@@ -14,38 +14,54 @@
 #       }
 #
 
-
-
-from abc import ABC, abstractmethod         #   for abstract class and methods
+from abc import ABC, abstractmethod                     #   for abstract class and methods
 
 class Command(ABC):
-    list = []                               #   list of all commands
-    def __init__(this, name, keywords):     #   initialisation of new command
-        this.name = name
-        this.keywords = keywords
-        Command.list.append(this)
+    _list = []                                           #   list of all commands
+    def __init__(this, name, keywords):                 #   initialisation of new command
+        this._name = name
+        this._keywords = keywords
+        Command.append(this)
 
-    def _get_kw(this, string):
-        for weight, array in this.keywords.items():
+    def __str__(this):
+        str = f'{this.__class__.__name__}.{this.getName()}:\n'
+        for key, value in this._keywords.items():
+            str += f'\t{key}:\t{value}\n'
+        return str
+
+    #   control keywords
+    def _getKeyword(this, string):                      #   return position of keyword
+        for weight, array in this._keywords.items():
             index = 0
             for word in array:
                 if string == word:
                     return (weight, index)
                 index += 1
-        return None
+        return None #   if not found
+    def removeKeyword(this, string):
+        position = this._getKeyword(string)
+        if(position): del this._keywords[ position[0] ][ position[1] ]
+    def addKeyword(this, weight, string):
+        if this._getKeyword(string): return
+        if( this._keywords.get(weight) ):   this._keywords[weight].append(string)
+        else:                           this._keywords[weight] = [string]
+    def changeKeyword(this, weight, string):
+        this.removeKeyword(string)
+        this.addKeyword(weight, string)
 
-    def remove_kw(this, string):
-        position = this._get_kw(string)
-        if(position):
-            del this.keywords[ position[0] ][ position[1] ]
-    def add_kw(this, weight, string):
-        if( this.keywords[weight] ):    this.keywords[weight].append(string)
-        else:                           this.keywords[weight] = [string]
+    #   setters
+    def setStart(this, function):               #   define start    (required)
+        this.start = function
 
-    #   static
-    @staticmethod
-    def find(string):
-        print('Find: '+string)
+    def setConfirm(this, function):             #   define confirm (optional)
+        this.confirm = function
+
+    #   getters
+    def getName(this):
+        return this._name
+    def getKeywords(this):
+        return this._keywords
+
     #   abstract
     @abstractmethod
     def start(this, string):                #   main method
@@ -53,3 +69,31 @@ class Command(ABC):
     @abstractmethod
     def confirm(this):                      #   optional method
         pass
+
+    #   static
+    @staticmethod
+    def getList():
+        return Command._list
+
+    @staticmethod
+    def append(obj):
+        Command._list.append(obj)
+
+    @staticmethod
+    def find(string):
+        chances = {}
+        list = Command.getList()
+        for i, obj in enumerate( list ):
+            chances[i] = 0
+            for weight, words in obj.getKeywords().items():
+                for word in words:
+                    if word in string:
+                        chances[i] += weight
+        print(chances)
+        if( sum( chances.values() ) ):
+            top = max( chances.values() ) / sum( chances.values() ) * 100
+        else:
+            return None
+        for i, chance in chances.items():
+            if chance == max( chances.values() ):
+                return list[i]

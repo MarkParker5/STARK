@@ -1,11 +1,9 @@
 #   File for test modules
 #   Program work only here
 #   :)
+from Command import Command
+import SmallTalk
 
-from SmallTalk import *
+string = 'Который час?'
 
-
-hello.start('Lorem')
-print(hello.keywords)
-hello.remove_kw('Lorem2')
-print(hello.keywords)
+print(Command.find(string).start())

@@ -18,14 +18,95 @@
 
 
 from .SmallTalk import *
+import datetime, time
+import math
 
 ################################################################################
-def method(string):
-    print('Hello')
-kw = {
-    1: ['Lorem', 'ipsum', 'dolor'],
-    2: ['Lorem2', 'ipsum2', 'dolor2'],
+def method():
+    now = datetime.datetime.now()
+    if now.hour%20 == 1:
+        str_hour = ' час'
+    elif 5 > now.hour%20 > 1:
+        str_hour =  ' часа'
+    else:
+        str_hour = ' часов'
+    if now.minute%10 == 1 and 20<now.minute or now.minute == 1:
+        str_minute = ' минута '
+    elif 0 < now.minute%10 < 5 and math.floor(now.minute/10) != 1:
+        str_minute = ' минуты '
+    else:
+        str_minute = ' минут '
+    #
+    def get_str(j):
+        if j==0:
+            str_num = 'десять'
+        elif j==1:
+            str_num = 'один'
+        elif j==2:
+            str_num = 'два'
+        elif j==3:
+            str_num = 'три'
+        elif j==4:
+            str_num = 'четыре'
+        elif j==5:
+            str_num = 'пять'
+        elif j==6:
+            str_num = 'шесть'
+        elif j==7:
+            str_num = 'семь'
+        elif j==8:
+            str_num = 'восемь'
+        else:
+            str_num = 'девять'
+        return str_num
+
+    def get_str_num(num, bool):
+        result = ''
+        for i in [100, 10, 1]:
+            j = num//i%10
+            str_num = get_str(j)
+            if i == 1 and bool:
+                if j==1:
+                    str_num = 'одна'
+                elif j==2:
+                    str_num = 'две'
+            if str_num=='десять':
+                continue
+            elif i==10 and j == 1:
+                j = int(num%10)
+                str_num = get_str(j)
+                if j==0:
+                    str_num = ''
+                elif j==2:
+                    str_num = 'две'
+                elif j==4:
+                    str_num = 'четыр'
+                elif j==5:
+                    str_num = 'пят'
+                str_num += 'надцать'
+                if j==0:
+                    str_num = 'десять'
+                result += str_num
+                break
+
+            elif i==10:
+                if j==4:
+                    str_num = 'сорок'
+                elif j<5:
+                    str_num += 'дцать'
+                elif j==9:
+                    str_num = 'девяноста'
+                else:
+                    str_num += 'десят'
+            result += ' '+str_num
+        return result
+    return f'Сейчас{get_str_num(now.hour, 0)}{str_hour},{get_str_num(now.minute, 1)}{str_minute}'
+
+keywords = {
+    5:   ['который час', 'сколько времени', 'время', 'часов'],
+    2:   ['текущее', 'сейчас', 'час'],
+    0.5: ['сколько']
 }
-hello = SmallTalk('First', kw)
-hello.setStart(method)
+ctime = SmallTalk('Current Time', keywords)
+ctime.setStart(method)
 ################################################################################
