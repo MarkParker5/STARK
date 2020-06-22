@@ -3,7 +3,10 @@
 #   :)
 from Command import Command
 import SmallTalk
+import Text2Speech
 
-string = 'Который час?'
+archie = Text2Speech.engine()
 
-print(Command.find(string).start())
+while True:
+    string = str(input('-> '))
+    archie.generate( Command.find(string).start() ).speak()

@@ -4,8 +4,8 @@
 #   setConfirm(method) is optional
 #
 #   How to add new command:
-#   1.  def method()
-#   1.2 def confirm_method()         # optional, not required
+#   1.  def method()                 #  return string
+#   1.2 def confirm_method()         #  optional, not required
 #   2.  kw = {
 #           (int)weight  : ['word1', 'word2', 'word3'],
 #           (int)weight1 : ['word3', 'word4'],
@@ -20,61 +20,52 @@
 from .SmallTalk import *
 import datetime, time
 import math
-
 ################################################################################
 def method():
-    now = datetime.datetime.now()
-    if now.hour%20 == 1:
-        str_hour = ' час'
-    elif 5 > now.hour%20 > 1:
-        str_hour =  ' часа'
+    return 'Я не понимаю'
+
+keywords = {}
+void = SmallTalk('Undefined', keywords)
+void.setStart(method)
+################################################################################
+################################################################################
+def method():
+    now     = datetime.datetime.now()
+    hours   = now.hour%12
+    minutes = now.minute
+    get_str = ['десять', 'один', 'два', 'три', 'четыре', 'пять', 'шесть', 'семь', 'восемь', 'девять']
+
+    if hours%20 == 1:
+        str_hour = 'час'
+    elif 5 > hours%20 > 1:
+        str_hour =  'часа'
     else:
-        str_hour = ' часов'
-    if now.minute%10 == 1 and 20<now.minute or now.minute == 1:
-        str_minute = ' минута '
-    elif 0 < now.minute%10 < 5 and math.floor(now.minute/10) != 1:
-        str_minute = ' минуты '
+        str_hour = 'часов'
+
+    if minutes%10 == 1 and 20<minutes or minutes == 1:
+        str_minute = 'минута'
+    elif 0 < minutes%10 < 5 and math.floor(minutes/10) != 1:
+        str_minute = 'минуты'
     else:
-        str_minute = ' минут '
-    #
-    def get_str(j):
-        if j==0:
-            str_num = 'десять'
-        elif j==1:
-            str_num = 'один'
-        elif j==2:
-            str_num = 'два'
-        elif j==3:
-            str_num = 'три'
-        elif j==4:
-            str_num = 'четыре'
-        elif j==5:
-            str_num = 'пять'
-        elif j==6:
-            str_num = 'шесть'
-        elif j==7:
-            str_num = 'семь'
-        elif j==8:
-            str_num = 'восемь'
-        else:
-            str_num = 'девять'
-        return str_num
+        str_minute = 'минут'
 
     def get_str_num(num, bool):
-        result = ''
+        result = []
         for i in [100, 10, 1]:
             j = num//i%10
-            str_num = get_str(j)
+            str_num = get_str[j]
+
             if i == 1 and bool:
                 if j==1:
                     str_num = 'одна'
                 elif j==2:
                     str_num = 'две'
+
             if str_num=='десять':
                 continue
             elif i==10 and j == 1:
                 j = int(num%10)
-                str_num = get_str(j)
+                str_num = get_str[j]
                 if j==0:
                     str_num = ''
                 elif j==2:
@@ -98,9 +89,10 @@ def method():
                     str_num = 'девяноста'
                 else:
                     str_num += 'десят'
-            result += ' '+str_num
-        return result
-    return f'Сейчас{get_str_num(now.hour, 0)}{str_hour},{get_str_num(now.minute, 1)}{str_minute}'
+
+            result.append(str_num)
+        return ' '.join(result)
+    return f'Сейчас {get_str_num(hours%12, 0)} {str_hour}, {get_str_num(minutes, 1)} {str_minute}'
 
 keywords = {
     5:   ['который час', 'сколько времени', 'время', 'часов'],

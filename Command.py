@@ -81,6 +81,7 @@ class Command(ABC):
 
     @staticmethod
     def find(string):
+        string = string.lower()
         chances = {}
         list = Command.getList()
         for i, obj in enumerate( list ):
@@ -93,7 +94,7 @@ class Command(ABC):
         if( sum( chances.values() ) ):
             top = max( chances.values() ) / sum( chances.values() ) * 100
         else:
-            return None
+            return list[0]
         for i, chance in chances.items():
             if chance == max( chances.values() ):
                 return list[i]
