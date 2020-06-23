@@ -15,6 +15,7 @@
 #
 
 from abc import ABC, abstractmethod                     #   for abstract class and methods
+from fuzzywuzzy import fuzz
 
 class Command(ABC):
     _list = []                                           #   list of all commands
@@ -88,13 +89,13 @@ class Command(ABC):
             chances[i] = 0
             for weight, words in obj.getKeywords().items():
                 for word in words:
-                    if word in string:
-                        chances[i] += weight
+                    chances[i] += fuzz.partial_ratio(word, string) * weight
         print(chances)
         if( sum( chances.values() ) ):
             top = max( chances.values() ) / sum( chances.values() ) * 100
         else:
             return list[0]
+        print(top)
         for i, chance in chances.items():
             if chance == max( chances.values() ):
                 return list[i]

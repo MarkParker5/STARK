@@ -28,7 +28,6 @@ keywords = {}
 void = SmallTalk('Undefined', keywords)
 void.setStart(method)
 ################################################################################
-################################################################################
 def method():
     now     = datetime.datetime.now()
     hours   = now.hour%12
@@ -95,9 +94,9 @@ def method():
     return f'Сейчас {get_str_num(hours%12, 0)} {str_hour}, {get_str_num(minutes, 1)} {str_minute}'
 
 keywords = {
-    5:   ['который час', 'сколько времени', 'время', 'часов'],
-    2:   ['текущее', 'сейчас', 'час'],
-    0.5: ['сколько']
+    10:     ['который час', 'сколько времени'],
+    5:      ['текущее', 'сейчас', 'час', 'время'],
+    1:      ['сколько']
 }
 ctime = SmallTalk('Current Time', keywords)
 ctime.setStart(method)
