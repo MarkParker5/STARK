@@ -30,7 +30,7 @@ void.setStart(method)
 ################################################################################
 def method():
     now     = datetime.datetime.now()
-    hours   = now.hour%12
+    hours   = now.hour%12 if now.hour else 12
     minutes = now.minute
     get_str = ['десять', 'один', 'два', 'три', 'четыре', 'пять', 'шесть', 'семь', 'восемь', 'девять']
 
@@ -76,7 +76,7 @@ def method():
                 str_num += 'надцать'
                 if j==0:
                     str_num = 'десять'
-                result += str_num
+                result.append(str_num)
                 break
 
             elif i==10:
@@ -88,10 +88,11 @@ def method():
                     str_num = 'девяноста'
                 else:
                     str_num += 'десят'
-
             result.append(str_num)
         return ' '.join(result)
-    return f'Сейчас {get_str_num(hours%12, 0)} {str_hour}, {get_str_num(minutes, 1)} {str_minute}'
+    answer = f'Сейчас {get_str_num(hours, 0)} {str_hour}'
+    if(minutes): answer += f', {get_str_num(minutes, 1)} {str_minute}'
+    return answer
 
 keywords = {
     10:     ['который час', 'сколько времени'],

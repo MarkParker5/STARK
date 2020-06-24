@@ -1,6 +1,6 @@
 from google.cloud import texttospeech
 import os
-import pygame
+from pygame import mixer
 import time
 import mmap
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "Text2Speech/archie-test-key.json"
@@ -19,10 +19,10 @@ class Speech:
             print(f'Говорю: {this._text}')
             with open(this._path) as f:
                 with mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ) as audio:
-                    pygame.mixer.init()
-                    pygame.mixer.music.load(audio)
-                    pygame.mixer.music.play()
-                    while pygame.mixer.music.get_busy():
+                    mixer.init()
+                    mixer.music.load(audio)
+                    mixer.music.play()
+                    while mixer.music.get_busy():
                         time.sleep(0.1)
             if(not this._standart): os.remove(this._path)
 
