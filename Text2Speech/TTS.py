@@ -36,7 +36,7 @@ class Speech:
 
 class Engine:
     def __init__(this, name = 'ru-RU-Wavenet-B'):
-        # os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "archie-test-key.json"
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "Text2Speech/tts-gc-key.json"
         this._name         = name
         this._client       = texttospeech.TextToSpeechClient()
         this._audio_config = texttospeech.AudioConfig( audio_encoding = texttospeech.AudioEncoding.MP3 )

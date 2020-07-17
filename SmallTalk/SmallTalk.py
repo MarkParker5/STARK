@@ -9,7 +9,7 @@ from Command import Command                     #   import parent class
 
 class SmallTalk(Command):
     def start(this, string):                    #   main method
-        print('Im using SmallTalk now :)')
+        print('Hello, World!')
 
     def confirm(this):                          #   optional method
         return True
