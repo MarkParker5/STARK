@@ -1,4 +1,6 @@
 __pycache__
 audio/*
-Text2Speech/tts-gc-key.json
+tts-gc-key.json
 test.py
+sandbox.py
+logs.txt

@@ -16,6 +16,20 @@
 
 from abc import ABC, abstractmethod                     #   for abstract class and methods
 from fuzzywuzzy import fuzz
+from threading import Thread, Event
+
+class RThread(Thread):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._return = None
+
+    def run(self):
+        if self._target is not None:
+            self._return = self._target(*self._args, **self._kwargs)
+
+    def join(self, *args, **kwargs):
+        super().join(*args, **kwargs)
+        return self._return
 
 class Command(ABC):
     _list = []                                           #   list of all commands
@@ -69,11 +83,11 @@ class Command(ABC):
 
     #   abstract
     @abstractmethod
-    def start(this, string):                #   main method
+    def start(this, string):                    #   main method
         pass
 
     @abstractmethod
-    def confirm(this):                      #   optional method
+    def confirm(this):                          #   optional method
         pass
 
     #   static
@@ -103,9 +117,27 @@ class Command(ABC):
             top = max( chances.values() ) / sum( chances.values() ) * 100
         else:
             return list[0]
-        if( max( chances.values() ) < 1000 or top < 80): return list[0]
         print(chances)
         print(top)
+        #if( max( chances.values() ) < 800 or top < 80): return list[0]
         for i, chance in chances.items():
             if chance == max( chances.values() ):
                 return list[i]
+
+    @staticmethod
+    def background(answer = ''):
+        def decorator(cmd):
+            def wrapper(text):
+                finish_event  = Event()
+                thread        = RThread(target=cmd, args=(text, finish_event))
+                thread.start()
+                return {
+                    'type': 'background',
+                    'text': answer,
+                    'thread': {
+                        'thread': thread,
+                        'finish_event': finish_event,
+                        }
+                }
+            return wrapper
+        return decorator

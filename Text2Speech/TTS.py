@@ -3,7 +3,7 @@ import os
 from pygame import mixer
 import time
 import mmap
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "Text2Speech/archie-test-key.json"
+import config
 
 class Speech:
     _list = []
@@ -35,14 +35,15 @@ class Speech:
         return Speech._list
 
 class Engine:
-    def __init__(this, name = 'ru-RU-Wavenet-B'):
-        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "Text2Speech/tts-gc-key.json"
-        this._name         = name
+    def __init__(this, name = 'ru-RU-Wavenet-B', language_code = config.language_code):
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = config.goole_tts_json_key
         this._client       = texttospeech.TextToSpeechClient()
         this._audio_config = texttospeech.AudioConfig( audio_encoding = texttospeech.AudioEncoding.MP3 )
+        this._language_code= language_code
+        this._name         = name
         this._voice        = texttospeech.VoiceSelectionParams(
-            language_code  = 'ru-RU',
-            name           = name,
+            language_code  = this._language_code,
+            name           = this._name,
             ssml_gender    = texttospeech.SsmlVoiceGender.FEMALE)
 
     def generate(this, text, standart = False):

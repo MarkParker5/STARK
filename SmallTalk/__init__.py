@@ -20,15 +20,20 @@
 from .SmallTalk import *
 import datetime, time
 import math
+from Command import Command
+import time
 ################################################################################
-def method():
-    return 'Я не понимаю'
+def method(text):
+    return {
+        'type': 'simple',
+        'text': 'Я не понимаю',
+    }
 
 keywords = {}
 void = SmallTalk('Undefined', keywords)
 void.setStart(method)
 ################################################################################
-def method():
+def method(text):
     now     = datetime.datetime.now()
     hours   = now.hour%12 if now.hour else 12
     minutes = now.minute
@@ -92,7 +97,10 @@ def method():
         return ' '.join(result)
     answer = f'Сейчас {get_str_num(hours, 0)} {str_hour}'
     if(minutes): answer += f', {get_str_num(minutes, 1)} {str_minute}'
-    return answer
+    return {
+        'type': 'simple',
+        'text': answer
+    }
 
 keywords = {
     10:     ['который час', 'сколько времени'],
@@ -101,4 +109,21 @@ keywords = {
 }
 ctime = SmallTalk('Current Time', keywords)
 ctime.setStart(method)
+################################################################################
+#                           Only for tests
+@Command.background('Запускаю фоновый процесс')
+def method(text, finish_event):
+    time.sleep(10)
+    finish_event.set()
+    return {
+        'text': 'Фоновый процесс завершен',
+    }
+
+
+keywords = {
+    10:     ['тестирование', 'проверка', 'потоков', 'фоновых'],
+    5:      ['процессов',]
+}
+test = SmallTalk('Test threads', keywords)
+test.setStart(method)
 ################################################################################
