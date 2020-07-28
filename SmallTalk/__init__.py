@@ -30,7 +30,8 @@ def method(text):
     }
 
 keywords = {}
-void = SmallTalk('Undefined', keywords)
+patterns = []
+void = SmallTalk('Undefined', keywords, patterns)
 void.setStart(method)
 ################################################################################
 def method(text):
@@ -104,10 +105,11 @@ def method(text):
 
 keywords = {
     10:     ['который час', 'сколько времени'],
-    3:      ['текущее', 'сейчас', 'время'],
+    5:      ['текущее', 'сейчас', 'время'],
     1:      ['сколько']
 }
-ctime = SmallTalk('Current Time', keywords)
+patterns = ['* который * час *', '* скольк* * врем* *', 'время']
+ctime = SmallTalk('Current Time', keywords, patterns)
 ctime.setStart(method)
 ################################################################################
 #                           Only for tests
@@ -121,9 +123,9 @@ def method(text, finish_event):
 
 
 keywords = {
-    10:     ['тестирование', 'проверка', 'потоков', 'фоновых'],
-    5:      ['процессов',]
+    10:     ['тестирование', 'проверка', 'потоков', 'фоновых', 'процессов'],
 }
-test = SmallTalk('Test threads', keywords)
+patterns = ['* (тестир*|провер*) * [фоновых] * (процесс*|поток*) *']
+test = SmallTalk('Test threads', keywords, patterns)
 test.setStart(method)
 ################################################################################

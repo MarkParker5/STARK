@@ -17,6 +17,7 @@
 from abc import ABC, abstractmethod                     #   for abstract class and methods
 from fuzzywuzzy import fuzz
 from threading import Thread, Event
+import re
 
 class RThread(Thread):
     def __init__(self, *args, **kwargs):
@@ -33,9 +34,26 @@ class RThread(Thread):
 
 class Command(ABC):
     _list = []                                           #   list of all commands
-    def __init__(this, name, keywords):                 #   initialisation of new command
+    _patterns = {
+        'word': '[A-Za-zА-ЯЁа-яё0-9]+',
+    }
+    _regex = {
+        #   stars   *
+        f'([A-Za-zА-ЯЁа-яё0-9]+)\*([A-Za-zА-ЯЁа-яё0-9]+)':  r'\\b\1.*\2\\b',  #   'te*xt'
+        f'\*([A-Za-zА-ЯЁа-яё0-9]+)':          r'\\b.*\1',                            #   '*text'
+        f'([A-Za-zА-ЯЁа-яё0-9]+)\*':          r'\1.*\\b',                            #   'text*'
+        f'(^|\s)\*($|\s)':      r'.*',                                                      #   '*'     ' * '
+        #   one of the list      (a|b|c)
+        '\(((?:.*\|)*.*)\)':    r'(?:\1)',
+        #   0 or 1 the of list [a|b|c]
+        '\[((?:.*\|?)*?.*?)\]': r'(?:\1)??',
+        #   one or more of the list, without order     {a|b|c}
+        '\{((?:.*\|?)*?.*?)\}': r'(?:\1)+?',
+    }
+    def __init__(this, name, keywords, patterns):                 #   initialisation of new command
         this._name = name
         this._keywords = keywords
+        this._patterns = patterns
         Command.append(this)
 
     def __str__(this):
@@ -81,6 +99,9 @@ class Command(ABC):
     def getKeywords(this):
         return this._keywords
 
+    def getPatterns(this):
+        return this._patterns
+
     #   abstract
     @abstractmethod
     def start(this, string):                    #   main method
@@ -110,19 +131,36 @@ class Command(ABC):
         list = Command.getList()
         for i, obj in enumerate( list ):
             chances[i] = 0
-            for weight, words in obj.getKeywords().items():
-                for word in words:
-                    chances[i] += Command.ratio(string, word) * weight
+            x = 1 / ( sum([int(i) for i in obj.getKeywords().keys()]) or 1 )
+            for weight, kws in obj.getKeywords().items():
+                k = x * weight / len(kws)
+                for kw in kws:
+                    chances[i] += Command.ratio(string, kw) * k
         if( sum( chances.values() ) ):
             top = max( chances.values() ) / sum( chances.values() ) * 100
         else:
             return list[0]
-        print(chances)
-        print(top)
         #if( max( chances.values() ) < 800 or top < 80): return list[0]
         for i, chance in chances.items():
             if chance == max( chances.values() ):
                 return list[i]
+
+    @staticmethod
+    def reg_find(string):
+        string = string.lower()
+        list   = Command.getList()
+        for obj in list:
+            for pattern in obj.getPatterns():
+                #   replace patterns
+                for ptrn, regex in Command._regex.items():
+                    pattern = re.sub(re.compile(ptrn), regex, pattern)
+                #   links   $Pattern
+                link = re.search(re.compile(f'\$[A-Za-zА-ЯЁа-яё0-9]+'), pattern)
+                if link: pattern = re.sub('\\'+link[0], f'(?P<{link[0][1:]}>{Command._patterns[link[0][1:]]})', pattern)
+                #   find
+                match = re.search(re.compile(pattern), string)
+                if(match): return obj # match.groupdict()
+        return None
 
     @staticmethod
     def background(answer = ''):
