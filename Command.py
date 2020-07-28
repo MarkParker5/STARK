@@ -39,10 +39,10 @@ class Command(ABC):
     }
     _regex = {
         #   stars   *
-        f'([A-Za-zА-ЯЁа-яё0-9]+)\*([A-Za-zА-ЯЁа-яё0-9]+)':  r'\\b\1.*\2\\b',  #   'te*xt'
-        f'\*([A-Za-zА-ЯЁа-яё0-9]+)':          r'\\b.*\1',                            #   '*text'
-        f'([A-Za-zА-ЯЁа-яё0-9]+)\*':          r'\1.*\\b',                            #   'text*'
-        f'(^|\s)\*($|\s)':      r'.*',                                                      #   '*'     ' * '
+        '([A-Za-zА-ЯЁа-яё0-9\(\)\[\]\{\}]+)\*([A-Za-zА-ЯЁа-яё0-9\(\)\[\]\{\}]+)':  r'\\b\1.*\2\\b',  #   'te*xt'
+        '\*([A-Za-zА-ЯЁа-яё0-9\(\)\[\]\{\}]+)':          r'\\b.*\1',                            #   '*text'
+        '([A-Za-zА-ЯЁа-яё0-9\(\)\[\]\{\}]+)\*':          r'\1.*\\b',                            #   'text*'
+        '(^|\s)\*($|\s)':      r'.*',                                                      #   '*'     ' * '
         #   one of the list      (a|b|c)
         '\(((?:.*\|)*.*)\)':    r'(?:\1)',
         #   0 or 1 the of list [a|b|c]
@@ -131,19 +131,24 @@ class Command(ABC):
         list = Command.getList()
         for i, obj in enumerate( list ):
             chances[i] = 0
-            x = 1 / ( sum([int(i) for i in obj.getKeywords().keys()]) or 1 )
+            k = 1 / ( sum( [int(w)*len(kw) for w, kw in obj.getKeywords().items()] ) or 1 )
             for weight, kws in obj.getKeywords().items():
-                k = x * weight / len(kws)
                 for kw in kws:
-                    chances[i] += Command.ratio(string, kw) * k
+                    chances[i] += Command.ratio(string, kw) * weight * k
         if( sum( chances.values() ) ):
             top = max( chances.values() ) / sum( chances.values() ) * 100
         else:
-            return list[0]
+            return {
+                    'cmd': list[0],
+                    'params': None,
+                }
         #if( max( chances.values() ) < 800 or top < 80): return list[0]
         for i, chance in chances.items():
             if chance == max( chances.values() ):
-                return list[i]
+                return {
+                        'cmd': list[i],
+                        'params': None,
+                    }
 
     @staticmethod
     def reg_find(string):
@@ -155,15 +160,21 @@ class Command(ABC):
                 for ptrn, regex in Command._regex.items():
                     pattern = re.sub(re.compile(ptrn), regex, pattern)
                 #   links   $Pattern
-                link = re.search(re.compile(f'\$[A-Za-zА-ЯЁа-яё0-9]+'), pattern)
+                link = re.search(re.compile('\$[A-Za-zА-ЯЁа-яё0-9\(\)\[\]\{\}]+'), pattern)
                 if link: pattern = re.sub('\\'+link[0], f'(?P<{link[0][1:]}>{Command._patterns[link[0][1:]]})', pattern)
                 #   find
                 match = re.search(re.compile(pattern), string)
-                if(match): return obj # match.groupdict()
-        return None
+                if(match): return {
+                                'cmd': obj,
+                                'params': match.groupdict(),
+                            }
+        return {
+                'cmd': list[0],
+                'params': None,
+            }
 
     @staticmethod
-    def background(answer = ''):
+    def background(answer = '', voice = ''):
         def decorator(cmd):
             def wrapper(text):
                 finish_event  = Event()
@@ -172,6 +183,7 @@ class Command(ABC):
                 return {
                     'type': 'background',
                     'text': answer,
+                    'voice': voice,
                     'thread': {
                         'thread': thread,
                         'finish_event': finish_event,

@@ -21,12 +21,12 @@ from .SmallTalk import *
 import datetime, time
 import math
 from Command import Command
-import time
 ################################################################################
 def method(text):
     return {
         'type': 'simple',
         'text': 'Я не понимаю',
+        'voice': 'Я не понимаю',
     }
 
 keywords = {}
@@ -96,11 +96,16 @@ def method(text):
                     str_num += 'десят'
             result.append(str_num)
         return ' '.join(result)
-    answer = f'Сейчас {get_str_num(hours, 0)} {str_hour}'
-    if(minutes): answer += f', {get_str_num(minutes, 1)} {str_minute}'
+
+    voice = f'Сейчас {get_str_num(hours, 0)} {str_hour}'
+    if(minutes): voice += f', {get_str_num(minutes, 1)} {str_minute}'
+    hours   = now.hour if now.hour > 9 else '0'+str(now.hour)
+    minutes = minutes if minutes > 9 else '0'+str(minutes) if minutes else '00'
+    text    = f'Текущее время: {hours}:{minutes}'
     return {
         'type': 'simple',
-        'text': answer
+        'text': text,
+        'voice': voice,
     }
 
 keywords = {
@@ -108,24 +113,25 @@ keywords = {
     5:      ['текущее', 'сейчас', 'время'],
     1:      ['сколько']
 }
-patterns = ['* который * час *', '* скольк* * врем* *', 'время']
+patterns = ['* который * час *', '* скольк* * (врем|час)* *', '* врем* *']
 ctime = SmallTalk('Current Time', keywords, patterns)
 ctime.setStart(method)
 ################################################################################
 #                           Only for tests
-@Command.background('Запускаю фоновый процесс')
+@Command.background(answer = 'Запуск фонового процесса', voice = 'Запускаю фоновый процесс')
 def method(text, finish_event):
     time.sleep(10)
     finish_event.set()
     return {
         'text': 'Фоновый процесс завершен',
+        'voice': 'Фоновый процесс завершен',
     }
 
 
 keywords = {
     10:     ['тестирование', 'проверка', 'потоков', 'фоновых', 'процессов'],
 }
-patterns = ['* (тестир*|провер*) * [фоновых] * (процесс*|поток*) *']
+patterns = ['* [тест|провер]* * [фонов*] * (процесс|поток)* *']
 test = SmallTalk('Test threads', keywords, patterns)
 test.setStart(method)
 ################################################################################

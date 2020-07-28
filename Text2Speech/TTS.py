@@ -16,7 +16,6 @@ class Speech:
 
     def speak(this):
         if( os.path.exists(this._path) ):
-            print(f'Говорю: {this._text}')
             with open(this._path) as f:
                 with mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ) as audio:
                     mixer.init()
