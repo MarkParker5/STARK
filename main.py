@@ -28,11 +28,9 @@ while True:                     #    main loop
     print('\nYou: ', end='')
     speech = listener.listen()
     text   = speech['text']
-    speech['status'] = 'ok' if text else 'void'
     if speech['status'] == 'ok':
         print(text)
-        if set(config.names) & set(text.split(' ')): online = True
-        if online:
+        if online := set(config.names) & set(text.split(' ')):
             voids = 0
             cmd, params = Command.reg_find(text).values()
             responce = cmd.start(text)
@@ -49,5 +47,6 @@ while True:                     #    main loop
                 voice.generate(responce['voice']).speak()
     else:
         if speech['status'] == 'error': print('Отсутсвует подключение к интернету');
-        elif speech['status']  == 'void': voids += 1
-        if voids >= 3: online = False; voids = 0
+        elif online and speech['status']  == 'void': voids += 1;
+        if online and voids >= 3: online = False; voids = 0
+        if not online: listener.listen_noise()
