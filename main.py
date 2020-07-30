@@ -33,7 +33,7 @@ while True:                     #    main loop
         if online := set(config.names) & set(text.split(' ')):
             voids = 0
             cmd, params = Command.reg_find(text).values()
-            responce = cmd.start(text)
+            responce = cmd.start(params)
             memory.insert(0, {
                 'text': text,
                 'cmd':  cmd,

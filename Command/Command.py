@@ -3,6 +3,7 @@
 #   command                 - object (class instance)
 #   Command.list            - list of all commands
 #   Command.find()          - recognize command from a string, return command object
+#       must return dict like {'cmd': cmd, 'params': params}
 #   this                    - object (class instance) pointer
 #   abstract this.start()   - required method for all commands
 #   abstract this.confirm() - Return True/False (User responce)
@@ -33,11 +34,13 @@ class RThread(Thread):
         return self._return
 
 class Command(ABC):
-    _list = []                                           #   list of all commands
+    _list     = []                                           #   list of all commands
+    _specials = []
     _patterns = {
-        'word': '[A-Za-zА-ЯЁа-яё0-9]+',
+        'word': '([A-Za-zА-ЯЁа-яё0-9])+',
+        'quest' : '(кто|что|как|какой|какая|какое|где|зачем|почему|сколько|чей|куда|когда)',
     }
-    _regex = {
+    _regex    = {
         #   stars   *
         '([A-Za-zА-ЯЁа-яё0-9\(\)\[\]\{\}]+)\*([A-Za-zА-ЯЁа-яё0-9\(\)\[\]\{\}]+)':  r'\\b\1.*\2\\b',  #   'te*xt'
         '\*([A-Za-zА-ЯЁа-яё0-9\(\)\[\]\{\}]+)':          r'\\b.*\1',                            #   '*text'
@@ -45,16 +48,17 @@ class Command(ABC):
         '(^|\s)\*($|\s)':      r'.*',                                                      #   '*'     ' * '
         #   one of the list      (a|b|c)
         '\(((?:.*\|)*.*)\)':    r'(?:\1)',
-        #   0 or 1 the of list [a|b|c]
+        #   0 or 1 the of list [abc]
         '\[((?:.*\|?)*?.*?)\]': r'(?:\1)??',
         #   one or more of the list, without order     {a|b|c}
         '\{((?:.*\|?)*?.*?)\}': r'(?:\1)+?',
     }
-    def __init__(this, name, keywords, patterns):                 #   initialisation of new command
+    def __init__(this, name, keywords = {}, patterns = [], special = False):                 #   initialisation of new command
         this._name = name
         this._keywords = keywords
         this._patterns = patterns
-        Command.append(this)
+        if special: Command.addSpecial(this)
+        else: Command.append(this)
 
     def __str__(this):
         str = f'{this.__class__.__name__}.{this.getName()}:\n'
@@ -104,7 +108,7 @@ class Command(ABC):
 
     #   abstract
     @abstractmethod
-    def start(this, string):                    #   main method
+    def start(this, params):                    #   main method
         pass
 
     @abstractmethod
@@ -116,33 +120,66 @@ class Command(ABC):
     def getList():
         return Command._list
 
+    def getRegexDict():
+        return Command._regex
+
+    def getPatternsDict():
+        return Command._patterns
+
+    def getSpecialsList():
+        return Command._specials
+
+    def getSpecial(string):
+        return Command._specials.get(string)
+
+    def addSpecial(obj):
+        Command._specials.append(obj)
+
     @staticmethod
     def append(obj):
         Command._list.append(obj)
+
+    @staticmethod
+    def setSearch(obj):
+        Command._search = obj
 
     @staticmethod
     def ratio(string, word):
         return ( fuzz.WRatio(string, word) + fuzz.ratio(string, word) ) / 2
 
     @staticmethod
+    def compilePattern(pattern):
+        #   transform patterns to regexp
+        for ptrn, regex in Command.getRegexDict().items():
+            pattern = re.sub(re.compile(ptrn), regex, pattern)
+        #   find links like  $Pattern
+        link = re.search(re.compile('\$[A-Za-zА-ЯЁа-яё0-9]+'), pattern)
+        if link: pattern = re.sub('\\'+link[0], f'(?P<{link[0][1:]}>{Command.compilePattern( Command.getPatternsDict()[ link[0][1:] ] )})', pattern)
+        #   return compiled regexp
+        return pattern
+
+    @staticmethod
     def find(string):
         string = string.lower()
         chances = {}
         list = Command.getList()
+        #   calculate chances of every command
         for i, obj in enumerate( list ):
             chances[i] = 0
             k = 1 / ( sum( [int(w)*len(kw) for w, kw in obj.getKeywords().items()] ) or 1 )
             for weight, kws in obj.getKeywords().items():
                 for kw in kws:
                     chances[i] += Command.ratio(string, kw) * weight * k
+        #    find command with the biggest chance
         if( sum( chances.values() ) ):
             top = max( chances.values() ) / sum( chances.values() ) * 100
-        else:
+        else: # if all chances is 0
             return {
                     'cmd': list[0],
-                    'params': None,
+                    'params': {},
                 }
-        #if( max( chances.values() ) < 800 or top < 80): return list[0]
+        #if( max( chances.values() ) < 800 or top < 50): return list[0]
+        #   find top command obj
         for i, chance in chances.items():
             if chance == max( chances.values() ):
                 return {
@@ -154,28 +191,34 @@ class Command(ABC):
     def reg_find(string):
         string = string.lower()
         list   = Command.getList()
+        if not string: return{
+            'cmd': list[0], #dialog mode
+            'params': {},
+        }
+        #   find command obj by pattern
         for obj in list:
             for pattern in obj.getPatterns():
-                #   replace patterns
-                for ptrn, regex in Command._regex.items():
-                    pattern = re.sub(re.compile(ptrn), regex, pattern)
-                #   links   $Pattern
-                link = re.search(re.compile('\$[A-Za-zА-ЯЁа-яё0-9\(\)\[\]\{\}]+'), pattern)
-                if link: pattern = re.sub('\\'+link[0], f'(?P<{link[0][1:]}>{Command._patterns[link[0][1:]]})', pattern)
-                #   find
-                match = re.search(re.compile(pattern), string)
-                if(match): return {
-                                'cmd': obj,
-                                'params': match.groupdict(),
-                            }
+                if match := re.search(re.compile(Command.compilePattern(pattern)), string):
+                    return {
+                    'cmd': obj,
+                    'params': match.groupdict(),
+                }
+        #  if command is search query
+        for obj in Command.getSpecialsList():
+            for pattern in obj.getPatterns():
+                if match := re.search(re.compile(Command.compilePattern(pattern)), string): return {
+                    'cmd': obj,
+                    'params': {**match.groupdict(), 'string': string},
+                }
+        #   return dialog bot if command not found
         return {
-                'cmd': list[0],
-                'params': None,
-            }
+            'cmd': list[0], #dialog mode
+            'params': {},
+        }
 
     @staticmethod
     def background(answer = '', voice = ''):
-        def decorator(cmd):
+        def decorator(cmd): #wrapper of wrapper (decorator of decorator)
             def wrapper(text):
                 finish_event  = Event()
                 thread        = RThread(target=cmd, args=(text, finish_event))

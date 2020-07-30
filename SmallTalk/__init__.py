@@ -21,7 +21,7 @@ from .SmallTalk import *
 import datetime, time
 import math
 ################################################################################
-def method(text):
+def method(params):
     return {
         'type': 'simple',
         'text': 'Я не понимаю',
@@ -33,7 +33,7 @@ patterns = []
 void = SmallTalk('Undefined', keywords, patterns)
 void.setStart(method)
 ################################################################################
-def method(text):
+def method(params):
     now     = datetime.datetime.now()
     hours   = now.hour%12 if now.hour else 12
     minutes = now.minute
@@ -112,13 +112,13 @@ keywords = {
     5:      ['текущее', 'сейчас', 'время'],
     1:      ['сколько']
 }
-patterns = ['* который * час *', '* скольк* * (врем|час)* *', '* врем* *']
+patterns = ['* который * час *', '* скольк* * (врем|час)* *']
 ctime = SmallTalk('Current Time', keywords, patterns)
 ctime.setStart(method)
 ################################################################################
 #                           Only for tests
 @SmallTalk.background(answer = 'Запуск фонового процесса', voice = 'Запускаю фоновый процесс')
-def method(text, finish_event):
+def method(params, finish_event):
     time.sleep(10)
     finish_event.set()
     return {
