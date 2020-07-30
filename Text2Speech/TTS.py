@@ -45,9 +45,24 @@ class Engine:
             name           = this._name,
             ssml_gender    = texttospeech.SsmlVoiceGender.FEMALE)
 
+    @staticmethod
+    def transliterate(name):
+        dict = {'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'e',
+          'ж':'zh','з':'z','и':'i','й':'i','к':'k','л':'l','м':'m','н':'n',
+          'о':'o','п':'p','р':'r','с':'s','т':'t','у':'u','ф':'f','х':'h',
+          'ц':'c','ч':'cz','ш':'sh','щ':'scz','ы':'y','э':'e',
+          'ю':'u','я':'ja'}
+        allowed = 'abcdefghijklmnopqrstuvxyz'
+        name = name.lower()
+        for i, letter in enumerate(name):
+            if letter in allowed: continue;
+            if letter in dict.keys(): name = name.replace(letter, dict[letter])
+            else: name = name.replace(letter, '_')
+        return name
+
     def generate(this, text, standart = False):
         dir             = f'audio/{this._name}'
-        path            = f'{dir}/{text}.mp3'
+        path            = f'{dir}/{Engine.transliterate(text)[:100]}.mp3'
         if( os.path.exists(path) ): return Speech(text, this._name, path, standart)
         synthesis_input = texttospeech.SynthesisInput(text=text)
         response        = this._client.synthesize_speech(input = synthesis_input, voice = this._voice, audio_config = this._audio_config)

@@ -20,7 +20,6 @@
 from .SmallTalk import *
 import datetime, time
 import math
-from Command import Command
 ################################################################################
 def method(text):
     return {
@@ -118,7 +117,7 @@ ctime = SmallTalk('Current Time', keywords, patterns)
 ctime.setStart(method)
 ################################################################################
 #                           Only for tests
-@Command.background(answer = 'Запуск фонового процесса', voice = 'Запускаю фоновый процесс')
+@SmallTalk.background(answer = 'Запуск фонового процесса', voice = 'Запускаю фоновый процесс')
 def method(text, finish_event):
     time.sleep(10)
     finish_event.set()

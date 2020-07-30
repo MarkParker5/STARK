@@ -5,7 +5,7 @@ r = sr.Recognizer()
 m = sr.Microphone(device_index=1)
 
 class SpeechToText:
-    def __init__(this, device = 1, language = "ru-RU", pause_threshold = 0.4):
+    def __init__(this, device = 1, language = "ru-RU", pause_threshold = 0.5):
         this.device     = 1
         this.language   = language
         this.m          = sr.Microphone(device_index = this.device)
