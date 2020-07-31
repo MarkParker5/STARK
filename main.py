@@ -3,6 +3,7 @@ import Text2Speech
 import SmallTalk
 from Command import Command
 import config
+import QA
 
 listener = SpeechRecognition.SpeechToText()
 voice    = Text2Speech.Engine()
@@ -12,14 +13,17 @@ online   = False
 voids    = 0
 listener.listen_noise()
 
+def reply(responce):
+    if responce['text']:
+        print('Archie: '+responce['text'])
+    if responce['voice']:
+        voice.generate(responce['voice']).speak()
+
 def check_threads():
     for thread in threads:
         if thread['finish_event'].is_set():
             responce = thread['thread'].join()
-            if responce['text']:
-                print(' — '+responce['text'])
-            if responce['voice']:
-                voice.generate(responce['voice']).speak()
+            reply(responce)
             thread['finish_event'].clear()
             del thread
 
@@ -30,21 +34,25 @@ while True:                     #    main loop
     text   = speech['text']
     if speech['status'] == 'ok':
         print(text)
-        if online := set(config.names) & set(text.split(' ')):
-            voids = 0
-            cmd, params = Command.reg_find(text).values()
+        voids = 0
+        if name := list(set(config.names) & set(text.split(' '))):
+            online = True
+            text = text.replace(name[0], '').strip()
+        if online:
+            if Command.isRepeat(text):
+                reply(memory[0]['responce']);
+                continue
+            try: cmd, params = memory[0]['cmd'].checkContext(text).values(); params = {**memory[0]['params'], **params}
+            except: cmd, params = Command.reg_find(text).values()
             responce = cmd.start(params)
+            reply(responce)
+            if responce['type'] == 'background':        #   add background thread to list
+                threads.append(responce['thread'])
             memory.insert(0, {
                 'text': text,
                 'cmd':  cmd,
                 'responce': responce
             })
-            if responce['type'] == 'background':        #   add background thread to list
-                threads.append(responce['thread'])
-            if responce['text']:
-                print('Archie: '+responce['text'])
-            if responce['voice']:
-                voice.generate(responce['voice']).speak()
     else:
         if speech['status'] == 'error': print('Отсутсвует подключение к интернету');
         elif online and speech['status']  == 'void': voids += 1;

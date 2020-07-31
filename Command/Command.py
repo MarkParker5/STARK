@@ -38,6 +38,7 @@ class Command(ABC):
     _patterns = {
         'word': '([A-Za-zА-ЯЁа-яё0-9])+',
         'quest' : '(кто|что|как|какой|какая|какое|где|зачем|почему|сколько|чей|куда|когда)',
+        'repeat': '* ((повтор*)|(еще раз)|(еще*раз)*) *',
     }
     _regex    = {
         #   stars   *
@@ -52,10 +53,11 @@ class Command(ABC):
         #   one or more of the list, without order     {a|b|c}
         '\{((?:.*\|?)*?.*?)\}': r'(?:\1)+?',
     }
-    def __init__(this, name, keywords = {}, patterns = []):                 #   initialisation of new command
+    def __init__(this, name, keywords = {}, patterns = [], subPatterns = []):                 #   initialisation of new command
         this._name     = name
         this._keywords = keywords
         this._patterns = patterns
+        this._subPatterns = subPatterns
         Command.append(this)
 
     def __str__(this):
@@ -87,6 +89,15 @@ class Command(ABC):
         this.removeKeyword(string)
         this.addKeyword(weight, string)
 
+    def checkContext(this, string):
+        for pattern in this.getSubPatterns():
+            if match := re.search(re.compile(Command.compilePattern(pattern)), string):
+                return {
+                'cmd': this,
+                'params': {**match.groupdict(), 'string':string},
+            }
+        raise Exception("Not Found")
+
     #   setters
     def setStart(this, function):               #   define start    (required)
         this.start = function
@@ -103,6 +114,9 @@ class Command(ABC):
 
     def getPatterns(this):
         return this._patterns
+
+    def getSubPatterns(this):
+        return this._subPatterns
 
     #   abstract
     @abstractmethod
@@ -134,6 +148,13 @@ class Command(ABC):
     def getCommand(name):
         for obj in Command.getList():
             if obj.getName() == name: return obj
+
+    @staticmethod
+    def isRepeat(string):
+        print(Command.getPatternsDict()['repeat'])
+        print(Command.compilePattern(Command.getPatternsDict()['repeat']))
+        if re.search(re.compile(Command.compilePattern(Command.getPatternsDict()['repeat'])), string): return True
+        return False
 
     @staticmethod
     def ratio(string, word):
@@ -193,7 +214,7 @@ class Command(ABC):
                 if match := re.search(re.compile(Command.compilePattern(pattern)), string):
                     return {
                     'cmd': obj,
-                    'params': match.groupdict(),
+                    'params': {**match.groupdict(), 'string':string,},
                 }
         #   return QA-system if command not found
         return {

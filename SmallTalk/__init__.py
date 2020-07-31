@@ -11,7 +11,9 @@
 #           (int)weight1 : ['word3', 'word4'],
 #           (int)weight2 : ['word5', 'word6', 'word7', 'word8', 'word9'],
 #       }
-#   3.  new_command = SmallTalk(Name, kw)
+#       patterns = ['* который * час *', '* скольк* * (врем|час)* *']
+#       subpatterns = [...]     #like patterns
+#   3.  new_command = SmallTalk(Name, kw, patterns, subpatterns)
 #   4.  new_command.setStart(method)
 #   5.  new_command.setConfirm(confirm_method)    # optional, not required
 
@@ -112,8 +114,9 @@ keywords = {
     5:      ['текущее', 'сейчас', 'время'],
     1:      ['сколько']
 }
-patterns = ['* который * час *', '* скольк* * (врем|час)* *']
-ctime = SmallTalk('Current Time', keywords, patterns)
+patterns    = ['* который * час *', '* скольк* * (врем|час)* *']
+subpatterns = ['а сейчас']
+ctime = SmallTalk('Current Time', keywords, patterns, subpatterns)
 ctime.setStart(method)
 ################################################################################
 #                           Only for tests
