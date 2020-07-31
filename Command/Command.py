@@ -35,7 +35,6 @@ class RThread(Thread):
 
 class Command(ABC):
     _list     = []                                           #   list of all commands
-    _specials = []
     _patterns = {
         'word': '([A-Za-zА-ЯЁа-яё0-9])+',
         'quest' : '(кто|что|как|какой|какая|какое|где|зачем|почему|сколько|чей|куда|когда)',
@@ -53,12 +52,11 @@ class Command(ABC):
         #   one or more of the list, without order     {a|b|c}
         '\{((?:.*\|?)*?.*?)\}': r'(?:\1)+?',
     }
-    def __init__(this, name, keywords = {}, patterns = [], special = False):                 #   initialisation of new command
-        this._name = name
+    def __init__(this, name, keywords = {}, patterns = []):                 #   initialisation of new command
+        this._name     = name
         this._keywords = keywords
         this._patterns = patterns
-        if special: Command.addSpecial(this)
-        else: Command.append(this)
+        Command.append(this)
 
     def __str__(this):
         str = f'{this.__class__.__name__}.{this.getName()}:\n'
@@ -83,7 +81,7 @@ class Command(ABC):
     def addKeyword(this, weight, string):
         if this._getKeyword(string): return
         if( this._keywords.get(weight) ):   this._keywords[weight].append(string)
-        else:                           this._keywords[weight] = [string]
+        else:                               this._keywords[weight] = [string]
 
     def changeKeyword(this, weight, string):
         this.removeKeyword(string)
@@ -120,28 +118,22 @@ class Command(ABC):
     def getList():
         return Command._list
 
+    @staticmethod
     def getRegexDict():
         return Command._regex
 
+    @staticmethod
     def getPatternsDict():
         return Command._patterns
-
-    def getSpecialsList():
-        return Command._specials
-
-    def getSpecial(string):
-        return Command._specials.get(string)
-
-    def addSpecial(obj):
-        Command._specials.append(obj)
 
     @staticmethod
     def append(obj):
         Command._list.append(obj)
 
     @staticmethod
-    def setSearch(obj):
-        Command._search = obj
+    def getCommand(name):
+        for obj in Command.getList():
+            if obj.getName() == name: return obj
 
     @staticmethod
     def ratio(string, word):
@@ -175,25 +167,25 @@ class Command(ABC):
             top = max( chances.values() ) / sum( chances.values() ) * 100
         else: # if all chances is 0
             return {
-                    'cmd': list[0],
-                    'params': {},
-                }
+                'cmd': Command.QA,
+                'params': {'string':string,},
+            }
         #if( max( chances.values() ) < 800 or top < 50): return list[0]
         #   find top command obj
         for i, chance in chances.items():
             if chance == max( chances.values() ):
                 return {
-                        'cmd': list[i],
-                        'params': None,
-                    }
+                    'cmd': Command.QA, #dialog mode
+                    'params': {'string':string,},
+                }
 
     @staticmethod
     def reg_find(string):
         string = string.lower()
         list   = Command.getList()
-        if not string: return{
-            'cmd': list[0], #dialog mode
-            'params': {},
+        if not string: return {
+            'cmd': Command.getCommand('Hello'),
+            'params': {'string':string,},
         }
         #   find command obj by pattern
         for obj in list:
@@ -203,17 +195,10 @@ class Command(ABC):
                     'cmd': obj,
                     'params': match.groupdict(),
                 }
-        #  if command is search query
-        for obj in Command.getSpecialsList():
-            for pattern in obj.getPatterns():
-                if match := re.search(re.compile(Command.compilePattern(pattern)), string): return {
-                    'cmd': obj,
-                    'params': {**match.groupdict(), 'string': string},
-                }
-        #   return dialog bot if command not found
+        #   return QA-system if command not found
         return {
-            'cmd': list[0], #dialog mode
-            'params': {},
+            'cmd': Command.QA,
+            'params': {'string':string,},
         }
 
     @staticmethod

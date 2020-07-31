@@ -1,11 +1,13 @@
-import requests
-import json
 from bs4 import BeautifulSoup as BS
-import wikipedia as wiki
 from Command import Command
+import wikipedia as wiki
+import requests
+import random
+import apiai
+import json
 import re
 
-class Search(Command):
+class QA(Command):
     def confirm(this, string): return True
 
     def googleDictionary(this, word):
@@ -67,11 +69,11 @@ class Search(Command):
         else:
             try:    search = this.googleSearch(query)
             except: search = ''
-            voice   = text = search
+            voice = text = search or random.choice(['Не совсем понимаю, о чём вы.', 'Вот эта последняя фраза мне не ясна.', 'А вот это не совсем понятно.', 'Можете сказать то же самое другими словами?', 'Вот сейчас я совсем вас не понимаю.', 'Попробуйте выразить свою мысль по-другому',])
         return {
             'type': 'simple',
-            'text': text,
+            'text':  text,
             'voice': voice,
         }
 
-google = Search('Search', {}, ['* вики* *','фильм *','* это','$quest *','{посчитай|сколько будет|корень из} *',], special=True)
+Command.QA = QA('QA', {}, [])

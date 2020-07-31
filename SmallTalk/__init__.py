@@ -22,16 +22,16 @@ import datetime, time
 import math
 ################################################################################
 def method(params):
+    voice = text = 'Привет'
     return {
         'type': 'simple',
-        'text': 'Я не понимаю',
-        'voice': 'Я не понимаю',
+        'text': text,
+        'voice': voice,
     }
 
-keywords = {}
-patterns = []
-void = SmallTalk('Undefined', keywords, patterns)
-void.setStart(method)
+patterns = ['* привет* *',]
+hello = SmallTalk('Hello', {}, patterns)
+hello.setStart(method)
 ################################################################################
 def method(params):
     now     = datetime.datetime.now()
