@@ -35,10 +35,11 @@ class RThread(Thread):
 
 class Command(ABC):
     _list     = []                                           #   list of all commands
-    _patterns = {
-        'word': '([A-Za-zА-ЯЁа-яё0-9])+',
-        'quest' : '(кто|что|как|какой|какая|какое|где|зачем|почему|сколько|чей|куда|когда)',
-        'repeat': '* ((повтор*)|(еще раз)|(еще*раз)*) *',
+    _entities = {
+        'word':   lambda: r'\b[A-Za-zА-ЯЁа-яё0-9\-]+\b',
+        'text':   lambda: r'[A-Za-zА-ЯЁа-яё0-9\- ]+',
+        'quest' : lambda: Command.compilePattern('(кто|что|как|какой|какая|какое|где|зачем|почему|сколько|чей|куда|когда)'),
+        'repeat': lambda: Command.compilePattern('* ((повтор*)|(еще раз)|(еще*раз)*) *'),
     }
     _regex    = {
         #   stars   *
@@ -137,8 +138,20 @@ class Command(ABC):
         return Command._regex
 
     @staticmethod
-    def getPatternsDict():
-        return Command._patterns
+    def getEntity(key):
+        entity = Command._entities.get(key)
+        #if type(entity) == 'function': entity = entity()
+        return entity()
+
+    # @staticmethod
+    # def getEntities():
+    #     return {
+    #         'word':   r'\b[A-Za-zА-ЯЁа-яё0-9\-]+\b',
+    #         'text':   r'[A-Za-zА-ЯЁа-яё0-9\- ]+',
+    #         'quest' : Command.compilePattern('(кто|что|как|какой|какая|какое|где|зачем|почему|сколько|чей|куда|когда)'),
+    #         'repeat': Command.compilePattern('* ((повтор*)|(еще раз)|(еще*раз)*) *'),
+    #     }
+    #     # return Command._entities
 
     @staticmethod
     def append(obj):
@@ -151,9 +164,7 @@ class Command(ABC):
 
     @staticmethod
     def isRepeat(string):
-        print(Command.getPatternsDict()['repeat'])
-        print(Command.compilePattern(Command.getPatternsDict()['repeat']))
-        if re.search(re.compile(Command.compilePattern(Command.getPatternsDict()['repeat'])), string): return True
+        if re.search(re.compile(Command.getEntity('repeat')), string): return True
         return False
 
     @staticmethod
@@ -166,8 +177,8 @@ class Command(ABC):
         for ptrn, regex in Command.getRegexDict().items():
             pattern = re.sub(re.compile(ptrn), regex, pattern)
         #   find links like  $Pattern
-        link = re.search(re.compile('\$[A-Za-zА-ЯЁа-яё0-9]+'), pattern)
-        if link: pattern = re.sub('\\'+link[0], f'(?P<{link[0][1:]}>{Command.compilePattern( Command.getPatternsDict()[ link[0][1:] ] )})', pattern)
+        link = re.search(re.compile('\$[a-z]+'), pattern)
+        if link: pattern = re.sub('\\'+link[0], f'(?P<{link[0][1:]}>{Command.getEntity( link[0][1:] )})', pattern)
         #   return compiled regexp
         return pattern
 

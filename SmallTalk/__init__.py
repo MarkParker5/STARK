@@ -22,6 +22,8 @@
 from .SmallTalk import *
 import datetime, time
 import math
+import requests
+from bs4 import BeautifulSoup as BS
 ################################################################################
 def method(params):
     voice = text = 'Привет'
@@ -36,9 +38,18 @@ hello = SmallTalk('Hello', {}, patterns)
 hello.setStart(method)
 ################################################################################
 def method(params):
-    now     = datetime.datetime.now()
-    hours   = now.hour%12 if now.hour else 12
+    if city := params.get('text'):
+        city     = city.title()
+        responce = requests.get(f'https://www.google.ru/search?&q=время+в+{city}&lr=lang_ru&lang=ru')
+        page     = BS(responce.content, 'html.parser')
+        now      = page.select('div.BNeawe>div>div.BNeawe')[0].get_text().split(':') or ''
+        now      = datetime.time(int(now[0]), int(now[1]))
+    else:
+        now      = datetime.datetime.now()
+
+    hours   = now.hour%12 or 12
     minutes = now.minute
+    print(now, hours, minutes)
     get_str = ['десять', 'один', 'два', 'три', 'четыре', 'пять', 'шесть', 'семь', 'восемь', 'девять']
 
     if hours%20 == 1:
@@ -98,14 +109,19 @@ def method(params):
             result.append(str_num)
         return ' '.join(result)
 
-    voice = f'Сейчас {get_str_num(hours, 0)} {str_hour}'
+    if city: voice = f'В {city} сейчас {get_str_num(hours, 0)} {str_hour}'
+    else:    voice = f'Сейчас {get_str_num(hours, 0)} {str_hour}'
     if(minutes): voice += f', {get_str_num(minutes, 1)} {str_minute}'
+
     hours   = now.hour if now.hour > 9 else '0'+str(now.hour)
-    minutes = minutes if minutes > 9 else '0'+str(minutes) if minutes else '00'
-    text    = f'Текущее время: {hours}:{minutes}'
+    minutes = minutes  if minutes  > 9 else '0'+str(minutes) if minutes else '00'
+
+    if city: text = f'Текущее время в {city}: {hours}:{minutes}'
+    else:    text = f'Текущее время: {hours}:{minutes}'
+
     return {
         'type': 'simple',
-        'text': text,
+        'text':  text,
         'voice': voice,
     }
 
@@ -114,8 +130,8 @@ keywords = {
     5:      ['текущее', 'сейчас', 'время'],
     1:      ['сколько']
 }
-patterns    = ['* который * час *', '* скольк* * (врем|час)* *']
-subpatterns = ['а сейчас']
+patterns    = ['* который * час в $text', '* скольк* * (врем|час)* * в $text', '* время в $text', '* который * час *', '* скольк* * (врем|час)* *']
+subpatterns = ['а (сейчас|в $text)']
 ctime = SmallTalk('Current Time', keywords, patterns, subpatterns)
 ctime.setStart(method)
 ################################################################################

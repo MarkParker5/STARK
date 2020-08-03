@@ -9,7 +9,7 @@ listener = SpeechRecognition.SpeechToText()
 voice    = Text2Speech.Engine()
 threads  = []
 memory   = []
-online   = False
+online   = True
 voids    = 0
 listener.listen_noise()
 
