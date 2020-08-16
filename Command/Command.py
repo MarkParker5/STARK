@@ -1,10 +1,13 @@
 #   Abstract class Command
+#
 #   Command                 - parent of all command classes
 #   command                 - object (class instance)
 #   Command.list            - list of all commands
-#   Command.find()          - recognize command from a string, return command object
+#   Command.find()          - recognize command from a string by fuzzywuzzy, return command object
 #       must return dict like {'cmd': cmd, 'params': params}
-#   this                    - object (class instance) pointer
+#   Command.reg_find()      - recognize command from a string with regexe patterns, return command object
+#       must return dict like {'cmd': cmd, 'params': params}
+#   this                    - object (class instance) pointer (self)
 #   abstract this.start()   - required method for all commands
 #   abstract this.confirm() - Return True/False (User responce)
 #   this.keywords           - dictionary of arrays keywords
@@ -13,7 +16,16 @@
 #           (int)weight1 : ['word3', 'word4'],
 #           (int)weight2 : ['word5', 'word6', 'word7', 'word8', 'word9'],
 #       }
+#   this.patterns           - list of command patterns
+#   this.subpatterns        - list of subpaterns (context patterns)
+#       like ['* который * час *', '* скольк* * (врем|час)* *']
+#   Command._entities       - linked patterns   $Pattern
+#   Command.regex           - regex patterns dict for better syntax
 #
+#
+#
+
+
 
 from abc import ABC, abstractmethod                     #   for abstract class and methods
 from fuzzywuzzy import fuzz
@@ -55,10 +67,10 @@ class Command(ABC):
         '\{((?:.*\|?)*?.*?)\}': r'(?:\1)+?',
     }
     def __init__(this, name, keywords = {}, patterns = [], subPatterns = []):                 #   initialisation of new command
-        this._name     = name
-        this._keywords = keywords
-        this._patterns = patterns
-        this._subPatterns = subPatterns
+        this._name          = name
+        this._keywords      = keywords
+        this._patterns      = patterns
+        this._subPatterns   = subPatterns
         Command.append(this)
 
     def __str__(this):
@@ -67,8 +79,10 @@ class Command(ABC):
             str += f'\t{key}:\t{value}\n'
         return str
 
-    #   control keywords
-    def _getKeyword(this, string):                      #   return position of keyword
+######################################################################################
+#                            CONTROL KEYWORDS                                        #
+######################################################################################
+    def getKeyword(this, string):                                  #   return position of the keyword
         for weight, array in this._keywords.items():
             index = 0
             for word in array:
@@ -78,35 +92,39 @@ class Command(ABC):
         return None #   if not found
 
     def removeKeyword(this, string):
-        position = this._getKeyword(string)
+        position = this.getKeyword(string)
         if(position): del this._keywords[ position[0] ][ position[1] ]
 
-    def addKeyword(this, weight, string):
-        if this._getKeyword(string): return
+    def addKeyword(this, weight, string):                           #   add new keywords to end of the list
+        if this.getKeyword(string): return
         if( this._keywords.get(weight) ):   this._keywords[weight].append(string)
         else:                               this._keywords[weight] = [string]
 
-    def changeKeyword(this, weight, string):
-        this.removeKeyword(string)
-        this.addKeyword(weight, string)
+    def changeKeyword(this, weight, name):                          #   set new weight to keyword   (find by name)
+        this.removeKeyword(name)
+        this.addKeyword(weight, name)
 
-    def checkContext(this, string):
+    def checkContext(this, string):                                 #   return cmd if the string matches the cmd context
         for pattern in this.getSubPatterns():
             if match := re.search(re.compile(Command.compilePattern(pattern)), string):
                 return {
                 'cmd': this,
-                'params': {**match.groupdict(), 'string':string},
+                'params': {**match.groupdict(), 'string':string},   #   return parans+initial text
             }
-        raise Exception("Not Found")
+        raise Exception("Not Found")                                #   raise exception if context not found
 
-    #   setters
-    def setStart(this, function):               #   define start    (required)
+######################################################################################
+#                                     SETTERS                                        #
+######################################################################################
+    def setStart(this, function):                                   #   define start    (required)
         this.start = function
 
-    def setConfirm(this, function):             #   define confirm (optional)
+    def setConfirm(this, function):                                 #   define confirm (optional)
         this.confirm = function
 
-    #   getters
+######################################################################################
+#                                     GETTERS                                        #
+######################################################################################
     def getName(this):
         return this._name
 
@@ -119,7 +137,9 @@ class Command(ABC):
     def getSubPatterns(this):
         return this._subPatterns
 
-    #   abstract
+######################################################################################
+#                               ABSTRACT METHODS                                     #
+######################################################################################
     @abstractmethod
     def start(this, params):                    #   main method
         pass
@@ -128,62 +148,53 @@ class Command(ABC):
     def confirm(this):                          #   optional method
         pass
 
-    #   static
+######################################################################################
+#                                 STATIC METHODS                                     #
+######################################################################################
     @staticmethod
     def getList():
-        return Command._list
+        return Command._list                    # all commands
 
     @staticmethod
     def getRegexDict():
-        return Command._regex
+        return Command._regex                   # all standart patterns
 
     @staticmethod
     def getEntity(key):
-        entity = Command._entities.get(key)
-        #if type(entity) == 'function': entity = entity()
+        entity = Command._entities.get(key)     # all linked $Pattern s
         return entity()
 
-    # @staticmethod
-    # def getEntities():
-    #     return {
-    #         'word':   r'\b[A-Za-zА-ЯЁа-яё0-9\-]+\b',
-    #         'text':   r'[A-Za-zА-ЯЁа-яё0-9\- ]+',
-    #         'quest' : Command.compilePattern('(кто|что|как|какой|какая|какое|где|зачем|почему|сколько|чей|куда|когда)'),
-    #         'repeat': Command.compilePattern('* ((повтор*)|(еще раз)|(еще*раз)*) *'),
-    #     }
-    #     # return Command._entities
-
     @staticmethod
-    def append(obj):
+    def append(obj):                            # add new command to list
         Command._list.append(obj)
 
     @staticmethod
-    def getCommand(name):
+    def getCommand(name):                       # get command by name
         for obj in Command.getList():
             if obj.getName() == name: return obj
 
     @staticmethod
-    def isRepeat(string):
+    def isRepeat(string):                       # return True if command is repeat-cmd
         if re.search(re.compile(Command.getEntity('repeat')), string): return True
         return False
 
     @staticmethod
-    def ratio(string, word):
+    def ratio(string, word):                    # get average distance of string and pattern
         return ( fuzz.WRatio(string, word) + fuzz.ratio(string, word) ) / 2
 
     @staticmethod
-    def compilePattern(pattern):
+    def compilePattern(pattern):                # transform my syntax to standart regexp
         #   transform patterns to regexp
         for ptrn, regex in Command.getRegexDict().items():
             pattern = re.sub(re.compile(ptrn), regex, pattern)
-        #   find links like  $Pattern
+        #   find and replace links like  $Pattern
         link = re.search(re.compile('\$[a-z]+'), pattern)
         if link: pattern = re.sub('\\'+link[0], f'(?P<{link[0][1:]}>{Command.getEntity( link[0][1:] )})', pattern)
         #   return compiled regexp
         return pattern
 
     @staticmethod
-    def find(string):
+    def find(string):                               # find command by fuzzywuzzy
         string = string.lower()
         chances = {}
         list = Command.getList()
@@ -212,7 +223,7 @@ class Command(ABC):
                 }
 
     @staticmethod
-    def reg_find(string):
+    def reg_find(string):                       # find comman by pattern
         string = string.lower()
         list   = Command.getList()
         if not string: return {
@@ -227,14 +238,14 @@ class Command(ABC):
                     'cmd': obj,
                     'params': {**match.groupdict(), 'string':string,},
                 }
-        #   return QA-system if command not found
+        #   return Question-Answer system if command not found
         return {
             'cmd': Command.QA,
             'params': {'string':string,},
         }
 
     @staticmethod
-    def background(answer = '', voice = ''):
+    def background(answer = '', voice = ''):    # make background cmd
         def decorator(cmd): #wrapper of wrapper (decorator of decorator)
             def wrapper(text):
                 finish_event  = Event()

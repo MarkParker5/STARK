@@ -1,7 +1,7 @@
 from google.cloud import texttospeech
 import os
 from pygame import mixer
-import time
+from  time import sleep
 import mmap
 import config
 
@@ -22,7 +22,7 @@ class Speech:
                     mixer.music.load(audio)
                     mixer.music.play()
                     while mixer.music.get_busy():
-                        time.sleep(0.1)
+                        sleep(0.1)
             if(not this._standart): os.remove(this._path)
 
     @staticmethod
