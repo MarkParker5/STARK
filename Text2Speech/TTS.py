@@ -25,6 +25,12 @@ class Speech:
                         sleep(0.1)
             if(not this._standart): os.remove(this._path)
 
+    def getBytes(this):
+        return open(this._path, 'rb')
+
+    def getPath(this):
+        return this._path
+
     @staticmethod
     def append(obj):
         Speech._list.append(obj)

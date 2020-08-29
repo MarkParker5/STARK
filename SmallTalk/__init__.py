@@ -51,7 +51,6 @@ def method(params):
 
     hours   = now.hour%12 or 12
     minutes = now.minute
-    print(now, hours, minutes)
     get_str = ['десять', 'один', 'два', 'три', 'четыре', 'пять', 'шесть', 'семь', 'восемь', 'девять']
 
     if hours%20 == 1:

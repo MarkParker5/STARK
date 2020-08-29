@@ -25,6 +25,14 @@ class SpeechToText:
             responce = {'text': None, 'status': 'error'}
         return responce
 
+    def recognize(this, speech):
+        with sr.AudioFile(speech.getPath()) as source:
+            audio = r.record(source)
+        try:
+            return r.recognize_google(audio)
+        except:
+            return ''
+
     def listen_noise(this):
         with this.m as source:
             this.r.adjust_for_ambient_noise(source)
