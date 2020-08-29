@@ -16,6 +16,8 @@
 #   3.  new_command = SmallTalk(Name, kw, patterns, subpatterns)
 #   4.  new_command.setStart(method)
 #   5.  new_command.setConfirm(confirm_method)    # optional, not required
+#
+#   @background(voice_to_speak, text_for_print) for background methods
 
 
 

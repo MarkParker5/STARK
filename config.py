@@ -1,3 +1,4 @@
-goole_tts_json_key = "tts-gc-key.json"
+google_tts_json_key= "tts-gc-key.json"
 language_code      = "ru-RU"
+device_index       = 1
 names              = ['арчи', 'archie']

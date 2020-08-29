@@ -14,10 +14,12 @@ voids    = 0
 listener.listen_noise()
 
 def reply(responce):
-    if responce['text']:
+    if responce['text']:                                #   print answer
         print('Archie: '+responce['text'])
-    if responce['voice']:
+    if responce['voice']:                               #   say answer
         voice.generate(responce['voice']).speak()
+    if responce['type'] == 'background':                #   add background thread to list
+        threads.append(responce['thread'])
 
 def check_threads():
     for thread in threads:
@@ -37,7 +39,7 @@ while True:                     #    main loop
         voids = 0
         if name := list(set(config.names) & set(text.split(' '))):
             online = True
-            text = text.replace(name[0], '').strip()
+            text   = text.replace(name[0], '').strip()
         if online:
             if Command.isRepeat(text):
                 reply(memory[0]['responce']);
@@ -46,8 +48,6 @@ while True:                     #    main loop
             except: cmd, params = Command.reg_find(text).values()
             responce = cmd.start(params)
             reply(responce)
-            if responce['type'] == 'background':        #   add background thread to list
-                threads.append(responce['thread'])
             memory.insert(0, {
                 'text': text,
                 'cmd':  cmd,
