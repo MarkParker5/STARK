@@ -4,4 +4,5 @@ tts-gc-key.json
 test.py
 sandbox.py
 logs.txt
-config
+config.py
+status.js
