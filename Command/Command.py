@@ -9,7 +9,6 @@
 #       must return dict like {'cmd': cmd, 'params': params}
 #   this                    - object (class instance) pointer (self)
 #   abstract this.start()   - required method for all commands
-#   abstract this.confirm() - Return True/False (User responce)
 #   this.keywords           - dictionary of arrays keywords
 #       like {
 #           (int)weight  : ['word1', 'word2', 'word3'],
@@ -119,9 +118,6 @@ class Command(ABC):
     def setStart(this, function):                                   #   define start    (required)
         this.start = function
 
-    def setConfirm(this, function):                                 #   define confirm (optional)
-        this.confirm = function
-
 ######################################################################################
 #                                     GETTERS                                        #
 ######################################################################################
@@ -142,10 +138,6 @@ class Command(ABC):
 ######################################################################################
     @abstractmethod
     def start(this, params):                    #   main method
-        pass
-
-    @abstractmethod
-    def confirm(this):                          #   optional method
         pass
 
 ######################################################################################

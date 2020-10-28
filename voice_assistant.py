@@ -1,6 +1,7 @@
 import SpeechRecognition
 import Text2Speech
 import SmallTalk
+import Media
 from Command import Command
 import config
 import QA
@@ -44,8 +45,12 @@ while True:                                             #    main loop
             if Command.isRepeat(text):
                 reply(memory[0]['responce']);
                 continue
-            try: cmd, params = memory[0]['cmd'].checkContext(text).values(); params = {**memory[0]['params'], **params}
-            except: cmd, params = Command.reg_find(text).values()
+            try:
+                cmd, params = memory[0]['cmd'].checkContext(text).values()
+                if memory[0].get('params'):
+                    params = {**memory[0].get('params'), **params}
+            except:
+                cmd, params = Command.reg_find(text).values()
             responce = cmd.start(params)
             reply(responce)
             memory.insert(0, {

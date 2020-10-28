@@ -10,6 +10,3 @@ from Command import Command                     #   import parent class
 class SmallTalk(Command):
     def start(this, string):                    #   main method
         print(f'Hello, {string=}')
-
-    def confirm(this):                          #   optional method
-        return True

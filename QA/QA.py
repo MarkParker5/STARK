@@ -7,8 +7,6 @@ import json
 import re
 
 class QA(Command):
-    def confirm(this, string): return True
-
     def googleDictionary(this, word):
         responce = requests.get(f'https://api.dictionaryapi.dev/api/v2/entries/ru/{word}')
         if responce.status_code == 200:
