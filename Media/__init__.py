@@ -1,7 +1,7 @@
 from .film import *
 import requests
 from bs4 import BeautifulSoup as BS
-import webbrowser
+import os
 
 ################################################################################
 def method(params):
@@ -18,18 +18,15 @@ def method(params):
         url = page.select_one('div[style="padding:22px; float:left; margin-left: 30px;"]>a[download]:last-child')
         return url['href'] if url else None
 
-    def finalUrl(url):
-        return "http://localhost:9192/play?url="+url
-
     def start(url):
-        webbrowser.open(url)
+        os.system(f'lxterminal --command="vlc {url}"')
 
     name = params.get('text')
     print(name)
     if name:
         if url:= extractUrl(findFilm(name)):
+            start(url)
             voice = text = 'Включаю'
-            start(finalUrl(url))
         else:
             voice = text = 'Не могу найти фильм'
     else:
