@@ -2,6 +2,7 @@ from Command import Command
 import SpeechRecognition
 import Text2Speech
 import SmallTalk
+import Media
 import telebot
 import config
 import QA
