@@ -1,7 +1,7 @@
 __pycache__
 audio
 tts-gc-key.json
-test.py
+/test.py
 sandbox.py
 logs.txt
 config.py

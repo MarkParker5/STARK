@@ -35,7 +35,7 @@ def check_threads(threads):
 def main(id, text):
     text = text.lower()
     if Command.isRepeat(text):
-        reply(memory[0]['responce']);
+        reply(id, memory[0]['responce']);
         return
     if memory:
         responce = memory[0]['responce']
