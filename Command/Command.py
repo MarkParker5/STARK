@@ -227,9 +227,9 @@ class Command(ABC):
             for pattern in obj.getPatterns():
                 if match := re.search(re.compile(Command.compilePattern(pattern)), string):
                     return {
-                    'cmd': obj,
-                    'params': {**match.groupdict(), 'string':string,},
-                }
+                        'cmd': obj,
+                        'params': {**match.groupdict(), 'string':string,},
+                    }
         #   return Question-Answer system if command not found
         return {
             'cmd': Command.QA,

@@ -33,30 +33,45 @@ def check_threads():
 while True:                                             #    main loop
     check_threads()
     print('\nYou: ', end='')
+    # input
     speech = listener.listen()
     text   = speech['text']
     if speech['status'] == 'ok':
         print(text)
         voids = 0
+        # set online add clean input if name in text
         if name := list(set(config.names) & set(text.split(' '))):
             online = True
             text   = text.replace(name[0], '').strip()
+        # recognize and execute command
         if online:
+            # repeat last answer
             if Command.isRepeat(text):
                 reply(memory[0]['responce']);
                 continue
+            # recognize command with context
             try:
                 cmd, params = memory[0]['cmd'].checkContext(text).values()
-                if memory[0].get('params'):
-                    params = {**memory[0].get('params'), **params}
+                if memory[0].get('params'): params = {**memory[0].get('params'), **params}
             except:
                 cmd, params = Command.reg_find(text).values()
+            # execute command
             responce = cmd.start(params)
+            # say answer
             reply(responce)
+            # waiting answer on question
+            if responce['type'] == 'question':
+                print('\nYou: ', end='')
+                speech = listener.listen()
+                if speech['status'] == 'ok':
+                    text = speech['text']
+                    print(text)
+                    if responce:= responce['callback'].answer(text): reply(responce)
+            # remember the command
             memory.insert(0, {
                 'text': text,
                 'cmd':  cmd,
-                'responce': responce
+                'responce': responce,
             })
     else:
         if speech['status'] == 'error': print('Отсутсвует подключение к интернету');

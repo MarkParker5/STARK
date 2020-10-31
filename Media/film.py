@@ -1,5 +1,5 @@
 from Command import Command
 
-class film(Command):
+class Film(Command):
     def start(this, string):                    #   main method
         pass

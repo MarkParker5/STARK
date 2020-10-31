@@ -20,6 +20,9 @@ def reply(id, responce):
         bot.send_message(id, responce['text'])
     if responce['voice']:
         bot.send_voice(id, voice.generate(responce['voice']).getBytes() )
+    if responce['type'] == 'background':                        #   add background thread to list
+        responce['thread']['id'] = id
+        threads.append(responce['thread'])
 
 def check_threads(threads):
     for thread in threads:
@@ -34,13 +37,24 @@ def main(id, text):
     if Command.isRepeat(text):
         reply(memory[0]['responce']);
         return
-    try:    cmd, params = memory[0]['cmd'].checkContext(text).values(); params = {**memory[0]['params'], **params}
-    except: cmd, params = Command.reg_find(text).values()
+    if memory:
+        responce = memory[0]['responce']
+        if responce['type'] == 'question':
+            if new_responce := responce['callback'].answer(text):
+                reply(id, new_responce)
+                memory.insert(0, {
+                    'cmd':  responce['callback'],
+                    'params': None,
+                    'responce': new_responce,
+                })
+                return
+    try:
+        cmd, params = memory[0]['cmd'].checkContext(text).values()
+        if memory[0].get('params'): params = {**memory[0].get('params'), **params}
+    except:
+        cmd, params = Command.reg_find(text).values()
     responce = cmd.start(params)
     reply(id, responce)
-    if responce['type'] == 'background':                        #   add background thread to list
-        responce['thread']['id'] = id
-        threads.append(responce['thread'])
     memory.insert(0, {
         'cmd':  cmd,
         'params': params,
