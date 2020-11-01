@@ -19,14 +19,14 @@ def extractUrl(url):
     return (url['href'], title.text) if url else None
 
 def startFilm(url, title):
-    os.system(f'lxterminal --command="vlc {url} -f --meta-title="{title}" "')
+    os.system(f'lxterminal --command="vlc {url} -f --meta-title=\\"{title}\\" "')
 
 def main(params):
     name = params.get('text')
     if name:
         url, title = extractUrl(findFilm(name))
         if url:
-            startFilm(url, title.replace(' ', ''))
+            startFilm(url, title.strip())
             voice = text = 'Включаю'
         else:
             voice = text = 'Не могу найти фильм'
