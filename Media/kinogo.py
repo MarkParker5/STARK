@@ -15,17 +15,18 @@ def extractUrl(url):
     responce = requests.get(url)
     page = BS(responce.content, 'html.parser')
     url = page.select_one('div[style="padding:22px; float:left; margin-left: 30px;"]>a[download]:last-child')
-    return url['href'] if url else None
+    title = page.select_one('h1')
+    return (url['href'], title.text) if url else None
 
-def startFilm(url):
-    print(url)
-    os.system(f'lxterminal --command="vlc {url} -f"')
+def startFilm(url, title):
+    os.system(f'lxterminal --command="vlc {url} -f --meta-title="{title}" "')
 
 def main(params):
     name = params.get('text')
     if name:
-        if url:= extractUrl(findFilm(name)):
-            startFilm(url)
+        url, title = extractUrl(findFilm(name))
+        if url:
+            startFilm(url, title.replace(' ', ''))
             voice = text = 'Включаю'
         else:
             voice = text = 'Не могу найти фильм'
