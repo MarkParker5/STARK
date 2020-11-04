@@ -31,6 +31,8 @@ from fuzzywuzzy import fuzz
 from threading import Thread, Event
 import re
 
+from synonyms import synonyms
+
 class RThread(Thread):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -51,6 +53,9 @@ class Command(ABC):
         'text':   lambda: r'[A-Za-zА-ЯЁа-яё0-9\- ]+',
         'quest' : lambda: Command.compilePattern('(кто|что|как|какой|какая|какое|где|зачем|почему|сколько|чей|куда|когда)'),
         'repeat': lambda: Command.compilePattern('* ((повтор*)|(еще раз)|(еще*раз)*) *'),
+        'true':   lambda: Command.compilePattern('('+'|'.join(sysonyms.get('да'))+')'),
+        'false':  lambda: Command.compilePattern('('+'|'.join(sysonyms.get('нет'))+')'),
+        'bool':   lambda: Command.compilePattern('($true|$false)')
     }
     _regex    = {
         #   stars   *
@@ -180,8 +185,8 @@ class Command(ABC):
         for ptrn, regex in Command.getRegexDict().items():
             pattern = re.sub(re.compile(ptrn), regex, pattern)
         #   find and replace links like  $Pattern
-        link = re.search(re.compile('\$[a-z]+'), pattern)
-        if link: pattern = re.sub('\\'+link[0], f'(?P<{link[0][1:]}>{Command.getEntity( link[0][1:] )})', pattern)
+        while link := re.search(re.compile('\$[a-z]+'), pattern):
+            pattern = re.sub('\\'+link[0], f'(?P<{link[0][1:]}>{Command.getEntity( link[0][1:] )})', pattern)
         #   return compiled regexp
         return pattern
 
@@ -226,9 +231,12 @@ class Command(ABC):
         for obj in list:
             for pattern in obj.getPatterns():
                 if match := re.search(re.compile(Command.compilePattern(pattern)), string):
+                    if params := match.groupdict():
+                        if params.get('true'): params['bool'] = True
+                        if params.get('false'): params['bool'] = False
                     return {
                         'cmd': obj,
-                        'params': {**match.groupdict(), 'string':string,},
+                        'params': {**params, 'string':string,},
                     }
         #   return Question-Answer system if command not found
         return {

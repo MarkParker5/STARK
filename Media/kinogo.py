@@ -1,8 +1,8 @@
-from .Film import *
+from .Media import *
 import requests
 from bs4 import BeautifulSoup as BS
 import os
-import Command
+from Command import Callback
 ################################################################################
 def findFilm(name):
     query = name + ' site:kinogo.by'
@@ -60,9 +60,9 @@ def start(params):
         'voice': voice,
     }
 
-kinogo_cb = Command.Callback(['$text',])
+kinogo_cb = Callback(['$text',])
 kinogo_cb.setStart(start)
 
 patterns = ['* включ* фильм $text', '* включ* фильм*']
-kinogo = Film('KinogoPlayer', {}, patterns)
+kinogo = Media('KinogoPlayer', {}, patterns)
 kinogo.setStart(main)

@@ -1,10 +1,8 @@
 import SpeechRecognition
 import Text2Speech
-import SmallTalk
-import Media
 from Command import Command
 import config
-import QA
+import modules
 
 listener = SpeechRecognition.SpeechToText()
 voice    = Text2Speech.Engine()
