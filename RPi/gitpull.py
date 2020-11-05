@@ -5,7 +5,7 @@ import config
 ################################################################################
 def reboot(params):
     if params['bool']:
-        os.system('sudo reboot')
+        os.system('sudo systemctl restart archie')
     return {
         'text': 'Хорошо',
         'voice': 'Хорошо',
