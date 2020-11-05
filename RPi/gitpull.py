@@ -34,6 +34,6 @@ def method(params, finish_event):
         'callback': reboot_cb,
     }
 
-patterns = ['* обновись *', '* можешь обновиться *', '* обнови себя *', '* скачай обновления *']
+patterns = ['* обновись *', '* можешь обновиться *', '* обнови себя *', '* скачай обновления *', '* провер* обновления']
 gitpull = RPi('git pull archie.git', [], patterns)
 gitpull.setStart(method)
