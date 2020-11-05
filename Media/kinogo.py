@@ -51,8 +51,9 @@ def start(params):
     name = params.get('text')
     voice = text = 'Не могу найти фильм'
     if name:
-        if url:= extractUrl(findFilm(name)):
-            startFilm(url)
+        url, title = extractUrl(findFilm(name))
+        if url:
+            startFilm(url, title.strip())
             voice = text = 'Включаю'
     return {
         'type': 'simple',
