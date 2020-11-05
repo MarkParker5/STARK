@@ -10,7 +10,9 @@ modules = {
 for name, module in modules.items():
     try:
         print(f'launching the {name}')
-        os.system(f'sudo chmod +x {config.path}/{module}.py')
-        os.system(f'nohup {config.path}/{module}.py &')
+        # os.system(f'sudo chmod +x {config.path}/{module}.py')
+        # os.system(f'nohup {config.path}/{module}.py &')
+        os.system(f'lxterminal --command="python {config.path}/{module}.py"')
+
     except:
         print(f'[error]\t{name} launch failed')

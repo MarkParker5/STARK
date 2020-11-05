@@ -65,7 +65,7 @@ while True:                                             #    main loop
                 if speech['status'] == 'ok':
                     text = speech['text']
                     print(text)
-                    if responce:= responce['callback'].answer(text): reply(responce)
+                    if responce := responce['callback'].answer(text): reply(responce)
             # remember the command
             memory.insert(0, {
                 'text': text,

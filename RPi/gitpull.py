@@ -12,7 +12,7 @@ def reboot(params):
         'type': 'simple',
     }
 
-reboot_cb = Callback(['$text',])
+reboot_cb = Callback(['$bool',])
 reboot_cb.setStart(reboot)
 
 @RPi.background(answer = 'Проверяю обновления...', voice = 'Проверяю обновления')
