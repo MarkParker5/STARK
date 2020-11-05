@@ -18,7 +18,7 @@ reboot_cb.setStart(reboot)
 @RPi.background(answer = 'Проверяю обновления...', voice = 'Проверяю обновления')
 def method(params, finish_event):
     os.system('git -C '+config.path+' remote update')
-    if not 'git pull' in os.popen('git -C '+config.path+' status -uno').readline():
+    if not 'git pull' in os.popen('git -C '+config.path+' status -uno').read():
         finish_event.set()
         return {
             'text': 'Установлена последняя версия',
@@ -34,6 +34,6 @@ def method(params, finish_event):
         'callback': reboot_cb,
     }
 
-patterns = ['* обновись *', '* можешь обновиться *', '* обнови себя *', '* скачай обновления *', '* провер* обновления']
+patterns = ['* обновись *', '* можешь обновиться *', '* обнови себя *', '* скачай обновлени* *', '* провер* обновлени* *']
 gitpull = RPi('git pull archie.git', [], patterns)
 gitpull.setStart(method)
