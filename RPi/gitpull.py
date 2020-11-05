@@ -17,7 +17,7 @@ reboot_cb.setStart(reboot)
 
 @RPi.background(answer = 'Проверяю обновления...', voice = 'Проверяю обновления')
 def method(params, finish_event):
-    if not os.popen('git -C '+config.path+' fetch').readline():
+    if not 'git pull' in os.popen('git -C '+config.path+' status -uno').readline():
         finish_event.set()
         return {
             'text': 'Установлена последняя версия',
