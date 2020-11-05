@@ -37,19 +37,3 @@ def method(params, finish_event):
 patterns = ['* обновись *', '* можешь обновиться *', '* обнови себя *', '* скачай обновления *']
 gitpull = RPi('git pull archie.git', [], patterns)
 gitpull.setStart(method)
-
-#
-
-[Unit]
-Description=A.R.C.H.I.E.
-
-[Service]
-WorkingDirectory=/home/pi/archie
-ExecStart=/home/pi/archie/main.py
-Restart=always
-RestartSec=10
-KillSignal=SIGINT
-SyslogIdentifier=archie
-
-[Install]
-WantedBy=multi-user.target
