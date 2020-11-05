@@ -1,4 +1,5 @@
 import os
+import config
 
 modules = {
     'Voice Assistant':  'voice_assistant',
@@ -8,6 +9,6 @@ modules = {
 for name, module in modules.items():
     try:
         print(f'launching the {name}')
-        os.system(f'start python {module}.py')
+        os.system(f'nohup {config.path}/{module}.py &')
     except:
         print(f'[error]\t{name} launch failed')

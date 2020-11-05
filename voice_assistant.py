@@ -1,3 +1,4 @@
+#!/usr/local/bin/python3.8
 import SpeechRecognition
 import Text2Speech
 from Command import Command
