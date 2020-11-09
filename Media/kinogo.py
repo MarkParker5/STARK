@@ -30,19 +30,17 @@ def main(params):
             voice = text = 'Включаю'
         else:
             voice = text = 'Не могу найти фильм'
-        type = 'simple'
     else:
         voice = text = 'Какой фильм включить?'
-        type = 'question'
         callback = kinogo_cb
         return {
-            'type': type,
+            'type': 'question',
             'text': text,
             'voice': voice,
             'callback': callback,
         }
     return {
-        'type': type,
+        'type': 'simple',
         'text': text,
         'voice': voice,
     }
