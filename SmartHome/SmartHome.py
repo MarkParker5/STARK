@@ -4,7 +4,7 @@ import time
 # for nrf24l01
 import RPi.GPIO as GPIO
 GPIO.setmode(GPIO.BCM)
-from lib_nrf24 import NRF24
+from .lib_nrf24 import NRF24
 import spidev
 
 radio = NRF24(GPIO, spidev.SpiDev())
@@ -33,5 +33,5 @@ class SmartHome(Command):
         for key, value in data.items():
             string += f'"{key}": "{value}", '
         string += '}\n'
-        for char in data:
+        for char in string:
             radio.write(char)
