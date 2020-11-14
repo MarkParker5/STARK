@@ -76,4 +76,6 @@ while True:                                             #    main loop
         if speech['status'] == 'error': print('Отсутсвует подключение к интернету');
         elif online and speech['status']  == 'void': voids += 1;
         if online and voids >= 3: online = False; voids = 0
-        if not online: listener.listen_noise()
+        if not online:
+            if config.double_clap_activation: break
+            else: listener.listen_noise()
