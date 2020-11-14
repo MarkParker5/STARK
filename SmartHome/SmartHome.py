@@ -30,8 +30,7 @@ class SmartHome(Command):
     @staticmethod
     def send(data):
         string = '{'
-        for key, value in data.items():
-            string += f'"{key}": "{value}", '
+        string += ','.join([f'"{key}": "{value}"' for key, value in data.items()])
         string += '}\n'
         for char in string:
             radio.write(char)
