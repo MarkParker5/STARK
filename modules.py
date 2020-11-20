@@ -1,5 +1,5 @@
 import QA
 import SmallTalk
 import Media
-import RPi
 import SmartHome
+import Raspi
