@@ -14,7 +14,7 @@ def findPage(name):
 
 def getFilm(url):
     id = url[18:].split('-')[0].split(',')[-1]
-    url = f'https://kinogo.appspot.com/engine/ajax/cdn_download.php?news_id={id}'
+    url = f'https://kinogo.la/engine/ajax/cdn_download.php?news_id={id}'
     responce = requests.get(url)
 
     page = BS(responce.content, 'html.parser')
@@ -29,7 +29,7 @@ def getFilm(url):
 
 def getSerial(url):
     id = url[18:].split('-')[0].split(',')[-1]
-    url = f'https://kinogo.appspot.com/engine/ajax/cdn_download.php?news_id={id}'
+    url = f'https://kinogo.la/engine/ajax/cdn_download.php?news_id={id}'
     responce = requests.get(url)
     page = BS(responce.content, 'html.parser')
     elems = page.children
