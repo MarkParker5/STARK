@@ -7,7 +7,7 @@ def method(params):
         'target': 'window',
         'cmd':  'window_open',
     })
-    voice = text = ''
+    voice = text = 'Поднимаю роллеты'
     return {
         'type': 'simple',
         'text': text,
@@ -26,7 +26,7 @@ def method(params):
         'target': 'window',
         'cmd':  'window_close',
     })
-    voice = text = ''
+    voice = text = 'Опускаю роллеты'
     return {
         'type': 'simple',
         'text': text,
