@@ -1,4 +1,5 @@
 from Command import Command                     #   import parent class
+import os
 
 class Raspi(Command):
     def start(this, string):                    #   main method
