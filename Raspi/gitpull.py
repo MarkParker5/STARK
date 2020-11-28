@@ -1,4 +1,4 @@
-from .RPi import *
+from .Raspi import *
 import os
 from Command import Callback
 import config
@@ -15,7 +15,7 @@ def reboot(params):
 reboot_cb = Callback(['$bool',])
 reboot_cb.setStart(reboot)
 
-@RPi.background(answer = 'Проверяю обновления...', voice = 'Проверяю обновления')
+@Raspi.background(answer = 'Проверяю обновления...', voice = 'Проверяю обновления')
 def method(params, finish_event):
     os.system('git -C '+config.path+' remote update')
     if not 'git pull' in os.popen('git -C '+config.path+' status -uno').read():
@@ -35,5 +35,5 @@ def method(params, finish_event):
     }
 
 patterns = ['* обновись *', '* можешь обновиться *', '* обнови себя *', '* скачай обновлени* *', '* провер* обновлени* *']
-gitpull = RPi('git pull archie.git', [], patterns)
+gitpull = Raspi('git pull archie.git', [], patterns)
 gitpull.setStart(method)
