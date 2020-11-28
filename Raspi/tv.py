@@ -39,7 +39,7 @@ def method(params):
     }
 
 keywords = {}
-patterns = ['* (выведи|вывести) * с (ноута|ноутбука|провода|hdmi) *']
+patterns = ['* (выведи|вывести|покажи|открой|показать|открыть) * с (ноута|ноутбука|провода|hdmi) *']
 tv_hdmi = Raspi('tv hdmi source', keywords, patterns)
 tv_hdmi.setStart(method)
 ################################################################################
