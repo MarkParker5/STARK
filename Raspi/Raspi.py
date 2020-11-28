@@ -1,6 +1,6 @@
 from Command import Command                     #   import parent class
 
-class RPi(Command):
+class Raspi(Command):
     def start(this, string):                    #   main method
         pass
 
