@@ -51,6 +51,7 @@ class Command(ABC):
     _entities = {
         'word':   lambda: r'\b[A-Za-zА-ЯЁа-яё0-9\-]+\b',
         'text':   lambda: r'[A-Za-zА-ЯЁа-яё0-9\- ]+',
+        'num':    lambda: r'[0-9]+',
         'quest' : lambda: Command.compilePattern('(кто|что|как|какой|какая|какое|где|зачем|почему|сколько|чей|куда|когда)'),
         'repeat': lambda: Command.compilePattern('* ((повтор*)|(еще раз)|(еще*раз)*) *'),
         'true':   lambda: Command.compilePattern('('+'|'.join(sysonyms.get('да'))+')'),
