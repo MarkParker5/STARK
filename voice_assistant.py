@@ -14,6 +14,25 @@ voids    = 0
 listener.listen_noise()
 
 if config.double_clap_activation:
+    # check double clap from arduino microphone module
+    def checkClap(channel):
+        global lastClapTime
+        now = time.time()
+        delta = now - lastClapTime
+        if 0.1 < delta < 0.6:
+            doubleClap = True
+        else:
+            lastClapTime = now
+
+    # waiting for double clap
+    def sleep():
+        global doubleClap
+        while not doubleClap:
+            check_threads()
+            time.sleep(1)
+        else:
+            doubleClap = False
+            
     import RPi.GPIO as GPIO
     import time
     lastClapTime = 0
@@ -37,25 +56,6 @@ def check_threads():
             reply(responce)
             thread['finish_event'].clear()
             del thread
-
-# check double clap from arduino microphone module
-def checkClap(channel):
-    global lastClapTime
-    now = time.time()
-    delta = now - lastClapTime
-    if 0.1 < delta < 0.6:
-        doubleClap = True
-    else:
-        lastClapTime = now
-
-# waiting for double clap
-def sleep():
-    global doubleClap
-    while not doubleClap:
-        check_threads()
-        time.sleep(1)
-    else:
-        doubleClap = False
 
 while True:                                             #    main loop
     check_threads()
