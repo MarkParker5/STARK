@@ -18,6 +18,7 @@ if config.double_clap_activation:
     # check double clap from arduino microphone module
     def checkClap(channel):
         global lastClapTime
+        global doubleClapw
         now = time.time()
         delta = now - lastClapTime
         if 0.1 < delta < 0.6:
@@ -27,6 +28,8 @@ if config.double_clap_activation:
 
     # waiting for double clap
     def sleep():
+        global lastClapTime
+        lastClapTime = 0
         global doubleClap
         while not doubleClap:
             check_threads()
@@ -102,5 +105,5 @@ while True:                                             #    main loop
         if voids >= 3:
             voids = 0
             if config.double_clap_activation:
-                print('Sleep (-_-)zzZZ')
+                print('\nSleep (-_-)zzZZ\n')
                 sleep()
