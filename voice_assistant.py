@@ -4,6 +4,7 @@ import Text2Speech
 from Command import Command
 import config
 import modules
+import os
 
 listener = SpeechRecognition.SpeechToText()
 voice    = Text2Speech.Engine()
