@@ -43,8 +43,9 @@ def getSerial(url):
             seasons[current_season] = {}
             continue
         spans = elem.find_all('span')
+        if not spans: break
         audio = spans[2].text
-        if 'Оригинальная дорожка' in audio or 'Полное дублирование' in audio or 'LostFilm' in audio:
+        if audio in ['Оригинальная дорожка', 'Полное дублирование', 'LostFilm']:
             num = int(spans[0].text.split(' ')[0])-1
             seasons[current_season][num] = {'href': elem.ul.li.a['href'], 'title': f'{current_season+1} сезон {num+1} серия'}
 

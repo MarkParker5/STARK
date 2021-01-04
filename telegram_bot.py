@@ -66,8 +66,8 @@ def execute(msg):
 
 
 while True:
-    #try:
+    try:
         print("Start polling...")
         bot.polling(callback = check_threads, args = (threads,) )
-    #except:
+    except:
         print("Polling failed")
