@@ -20,6 +20,7 @@ class Speech:
                 with mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ) as audio:
                     mixer.init()
                     mixer.music.load(audio)
+                    mixer.music.set_volume(config.voice_volume)
                     mixer.music.play()
                     while mixer.music.get_busy():
                         sleep(0.1)

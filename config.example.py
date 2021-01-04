@@ -7,6 +7,7 @@ goole_tts_json_key = 'google-cloud-text-to-speech-private-key.json'
 
 language_code      = 'ru-RU'
 device_index       = 1
+voice_volume       = 0.2
 double_clap_activation = True
 
 names              = ['арчи', 'archie']
