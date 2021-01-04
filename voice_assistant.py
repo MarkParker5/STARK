@@ -32,7 +32,7 @@ if config.double_clap_activation:
             time.sleep(1)
         else:
             doubleClap = False
-            
+
     import RPi.GPIO as GPIO
     import time
     lastClapTime = 0
@@ -57,6 +57,7 @@ def check_threads():
             thread['finish_event'].clear()
             del thread
 
+os.system('clear')
 while True:                                             #    main loop
     check_threads()
     print('\nYou: ', end='')
@@ -99,4 +100,6 @@ while True:                                             #    main loop
         elif speech['status']  == 'void': voids += 1;
         if voids >= 3:
             voids = 0
-            if config.double_clap_activation: sleep()
+            if config.double_clap_activation:
+                print('Sleep (-_-)zzZZ')
+                sleep()
