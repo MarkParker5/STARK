@@ -15,8 +15,11 @@ class SpeechToText:
         this.r.dynamic_energy_threshold = False
 
     def listen(this):
-        with this.m as source:
-            audio = this.r.listen(source)
+        try:
+            with this.m as source:
+                audio = this.r.listen(source)
+        except:
+            return ''
         try:
             responce = {'text': this.r.recognize_google(audio, language = this.language).lower(), 'status': 'ok'}
         except sr.UnknownValueError:

@@ -18,7 +18,7 @@ if config.double_clap_activation:
     # check double clap from arduino microphone module
     def checkClap(channel):
         global lastClapTime
-        global doubleClapw
+        global doubleClap
         now = time.time()
         delta = now - lastClapTime
         if 0.1 < delta < 0.6:
@@ -75,7 +75,7 @@ while True:                                             #    main loop
         if Command.isRepeat(text):
             reply(memory[0]['responce']);
             continue
-        # recognize command with context
+        # trying to recognize command with context
         try:
             cmd, params = memory[0]['cmd'].checkContext(text).values()
             if memory[0].get('params'): params = {**memory[0].get('params'), **params}
