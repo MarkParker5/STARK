@@ -1,11 +1,12 @@
 import sqlite3
 from sqlite3 import Error
+import config
 
 def sqlite(func):
     def wrapper(this, *args):
         result = None
         try:
-            connect = sqlite3.connect('archie.db')
+            connect = sqlite3.connect(config.db_name)
             cursor  = connect.cursor()
             result = func(this, cursor, *args)
             connect.commit()
