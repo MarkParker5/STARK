@@ -1,10 +1,6 @@
 from .Zieit import *
-import urllib.request
-import xlrd
-import xlwt
-from xlutils.copy import copy
 ################################################################################
-def nextLesson(params):
+def nextLessonMethod(params):
     lesson   = Zieit.getNextLesson(Zieit.lessonsStartTime)
     if lesson == None: voice = text = 'Сегодня пар нет'
     else:
@@ -23,4 +19,4 @@ def nextLesson(params):
 keywords = {}
 patterns = ['* следующ* (предмет|урок|пара)']
 nextLesson = Zieit('Next Lesson', keywords, patterns)
-nextLesson.setStart(nextLesson)
+nextLesson.setStart(nextLessonMethod)

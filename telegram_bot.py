@@ -5,6 +5,7 @@ import Text2Speech
 import telebot
 import config
 import modules
+import time
 
 threads = []
 online  = True
@@ -70,4 +71,5 @@ while True:
         print("Start polling...")
         bot.polling(callback = check_threads, args = (threads,) )
     except:
+        time.sleep(10)
         print("Polling failed")

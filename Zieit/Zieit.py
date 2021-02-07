@@ -1,4 +1,9 @@
 from Command import Command                     #   import parent class
+import urllib.request
+import xlrd
+import xlwt
+from xlutils.copy import copy
+from datetime import datetime
 
 class Zieit (Command):
     lessonsStartTime = ['07:55','09:25','11:05','12:35','14:05','15:45','17:15']
@@ -7,8 +12,8 @@ class Zieit (Command):
     def start(this, string):                    #   main method
         pass
 
-    @staticmethod
-    def getShedule():
+    @classmethod
+    def getShedule(self):
         url = 'https://www.zieit.edu.ua/wp-content/uploads/Rozklad/2k.xls'
         name = url.split('/')[-1]
         urllib.request.urlretrieve(url, name)
@@ -52,18 +57,19 @@ class Zieit (Command):
                     lesson['type'] = row[14]
         return week
 
-    @staticmethod
-    def getTodaysShedule():
-        week = getShedule()
+    @classmethod
+    def getTodaysShedule(self):
+        week = self.getShedule()
         for d, lessons in week.items():
             date = datetime.strptime(d, "%d.%m.%Y").date()
             today = datetime.now().date()
             if date == today: return lessons
         return None
 
-    @staticmethod
-    def getNextLesson(lessonsTime):
-        lessons = getTodaysShedule()
+    @classmethod
+    def getNextLesson(self, lessonsTime):
+        lessons = self.getTodaysShedule()
+        if lessons == None: return None
         next = {}
         for i, lesson in lessons.items():
             border = datetime.strptime(lessonsTime[i-1], '%H:%M').time()
