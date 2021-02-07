@@ -6,12 +6,14 @@ from xlutils.copy import copy
 ################################################################################
 def nextLesson(params):
     lesson   = Zieit.getNextLesson(Zieit.lessonsStartTime)
-    subject  = lesson['subject']
-    teacher  = lesson['teacher']
-    auditory = lesson['auditory']
-    type     = lesson['type']
-    voice    = f'{type} по предмету {subject} в аудитории {auditory}'
-    text     = f'{subject}\n{teacher}\n{auditory}\n{type}'
+    if lesson == None: voice = text = 'Сегодня пар нет'
+    else:
+        subject  = lesson['subject']
+        teacher  = lesson['teacher']
+        auditory = lesson['auditory']
+        type     = lesson['type']
+        voice    = f'{type} по предмету {subject} в аудитории {auditory}'
+        text     = f'{subject}\n{teacher}\n{auditory}\n{type}'
     return {
         'type': 'simple',
         'text': text,
