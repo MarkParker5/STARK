@@ -21,4 +21,4 @@ def nextLesson(params):
 keywords = {}
 patterns = ['* следующ* (предмет|урок|пара)']
 nextLesson = Zieit('Next Lesson', keywords, patterns)
-nextLesson.setStart(method)
+nextLesson.setStart(nextLesson)
