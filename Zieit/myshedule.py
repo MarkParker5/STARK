@@ -5,9 +5,13 @@ import xlwt
 from xlutils.copy import copy
 ################################################################################
 def nextLesson(params):
-    lesson = Zieit.getNextLesson(Zieit.lessonsStartTime)
-    voice = f'{lesson['type']} по предмету {lesson['subject']} в аудитории {lesson['auditory']}'
-    text = f'{lesson['subject']}\n{lesson['teacher']}\n{lesson['auditory']}\n{lesson['type']}'
+    lesson   = Zieit.getNextLesson(Zieit.lessonsStartTime)
+    subject  = lesson['subject']
+    teacher  = lesson['teacher']
+    auditory = lesson['auditory']
+    type     = lesson['type']
+    voice    = f'{type} по предмету {subject} в аудитории {auditory}'
+    text     = f'{subject}\n{teacher}\n{auditory}\n{type}'
     return {
         'type': 'simple',
         'text': text,

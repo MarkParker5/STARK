@@ -13,3 +13,4 @@ for name, module in modules.items():
         os.system(f'lxterminal --command="python3.8 {config.path}/{module}.py"')
     except:
         print(f'[error]\t{name} launch failed')
+os.system(f'lxterminal --command="python3.8 {config.path}/manage.py runserver"')

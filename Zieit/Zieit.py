@@ -57,7 +57,7 @@ class Zieit (Command):
         week = getShedule()
         for d, lessons in week.items():
             date = datetime.strptime(d, "%d.%m.%Y").date()
-            today = datetime.now().date() + timedelta(days=1)
+            today = datetime.now().date()
             if date == today: return lessons
         return None
 
@@ -67,7 +67,7 @@ class Zieit (Command):
         next = {}
         for i, lesson in lessons.items():
             border = datetime.strptime(lessonsTime[i-1], '%H:%M').time()
-            now = datetime.strptime('11:00', '%H:%M').time()#datetime.now().time()
+            now = datetime.now().time()
             print(now, start, now < border)
             if now < start: next[i] = lesson
         if next: return next[min(next.keys())]
