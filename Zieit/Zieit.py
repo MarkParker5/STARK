@@ -74,7 +74,6 @@ class Zieit (Command):
         for i, lesson in lessons.items():
             border = datetime.strptime(lessonsTime[i-1], '%H:%M').time()
             now = datetime.now().time()
-            print(now, start, now < border)
-            if now < start: next[i] = lesson
+            if now < border: next[i] = lesson
         if next: return next[min(next.keys())]
         else:   return None
