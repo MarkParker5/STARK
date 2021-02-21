@@ -252,14 +252,6 @@ class Command(ABC):
                 finish_event  = Event()
                 thread        = RThread(target=cmd, args=(text, finish_event))
                 thread.start()
-                return {
-                    'type': 'background',
-                    'text': answer,
-                    'voice': voice,
-                    'thread': {
-                        'thread': thread,
-                        'finish_event': finish_event,
-                        }
-                }
+                return Response(voice = voice, text = answer, thread = {'thread': thread, 'finish_event': finish_event} )
             return wrapper
         return decorator

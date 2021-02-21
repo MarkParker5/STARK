@@ -7,11 +7,7 @@ def method(params):
         'cmd':  'light_on',
     })
     voice = text = ''
-    return {
-        'type': 'simple',
-        'text': text,
-        'voice': voice,
-    }
+    return Response(text = text, voice = voice)
 
 keywords = {}
 patterns = ['* (включ|выключ)* свет *']

@@ -1,5 +1,5 @@
 from bs4 import BeautifulSoup as BS
-from Command import Command
+from Command import Command, Response
 import wikipedia as wiki
 import requests
 import random
@@ -8,11 +8,11 @@ import re
 
 class QA(Command):
     def googleDictionary(this, word):
-        responce = requests.get(f'https://api.dictionaryapi.dev/api/v2/entries/ru/{word}')
-        if responce.status_code == 200:
-            responce = json.loads(responce.content)
+        response = requests.get(f'https://api.dictionaryapi.dev/api/v2/entries/ru/{word}')
+        if response.status_code == 200:
+            response = json.loads(response.content)
             text = ''
-            r = responce[0]
+            r = response[0]
             definition = r['meanings'][0]['definitions'][0]
             short = r['word'].lower().capitalize() + ' (' + ( r['meanings'][0]['partOfSpeech'].capitalize() if r['meanings'][0]['partOfSpeech'] != 'undefined' else 'Разговорный' ) + ') — ' + definition['definition'].lower().capitalize() + ( '. Синонимы: ' + ', '.join(definition['synonyms']) if definition['synonyms'] else '')
             short = short.replace(word[0].lower()+'.', word.lower())
@@ -21,7 +21,7 @@ class QA(Command):
             short = short.replace('потр.', 'потребляется')
             short = short.replace('знач.', 'значении')
 
-            for r in responce:
+            for r in response:
                 text += '\n' + r['word'].lower().capitalize() + ' (' + (r['meanings'][0]['partOfSpeech'].capitalize() if r['meanings'][0]['partOfSpeech'] != 'undefined' else 'Разговорный') + ')\n'
                 for definition in r['meanings'][0]['definitions']:
                     text += '\t— ' + definition['definition'].lower().capitalize()
@@ -46,8 +46,8 @@ class QA(Command):
         except: return ''
 
     def googleSearch(this, word):
-        responce = requests.get(f'https://www.google.ru/search?&q={word}&lr=lang_ru&lang=ru')
-        page = BS(responce.content, 'html.parser')
+        response = requests.get(f'https://www.google.ru/search?&q={word}&lr=lang_ru&lang=ru')
+        page = BS(response.content, 'html.parser')
         info = page.select('div.BNeawe>div>div.BNeawe')
         return info[0].get_text() if info else ''
 
@@ -67,10 +67,6 @@ class QA(Command):
             try:    search = this.googleSearch(query)
             except: search = ''
             voice = text = search or random.choice(['Не совсем понимаю, о чём вы.', 'Вот эта последняя фраза мне не ясна.', 'А вот это не совсем понятно.', 'Можете сказать то же самое другими словами?', 'Вот сейчас я совсем вас не понимаю.', 'Попробуйте выразить свою мысль по-другому',])
-        return {
-            'type': 'simple',
-            'text':  text,
-            'voice': voice,
-        }
+        return Response(text = text, voice = voice)
 
 Command.QA = QA('QA', {}, [])

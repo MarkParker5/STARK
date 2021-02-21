@@ -3,6 +3,7 @@ import datetime, time
 import requests
 from bs4 import BeautifulSoup as BS
 import math
+from Command import Response
 ################################################################################
 def method(params):
     if city := params.get('text'):
@@ -85,11 +86,7 @@ def method(params):
     if city: text = f'Текущее время в {city}: {hours}:{minutes}'
     else:    text = f'Текущее время: {hours}:{minutes}'
 
-    return {
-        'type': 'simple',
-        'text':  text,
-        'voice': voice,
-    }
+    return Response(text = text, voice = voice)
 
 keywords = {
     10:     ['который час', 'сколько времени'],

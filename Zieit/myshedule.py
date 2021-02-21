@@ -10,11 +10,7 @@ def nextLessonMethod(params):
         type     = lesson['type']
         voice    = f'{type} по предмету {subject} в аудитории {auditory}'
         text     = f'{subject}\n{teacher}\n{auditory}\n{type}'
-    return {
-        'type': 'simple',
-        'text': text,
-        'voice': voice,
-    }
+    return Response(text = text, voice = voice)
 
 keywords = {}
 patterns = ['* следующ* (предмет|урок|пара)']

@@ -1,14 +1,11 @@
 from .Raspi import *
+from Command import Response
 ################################################################################
 def method(params):
     Raspi.hdmi_cec('on 0')
     Raspi.hdmi_cec('as')
     voice = text = ''
-    return {
-        'type': 'simple',
-        'text': text,
-        'voice': voice,
-    }
+    return Response(text = text, voice = voice)
 
 keywords = {}
 patterns = ['* включи* (телевизор|экран) *']
@@ -18,11 +15,7 @@ tv_on.setStart(method)
 def method(params):
     Raspi.hdmi_cec('standby 0')
     voice = text = ''
-    return {
-        'type': 'simple',
-        'text': text,
-        'voice': voice,
-    }
+    return Response(text = text, voice = voice)
 
 keywords = {}
 patterns = ['* (выключи|отключи)* (телевизор|экран) *']
@@ -33,11 +26,7 @@ def method(params):
     port = params['num'] + '0' if len(params['num']) == 1 else params['num']
     Raspi.hdmi_cec(f'tx 4F:82:{port}:00')
     voice = text = ''
-    return {
-        'type': 'simple',
-        'text': text,
-        'voice': voice,
-    }
+    return Response(text = text, voice = voice)
 
 keywords = {}
 patterns = ['* (выведи|вывести|покажи|открой|показать|открыть) * с (|провода|hdmi|кабеля|порта) * $num *']
@@ -47,11 +36,7 @@ tv_hdmi.setStart(method)
 def method(params):
     Raspi.hdmi_cec('tx 4F:82:20:00')
     voice = text = ''
-    return {
-        'type': 'simple',
-        'text': text,
-        'voice': voice,
-    }
+    return Response(text = text, voice = voice)
 
 keywords = {}
 patterns = ['* (выведи|вывести|покажи|открой|показать|открыть) * с (ноута|ноутбука|провода|hdmi)']
@@ -61,11 +46,7 @@ tv_hdmi.setStart(method)
 def method(params):
     Raspi.hdmi_cec('as')
     voice = text = ''
-    return {
-        'type': 'simple',
-        'text': text,
-        'voice': voice,
-    }
+    return Response(text = text, voice = voice)
 
 keywords = {}
 patterns = ['* (верни|вернуть|включи*|покажи|показать) [нормальн|стандартн|привычн]* (телевизор|экран|картинк|изображение) *']

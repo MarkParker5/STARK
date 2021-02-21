@@ -2,7 +2,7 @@ from .Media import *
 import requests
 from bs4 import BeautifulSoup as BS
 import os
-from Command import Callback
+from Command import Callback, Response
 ################################################################################
 def findPage(name):
     query = name + ' site:kinogo.by'
@@ -83,17 +83,8 @@ def film(params):
     else:
         voice = text = 'Какой фильм включить?'
         callback = kinogo_film_cb
-        return {
-            'type': 'question',
-            'text': text,
-            'voice': voice,
-            'callback': callback,
-        }
-    return {
-        'type': 'simple',
-        'text': text,
-        'voice': voice,
-    }
+        return Response(text = text, voice = voice, callback = callback)
+    return Response(text = text, voice = voice)
 
 def start_film(params):
     name = params.get('text')
@@ -104,12 +95,7 @@ def start_film(params):
         if url:
             startFilm(url, title)
             voice = text = 'Включаю'
-    return {
-        'type': 'simple',
-        'text': text,
-        'voice': voice,
-    }
-
+    return Response(text = text, voice = voice)
 
 def serial(params):
     name = params.get('text')
@@ -124,17 +110,8 @@ def serial(params):
     else:
         voice = text = 'Какой сериал включить?'
         callback = kinogo_serial_cb
-        return {
-            'type': 'question',
-            'text': text,
-            'voice': voice,
-            'callback': callback,
-        }
-    return {
-        'type': 'simple',
-        'text': text,
-        'voice': voice,
-    }
+        return Response(text = text, voice = voice, callback = callback)
+    return Response(text = text, voice = voice)
 
 def start_serial(params):
     name = params.get('text')
@@ -145,11 +122,7 @@ def start_serial(params):
         if url:
             startSerial(url, title)
             voice = text = 'Включаю'
-    return {
-        'type': 'simple',
-        'text': text,
-        'voice': voice,
-    }
+    return Response(text = text, voice = voice)
 
 kinogo_film_cb = Callback(['$text',])
 kinogo_film_cb.setStart(start_film)

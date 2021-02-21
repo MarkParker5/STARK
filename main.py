@@ -13,4 +13,6 @@ for name, module in modules.items():
         os.system(f'lxterminal --command="python3.8 {config.path}/{module}.py"')
     except:
         print(f'[error]\t{name} launch failed')
-os.system(f'lxterminal --command="python3.8 {config.path}/manage.py runserver"')
+
+os.system(f'lxterminal --command="python3.8 {config.path}/manage.py runserver 192.168.0.129:8000"')
+os.system(f'lxterminal --command="vlc"')

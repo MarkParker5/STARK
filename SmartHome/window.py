@@ -8,11 +8,7 @@ def method(params):
         'cmd':  'window_open',
     })
     voice = text = 'Поднимаю роллеты'
-    return {
-        'type': 'simple',
-        'text': text,
-        'voice': voice,
-    }
+    return Response(text = text, voice = voice)
 
 keywords = {}
 patterns = ['* (открыть|открой) (окно|окна) *', '* (подними|поднять) (шторы|роллеты) *']
@@ -27,11 +23,7 @@ def method(params):
         'cmd':  'window_close',
     })
     voice = text = 'Опускаю роллеты'
-    return {
-        'type': 'simple',
-        'text': text,
-        'voice': voice,
-    }
+    return Response(text = text, voice = voice)
 
 keywords = {}
 patterns = ['* (закрыть|закрой) (окно|окна) *', '* (опусти|опустить) (шторы|роллеты) *']
