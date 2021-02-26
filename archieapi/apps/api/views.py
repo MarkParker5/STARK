@@ -18,7 +18,8 @@ def command(request):
     name = request.GET.get("name")
     params = request.GET.get("params") or {}
     if not name: return HttpResponse("")
-    try: cmd = Command.getCommand(name)
+    cmd = Command.getCommand(name)
+    try: response = cmd.start()
     except: return HttpResponse("")
     if not cmd: return HttpResponse("")
     json_string = json.dumps(response)
