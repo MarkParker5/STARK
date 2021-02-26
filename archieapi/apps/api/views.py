@@ -18,10 +18,10 @@ def text(request):
 def command(request):
     name = request.GET.get("name")
     params = request.GET.get("params") or {}
-    if not name: return HttpResponse(name)
+    if not name: return HttpResponse('')
     cmd = Command.getCommand(name)
-    try: response = cmd.start()
-    except: return HttpResponse(cmd)
-    if not cmd: return HttpResponse("oops")
-    json_string = json.dumps(response)
-    return HttpResponse(json_string)
+    if not cmd: return HttpResponse('')
+    try: response = cmd.start(params)
+    except: return HttpResponse('')
+    if not cmd: return HttpResponse('')
+    return HttpResponse('')
