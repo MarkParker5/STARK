@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from  django.http import HttpResponse
+import os
 # Archie
 from Command import Command
 import modules
@@ -17,14 +18,10 @@ def text(request):
 def command(request):
     name = request.GET.get("name")
     params = request.GET.get("params") or {}
-    print(name, params)
-    if not name: return HttpResponse("")
+    if not name: return HttpResponse(name)
     cmd = Command.getCommand(name)
-    print(cmd)
     try: response = cmd.start()
-    except: return HttpResponse("")
-    print(response)
-    if not cmd: return HttpResponse("")
+    except: return HttpResponse(cmd)
+    if not cmd: return HttpResponse("oops")
     json_string = json.dumps(response)
-    print(json_string)
     return HttpResponse(json_string)
