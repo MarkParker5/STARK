@@ -17,10 +17,14 @@ def text(request):
 def command(request):
     name = request.GET.get("name")
     params = request.GET.get("params") or {}
+    print(name, params)
     if not name: return HttpResponse("")
     cmd = Command.getCommand(name)
+    print(cmd)
     try: response = cmd.start()
     except: return HttpResponse("")
+    print(response)
     if not cmd: return HttpResponse("")
     json_string = json.dumps(response)
+    print(json_string)
     return HttpResponse(json_string)
