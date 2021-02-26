@@ -97,6 +97,6 @@ class Zieit (Command):
             'викл.':'',
             'ст.в.':'',
         }
-        for short, full in names.items()
+        for short, full in names.items():
             string.replace(short, full)
         return string
