@@ -8,6 +8,7 @@ from datetime import datetime
 class Zieit (Command):
     lessonsStartTime = ['07:55','09:25','11:05','12:35','14:05','15:45','17:15']
     lessonsEndTime = ['09:15','10:45','12:25','13:55','15:25','17:05','18:35']
+    weekdays = ["Неділя", "Понеділок", "Вівторок", "Середа", "Четвер", "П'ятниця", "Субота"]
 
     def start(this, string):                    #   main method
         pass
@@ -40,7 +41,7 @@ class Zieit (Command):
         for rownum in range(7, table.nrows):
             row = table.row_values(rownum)
             if row[0] != last_day:
-                date = last_day.split('\n')[1]
+                date = last_day.split('\n')[bool(last_day.split('\n')[1])]
                 week[date] = day
                 day = {}
                 last_day = row[0]
@@ -61,9 +62,13 @@ class Zieit (Command):
     def getTodaysShedule(self):
         week = self.getShedule()
         for d, lessons in week.items():
-            date = datetime.strptime(d, "%d.%m.%Y").date()
             today = datetime.now().date()
-            if date == today: return lessons
+            try:
+                date = datetime.strptime(d, "%d.%m.%Y").date()
+                if date == today: return lessons
+            except:
+                if self.weekdays.index(d) == today.isoweekday():
+                    return lessons
         return None
 
     @classmethod
