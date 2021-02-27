@@ -13,16 +13,13 @@ class {name} (Command):
 def getCommand(name, parent, bg):
     str = f'''
 from .{parent} import *
+from Command import Response
 ################################################################################
 {f"@{parent}.background(answer = '', voice = '')" if bg else ''}
 def method(params{', finish_event' if bg else ''}):
     voice = text = ''
     {'finish_event.set()' if bg else ''}
-    return {{
-        'type': 'simple',
-        'text': text,
-        'voice': voice,
-    }}
+    return Response(text = text, voice = voice)
 
 keywords = {{}}
 patterns = []
