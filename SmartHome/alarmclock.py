@@ -5,6 +5,7 @@ import os
 ################################################################################
 
 def method(params):
+    text = voice = ''
     Command.getCommand('tv on').start({})
     Command.getCommand('window_open').start({})
     shedule = Command.getCommand('Todays Shedule').start({}).voice
