@@ -12,7 +12,7 @@ def method(params):
     if shedule:
         voice = voice + ' Расписание на сегодня: ' + shedule
     while True:
-        if os.system('echo \'pow 0.0.0.0\' | cec-client -s -d 1 |grep power') == 'power status: on':
+        if os.popen('echo \'pow 0.0.0.0\' | cec-client -s -d 1 |grep power').read() == 'power status: on':
             break
     return Response(text = text, voice = voice)
 
