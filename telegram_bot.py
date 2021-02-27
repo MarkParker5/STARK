@@ -15,37 +15,38 @@ voice   = Text2Speech.Engine()
 listener= SpeechRecognition.SpeechToText()
 bot     = telebot.TeleBot(config.telebot)
 
-def reply(id, responce):
-    if responce['text']:
-        bot.send_message(id, responce['text'])
-    if responce['voice']:
-        bot.send_voice(id, voice.generate(responce['voice']).getBytes() )
-    if responce['type'] == 'background':                        #   add background thread to list
-        responce['thread']['id'] = id
-        threads.append(responce['thread'])
+def reply(id, response):
+    if response.text:
+        bot.send_message(id, response.text)
+    if response.voice:
+        bot.send_voice(id, voice.generate(response.voice).getBytes() )
+    if response.thread:                        #   add background thread to list
+        response.thread['id'] = id
+        threads.append(response.thread)
+
 
 def check_threads(threads):
     for thread in threads:
         if thread['finish_event'].is_set():
-            responce = thread['thread'].join()
-            reply(thread['id'], responce)
+            response = thread['thread'].join()
+            reply(thread['id'], response)
             thread['finish_event'].clear()
             del thread
 
 def main(id, text):
     text = text.lower()
     if Command.isRepeat(text):
-        reply(id, memory[0]['responce']);
+        reply(id, memory[0]['response']);
         return
     if memory:
-        responce = memory[0]['responce']
-        if responce['type'] == 'question':
-            if new_responce := responce['callback'].answer(text):
-                reply(id, new_responce)
+        response = memory[0]['response']
+        if response.callback:
+            if new_response := response.callback.answer(text):
+                reply(id, new_response)
                 memory.insert(0, {
-                    'cmd':  responce['callback'],
+                    'cmd':  response.callback,
                     'params': None,
-                    'responce': new_responce,
+                    'response': new_response,
                 })
                 return
     try:
@@ -53,12 +54,12 @@ def main(id, text):
         if memory[0].get('params'): params = {**memory[0].get('params'), **params}
     except:
         cmd, params = Command.reg_find(text).values()
-    responce = cmd.start(params)
-    reply(id, responce)
+    response = cmd.start(params)
+    reply(id, response)
     memory.insert(0, {
         'cmd':  cmd,
         'params': params,
-        'responce': responce,
+        'response': response,
     })
 
 @bot.message_handler(content_types = ['text'])
