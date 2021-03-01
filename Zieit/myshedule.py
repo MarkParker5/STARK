@@ -41,14 +41,15 @@ currentLesson.setStart(currentLessonMethod)
 def todaysSheduleMethod(params):
     lessons = Zieit.getTodaysShedule()
     text = voice = ''
-    if not lessons: voice = text = 'Сегодня пар нет'
-    return Response(text = text, voice = voice)
-    for lesson in lessons:
+    if not lessons:
+        voice = text = 'Сегодня пар нет'
+        return Response(text = text, voice = voice)
+    for i, lesson in lessons.items():
         subject  = lesson['subject']
         teacher  = lesson['teacher']
         auditory = lesson['auditory']
         type     = lesson['type']
-        voice    += Zieit.fullNames(f'{type} по предмету {subject} в аудитории {auditory}\n')
+        voice    += Zieit.fullNames(f'{type} по предмету {subject} в аудитории {auditory}.\n').capitalize()
         text     += f'{subject} ({auditory})\n'
     return Response(text = text, voice = voice)
 

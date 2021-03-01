@@ -11,9 +11,9 @@ def method(params):
     Command.getCommand('window_open').start({})
     shedule = Command.getCommand('Todays Shedule').start({}).voice
     time = Command.getCommand('Current Time').start({}).voice
-    voice = f'Доброе утро! {time}.'
+    voice = f'Доброе утро! {time}.\n'
     if shedule:
-        voice = voice + ' Расписание на сегодня: ' + shedule
+        voice = voice + 'Сегодня у вас: \n' + shedule
     while True:
         if os.popen('echo \'pow 0.0.0.0\' | cec-client -s -d 1 |grep power').read() == 'power status: on\n':
             break
