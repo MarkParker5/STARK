@@ -118,7 +118,6 @@ while True:
     print('\nYou: ', end='')
     speech = listener.listen()
     print(speech.get('text') or '', end='')
-    voids = 0
     while True:
         if speech['status'] == 'error':
             break
