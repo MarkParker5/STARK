@@ -23,5 +23,5 @@ def command(request):
     if not cmd: return HttpResponse('')
     try: response = cmd.start(params)
     except: return HttpResponse('')
-    if not cmd: return HttpResponse('')
-    return HttpResponse('')
+    json_string = json.dumps(response)
+    return HttpResponse(json_string)

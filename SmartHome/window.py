@@ -7,7 +7,7 @@ def method(params):
         'target': 'window',
         'cmd':  'window_open',
     })
-    voice = text = 'Поднимаю роллеты'
+    voice = text = ''
     return Response(text = text, voice = voice)
 
 keywords = {}
@@ -22,7 +22,7 @@ def method(params):
         'target': 'window',
         'cmd':  'window_close',
     })
-    voice = text = 'Опускаю роллеты'
+    voice = text = ''
     return Response(text = text, voice = voice)
 
 keywords = {}
