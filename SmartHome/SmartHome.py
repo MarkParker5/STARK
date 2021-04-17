@@ -60,7 +60,10 @@ class SmartHome(Command):
             print(json)
             #   parsing of received data
             data = JSON.loads(json)
-            if name := data.get('name'):
+            if data.get('target') != 'hub':
+                json = ''
+                continue
+            if name := data.get('command'):
                 params = data.get('params') or {}
                 if cmd := Command.getCommand(name):
                     try: cmd.start(params)

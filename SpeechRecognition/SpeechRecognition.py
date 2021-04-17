@@ -5,14 +5,15 @@ r = sr.Recognizer()
 m = sr.Microphone(device_index=config.device_index)
 
 class SpeechToText:
-    def __init__(this, device = config.device_index, language = config.language_code, pause_threshold = 0.5):
+    def __init__(this, device = config.device_index, language = config.language_code):
         this.device     = device
         this.language   = language
         this.m          = sr.Microphone(device_index = this.device)
         this.r          = sr.Recognizer()
-        this.r.pause_threshold          = pause_threshold
-        this.r.energy_threshold         = 2000
-        this.r.dynamic_energy_threshold = False
+        this.r.pause_threshold          = config.pause_threshold
+        this.r.energy_threshold         = config.energy_threshold
+        this.r.dynamic_energy_threshold = config.dynamic_energy_threshold
+        this.r.non_speaking_duration    = config.non_speaking_duration
 
     def listen(this):
         try:
