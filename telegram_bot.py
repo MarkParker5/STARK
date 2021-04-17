@@ -66,11 +66,17 @@ def main(id, text):
 def execute(msg):
     main(msg.chat.id, msg.text)
 
-@bot.message_handler(commands=['vlc', 'queue', 'terminal'])
-def vlc(message):
-    command = msg.text.replace('/terminal', '').replace('/vlc', 'vlc')
+@bot.message_handler(commands=['vlc', 'queue', 'cmd'])
+def simple_commands(message):
+    command = msg.text.replace('/cmd', '').replace('/vlc', 'vlc')
     if '/queue' in msg.text: command = command.replace('/queue', '') + '--playlist-enqueue'
     os.system(f'lxterminal --command="{command}"')
+
+@bot.message_handler(commands=['terminal'])
+def terminal(message):
+    command = msg.text.replace('/terminal', '')
+    output = os.popen(command).read()
+    bot.send_message(msg.chat.id, output)
 
 while True:
     try:
