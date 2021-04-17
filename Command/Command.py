@@ -53,8 +53,8 @@ class Command(ABC):
         'num':    lambda: r'[0-9]+',
         'quest' : lambda: Command.compilePattern('(кто|что|как|какой|какая|какое|где|зачем|почему|сколько|чей|куда|когда)'),
         'repeat': lambda: Command.compilePattern('* ((повтор*)|(еще раз)|(еще*раз)*) *'),
-        'true':   lambda: Command.compilePattern('('+'|'.join(sysonyms.get('да'))+')'),
-        'false':  lambda: Command.compilePattern('('+'|'.join(sysonyms.get('нет'))+')'),
+        'true':   lambda: Command.compilePattern('('+'|'.join(synonyms.get('да'))+')'),
+        'false':  lambda: Command.compilePattern('('+'|'.join(synonyms.get('нет'))+')'),
         'bool':   lambda: Command.compilePattern('($true|$false)')
     }
     _regex    = {

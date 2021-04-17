@@ -16,6 +16,7 @@ def method(params, finish_event):
     os.system('git -C '+config.path+' remote update')
     if not 'git pull' in os.popen('git -C '+config.path+' status -uno').read():
         finish_event.set()
+        voice = text = 'Установлена последняя версия'
         return Response(text = text, voice = voice)
     os.system('git -C '+config.path+' pull')
     finish_event.set()
