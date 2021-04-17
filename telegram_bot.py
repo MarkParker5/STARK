@@ -1,18 +1,17 @@
 #!/usr/local/bin/python3.8
 from Command import Command
-import SpeechRecognition
 import Text2Speech
 import telebot
 import config
 import modules
 import time
+import os
 
 threads = []
 online  = True
 voids   = 0
 memory  = []
 voice   = Text2Speech.Engine()
-listener= SpeechRecognition.SpeechToText()
 bot     = telebot.TeleBot(config.telebot)
 
 def reply(id, response):
@@ -62,21 +61,21 @@ def main(id, text):
         'response': response,
     })
 
-@bot.message_handler(content_types = ['text'])
-def execute(msg):
-    main(msg.chat.id, msg.text)
-
 @bot.message_handler(commands=['vlc', 'queue', 'cmd'])
-def simple_commands(message):
+def simple_commands(msg):
     command = msg.text.replace('/cmd', '').replace('/vlc', 'vlc')
     if '/queue' in msg.text: command = command.replace('/queue', '') + '--playlist-enqueue'
     os.system(f'lxterminal --command="{command}"')
 
 @bot.message_handler(commands=['terminal'])
-def terminal(message):
+def terminal(msg):
     command = msg.text.replace('/terminal', '')
     output = os.popen(command).read()
     bot.send_message(msg.chat.id, output)
+
+@bot.message_handler(content_types = ['text'])
+def execute(msg):
+    main(msg.chat.id, msg.text)
 
 while True:
     try:
