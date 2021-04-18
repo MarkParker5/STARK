@@ -41,17 +41,21 @@ class SmartHome(Command):
 
     @staticmethod
     def _send(data):
-        while radioIsBusy: tile.sleep(0.1)
+        radio.stopListening()
+        SmartHome.send_queue.remove(data)
+        print(data)
         string = JSON.dumps(data)
         for char in string: radio.write(char)
+        radio.startListening()
+
 
     @staticmethod
     def receiveAndTransmit():
         json = ''
         while True:
-            for command in SmartHome.send_queue: _send(command)
+            for command in SmartHome.send_queue: SmartHome._send(command)
             #   listening radio
-            while not radio.available(): time.sleep(0.01)
+            if not radio.available(): continue
             recv_buffer = []
             radio.read(recv_buffer, radio.getDynamicPayloadSize())
             if recv_buffer[0] != 10:
@@ -59,11 +63,12 @@ class SmartHome(Command):
                 continue
             print(json)
             #   parsing of received data
-            data = JSON.loads(json)
+            try: data = JSON.loads(json)
+            except: data = {}
             if data.get('target') != 'hub':
                 json = ''
                 continue
-            if name := data.get('command'):
+            if name := data.get('cmd'):
                 params = data.get('params') or {}
                 if cmd := Command.getCommand(name):
                     try: cmd.start(params)
