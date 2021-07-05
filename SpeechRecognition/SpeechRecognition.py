@@ -1,8 +1,8 @@
 import speech_recognition as sr
 import config
 
-r = sr.Recognizer()
-m = sr.Microphone(device_index=config.device_index)
+#r = sr.Recognizer()
+#m = sr.Microphone(device_index=config.device_index)
 
 class SpeechToText:
     def __init__(this, device = config.device_index, language = config.language_code):
