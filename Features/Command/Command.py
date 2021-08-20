@@ -26,7 +26,7 @@
 
 
 
-from abc import ABC, abstractmethod                     #   for abstract class and methods
+from abc import ABC, abstractmethod
 # from fuzzywuzzy import fuzz
 from threading import Thread, Event
 import re

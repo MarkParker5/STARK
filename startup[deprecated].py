@@ -17,5 +17,5 @@ for name, module in modules.items():
         print(f'[error]\t{name} launch failed')
 
 print('Running server...')
-os.system(f'lxterminal --command="python3.8 {config.path}/manage.py runserver 192.168.0.129:8000 & read"')
+os.system(f'lxterminal --command="python3.8 {config.path}/Controls/Django/manage.py runserver 192.168.0.129:8000 & read"')
 os.system(f'lxterminal --command="vlc"')
