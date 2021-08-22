@@ -8,10 +8,7 @@ __pycache__
 *.save
 
 *.xls
-/audio
-/tts-gc-key.json
-/test.py
-/sandbox.py
-/logs.txt
+
 /config.py
-/status.json
+/tts-gc-key.json
+/logs.txt

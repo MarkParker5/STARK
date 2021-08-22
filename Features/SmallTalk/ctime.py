@@ -1,9 +1,9 @@
-from .SmallTalk import *
 import datetime, time
 import requests
 from bs4 import BeautifulSoup as BS
 import math
-from Command import Response
+from .SmallTalk import SmallTalk
+from ..Command import Response
 ################################################################################
 def method(params):
     if city := params.get('text'):

@@ -1,4 +1,4 @@
-from Command import Command, Response                     #   import parent class
+from ..Command import Command, Response                     #   import parent class
 import urllib.request
 import xlrd
 import xlwt

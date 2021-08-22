@@ -1,5 +1,5 @@
 from .SmallTalk import *
-from Command import Response
+from ..Command import Response
 ################################################################################
 def method(params):
     voice = text = 'Привет'

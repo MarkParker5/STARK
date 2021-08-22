@@ -1,6 +1,5 @@
 from .SmartHome import *
-from Command import Response
-from Command import Command
+from ..Command import Response, Command
 import Text2Speech
 import os
 ################################################################################

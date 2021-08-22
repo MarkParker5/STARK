@@ -1,1 +1,0 @@
-from .myshedule import *

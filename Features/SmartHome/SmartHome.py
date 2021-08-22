@@ -1,12 +1,13 @@
 import RPi.GPIO as GPIO
-GPIO.setmode(GPIO.BCM)
 from .lib_nrf24 import NRF24
 import spidev
 
 import time
 import json as JSON
-from Command import Command
 from threading import Thread
+from ..Command import Command
+
+GPIO.setmode(GPIO.BCM)
 
 pipe = [0xf0, 0xf0, 0xf0, 0xf0, 0xe1]
 

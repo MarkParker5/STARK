@@ -31,7 +31,7 @@ from abc import ABC, abstractmethod
 from threading import Thread, Event
 import re
 
-from synonyms import synonyms
+from .synonyms import synonyms
 
 class RThread(Thread):
     def __init__(self, *args, **kwargs):

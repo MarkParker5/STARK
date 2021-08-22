@@ -1,10 +1,9 @@
 #!/usr/local/bin/python3.8
-import SpeechRecognition
-import Text2Speech
-from Command import Command
-import config
-import modules
 import os
+from Controls.Control import Control
+from General import SpeechRecognition, Text2Speech
+from Features.Command import Command
+import config
 
 if config.double_clap_activation:
     import RPi.GPIO as GPIO

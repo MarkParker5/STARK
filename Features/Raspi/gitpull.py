@@ -1,6 +1,6 @@
 from .Raspi import *
 import os
-from Command import Callback, Response
+from ..Command import Callback, Response
 import config
 ################################################################################
 def reboot(params):

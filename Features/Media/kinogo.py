@@ -2,7 +2,7 @@ from .Media import *
 import requests
 from bs4 import BeautifulSoup as BS
 import os
-from Command import Callback, Response
+from ..Command import Callback, Response
 ################################################################################
 def findPage(name):
     query = name + ' site:kinogo.by'

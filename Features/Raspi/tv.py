@@ -1,5 +1,5 @@
 from .Raspi import *
-from Command import Response
+from ..Command import Response
 ################################################################################
 def method(params):
     Raspi.hdmi_cec('on 0')
@@ -29,7 +29,7 @@ def method(params):
     return Response(text = text, voice = voice)
 
 keywords = {}
-patterns = ['* (выведи|вывести|покажи|открой|показать|открыть) * с (|провода|hdmi|кабеля|порта) * $num *']
+patterns = ['* (выведи|вывести|покажи|открой|показать|открыть) * с (провода|hdmi|кабеля|порта) * $num *']
 tv_hdmi = Raspi('tv hdmi source', keywords, patterns)
 tv_hdmi.setStart(method)
 ################################################################################
@@ -39,7 +39,7 @@ def method(params):
     return Response(text = text, voice = voice)
 
 keywords = {}
-patterns = ['* (выведи|вывести|покажи|открой|показать|открыть) * с (ноута|ноутбука|провода|hdmi)']
+patterns = ['* (выведи|вывести|покажи|открой|показать|открыть) * с (ноута|ноутбука|планшета|провода|hdmi)']
 tv_hdmi = Raspi('tv hdmi source', keywords, patterns)
 tv_hdmi.setStart(method)
 ################################################################################
@@ -49,6 +49,6 @@ def method(params):
     return Response(text = text, voice = voice)
 
 keywords = {}
-patterns = ['* (верни|вернуть|включи*|покажи|показать) [нормальн|стандартн|привычн]* (телевизор|экран|картинк|изображение) *']
+patterns = ['* (верни|вернуть|включи*|покажи|показать) [основн|нормальн|стандартн|привычн]* (телевизор|экран|картинк|изображение) *']
 tv_rpi = Raspi('tv rpi source', keywords, patterns)
 tv_rpi.setStart(method)

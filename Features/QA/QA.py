@@ -1,9 +1,8 @@
 from bs4 import BeautifulSoup as BS
-from Command import Command
+from ..Command import Command
 import wikipedia as wiki
 import requests
 import random
-import apiai
 import json
 import re
 

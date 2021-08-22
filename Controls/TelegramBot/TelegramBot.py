@@ -1,11 +1,12 @@
 #!/usr/local/bin/python3.8
-from Command import Command
-import Text2Speech
-import telebot
-import config
-import modules
+
 import time
 import os
+import telebot
+import config
+from Features import Command
+from General import Text2Speech
+from Controls.Control import Control
 
 class TelegramBot(Control):
     threads = []
@@ -16,9 +17,9 @@ class TelegramBot(Control):
     bot     = telebot.TeleBot(config.telebot)
 
     #   Singleton
-    def __new__(self, cls):
+    def __new__(cls):
         if not hasattr(cls, 'instance'):
-            cls.instance = super(VoiceAssistant, cls).__new__(cls)
+            cls.instance = super(TelegramBot, cls).__new__(cls)
         return cls.instance
 
     def reply(self, id, response):
@@ -89,8 +90,8 @@ class TelegramBot(Control):
                 print("Start polling...")
                 bot.polling(callback = check_threads, args = (threads,) )
             except:
-                time.sleep(10)
                 print("Polling failed")
+                time.sleep(10)
 
 
 if __name__ == '__main__':
