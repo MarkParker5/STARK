@@ -59,10 +59,20 @@ class SmartHome(Command):
             if not radio.available(): continue
             recv_buffer = []
             radio.read(recv_buffer, radio.getDynamicPayloadSize())
-            if recv_buffer[0] != 10:
-                json += chr(recv_buffer[0])
+            char = chr(recv_buffer[0])
+
+            if char == '{':
+                json = '{'
                 continue
-            print(json)
+            else if char == '}':
+                json += char
+                print(json)
+            else if char in ['\n', ';']:
+                continue
+            else:
+                json += char
+                continue
+
             #   parsing of received data
             try: data = JSON.loads(json)
             except: data = {}
