@@ -41,20 +41,21 @@ class SmartHome(Command):
         SmartHome.send_queue.append(data)
 
     @staticmethod
-    def _send(data):
-        radio.stopListening()
-        SmartHome.send_queue.remove(data)
+    def _send():
+        data = SmartHome.send_queue.pop()
         print(data)
         string = JSON.dumps(data)
         for char in string: radio.write(char)
-        radio.startListening()
-
 
     @staticmethod
     def receiveAndTransmit():
         json = ''
         while True:
-            for command in SmartHome.send_queue: SmartHome._send(command)
+            if SmartHome.send_queue:
+                radio.stopListening()
+                while SmartHome.send_queue: SmartHome._send()
+                radio.startListening()
+
             #   listening radio
             if not radio.available(): continue
             recv_buffer = []
