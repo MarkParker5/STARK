@@ -7,16 +7,16 @@
 #       must return dict like {'cmd': cmd, 'params': params}
 #   Command.reg_find()      - recognize command from a string with regexe patterns, return command object
 #       must return dict like {'cmd': cmd, 'params': params}
-#   this                    - object (class instance) pointer (self)
-#   abstract this.start()   - required method for all commands
-#   this.keywords           - dictionary of arrays keywords
+#   self                    - object (class instance) pointer (self)
+#   abstract self.start()   - required method for all commands
+#   self.keywords           - dictionary of arrays keywords
 #       like {
 #           (int)weight  : ['word1', 'word2', 'word3'],
 #           (int)weight1 : ['word3', 'word4'],
 #           (int)weight2 : ['word5', 'word6', 'word7', 'word8', 'word9'],
 #       }
-#   this.patterns           - list of command patterns
-#   this.subpatterns        - list of subpaterns (context patterns)
+#   self.patterns           - list of command patterns
+#   self.subpatterns        - list of subpaterns (context patterns)
 #       like ['* который * час *', '* скольк* * (врем|час)* *']
 #   Command._entities       - linked patterns   $Pattern
 #   Command.regex           - regex patterns dict for better syntax
@@ -70,24 +70,24 @@ class Command(ABC):
         #   one or more of the list, without order     {a|b|c}
         '\{((?:.*\|?)*?.*?)\}': r'(?:\1)+?',
     }
-    def __init__(this, name, keywords = {}, patterns = [], subPatterns = []):                 #   initialisation of new command
-        this._name          = name
-        this._keywords      = keywords
-        this._patterns      = patterns
-        this._subPatterns   = subPatterns
-        Command.append(this)
+    def __init__(self, name, keywords = {}, patterns = [], subPatterns = []):                 #   initialisation of new command
+        self._name          = name
+        self._keywords      = keywords
+        self._patterns      = patterns
+        self._subPatterns   = subPatterns
+        Command.append(self)
 
-    def __str__(this):
-        str = f'{this.__class__.__name__}.{this.getName()}:\n'
-        for key, value in this._keywords.items():
+    def __str__(self):
+        str = f'{self.__class__.__name__}.{self.getName()}:\n'
+        for key, value in self._keywords.items():
             str += f'\t{key}:\t{value}\n'
         return str
 
 ######################################################################################
 #                            CONTROL KEYWORDS                                        #
 ######################################################################################
-    def getKeyword(this, string):                                  #   return position of the keyword
-        for weight, array in this._keywords.items():
+    def getKeyword(self, string):                                  #   return position of the keyword
+        for weight, array in self._keywords.items():
             index = 0
             for word in array:
                 if string == word:
@@ -95,24 +95,24 @@ class Command(ABC):
                 index += 1
         return None #   if not found
 
-    def removeKeyword(this, string):
-        position = this.getKeyword(string)
-        if(position): del this._keywords[ position[0] ][ position[1] ]
+    def removeKeyword(self, string):
+        position = self.getKeyword(string)
+        if(position): del self._keywords[ position[0] ][ position[1] ]
 
-    def addKeyword(this, weight, string):                           #   add new keywords to end of the list
-        if this.getKeyword(string): return
-        if( this._keywords.get(weight) ):   this._keywords[weight].append(string)
-        else:                               this._keywords[weight] = [string]
+    def addKeyword(self, weight, string):                           #   add new keywords to end of the list
+        if self.getKeyword(string): return
+        if( self._keywords.get(weight) ):   self._keywords[weight].append(string)
+        else:                               self._keywords[weight] = [string]
 
-    def changeKeyword(this, weight, name):                          #   set new weight to keyword   (find by name)
-        this.removeKeyword(name)
-        this.addKeyword(weight, name)
+    def changeKeyword(self, weight, name):                          #   set new weight to keyword   (find by name)
+        self.removeKeyword(name)
+        self.addKeyword(weight, name)
 
-    def checkContext(this, string):                                 #   return cmd if the string matches the cmd context
-        for pattern in this.getSubPatterns():
+    def checkContext(self, string):                                 #   return cmd if the string matches the cmd context
+        for pattern in self.getSubPatterns():
             if match := re.search(re.compile(Command.compilePattern(pattern)), string):
                 return {
-                'cmd': this,
+                'cmd': self,
                 'params': {**match.groupdict(), 'string':string},   #   return parans+initial text
             }
         raise Exception("Not Found")                                #   raise exception if context not found
@@ -120,29 +120,29 @@ class Command(ABC):
 ######################################################################################
 #                                     SETTERS                                        #
 ######################################################################################
-    def setStart(this, function):                                   #   define start    (required)
-        this.start = function
+    def setStart(self, function):                                   #   define start    (required)
+        self.start = function
 
 ######################################################################################
 #                                     GETTERS                                        #
 ######################################################################################
-    def getName(this):
-        return this._name
+    def getName(self):
+        return self._name
 
-    def getKeywords(this):
-        return this._keywords
+    def getKeywords(self):
+        return self._keywords
 
-    def getPatterns(this):
-        return this._patterns
+    def getPatterns(self):
+        return self._patterns
 
-    def getSubPatterns(this):
-        return this._subPatterns
+    def getSubPatterns(self):
+        return self._subPatterns
 
 ######################################################################################
 #                               ABSTRACT METHODS                                     #
 ######################################################################################
     @abstractmethod
-    def start(this, params):                    #   main method
+    def start(self, params):                    #   main method
         pass
 
 ######################################################################################

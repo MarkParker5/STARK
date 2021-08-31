@@ -7,9 +7,9 @@ import json
 import re
 
 class QA(Command):
-    def confirm(this, string): return True
+    def confirm(self, string): return True
 
-    def googleDictionary(this, word):
+    def googleDictionary(self, word):
         responce = requests.get(f'https://api.dictionaryapi.dev/api/v2/entries/ru/{word}')
         if responce.status_code == 200:
             responce = json.loads(responce.content)
@@ -41,32 +41,32 @@ class QA(Command):
             }
         return {}
 
-    def wikipedia(this, word):
+    def wikipedia(self, word):
         wiki.set_lang("ru")
         article = wiki.summary(word, sentences=5)
         try:    return article[:article.find('\n\n')][:600]
         except: return ''
 
-    def googleSearch(this, word):
+    def googleSearch(self, word):
         responce = requests.get(f'https://www.google.ru/search?&q={word}&lr=lang_ru&lang=ru')
         page = BS(responce.content, 'html.parser')
         info = page.select('div.BNeawe>div>div.BNeawe')
         return info[0].get_text() if info else ''
 
-    def start(this, params):
+    def start(self, params):
         query = params['string']
         if 'вики' in query:
             query = query.replace('википедия', '').replace('вики', '').strip()
-            try:    search = this.googleSearch(query)
+            try:    search = self.googleSearch(query)
             except: search = ''
-            try:    wiki   = this.wikipedia(query) if not 'Википедия' in search else ''
+            try:    wiki   = self.wikipedia(query) if not 'Википедия' in search else ''
             except: wiki   = ''
-            try:    gdict  = this.googleDictionary(query)
+            try:    gdict  = self.googleDictionary(query)
             except: gdict  = []
             voice          = search or (gdict['short'] if gdict else '') or wiki
             text           = (f'Google Search:\n\t{search}' if search else '') + (f'\n\nWikipedia:\n\t{wiki}' if wiki else '') + ('\n\nDictionary:'+gdict['text'] if gdict else '')
         else:
-            try:    search = this.googleSearch(query)
+            try:    search = self.googleSearch(query)
             except: search = ''
             voice = text = search or random.choice(['Не совсем понимаю, о чём вы.', 'Вот эта последняя фраза мне не ясна.', 'А вот это не совсем понятно.', 'Можете сказать то же самое другими словами?', 'Вот сейчас я совсем вас не понимаю.', 'Попробуйте выразить свою мысль по-другому',])
         return Response(text = text, voice = voice)

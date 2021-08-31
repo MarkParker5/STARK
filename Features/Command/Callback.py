@@ -3,21 +3,21 @@ from .Response import Response
 import re
 
 class Callback:
-    def __init__(this, patterns, quiet = False, once = True):
-        this.patterns = patterns
-        this.quiet = quiet
-        this.once = once
+    def __init__(self, patterns, quiet = False, once = True):
+        self.patterns = patterns
+        self.quiet = quiet
+        self.once = once
 
-    def setStart(this, function):
-        this.start = function
+    def setStart(self, function):
+        self.start = function
 
-    def start(this, params):
+    def start(self, params):
         pass
 
-    def answer(this, string):
-        for pattern in this.patterns:
+    def answer(self, string):
+        for pattern in self.patterns:
             if match := re.search(re.compile(Command.compilePattern(pattern)), string):
-                return this.start({**match.groupdict(), 'string':string})
+                return self.start({**match.groupdict(), 'string':string})
         return None
 
     @staticmethod

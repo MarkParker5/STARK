@@ -1,6 +1,6 @@
 class Response:
-    def __init__(this, voice, text, callback = None, thread = None):
-        this.voice: str = voice
-        this.text: str = text
-        this.callback: Callback = callback
-        this.thread = thread
+    def __init__(self, voice, text, callback = None, thread = None):
+        self.voice: str = voice
+        self.text: str = text
+        self.callback: Callback = callback
+        self.thread = thread

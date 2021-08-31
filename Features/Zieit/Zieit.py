@@ -10,7 +10,7 @@ class Zieit (Command):
     lessonsEndTime = ['09:15','10:45','12:25','13:55','15:25','17:05','18:35']
     weekdays = ["Неділя", "Понеділок", "Вівторок", "Середа", "Четвер", "П'ятниця", "Субота"]
 
-    def start(this, string):                    #   main method
+    def start(self, string):                    #   main method
         pass
 
     @classmethod

@@ -9,5 +9,5 @@ import Features
 # start oll controls in own thread or subprocess:
 # voice assistant, telegram bot, django(api and ui)
 
-#Controls.TelegramBot().start()
-Controls.VoiceAssistant().start()
+Controls.TelegramBot().start()
+#Controls.VoiceAssistant().start()

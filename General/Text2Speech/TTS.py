@@ -7,16 +7,16 @@ import config
 
 class Speech:
     _list = []
-    def __init__(this, text, voice, path, standart = False):
-        this._text      = text
-        this._voice     = voice
-        this._path      = path
-        this._standart  = standart
-        if(standart): Speech.append(this)
+    def __init__(self, text, voice, path, standart = False):
+        self._text      = text
+        self._voice     = voice
+        self._path      = path
+        self._standart  = standart
+        if(standart): Speech.append(self)
 
-    def speak(this):
-        if( os.path.exists(this._path) ):
-            with open(this._path) as f:
+    def speak(self):
+        if( os.path.exists(self._path) ):
+            with open(self._path) as f:
                 with mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ) as audio:
                     mixer.init()
                     mixer.music.load(audio)
@@ -24,13 +24,13 @@ class Speech:
                     mixer.music.play()
                     while mixer.music.get_busy():
                         sleep(0.1)
-            if(not this._standart): os.remove(this._path)
+            if(not self._standart): os.remove(self._path)
 
-    def getBytes(this):
-        return open(this._path, 'rb')
+    def getBytes(self):
+        return open(self._path, 'rb')
 
-    def getPath(this):
-        return this._path
+    def getPath(self):
+        return self._path
 
     @staticmethod
     def append(obj):
@@ -41,15 +41,15 @@ class Speech:
         return Speech._list
 
 class Engine:
-    def __init__(this, name = 'ru-RU-Wavenet-B', language_code = config.language_code):
+    def __init__(self, name = 'ru-RU-Wavenet-B', language_code = config.language_code):
         os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = config.goole_tts_json_key
-        this._client       = texttospeech.TextToSpeechClient()
-        this._audio_config = texttospeech.AudioConfig( audio_encoding = texttospeech.AudioEncoding.MP3 )
-        this._language_code= language_code
-        this._name         = name
-        this._voice        = texttospeech.VoiceSelectionParams(
-            language_code  = this._language_code,
-            name           = this._name,
+        self._client       = texttospeech.TextToSpeechClient()
+        self._audio_config = texttospeech.AudioConfig( audio_encoding = texttospeech.AudioEncoding.MP3 )
+        self._language_code= language_code
+        self._name         = name
+        self._voice        = texttospeech.VoiceSelectionParams(
+            language_code  = self._language_code,
+            name           = self._name,
             ssml_gender    = texttospeech.SsmlVoiceGender.FEMALE)
 
     @staticmethod
@@ -67,16 +67,16 @@ class Engine:
             else: name = name.replace(letter, '_')
         return name
 
-    def generate(this, text, standart = False):
-        dir             = f'audio/{this._name}'
+    def generate(self, text, standart = False):
+        dir             = f'audio/{self._name}'
         path            = f'{dir}/{Engine.transliterate(text)[:100]}.mp3'
-        if( os.path.exists(path) ): return Speech(text, this._name, path, standart)
+        if( os.path.exists(path) ): return Speech(text, self._name, path, standart)
         synthesis_input = texttospeech.SynthesisInput(text=text)
         try:
-            response        = this._client.synthesize_speech(input = synthesis_input, voice = this._voice, audio_config = this._audio_config)
+            response        = self._client.synthesize_speech(input = synthesis_input, voice = self._voice, audio_config = self._audio_config)
             if not os.path.exists(dir): os.makedirs(dir)
             with open(path, 'wb') as out:
                 out.write(response.audio_content)
         except:
             print("[ERROR] TTS Error: google cloud tts response error. Check Cloud Platform Console")
-        return Speech(text, this._name, path, standart)
+        return Speech(text, self._name, path, standart)

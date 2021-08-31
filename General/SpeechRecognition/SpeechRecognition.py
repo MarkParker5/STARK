@@ -5,31 +5,31 @@ import config
 #m = sr.Microphone(device_index=config.device_index)
 
 class SpeechToText:
-    def __init__(this, device = config.device_index, language = config.language_code):
-        this.device     = device
-        this.language   = language
-        this.m          = sr.Microphone(device_index = this.device)
-        this.r          = sr.Recognizer()
-        this.r.pause_threshold          = config.pause_threshold
-        this.r.energy_threshold         = config.energy_threshold
-        this.r.dynamic_energy_threshold = config.dynamic_energy_threshold
-        this.r.non_speaking_duration    = config.non_speaking_duration
+    def __init__(self, device = config.device_index, language = config.language_code):
+        self.device     = device
+        self.language   = language
+        self.m          = sr.Microphone(device_index = self.device)
+        self.r          = sr.Recognizer()
+        self.r.pause_threshold          = config.pause_threshold
+        self.r.energy_threshold         = config.energy_threshold
+        self.r.dynamic_energy_threshold = config.dynamic_energy_threshold
+        self.r.non_speaking_duration    = config.non_speaking_duration
 
-    def listen(this):
+    def listen(self):
         try:
-            with this.m as source:
-                audio = this.r.listen(source)
+            with self.m as source:
+                audio = self.r.listen(source)
         except:
             return ''
         try:
-            responce = {'text': this.r.recognize_google(audio, language = this.language).lower(), 'status': 'ok'}
+            responce = {'text': self.r.recognize_google(audio, language = self.language).lower(), 'status': 'ok'}
         except sr.UnknownValueError:
             responce = {'text': None, 'status': 'void'}
         except sr.RequestError:
             responce = {'text': None, 'status': 'error'}
         return responce
 
-    def recognize(this, speech):
+    def recognize(self, speech):
         with sr.AudioFile(speech.getPath()) as source:
             audio = r.record(source)
         try:
@@ -37,10 +37,10 @@ class SpeechToText:
         except:
             return ''
 
-    def listen_noise(this):
-        with this.m as source:
-            this.r.adjust_for_ambient_noise(source)
+    def listen_noise(self):
+        with self.m as source:
+            self.r.adjust_for_ambient_noise(source)
 
-    def set_device(this, index):
-        this.device = 1
-        this.m = sr.Microphone(device_index = this.device)
+    def set_device(self, index):
+        self.device = 1
+        self.m = sr.Microphone(device_index = self.device)

@@ -1,5 +1,5 @@
 from ..Command import Command
 
 class Media(Command):
-    def start(this, string):                    #   main method
+    def start(self, string):                    #   main method
         pass

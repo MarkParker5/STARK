@@ -5,7 +5,7 @@ def getClass(name):
 from Command import Command                     #   import parent class
 
 class {name} (Command):
-    def start(this, string):                    #   main method
+    def start(self, string):                    #   main method
         pass
     '''
     return str.strip()

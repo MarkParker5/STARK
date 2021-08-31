@@ -6,5 +6,5 @@
 from ..Command import Command                     #   import parent class
 
 class SmallTalk(Command):
-    def start(this, string):                    #   main method
+    def start(self, string):                    #   main method
         print(f'Hello, {string=}')

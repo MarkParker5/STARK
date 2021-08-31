@@ -33,7 +33,7 @@ class SmartHome(Command):
     radio = radio
     send_queue = []
 
-    def start(this, string):                    #   main method
+    def start(self, string):                    #   main method
         pass
 
     @staticmethod
