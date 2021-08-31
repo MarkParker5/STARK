@@ -72,8 +72,11 @@ class Engine:
         path            = f'{dir}/{Engine.transliterate(text)[:100]}.mp3'
         if( os.path.exists(path) ): return Speech(text, this._name, path, standart)
         synthesis_input = texttospeech.SynthesisInput(text=text)
-        response        = this._client.synthesize_speech(input = synthesis_input, voice = this._voice, audio_config = this._audio_config)
-        if not os.path.exists(dir): os.makedirs(dir)
-        with open(path, 'wb') as out:
-            out.write(response.audio_content)
+        try:
+            response        = this._client.synthesize_speech(input = synthesis_input, voice = this._voice, audio_config = this._audio_config)
+            if not os.path.exists(dir): os.makedirs(dir)
+            with open(path, 'wb') as out:
+                out.write(response.audio_content)
+        except:
+            print("[ERROR] TTS Error: google cloud tts response error. Check Cloud Platform Console")
         return Speech(text, this._name, path, standart)

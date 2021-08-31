@@ -31,31 +31,31 @@ class VoiceAssistant(Control):
         return cls.instance
 
     def start(self):
-        listener.listen_noise()
+        self.listener.listen_noise()
         os.system('clear')
 
         while True:
-            if voids >= 3:
-                voids = 0
+            if self.voids >= 3:
+                self.voids = 0
                 if config.double_clap_activation:
                     print('\nSleep (-_-)zzZZ\n')
                     sleep()
             print('\nYou: ', end='')
-            speech = listener.listen()
+            speech = self.listener.listen()
             print(speech.get('text') or '', end='')
             while True:
                 if speech['status'] == 'error':
                     break
                 if speech['status'] == 'void':
-                    voids += 1
+                    self.voids += 1
                     break
                 text = speech['text']
                 cmd, params = Command.reg_find(text).values()
                 try:    response = cmd.start(params)
                 except: break
-                reply(response)
-                check_threads()
-                report()
+                self.reply(response)
+                self.check_threads()
+                self.report()
                 if response.callback:
                     speech = recognize(response.callback, {})
                 else:
@@ -63,20 +63,20 @@ class VoiceAssistant(Control):
 
     def recognize(self, callback, params):
         print('\nYou: ', end='')
-        speech = listener.listen()
+        speech = self.listener.listen()
         if speech['status'] in ['error', 'void']:
             return speech
         text = speech['text']
         print(text, end='')
         while True:
-            check_threads()
+            self.check_threads()
             if not callback: break
             try:
                 if response := callback.answer(text):
-                    reply(response)
+                    self.reply(response)
             except:
                 break
-            memory.insert(0, {
+            self.memory.insert(0, {
                 'text': text,
                 'cmd':  cmd,
                 'response': response,
@@ -86,64 +86,59 @@ class VoiceAssistant(Control):
         return speech
 
     def report(self):
-        global reports
-        for response in reports:
+        for response in self.reports:
             if response.voice:
-                voice.generate(response.voice).speak()
+                self.voice.generate(response.voice).speak()
             time.sleep(2)
-        reports = []
+        self.reports = []
 
     def reply(self, response):
         if response.text:                                #   print answer
             print('\nArchie: '+response.text)
         if response.voice:                               #   say answer
-            voice.generate(response.voice).speak()
+            self.voice.generate(response.voice).speak()
         if response.thread:                              #   add background thread to stack
-            threads.append(response.thread)
+            self.threads.append(response.thread)
 
     def check_threads(self):
-        for thread in threads:
+        for thread in self.threads:
             if not thread['finish_event'].is_set(): continue
             response = thread['thread'].join()
-            reply(response)
+            self.reply(response)
             if response.callback:
                 if response.callback.quiet:
                     response.callback.start()
                 else:
                     for _ in range(3):
                         print('\nYou: ', end='')
-                        speech = listener.listen()
+                        speech = self.listener.listen()
                         if speech['status'] == 'ok':
                             print(speech['text'], '\n')
                             new_response = response.callback.answer(speech['text'])
-                            reply(new_response)
+                            self.reply(new_response)
                             break
                     else:
-                        reports.append(response)
+                        self.reports.append(response)
             thread['finish_event'].clear()
             del thread
 
     # check double clap from arduino microphone module
     def checkClap(self, channel):
-        global lastClapTime
-        global doubleClap
         now = time.time()
-        delta = now - lastClapTime
+        delta = now - self.lastClapTime
         if 0.1 < delta < 0.6:
-            doubleClap = True
+            self.doubleClap = True
         else:
-            lastClapTime = now
+            self.lastClapTime = now
 
     # waiting for double clap
     def sleep(self):
-        global lastClapTime
-        lastClapTime = 0
-        global doubleClap
-        while not doubleClap:
-            check_threads()
+        self.lastClapTime = 0
+        while not self.doubleClap:
+            self.check_threads()
             time.sleep(1)
         else:
-            doubleClap = False
+            self.doubleClap = False
 
 if __name__ == '__main__':
     VoiceAssistant().start()
