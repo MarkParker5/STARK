@@ -5,14 +5,6 @@ from General import SpeechRecognition, Text2Speech
 from Features.Command import Command
 import config
 
-if config.double_clap_activation:
-    import RPi.GPIO as GPIO
-    import time
-
-    GPIO.setmode(GPIO.BCM)
-    GPIO.setup(12, GPIO.IN)
-    GPIO.add_event_detect(12, GPIO.RISING, callback = checkClap)
-
 class VoiceAssistant(Control):
     listener = SpeechRecognition.SpeechToText()
     voice    = Text2Speech.Engine()
@@ -139,6 +131,14 @@ class VoiceAssistant(Control):
             time.sleep(1)
         else:
             self.doubleClap = False
+
+if config.double_clap_activation:
+    import RPi.GPIO as GPIO
+    import time
+
+    GPIO.setmode(GPIO.BCM)
+    GPIO.setup(12, GPIO.IN)
+    GPIO.add_event_detect(12, GPIO.RISING, callback = VoiceAssistant().checkClap)
 
 if __name__ == '__main__':
     VoiceAssistant().start()
