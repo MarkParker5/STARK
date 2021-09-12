@@ -9,14 +9,19 @@ import Controls
 # voice assistant, telegram bot, django(api and ui)
 
 def main():
-    telegram = multiprocessing.Process(target = Controls.TelegramBot().start)
-    voiceAssistant = multiprocessing.Process(target = Controls.VoiceAssistant().start)
+    controls = [
+        Controls.VoiceAssistant(),
+        Controls.TelegramBot(),
+        Controls.RemoteControl(),
+        Controls.Django(),
+    ]
 
-    telegram.start()
-    #voiceAssistant.start()
+    processes = []
+    for control in controls:
+        process = multiprocessing.Process(target = control.start)
+        process.start()
 
-    telegram.join()
-    #voiceAssistant.join()
+    for process in processes:
+        process.join()
 
 if __name__ =='__main__': main()
-    

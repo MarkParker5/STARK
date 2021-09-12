@@ -24,10 +24,10 @@ def formatDay(lessons):
         teacher  = lesson['teacher']
         auditory = lesson['auditory']
         type     = lesson['type']
-        voice    += Zieit.fullNames(f'№{index}, {type} по предмету {subject} в аудитории {auditory}.\n').capitalize()
+        voice    += Zieit.fullNames(f'.№{index}, {type} по предмету {subject} в аудитории {auditory}.\n').capitalize()
         text     += Zieit.fullNames(f'\n{index}. [{time}] {subject}\n....{type} ({auditory})\n....') + teacher
     return Response(text = text, voice = voice)
-    
+
 ################################################################################
 
 def nextLessonFunc(params):
