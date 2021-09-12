@@ -89,8 +89,8 @@ class TelegramBot(Control):
             try:
                 print("Start polling...")
                 bot.polling(callback = check_threads, args = (threads,) )
-            except:
-                print("Polling failed")
+            except Exception as e:
+                print(e, "\nPolling failed")
                 time.sleep(10)
 
 
