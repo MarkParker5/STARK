@@ -15,19 +15,22 @@ class Speech:
         if(standart): Speech.append(self)
 
     def speak(self):
-        if( os.path.exists(self._path) ):
-            with open(self._path) as f:
-                with mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ) as audio:
-                    mixer.init()
-                    mixer.music.load(audio)
-                    mixer.music.set_volume(config.voice_volume)
-                    mixer.music.play()
-                    while mixer.music.get_busy():
-                        sleep(0.1)
-            if(not self._standart): os.remove(self._path)
+        if not os.path.exists(self._path): return
+        with open(self._path) as f:
+            with mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ) as audio:
+                mixer.init()
+                mixer.music.load(audio)
+                mixer.music.set_volume(config.voice_volume)
+                mixer.music.play()
+                while mixer.music.get_busy():
+                    sleep(0.1)
+        if(not self._standart): os.remove(self._path)
 
     def getBytes(self):
-        return open(self._path, 'rb')
+        if not os.path.exists(self._path): return None
+        with open(self._path, 'rb') as b:
+            bytes = b
+        return bytes
 
     def getPath(self):
         return self._path

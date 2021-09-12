@@ -3,11 +3,11 @@ import urllib.request
 import xlrd
 import xlwt
 from xlutils.copy import copy
-from datetime import datetime
+from datetime import datetime, timedelta
 
 class Zieit (Command):
-    lessonsStartTime = ['07:55','09:25','11:05','12:35','14:05','15:45','17:15']
-    lessonsEndTime = ['09:15','10:45','12:25','13:55','15:25','17:05','18:35']
+    lessonsStartTime = ['08:00', '09:30', '11:10', '12:40', '14:10', '15:50', '17:20']
+    lessonsEndTime   = ['09:20', '10:50', '12:30', '14:00', '15:30', '17:10', '18:40']
     weekdays = ["Неділя", "Понеділок", "Вівторок", "Середа", "Четвер", "П'ятниця", "Субота"]
 
     def start(self, string):                    #   main method
@@ -15,7 +15,7 @@ class Zieit (Command):
 
     @classmethod
     def getShedule(self):
-        url = 'https://www.zieit.edu.ua/wp-content/uploads/Rozklad/2k.xls'
+        url = 'https://www.zieit.edu.ua/wp-content/uploads/Rozklad/3k.xls'
         name = url.split('/')[-1]
         urllib.request.urlretrieve(url, name)
 
@@ -56,18 +56,29 @@ class Zieit (Command):
                     lesson['subject'] = row[14]
                 elif rownum%4 == 0:
                     lesson['type'] = row[14]
+                    lesson['index'] = int(row[2])
+                    lesson['time']  = str(row[3])
         return week
 
     @classmethod
     def getTodaysShedule(self):
+        today = datetime.now().date()
+        return self.getSheduleForDate(today)
+
+    @classmethod
+    def getTomorrowsShedule(self):
+        tomorrow = datetime.now().date() + timedelta(days = 1)
+        return self.getSheduleForDate(tomorrow)
+
+    @classmethod
+    def getSheduleForDate(self, target_date):
         week = self.getShedule()
         for d, lessons in week.items():
-            today = datetime.now().date()
             try:
                 date = datetime.strptime(d, "%d.%m.%Y").date()
-                if date == today: return lessons
+                if date == target_date: return lessons
             except:
-                if self.weekdays.index(d) == today.isoweekday():
+                if self.weekdays.index(d) == target_date.isoweekday():
                     return lessons
         return None
 
@@ -87,6 +98,11 @@ class Zieit (Command):
     def fullNames(self, string):
         string = string.lower()
         names = {
+            'алгоритми та структури даних': 'Алгоритмы и структуры данных',
+            'філософія': 'Философия',
+            'архітектура комп\'ютерів': 'Архитектура компьютеров',
+            'web-програмування': 'WEB-программирование',
+            'бази даних': 'Базы данных',
             'укр мова': 'украинский язык',
             'дискретна': 'дискретная',
             'безпека життєдіяльності та основи охорони праці':'обж',
@@ -102,8 +118,6 @@ class Zieit (Command):
             'викл.':'',
             'ст.в.':'',
             '(шк)':'',
-            '(': '',
-            ')': '',
             'і':'и',
             'ауд.': '',
             '  ': ' ',

@@ -1,59 +1,78 @@
 from .Zieit import *
-################################################################################
-def nextLessonMethod(params):
-    lesson   = Zieit.getNextLesson(Zieit.lessonsStartTime)
+
+def formatLesson(lesson):
     if lesson == None: voice = text = 'Сегодня пар нет'
     else:
+        index    = lesson['index']
+        time     = lesson['time'].replace('.', ':')
         subject  = lesson['subject']
         teacher  = lesson['teacher']
         auditory = lesson['auditory']
         type     = lesson['type']
-        voice    = Zieit.fullNames(f'{type} по предмету {subject} в аудитории {auditory}')
-        text     = f'{subject}\n{teacher}\n{auditory}\n{type}'
+        voice    = Zieit.fullNames(f'{type} по предмету {subject} в аудитории {auditory} в {time}')
+        text     = Zieit.fullNames(f'{index}. [{time}] {subject}\n{teacher}\n{auditory}\n{type}')
     return Response(text = text, voice = voice)
+
+def formatDay(lessons):
+    text = voice = ''
+    if not lessons:
+        return None
+    for i, lesson in lessons.items():
+        index    = lesson['index']
+        time     = lesson['time'].replace('.', ':')
+        subject  = lesson['subject']
+        teacher  = lesson['teacher']
+        auditory = lesson['auditory']
+        type     = lesson['type']
+        voice    += Zieit.fullNames(f'№{index}, {type} по предмету {subject} в аудитории {auditory}.\n').capitalize()
+        text     += Zieit.fullNames(f'\n{index}. [{time}] {subject}\n....{type} ({auditory})\n....') + teacher
+    return Response(text = text, voice = voice)
+    
+################################################################################
+
+def nextLessonFunc(params):
+    return formatLesson(Zieit.getNextLesson(Zieit.lessonsStartTime))
 
 keywords = {}
 patterns = ['* следующ* (предмет|урок|пара)']
 nextLesson = Zieit('Next Lesson', keywords, patterns)
-nextLesson.setStart(nextLessonMethod)
+nextLesson.setStart(nextLessonFunc)
 
 ################################################################################
 
-def currentLessonMethod(params):
-    lesson   = Zieit.getNextLesson(Zieit.lessonsEndTime)
-    if lesson == None: voice = text = 'Сегодня пар нет'
-    else:
-        subject  = lesson['subject']
-        teacher  = lesson['teacher']
-        auditory = lesson['auditory']
-        type     = lesson['type']
-        voice    = Zieit.fullNames(f'{type} по предмету {subject} в аудитории {auditory}')
-        text     = f'{subject}\n{teacher}\n{auditory}\n{type}'
-    return Response(text = text, voice = voice)
+def currentLessonFunc(params):
+    return formatLesson(Zieit.getNextLesson(Zieit.lessonsEndTime))
 
 keywords = {}
 patterns = ['* (текущ*|сейчас) (предмет|урок|пара)']
 currentLesson = Zieit('Current Lesson', keywords, patterns)
-currentLesson.setStart(currentLessonMethod)
+currentLesson.setStart(currentLessonFunc)
 
 ################################################################################
 
-def todaysSheduleMethod(params):
-    lessons = Zieit.getTodaysShedule()
-    text = voice = ''
-    if not lessons:
-        voice = text = 'Сегодня пар нет'
+def todaysSheduleFunc(params):
+    if lessons := Zieit.getTodaysShedule():
+        return formatDay(lessons)
+    else:
+        text = voice = 'Сегодня пар нет'
         return Response(text = text, voice = voice)
-    for i, lesson in lessons.items():
-        subject  = lesson['subject']
-        teacher  = lesson['teacher']
-        auditory = lesson['auditory']
-        type     = lesson['type']
-        voice    += Zieit.fullNames(f'{type} по предмету {subject} в аудитории {auditory}.\n').capitalize()
-        text     += f'{subject} ({auditory})\n'
-    return Response(text = text, voice = voice)
+
 
 keywords = {}
-patterns = ['* сегодня (предметы|уроки|пары|расписание)']
+patterns = ['* сегодня (предметы|уроки|пары|расписание)', '* (предметы|уроки|пары|расписание) * сегодня *']
 todaysShedule = Zieit('Todays Shedule', keywords, patterns)
-todaysShedule.setStart(todaysSheduleMethod)
+todaysShedule.setStart(todaysSheduleFunc)
+
+################################################################################
+
+def tomorrowsSheduleFunc(params):
+    if lessons := Zieit.getTomorrowsShedule():
+        return formatDay(lessons)
+    else:
+        text = voice = 'Завтра пар нет'
+        return Response(text = text, voice = voice)
+
+keywords = {}
+patterns = ['* завтра (предметы|уроки|пары|расписание)', '* (предметы|уроки|пары|расписание) * завтра *']
+tomorrowsShedule = Zieit('Todays Shedule', keywords, patterns)
+tomorrowsShedule.setStart(tomorrowsSheduleFunc)
