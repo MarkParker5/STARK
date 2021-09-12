@@ -11,7 +11,7 @@ if config.double_clap_activation:
 
     GPIO.setmode(GPIO.BCM)
     GPIO.setup(12, GPIO.IN)
-    GPIO.add_event_detect(12, GPIO.RISING, callback = checkClap)
+    GPIO.add_event_detect(12, GPIO.RISING, callback = VoiceAssistant().checkClap)
 
 class VoiceAssistant(Control):
     listener = SpeechRecognition.SpeechToText()
