@@ -1,4 +1,4 @@
-from telebot import TeleBot
+from telebot import TeleBot, util
 
 # added callback for __threaded_polling
 class MyTeleBot(TeleBot):
@@ -6,10 +6,10 @@ class MyTeleBot(TeleBot):
         if self.threaded:
             self.__threaded_polling(none_stop, interval, timeout, callback, args)
         else:
-            self.__non_threaded_polling(none_stop, interval, timeout)
+            self._TeleBot__non_threaded_polling(none_stop, interval, timeout)
 
     def __threaded_polling(self, none_stop=False, interval=0, timeout=20, callback = lambda *args: None, args = () ):
-        self.__stop_polling.clear()
+        self._TeleBot__stop_polling.clear()
         error_interval = 0.25
 
         polling_thread = util.WorkerThread(name="PollingThread")
@@ -19,11 +19,11 @@ class MyTeleBot(TeleBot):
             self.worker_pool.exception_event
         )
 
-        while not self.__stop_polling.wait(interval):
+        while not self._TeleBot__stop_polling.wait(interval):
             callback(*args)      #   added by Parker
             or_event.clear()
             try:
-                polling_thread.put(self.__retrieve_updates, timeout)
+                polling_thread.put(self._TeleBot__retrieve_updates, timeout)
 
                 or_event.wait()  # wait for polling thread finish, polling thread error or thread pool error
 
@@ -33,14 +33,14 @@ class MyTeleBot(TeleBot):
                 error_interval = 0.25
             except apihelper.ApiException as e:
                 if not none_stop:
-                    self.__stop_polling.set()
+                    self._TeleBot__stop_polling.set()
                 else:
                     polling_thread.clear_exceptions()
                     self.worker_pool.clear_exceptions()
                     time.sleep(error_interval)
                     error_interval *= 2
             except KeyboardInterrupt:
-                self.__stop_polling.set()
+                self._TeleBot__stop_polling.set()
                 break
 
         polling_thread.stop()
