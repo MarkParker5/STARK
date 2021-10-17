@@ -27,23 +27,9 @@
 
 
 from abc import ABC, abstractmethod
-# from fuzzywuzzy import fuzz
-from threading import Thread, Event
 import re
-
+from .RThread import RThread, Event
 from .synonyms import synonyms
-
-class RThread(Thread):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._return = None
-
-    def run(self):
-        if self._target: self._return = self._target(*self._args, **self._kwargs)
-
-    def join(self, *args, **kwargs):
-        super().join(*args, **kwargs)
-        return self._return
 
 class Command(ABC):
     _list     = []                                           #   list of all commands
@@ -183,6 +169,7 @@ class Command(ABC):
         #   return compiled regexp
         return pattern
 
+    '''
     @staticmethod
     def find(string):                               # find command by fuzzywuzzy
         string = string.lower()
@@ -211,6 +198,7 @@ class Command(ABC):
                     'cmd': Command.QA, #dialog mode
                     'params': {'string':string,},
                 }
+    '''
 
     @staticmethod
     def reg_find(string):                       # find comman by pattern
