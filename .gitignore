@@ -12,3 +12,5 @@ __pycache__
 /config.py
 /tts-gc-key.json
 /logs.txt
+
+audio/

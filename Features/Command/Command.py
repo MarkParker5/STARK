@@ -225,13 +225,21 @@ class Command(ABC):
             'params': {'string':string,},
         }
 
-    @staticmethod
+    @staticmethod #TODO: pass Response instead of answer and voice; create ThreadData struct
     def background(answer = '', voice = ''):    # make background cmd
-        def decorator(cmd): #wrapper of wrapper (decorator of decorator)
+        def decorator(func): #wrapper of wrapper (decorator of decorator)
             def wrapper(text):
                 finish_event  = Event()
-                thread        = RThread(target=cmd, args=(text, finish_event))
+                thread        = RThread(target=func, args=(text, finish_event))
                 thread.start()
                 return Response(voice = voice, text = answer, thread = {'thread': thread, 'finish_event': finish_event} )
             return wrapper
         return decorator
+
+    @classmethod
+    def new(cls, *args, **kwargs):
+        def creator(func):
+            cmd: Command = cls(*args, **kwargs)
+            cmd.setStart(func)
+            return func
+        return creator
