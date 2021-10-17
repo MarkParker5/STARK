@@ -2,5 +2,5 @@ from ..Control import Control
 
 class Django(Control):
     def start(self):
-        # run manage.py
+        #TODO: run manage.py
         pass

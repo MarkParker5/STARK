@@ -10,12 +10,6 @@ class RemoteControl(Control):
     url = 'http://t97316v1.beget.tech/read'
     session = requests.Session()
 
-    #   Singleton
-    def __new__(cls):
-        if not hasattr(cls, 'instance'):
-            cls.instance = super(RemoteControl, cls).__new__(cls)
-        return cls.instance
-
     def start(self):
         while True:
             time.sleep(1)

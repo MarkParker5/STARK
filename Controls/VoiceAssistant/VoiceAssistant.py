@@ -16,12 +16,6 @@ class VoiceAssistant(Control):
     lastClapTime = 0
     doubleClap = False
 
-    #   Singleton
-    def __new__(cls):
-        if not hasattr(cls, 'instance'):
-            cls.instance = super(VoiceAssistant, cls).__new__(cls)
-        return cls.instance
-
     def start(self):
         self.listener.listen_noise()
         os.system('clear')

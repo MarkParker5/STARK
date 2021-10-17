@@ -2,11 +2,11 @@
 
 import time
 import os
-import telebot
 import config
 from Features import Command
 from General import Text2Speech
 from Controls.Control import Control
+from .MyTeleBot import MyTeleBot
 
 class TelegramBot(Control):
     threads = []
@@ -14,13 +14,7 @@ class TelegramBot(Control):
     voids   = 0
     memory  = []
     voice   = Text2Speech.Engine()
-    bot     = telebot.TeleBot(config.telebot)
-
-    #   Singleton
-    def __new__(cls):
-        if not hasattr(cls, 'instance'):
-            cls.instance = super(TelegramBot, cls).__new__(cls)
-        return cls.instance
+    bot     = MyTeleBot(config.telebot)
 
     def reply(self, id, response):
         if response.text:

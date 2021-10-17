@@ -1,0 +1,10 @@
+pip install speech_recognition
+pip install google-cloud-texttospeech
+pip install pygame
+pip install bs4
+pip install wikipedia
+pip install xlrd
+pip install xlwt
+pip install xlutils
+pip install pyaudio # if instalation fails, try install from .whl (https://www.lfd.uci.edu/~gohlke/pythonlibs/#pyaudio)
+pip install pip install PyTelegramBotApi
