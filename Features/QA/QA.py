@@ -1,5 +1,5 @@
 from bs4 import BeautifulSoup as BS
-from ..Command import Command, Response
+from ArchieCore import Command, Response
 import wikipedia as wiki
 import requests
 import random
@@ -71,4 +71,4 @@ class QA(Command):
             voice = text = search or random.choice(['Не совсем понимаю, о чём вы.', 'Вот эта последняя фраза мне не ясна.', 'А вот это не совсем понятно.', 'Можете сказать то же самое другими словами?', 'Вот сейчас я совсем вас не понимаю.', 'Попробуйте выразить свою мысль по-другому',])
         return Response(text = text, voice = voice)
 
-Command.QA = QA('QA', {}, [])
+Command.QA = QA('QA', [])

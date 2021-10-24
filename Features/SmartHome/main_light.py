@@ -1,5 +1,5 @@
 from .SmartHome import *
-from ..Command import Response
+from ArchieCore import Response
 ################################################################################
 
 def method(params):
@@ -10,7 +10,6 @@ def method(params):
     voice = text = ''
     return Response(text = text, voice = voice)
 
-keywords = {}
 patterns = ['* (включ|выключ)* свет *']
-main_light = SmartHome('main_light', keywords, patterns)
+main_light = SmartHome('main_light', patterns)
 main_light.setStart(method)

@@ -2,7 +2,7 @@ from .Media import *
 import requests
 from bs4 import BeautifulSoup as BS
 import os
-from ..Command import Callback, Response
+from ArchieCore import Response
 ################################################################################
 def findPage(name):
     query = name + ' site:kinogo.by'
@@ -128,7 +128,7 @@ kinogo_film_cb = Callback(['$text',])
 kinogo_film_cb.setStart(start_film)
 
 patterns = ['* включ* фильм $text', '* включ* фильм*']
-kinogo_film = Media('KinogoFilm', {}, patterns)
+kinogo_film = Media('KinogoFilm', patterns)
 kinogo_film.setStart(film)
 
 
@@ -136,5 +136,5 @@ kinogo_serial_cb = Callback(['$text',])
 kinogo_serial_cb.setStart(start_serial)
 
 patterns = ['* включ* сериал $text', '* включ* сериал*']
-kinogo_serial = Media('KinogoSerial', {}, patterns)
+kinogo_serial = Media('KinogoSerial', patterns)
 kinogo_serial.setStart(serial)

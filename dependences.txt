@@ -1,3 +1,4 @@
+Python 3.10
 pip install speech_recognition
 pip install google-cloud-texttospeech
 pip install pygame

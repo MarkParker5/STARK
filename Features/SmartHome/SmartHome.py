@@ -5,7 +5,7 @@ import spidev
 import time
 import json as JSON
 from threading import Thread
-from ..Command import Command
+from ArchieCore import Command
 
 GPIO.setmode(GPIO.BCM)
 

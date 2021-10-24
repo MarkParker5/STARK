@@ -1,6 +1,6 @@
 from .Raspi import *
 import os
-from ..Command import Callback, Response
+from ArchieCore import CommandsManager, Callback, Response
 import config
 ################################################################################
 def reboot(params):
@@ -11,7 +11,7 @@ def reboot(params):
 reboot_cb = Callback(['$bool',])
 reboot_cb.setStart(reboot)
 
-@Raspi.background(answer = 'Проверяю обновления...', voice = 'Проверяю обновления')
+@CommandsManager.background(answer = 'Проверяю обновления...', voice = 'Проверяю обновления')
 def method(params, finish_event):
     os.system('git -C '+config.path+' remote update')
     if not 'git pull' in os.popen('git -C '+config.path+' status -uno').read():
@@ -24,5 +24,5 @@ def method(params, finish_event):
     return Response(text = text, voice = voice, callback = reboot_cb)
 
 patterns = ['* обновись *', '* можешь обновиться *', '* обнови себя *', '* скачай обновлени* *', '* провер* обновлени* *']
-gitpull = Raspi('git pull archie.git', [], patterns)
+gitpull = Raspi('git pull archie.git', patterns)
 gitpull.setStart(method)

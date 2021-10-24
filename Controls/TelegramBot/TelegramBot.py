@@ -3,9 +3,9 @@
 import time
 import os
 import config
-from Features import Command
+from ArchieCore import Command
 from General import Text2Speech
-from Controls.Control import Control
+from ..Control import Control
 from .MyTeleBot import MyTeleBot
 
 class TelegramBot(Control):

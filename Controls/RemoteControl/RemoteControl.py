@@ -2,8 +2,8 @@ import time
 import requests
 import json as JSON
 
-from Controls.Control import Control
-from Features.Command import Command
+from ..Control import Control
+from ArchieCore import Command
 from Features import *
 
 class RemoteControl(Control):

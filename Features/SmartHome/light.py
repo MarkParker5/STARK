@@ -1,5 +1,5 @@
 from .SmartHome import *
-from ..Command import Response
+from ArchieCore import Response
 ################################################################################
 
 def method(params):
@@ -10,9 +10,8 @@ def method(params):
     voice = text = ''
     return Response(text = text, voice = voice)
 
-keywords = {}
 patterns = ['* (включ|выключ)* свет *']
-main_light = SmartHome('main_light', keywords, patterns)
+main_light = SmartHome('main_light', patterns)
 main_light.setStart(method)
 
 ################################################################################
@@ -26,9 +25,8 @@ def method(params):
     voice = text = ''
     return Response(text = text, voice = voice)
 
-keywords = {}
 patterns = ['* включи* подсветку *']
-light_on = SmartHome('led_on', keywords, patterns)
+light_on = SmartHome('led_on', patterns)
 light_on.setStart(method)
 
 ################################################################################
@@ -41,9 +39,8 @@ def method(params):
     voice = text = ''
     return Response(text = text, voice = voice)
 
-keywords = {}
 patterns = ['* выключи* подсветку *']
-led_off = SmartHome('led_off', keywords, patterns)
+led_off = SmartHome('led_off', patterns)
 led_off.setStart(method)
 
 ################################################################################
@@ -56,9 +53,8 @@ def method(params):
     voice = text = ''
     return Response(text = text, voice = voice)
 
-keywords = {}
 patterns = []
-led_hello = SmartHome('led_hello', keywords, patterns)
+led_hello = SmartHome('led_hello', patterns)
 led_hello.setStart(method)
 
 ################################################################################

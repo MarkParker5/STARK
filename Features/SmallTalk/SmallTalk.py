@@ -3,7 +3,7 @@
 #   Module for speaking with voice assistent
 #   See class Command
 
-from ..Command import Command                     #   import parent class
+from ArchieCore import Command                     #   import parent class
 
 class SmallTalk(Command):
     def start(self, string):                    #   main method

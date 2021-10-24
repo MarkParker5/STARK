@@ -33,9 +33,8 @@ def formatDay(lessons):
 def nextLessonFunc(params):
     return formatLesson(Zieit.getNextLesson(Zieit.lessonsStartTime))
 
-keywords = {}
 patterns = ['* следующ* (предмет|урок|пара)']
-nextLesson = Zieit('Next Lesson', keywords, patterns)
+nextLesson = Zieit('Next Lesson', patterns)
 nextLesson.setStart(nextLessonFunc)
 
 ################################################################################
@@ -43,9 +42,8 @@ nextLesson.setStart(nextLessonFunc)
 def currentLessonFunc(params):
     return formatLesson(Zieit.getNextLesson(Zieit.lessonsEndTime))
 
-keywords = {}
 patterns = ['* (текущ*|сейчас) (предмет|урок|пара)']
-currentLesson = Zieit('Current Lesson', keywords, patterns)
+currentLesson = Zieit('Current Lesson', patterns)
 currentLesson.setStart(currentLessonFunc)
 
 ################################################################################
@@ -57,10 +55,8 @@ def todaysSheduleFunc(params):
         text = voice = 'Сегодня пар нет'
         return Response(text = text, voice = voice)
 
-
-keywords = {}
 patterns = ['* сегодня (предметы|уроки|пары|расписание)', '* (предметы|уроки|пары|расписание) * сегодня *']
-todaysShedule = Zieit('Todays Shedule', keywords, patterns)
+todaysShedule = Zieit('Todays Shedule', patterns)
 todaysShedule.setStart(todaysSheduleFunc)
 
 ################################################################################
@@ -72,7 +68,6 @@ def tomorrowsSheduleFunc(params):
         text = voice = 'Завтра пар нет'
         return Response(text = text, voice = voice)
 
-keywords = {}
 patterns = ['* завтра (предметы|уроки|пары|расписание)', '* (предметы|уроки|пары|расписание) * завтра *']
-tomorrowsShedule = Zieit('Todays Shedule', keywords, patterns)
+tomorrowsShedule = Zieit('Todays Shedule', patterns)
 tomorrowsShedule.setStart(tomorrowsSheduleFunc)

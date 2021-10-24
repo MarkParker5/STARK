@@ -1,5 +1,5 @@
 from .SmallTalk import *
-from ..Command import Response
+from ArchieCore import Response
 ################################################################################
 
 @SmallTalk.new('Hello', patterns = ['* привет* *',])

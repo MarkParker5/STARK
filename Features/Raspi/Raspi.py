@@ -1,4 +1,4 @@
-from ..Command import Command                     #   import parent class
+from ArchieCore import Command                     #   import parent class
 import os
 
 class Raspi(Command):

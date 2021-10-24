@@ -10,9 +10,8 @@ def method(params):
     voice = text = ''
     return Response(text = text, voice = voice)
 
-keywords = {}
 patterns = ['* (открыть|открой) (окно|окна) *', '* (подними|поднять) (шторы|роллеты) *']
-window_open = SmartHome('window_open', keywords, patterns)
+window_open = SmartHome('window_open', patterns)
 window_open.setStart(method)
 
 ################################################################################
@@ -25,7 +24,6 @@ def method(params):
     voice = text = ''
     return Response(text = text, voice = voice)
 
-keywords = {}
 patterns = ['* (закрыть|закрой) (окно|окна) *', '* (опусти|опустить) (шторы|роллеты) *']
-window_close = SmartHome('window_close', keywords, patterns)
+window_close = SmartHome('window_close', patterns)
 window_close.setStart(method)

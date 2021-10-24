@@ -1,5 +1,6 @@
 from google.cloud import texttospeech
 import os
+os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = 'hide'
 from pygame import mixer
 from  time import sleep
 import mmap

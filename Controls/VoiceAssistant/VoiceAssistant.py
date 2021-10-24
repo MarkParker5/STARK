@@ -1,8 +1,8 @@
 #!/usr/local/bin/python3.8
 import os
-from Controls.Control import Control
+from ..Control import Control
 from General import SpeechRecognition, Text2Speech
-from Features.Command import Command
+from ArchieCore import CommandsManager
 import config
 
 class VoiceAssistant(Control):
@@ -29,6 +29,7 @@ class VoiceAssistant(Control):
             print('\nYou: ', end='')
             speech = self.listener.listen()
             print(speech.get('text') or '', end='')
+
             while True:
                 if speech['status'] == 'error':
                     break
@@ -36,16 +37,19 @@ class VoiceAssistant(Control):
                     self.voids += 1
                     break
                 text = speech['text']
-                cmd, params = Command.reg_find(text).values()
-                try:    response = cmd.start(params)
-                except: break
-                self.reply(response)
-                self.check_threads()
-                self.report()
-                if response.callback:
-                    speech = recognize(response.callback, {})
-                else:
-                    break
+
+                for result in CommandsManager().search(text):
+                    try: response = result.command.start(result.parameters)
+                    except: break
+
+                    self.reply(response)
+                    self.check_threads()
+                    self.report()
+
+                    if response.callback:
+                        speech = recognize(response.callback, {})
+                    else:
+                        break
 
     def recognize(self, callback, params):
         print('\nYou: ', end='')
@@ -54,6 +58,7 @@ class VoiceAssistant(Control):
             return speech
         text = speech['text']
         print(text, end='')
+
         while True:
             self.check_threads()
             if not callback: break
