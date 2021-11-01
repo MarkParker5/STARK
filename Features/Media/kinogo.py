@@ -31,7 +31,6 @@ def film(params):
             voice = text = 'Не могу найти фильм'
     else:
         voice = text = 'Какой фильм включить?'
-        callback = kinogo_film_cb
         return Response(text = text, voice = voice, context = [start_film,])
     return Response(text = text, voice = voice)
 
@@ -62,6 +61,5 @@ def serial(params):
             voice = text = 'Не могу найти'
     else:
         voice = text = 'Какой сериал включить?'
-        callback = kinogo_serial_cb
         return Response(text = text, voice = voice, context = [start_film,])
     return Response(text = text, voice = voice)
