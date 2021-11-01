@@ -1,10 +1,12 @@
-from .SmartHome import *
+from .SmartHome import SmartHome
 from ArchieCore import Response, Command
 import Text2Speech
 import os
+
 ################################################################################
 
-def method(params):
+@Command.new(primary = False)
+def alarmclock(params):
     text = voice = ''
     Command.getCommand('tv on').start({})
     Command.getCommand('window_open').start({})
@@ -18,7 +20,3 @@ def method(params):
             break
     Text2Speech.Engine().generate(voice).speak()
     return Response(text = text, voice = voice)
-
-patterns = []
-alarmclock = SmartHome('alarmclock', patterns)
-alarmclock.setStart(method)

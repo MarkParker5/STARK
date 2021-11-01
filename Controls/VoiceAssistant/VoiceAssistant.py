@@ -38,7 +38,7 @@ class VoiceAssistant(Control):
                     break
                 text = speech['text']
 
-                for result in CommandsManager().search(text):
+                for result in CommandsManager().search(text, CommandsManager().allCommands):
                     try: response = result.command.start(result.parameters)
                     except: break
 

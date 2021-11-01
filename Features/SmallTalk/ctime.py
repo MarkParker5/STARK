@@ -2,9 +2,14 @@ import datetime, time
 import requests
 from bs4 import BeautifulSoup as BS
 import math
-from .SmallTalk import SmallTalk
-from ArchieCore import Response
-################################################################################
+from ArchieCore import Command, Response
+
+@Command.new([
+    'который * час в $text',
+    'скольк* * (врем|час)* * в $text',
+    'время в $text',
+    'который * час',
+    'скольк* * (врем|час)*'])
 def method(params):
     if city := params.get('text'):
         city     = city.title()
@@ -87,13 +92,3 @@ def method(params):
     else:    text = f'Текущее время: {hours}:{minutes}'
 
     return Response(text = text, voice = voice)
-
-# keywords = {
-#     10:     ['который час', 'сколько времени'],
-#     5:      ['текущее', 'сейчас', 'время'],
-#     1:      ['сколько']
-# }
-patterns    = ['* который * час в $text', '* скольк* * (врем|час)* * в $text', '* время в $text', '* который * час *', '* скольк* * (врем|час)* *']
-# subpatterns = ['а (сейчас|в $text)']
-ctime = SmallTalk('Current Time', patterns)
-ctime.setStart(method)

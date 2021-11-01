@@ -1,18 +1,21 @@
 from typing import Callable
 from abc import ABC
-from .RThread import RThread, Event
+
+from ..Pattern import ACObject, Pattern
 from .CommandsManager import CommandsManager
-from .. import Pattern
 
 class Command(ABC):
     name: str
     patterns: list[Pattern]
     start: Callable
 
-    def __init__(self, name, keywords = {}, patterns = []):                     #   initialisation of new command
-        self._name = name #TODO: change name to path
+    def __init__(self, name, patterns = [], primary = True):
+        self._name = name
         self._patterns = patterns
         CommandsManager().append(self)
+
+    def start(self, params: dict[str, ACObject]):
+        raise Exception(f'Method start is not implemented for command with name {name}')
 
     def setStart(self, function):                                               #   define start (required)
         self.start = function
@@ -28,7 +31,7 @@ class Command(ABC):
     @classmethod
     def new(cls, *args, **kwargs):
         def creator(func):
-            cmd: Command = cls(*args, **kwargs)
+            cmd: Command = cls(func.__name__, *args, **kwargs)
             cmd.setStart(func)
-            return func
+            return cmd
         return creator

@@ -1,4 +1,4 @@
-from typing import Type
+from typing import Type, Optional
 from . import Command
 from ..Pattern import ACObject
 
@@ -18,7 +18,7 @@ class CommandsManager:
             cls.instance = super().__new__(cls)
         return cls.instance
 
-    def search(self, string) -> list[SearchResult]:                             # find command by pattern
+    def search(self, string: str, commands: list[Command]) -> list[SearchResult]:
         string = string.lower()
         results: list[SearchResult] = []
         acstring = ACString(string)
@@ -37,12 +37,15 @@ class CommandsManager:
         if results: return results
         else: return [SearchResult(Command.QA, {'string': acstring,}),]
 
-    def append(self, obj):                                                      # add new command to list
-        self.allCommands.append(obj)
+    def append(self, command):
+        if hasattr(self, command.name):
+            Exception('Error: command with name \'{command.name}\' already exist')
+        setattr(self, command.name, command)
+        if command.primary:
+            self.allCommands.append(command)
 
-    def getCommand(name):                                                       # TODO: quick search
-        for command in self.allCommands:
-            if command.name == name: return command
+    def getCommand(self, name) -> Optional[Command]:
+        return getattr(self, name) if hasattr(self, name) else None
 
     @staticmethod
     def classFromString(className: str) -> ACObject:

@@ -1,8 +1,7 @@
 from .SmallTalk import *
-from ArchieCore import Response
-################################################################################
+from ArchieCore import Command, Response
 
-@SmallTalk.new('Hello', patterns = ['* привет* *',])
-def method(params):
+@Command.new(['привет*',])
+def hello(params):
     voice = text = 'Привет'
     return Response(text = text, voice = voice)

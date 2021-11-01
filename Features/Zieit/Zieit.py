@@ -1,17 +1,13 @@
-from ArchieCore import Command, Response                     #   import parent class
 import urllib.request
 import xlrd
 import xlwt
 from xlutils.copy import copy
 from datetime import datetime, timedelta
 
-class Zieit (Command):
+class Zieit:
     lessonsStartTime = ['08:00', '09:30', '11:10', '12:40', '14:10', '15:50', '17:20']
     lessonsEndTime   = ['09:20', '10:50', '12:30', '14:00', '15:30', '17:10', '18:40']
     weekdays = ["Неділя", "Понеділок", "Вівторок", "Середа", "Четвер", "П'ятниця", "Субота"]
-
-    def start(self, string):                    #   main method
-        pass
 
     @classmethod
     def getShedule(self):

@@ -1,4 +1,5 @@
-from .Zieit import *
+from ArchieCore import Command, Response
+from .Zieit import Zieit
 
 def formatLesson(lesson):
     if lesson == None: voice = text = 'Сегодня пар нет'
@@ -28,46 +29,26 @@ def formatDay(lessons):
         text     += Zieit.fullNames(f'\n{index}. [{time}] {subject}\n....{type} ({auditory})\n....') + teacher
     return Response(text = text, voice = voice)
 
-################################################################################
-
-def nextLessonFunc(params):
+@Command.new(['следующ* (предмет|урок|пара)'])
+def nextLesson(params):
     return formatLesson(Zieit.getNextLesson(Zieit.lessonsStartTime))
 
-patterns = ['* следующ* (предмет|урок|пара)']
-nextLesson = Zieit('Next Lesson', patterns)
-nextLesson.setStart(nextLessonFunc)
-
-################################################################################
-
-def currentLessonFunc(params):
+@Command.new(['(текущ*|сейчас) (предмет|урок|пара)'])
+def currentLesson(params):
     return formatLesson(Zieit.getNextLesson(Zieit.lessonsEndTime))
 
-patterns = ['* (текущ*|сейчас) (предмет|урок|пара)']
-currentLesson = Zieit('Current Lesson', patterns)
-currentLesson.setStart(currentLessonFunc)
-
-################################################################################
-
-def todaysSheduleFunc(params):
+@Command.new(['сегодня (предметы|уроки|пары|расписание)', '* (предметы|уроки|пары|расписание) * сегодня'])
+def todaysShedule(params):
     if lessons := Zieit.getTodaysShedule():
         return formatDay(lessons)
     else:
         text = voice = 'Сегодня пар нет'
         return Response(text = text, voice = voice)
 
-patterns = ['* сегодня (предметы|уроки|пары|расписание)', '* (предметы|уроки|пары|расписание) * сегодня *']
-todaysShedule = Zieit('Todays Shedule', patterns)
-todaysShedule.setStart(todaysSheduleFunc)
-
-################################################################################
-
-def tomorrowsSheduleFunc(params):
+@Command.new(['завтра (предметы|уроки|пары|расписание)', '* (предметы|уроки|пары|расписание) * завтра'])
+def tomorrowsShedule(params):
     if lessons := Zieit.getTomorrowsShedule():
         return formatDay(lessons)
     else:
         text = voice = 'Завтра пар нет'
         return Response(text = text, voice = voice)
-
-patterns = ['* завтра (предметы|уроки|пары|расписание)', '* (предметы|уроки|пары|расписание) * завтра *']
-tomorrowsShedule = Zieit('Todays Shedule', patterns)
-tomorrowsShedule.setStart(tomorrowsSheduleFunc)

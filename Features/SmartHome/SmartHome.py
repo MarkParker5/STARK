@@ -29,12 +29,9 @@ radio.stopListening()
 
 radio.startListening()
 
-class SmartHome(Command):
+class SmartHome():
     radio = radio
     send_queue = []
-
-    def start(self, string):                    #   main method
-        pass
 
     @staticmethod
     def send(data):
