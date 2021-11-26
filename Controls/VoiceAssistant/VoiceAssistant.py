@@ -6,6 +6,7 @@ from ArchieCore import CommandsManager
 import config
 
 class VoiceAssistant(Control):
+    commandsManager = CommandsManager()
     listener = SpeechRecognition.SpeechToText()
     voice    = Text2Speech.Engine()
     threads  = []
@@ -26,6 +27,7 @@ class VoiceAssistant(Control):
                 if config.double_clap_activation:
                     print('\nSleep (-_-)zzZZ\n')
                     sleep()
+
             print('\nYou: ', end='')
             speech = self.listener.listen()
             print(speech.get('text') or '', end='')
@@ -38,14 +40,14 @@ class VoiceAssistant(Control):
                     break
                 text = speech['text']
 
-                for result in CommandsManager().search(text, CommandsManager().allCommands):
+                for result in self.commandsManager.search(text, self.commandsManager.allCommands):
                     try: response = result.command.start(result.parameters)
                     except: break
 
                     self.reply(response)
                     self.check_threads()
                     self.report()
-
+                    
                     if response.callback:
                         speech = recognize(response.callback, {})
                     else:
@@ -62,18 +64,16 @@ class VoiceAssistant(Control):
         while True:
             self.check_threads()
             if not callback: break
-            try:
-                if response := callback.answer(text):
-                    self.reply(response)
-            except:
-                break
+
             self.memory.insert(0, {
                 'text': text,
                 'cmd':  cmd,
                 'response': response,
             })
+
             speech = recognize(response.callback, params)
             if callback.once: break
+
         return speech
 
     def report(self):

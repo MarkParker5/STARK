@@ -24,15 +24,18 @@ class CommandsManager:
         acstring = ACString(string)
 
         #   find command obj by pattern
-        for command in self.allCommands:
+        for command in commands:
             for pattern in command.patterns:
                 if groupdict := pattern.match(string):
                     parameters: dict[str: ACObject] = {'string': acstring,}
                     for key, value in groupdict.items():
                         name, typeName = key.split(':')
                         ACType: Type[ACObject] = CommandsManager.classFromString(typeName)
-                        parameters[name] = ACType(value)
-                    results.append(SearchResult(command, parameters))
+
+                        try: parameters[name] = ACType.parse(string: value)
+                        except: break
+                    else:
+                        results.append(SearchResult(command, parameters))
 
         if results: return results
         else: return [SearchResult(Command.QA, {'string': acstring,}),]
