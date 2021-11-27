@@ -2,7 +2,7 @@ from typing import Type, Optional
 import re
 
 from .expressions import expressions
-from .ACObjects import *
+from ..ACObjects import *
 
 class Pattern:
     origin: str

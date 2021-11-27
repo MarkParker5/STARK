@@ -1,4 +1,5 @@
-from .ACObject import ACString, Pattern
+from .ACObject import Pattern, classproperty
+from . import ACString
 
 class ACWord(ACString):
 

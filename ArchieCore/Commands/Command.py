@@ -1,8 +1,8 @@
 from typing import Callable
 from abc import ABC
 
-from ..Pattern import ACObject, Pattern
-from .CommandsManager import CommandsManager
+from ..ACObjects import ACObject
+from ..Pattern import Pattern
 
 class Command(ABC):
     name: str
@@ -12,6 +12,9 @@ class Command(ABC):
     def __init__(self, name, patterns = [], primary = True):
         self._name = name
         self._patterns = patterns
+        self.primary = primary
+
+        from .CommandsManager import CommandsManager
         CommandsManager().append(self)
 
     def start(self, params: dict[str, ACObject]):
@@ -30,7 +33,7 @@ class Command(ABC):
 
     @classmethod
     def new(cls, *args, **kwargs):
-        def creator(func):
+        def creator(func) -> Command:
             cmd: Command = cls(func.__name__, *args, **kwargs)
             cmd.setStart(func)
             return cmd

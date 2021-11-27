@@ -1,4 +1,4 @@
-from .ACObject import ACObject, Pattern
+from .ACObject import ACObject, Pattern, classproperty
 
 class ACString(ACObject):
     value: str
@@ -7,8 +7,8 @@ class ACString(ACObject):
         self.value = string
 
     @classmethod
-    def parse(class, fromString: str):
-        acString = ACString(value: string)
+    def parse(cls, fromString: str):
+        acString = cls(value = string)
         acString.stringValue = string
         return acString
 

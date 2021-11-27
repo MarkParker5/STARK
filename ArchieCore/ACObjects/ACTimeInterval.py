@@ -1,4 +1,5 @@
-from .ACObject import ACObject, Pattern
+from __future__ import annotations
+from .ACObject import ACObject, Pattern, classproperty
 
 class ACTimeInterval(ACObject):
     value: float # seconds
@@ -10,11 +11,11 @@ class ACTimeInterval(ACObject):
                  days: float = 0,
                  weeks: float = 0) -> ACTimeInterval:
 
-    days += weeks * 7
-    hours += days * 24
-    minutes += hours * 60
-    seconds += minutes * 60
-    return ACTimeInterval(value: seconds)
+        days += weeks * 7
+        hours += days * 24
+        minutes += hours * 60
+        seconds += minutes * 60
+        return ACTimeInterval(value = seconds)
 
     @classmethod
     def parse(cls, fromString: str) -> ACObject:

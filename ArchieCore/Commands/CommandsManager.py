@@ -1,6 +1,7 @@
 from typing import Type, Optional
-from . import Command
-from ..Pattern import ACObject
+from .Command import Command
+from ..ACObjects import ACObject
+from .RThread import RThread, Event
 
 class SearchResult:
     command: Command
@@ -32,7 +33,7 @@ class CommandsManager:
                         name, typeName = key.split(':')
                         ACType: Type[ACObject] = CommandsManager.classFromString(typeName)
 
-                        try: parameters[name] = ACType.parse(string: value)
+                        try: parameters[name] = ACType.parse(string = value)
                         except: break
                     else:
                         results.append(SearchResult(command, parameters))

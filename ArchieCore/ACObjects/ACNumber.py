@@ -1,4 +1,4 @@
-from .ACObject import ACObject, Pattern
+from .ACObject import ACObject, Pattern, classproperty
 
 class ACNumber(ACObject):
     value: float
@@ -9,14 +9,14 @@ class ACNumber(ACObject):
 
     @classmethod
     def parse(cls, fromString: str):
-        string = string.replace(' ', '').replace(',', '.').replace('%', ''))
+        string = string.replace(' ', '').replace(',', '.').replace('%', '')
         value = float(string)
-        
+
         if '%' in stringValue:
             value /= 100
             isPercentage = True
 
-        acNumber = ACNumber(value: value)
+        acNumber = ACNumber(value = value)
         acNumber.isPercentage = isPercentage
         acNumber.stringValue = stringValue
 

@@ -1,14 +1,12 @@
 from abc import ABC, abstractmethod
+from General import Singleton
 
-class Control(ABC):
-    
-    # Singleton
-    def __new__(cls):
-        if not hasattr(cls, 'instance'):
-            cls.instance = super().__new__(cls)
-        return cls.instance
+class Control(Singleton):
+
+    @abstractmethod
+    def __init__(self):
+        pass
 
     @abstractmethod
     def start(self):
-        # entry point of the control
         pass
