@@ -1,5 +1,5 @@
 Python 3.10
-pip install speech_recognition
+pip install SpeechRecognition
 pip install google-cloud-texttospeech
 pip install pygame
 pip install bs4

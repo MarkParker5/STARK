@@ -17,6 +17,9 @@ class VoiceAssistant(Control):
     lastClapTime = 0
     doubleClap = False
 
+    def __init__(self):
+        pass
+
     def start(self):
         self.listener.listen_noise()
         os.system('clear')
@@ -47,7 +50,7 @@ class VoiceAssistant(Control):
                     self.reply(response)
                     self.check_threads()
                     self.report()
-                    
+
                     if response.callback:
                         speech = recognize(response.callback, {})
                     else:

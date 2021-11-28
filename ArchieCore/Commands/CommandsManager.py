@@ -1,6 +1,6 @@
 from typing import Type, Optional
 from .Command import Command
-from ..ACObjects import ACObject
+from ..ACObjects import *
 from .RThread import RThread, Event
 
 class SearchResult:
@@ -13,6 +13,7 @@ class SearchResult:
 
 class CommandsManager:
     allCommands: list[Command] = []
+    QA: Command
 
     def __new__(cls):                                                           # Singleton
         if not hasattr(cls, 'instance'):
@@ -39,7 +40,7 @@ class CommandsManager:
                         results.append(SearchResult(command, parameters))
 
         if results: return results
-        else: return [SearchResult(Command.QA, {'string': acstring,}),]
+        else: return [SearchResult(self.QA, {'string': acstring,}),]
 
     def append(self, command):
         if hasattr(self, command.name):

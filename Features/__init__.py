@@ -1,5 +1,4 @@
 # from .Media import Media
-from .QA.QA import QA
 from .SmallTalk import SmallTalk
 from .Raspi import Raspi
 from .Zieit import Zieit

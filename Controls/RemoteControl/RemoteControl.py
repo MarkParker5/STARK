@@ -10,6 +10,9 @@ class RemoteControl(Control):
     url = 'http://t97316v1.beget.tech/read'
     session = requests.Session()
 
+    def __init__(self):
+        pass
+
     def start(self):
         while True:
             time.sleep(1)

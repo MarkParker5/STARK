@@ -16,6 +16,9 @@ class TelegramBot(Control):
     voice   = Text2Speech.Engine()
     bot     = MyTeleBot(config.telebot)
 
+    def __init__(self):
+        pass
+
     def reply(self, id, response):
         if response.text:
             self.bot.send_message(id, response.text)

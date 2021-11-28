@@ -4,7 +4,7 @@ class ACString(ACObject):
     value: str
 
     def __init__(self, value: str):
-        self.value = string
+        self.value = value
 
     @classmethod
     def parse(cls, fromString: str):
