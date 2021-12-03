@@ -7,9 +7,9 @@ import Controls
 def main():
     controls = [
         Controls.VoiceAssistant(),
-        Controls.TelegramBot(),
-        Controls.RemoteControl(),
-        Controls.Django(),
+        #Controls.TelegramBot(),
+        #Controls.RemoteControl(),
+        #Controls.Django(),
     ]
 
     processes = []

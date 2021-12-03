@@ -13,7 +13,7 @@ class SearchResult:
 
 class CommandsManager:
     allCommands: list[Command] = []
-    QA: Command
+    QA: Command = None
 
     def __new__(cls):                                                           # Singleton
         if not hasattr(cls, 'instance'):
@@ -21,15 +21,18 @@ class CommandsManager:
         return cls.instance
 
     def search(self, string: str, commands: list[Command]) -> list[SearchResult]:
-        string = string.lower()
         results: list[SearchResult] = []
-        acstring = ACString(string)
+        acstring = ACString(string.lower())
 
         #   find command obj by pattern
         for command in commands:
             for pattern in command.patterns:
-                if groupdict := pattern.match(string):
-                    parameters: dict[str: ACObject] = {'string': acstring,}
+                groupdict = pattern.match(acstring)
+
+                if groupdict != None:
+
+                    parameters: dict[str: ACObject] = {'string': acstring}
+
                     for key, value in groupdict.items():
                         name, typeName = key.split(':')
                         ACType: Type[ACObject] = CommandsManager.classFromString(typeName)
@@ -40,7 +43,9 @@ class CommandsManager:
                         results.append(SearchResult(command, parameters))
 
         if results: return results
-        else: return [SearchResult(self.QA, {'string': acstring,}),]
+        elif qa := self.QA: return [SearchResult(qa, {'string': acstring,}),]
+
+        return []
 
     def append(self, command):
         if hasattr(self, command.name):

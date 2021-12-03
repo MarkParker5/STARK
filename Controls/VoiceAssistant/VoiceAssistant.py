@@ -1,98 +1,95 @@
 #!/usr/local/bin/python3.8
+from typing import Optional
+
 import os
-from ..Control import Control
-from General import SpeechRecognition, Text2Speech
-from ArchieCore import CommandsManager
+
 import config
+from ..Control import Control
+from General import SpeechRecognizer, Text2Speech
+from ArchieCore import CommandsManager, Command, Response, ResponseAction, ThreadData
+
+'''
+TODO: async
+self.check_threads()
+self.report()
+'''
 
 class VoiceAssistant(Control):
     commandsManager = CommandsManager()
-    listener = SpeechRecognition.SpeechToText()
-    voice    = Text2Speech.Engine()
-    threads  = []
-    reports  = []
-    memory   = []
-    voids    = 0
+    speechRecognizer = SpeechRecognizer()
+    voice = Text2Speech.Engine()
 
-    lastClapTime = 0
-    doubleClap = False
+    commandsContext: list[list[Command]] = []
+    threads: list[ThreadData] = []
+    reports: list[Response] = []
+    memory: list[Response] = []
+
+    voids: int = 0
+    lastClapTime: float = 0
+    doubleClap: bool = False
 
     def __init__(self):
         pass
 
     def start(self):
-        self.listener.listen_noise()
-        os.system('clear')
+        self.commandsContext = [self.commandsManager.allCommands,]
+        self.speechRecognizer.didReceivePartialResult = lambda string: self.speechRecognizerReceivePartialResult(string)
+        self.speechRecognizer.didReceiveFinalResult = lambda string: self.speechRecognizerReceiveFinalResult(string)
+        self.speechRecognizer.startListening()
 
-        while True:
-            if self.voids >= 3:
-                self.voids = 0
-                if config.double_clap_activation:
-                    print('\nSleep (-_-)zzZZ\n')
-                    sleep()
+    def stop(self):
+        self.speechRecognizer.stopListening()
 
-            print('\nYou: ', end='')
-            speech = self.listener.listen()
-            print(speech.get('text') or '', end='')
+    def speechRecognizerReceivePartialResult(self, result: str):
+        print(f'\rYou: \x1B[3m{result}\x1B[0m', end = '')
 
-            while True:
-                if speech['status'] == 'error':
-                    break
-                if speech['status'] == 'void':
-                    self.voids += 1
-                    break
-                text = speech['text']
+    def speechRecognizerReceiveFinalResult(self, result: str):
+        print(f'\rYou: {result}')
 
-                for result in self.commandsManager.search(text, self.commandsManager.allCommands):
-                    try: response = result.command.start(result.parameters)
-                    except: break
+        currentContext = self.commandsContext[0] if self.commandsContext else None
 
-                    self.reply(response)
-                    self.check_threads()
-                    self.report()
+        while self.commandsContext:
+            if searchResults := self.commandsManager.search(string = result, commands = currentContext):
+                for searchResult in searchResults:
+                    commandResponse = searchResult.command.start(params = searchResult.parameters)
+                    self.parse(commandResponse)
 
-                    if response.callback:
-                        speech = recognize(response.callback, {})
-                    else:
-                        break
+                    match commandResponse.action:
+                        case ResponseAction.popContext:
+                            self.commandsContext.pop(0)
+                        case ResponseAction.popToRootContext:
+                            self.commandsContext = [self.commandsManager.allCommands,]
+                            break
+                        case ResponseAction.sleep:
+                            self.stopListening()
+                        case ResponseAction.repeatLastAnswer:
+                            if self.memory:
+                                previousResponse = self.memory[-1]
+                                self.reply(previousResponse)
+                break
+            else:
+                currentContext = self.commandsContext.pop(0)
+        else:
+            self.commandsContext.append(self.commandsManager.allCommands)
 
-    def recognize(self, callback, params):
-        print('\nYou: ', end='')
-        speech = self.listener.listen()
-        if speech['status'] in ['error', 'void']:
-            return speech
-        text = speech['text']
-        print(text, end='')
+    def parse(self, response):
+        self.reply(response)
+        if response.thread:                               #   add background thread to list
+            self.threads.append(response.thread)
+        if response.context:                              #   insert context if exist
+            self.commandsContext.insert(0, response.context)
+        self.memory.append(response)
 
-        while True:
-            self.check_threads()
-            if not callback: break
-
-            self.memory.insert(0, {
-                'text': text,
-                'cmd':  cmd,
-                'response': response,
-            })
-
-            speech = recognize(response.callback, params)
-            if callback.once: break
-
-        return speech
+    def reply(self, response):
+        if response.text:                                 #   print answer
+            print('\nArchie: '+response.text)
+        if response.voice:                                #   say answer
+            self.voice.generate(response.voice).speak()
 
     def report(self):
         for response in self.reports:
-            if response.voice:
-                self.voice.generate(response.voice).speak()
-            time.sleep(2)
+            self.reply(response)
         self.reports = []
-
-    def reply(self, response):
-        if response.text:                                #   print answer
-            print('\nArchie: '+response.text)
-        if response.voice:                               #   say answer
-            self.voice.generate(response.voice).speak()
-        if response.thread:                              #   add background thread to stack
-            self.threads.append(response.thread)
 
     def check_threads(self):
         for thread in self.threads:

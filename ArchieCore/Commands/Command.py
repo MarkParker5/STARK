@@ -9,9 +9,9 @@ class Command(ABC):
     patterns: list[Pattern]
     start: Callable
 
-    def __init__(self, name, patterns = [], primary = True):
+    def __init__(self, name: str, patterns: list[str] = [], primary: bool = True):
         self._name = name
-        self._patterns = patterns
+        self._patterns = [Pattern(pattern) for pattern in patterns]
         self.primary = primary
 
         from .CommandsManager import CommandsManager

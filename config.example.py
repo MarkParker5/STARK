@@ -7,14 +7,7 @@ goole_tts_json_key = path+'google-cloud-text-to-speech-private-key.json'
 
 db_name = 'archie.db'
 
-language_code = 'ru-RU'
-device_index  = 1
-voice_volume  = 1
-
-energy_threshold = 2000
-dynamic_energy_threshold = True
-pause_threshold = 1
-non_speaking_duration = 1
+vosk_model = 'model-small-rus' # from alphacephei.com/vosk/models
 
 double_clap_activation = False
 

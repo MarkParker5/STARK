@@ -21,7 +21,9 @@ class Pattern:
 
         #   find and transform arguments like $name:Type
         argumentRegex = re.compile(r'\$[:word:]:[:word:]')
-        while match := re.search(argumentRegex, pattern)[0]:
+        reMatch = re.search(argumentRegex, pattern)
+        while reMatch:
+            match = reMatch.pop(0)
             arg: str = match[1:]
             argName, argTypeName = arg.split(':')
             argType: Type[ACObject] = classFromString(argTypeName)
@@ -30,7 +32,7 @@ class Pattern:
         return re.compile(pattern)
 
 
-    def match(self, string: str) -> Optional[dict[str, str]]:
-        if match := re.search(self.compiled, string):
+    def match(self, string: ACString) -> Optional[dict[str, str]]:
+        if match := re.search(self.compiled, string.value):
             return match.groupdict()
         return None
