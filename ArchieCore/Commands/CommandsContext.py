@@ -50,7 +50,7 @@ class CommandsContext:
                         case ResponseAction.answerNotFound:
                             continue
 
-                        self.parse(commandResponse)
+                    self.parse(commandResponse)
                 break
             else:
                 currentContext = self.commandsContext.pop(0)
