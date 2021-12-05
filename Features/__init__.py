@@ -1,8 +1,8 @@
 # from .Media import Media
-from .SmallTalk import SmallTalk
-from .Raspi import Raspi
-from .Zieit import Zieit
-from .QA import QA
+from . import SmallTalk
+from . import Raspi
+from . import Zieit
+from . import QA
 
-try: from .SmartHome import SmartHome
+try: from . import SmartHome
 except: pass

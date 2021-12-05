@@ -3,24 +3,24 @@
 import time
 import os
 import config
-from ArchieCore import Command, CommandsContext, CommandsContextDelegate
+from ArchieCore import Command, CommandsContextManager, CommandsContextManagerDelegate
 from General import Text2Speech
 from ..Control import Control
 from .MyTeleBot import MyTeleBot
 
-class TelegramBot(Control, CommandsContextDelegate):
+class TelegramBot(Control, CommandsContextManagerDelegate):
     threads = []
     online  = True
     voids   = 0
     memory  = []
     voice   = Text2Speech.Engine()
     bot     = MyTeleBot(config.telebot)
-    commandsContext: CommandsContext
+    commandsContext: CommandsContextManager
 
     # Control
 
     def __init__(self):
-        self.commandsContext = CommandsContext(delegate = self)
+        self.commandsContext = CommandsContextManager(delegate = self)
 
     def start(self):
         while True:
@@ -34,10 +34,7 @@ class TelegramBot(Control, CommandsContextDelegate):
     def stop(self):
         raise NotImplementedError
 
-    def main(self, id, text):
-        self.commandsContext.processString(text.lower(), data = {'id': id})
-
-    # CommandsContextDelegate
+    # CommandsContextManagerDelegate
 
     def commandsContextDidReceiveResponse(self, response):
         id = response.data.get('id')
@@ -65,4 +62,4 @@ class TelegramBot(Control, CommandsContextDelegate):
 
     @bot.message_handler(content_types = ['text'])
     def execute(msg):
-        self.commandsContext.processString(msg.text.lower(), data = {'id': msg.chat.id})
+        TelegramBot().commandsContext.processString(msg.text.lower(), data = {'id': msg.chat.id})

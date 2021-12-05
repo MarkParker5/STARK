@@ -4,7 +4,7 @@ import json as JSON
 
 from ..Control import Control
 from ArchieCore import Command
-from Features import *
+# from Features import *
 
 class RemoteControl(Control):
     url = 'http://t97316v1.beget.tech/read'

@@ -14,13 +14,15 @@ class Response:
     voice: str
     text: str
     context: list[Command]
+    parameters: dict[str, Any]
     thread: Optional[ThreadData]
     action: Optional[ResponseAction]
     data: dict[str, Any]
 
-    def __init__(self, voice, text, context = [], thread = None, action = None):
+    def __init__(self, voice, text, context = [], parameters: dict[str, Any] = {}, thread = None, action = None):
         self.voice = voice
         self.text = text
         self.context = context
+        self.parameters = parameters
         self.thread = thread
         self.action = action

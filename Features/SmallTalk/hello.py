@@ -1,4 +1,3 @@
-from .SmallTalk import *
 from ArchieCore import Command, Response
 
 @Command.new(['привет*',])

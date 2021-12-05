@@ -13,8 +13,17 @@ class Speech:
         self.path      = path
 
     def speak(self):
-        sounddevice.play(*soundfile.read(self.path, dtype='float32'))
-        sounddevice.wait()
+        try:
+            sounddevice.play(*soundfile.read(self.path, dtype='float32'))
+            sounddevice.wait()
+        except Exception as e:
+            print('\n[Error] Can`t play audio file\n', e)
+
+    def getBytes(self):
+        if not os.path.exists(self.path): return None
+        with open(self.path, 'rb') as b:
+            bytes = b
+        return bytes
 
     def stopSpeaking(self):
         pass
@@ -36,14 +45,14 @@ class Engine:
         dict = {'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'e',
           'ж':'zh','з':'z','и':'i','й':'i','к':'k','л':'l','м':'m','н':'n',
           'о':'o','п':'p','р':'r','с':'s','т':'t','у':'u','ф':'f','х':'h',
-          'ц':'c','ч':'cz','ш':'sh','щ':'scz','ы':'y','э':'e',
-          'ю':'u','я':'ja'}
+          'ц':'c','ч':'ch','ш':'sh','щ':'sch','ы':'y','э':'e',
+          'ю':'u','я':'ja', ' ':'_'}
         allowed = 'abcdefghijklmnopqrstuvxyz'
         name = name.lower()
         for i, letter in enumerate(name):
             if letter in allowed: continue;
             if letter in dict.keys(): name = name.replace(letter, dict[letter])
-            else: name = name.replace(letter, '_')
+            else: name = name.replace(letter, '')
         return name
 
     def generate(self, text):
@@ -59,7 +68,7 @@ class Engine:
             if not os.path.exists(dir): os.makedirs(dir)
             with open(path, 'wb') as out:
                 out.write(response.audio_content)
-        except:
-            print("[ERROR] TTS Error: google cloud tts response error. Check Cloud Platform Console")
+        except Exception as e:
+            print("\n[ERROR] TTS Error: google cloud tts response error. Check Cloud Platform Console\n", e)
 
         return Speech(text, self._name, path)

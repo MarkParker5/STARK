@@ -5,12 +5,12 @@ import asyncio
 import config
 from ..Control import Control
 from General import SpeechRecognizer, SpeechRecognizerDelegate, Text2Speech
-from ArchieCore import ACTime, CommandsContext, CommandsContextDelegate
+from ArchieCore import ACTime, CommandsContextManager, CommandsContextManagerDelegate
 
-class VoiceAssistant(Control, SpeechRecognizerDelegate, CommandsContextDelegate):
+class VoiceAssistant(Control, SpeechRecognizerDelegate, CommandsContextManagerDelegate):
 
     speechRecognizer: SpeechRecognizer
-    commandsContext: CommandsContext
+    CommandsContextManager: CommandsContextManager
     voice = Text2Speech.Engine()
 
     voids: int = 0
@@ -21,7 +21,7 @@ class VoiceAssistant(Control, SpeechRecognizerDelegate, CommandsContextDelegate)
 
     def __init__(self):
         self.speechRecognizer = SpeechRecognizer(delegate = self)
-        self.commandsContext = CommandsContext(delegate = self)
+        self.commandsContext = CommandsContextManager(delegate = self)
 
     def start(self):
         self.speechRecognizer.delegate = self
@@ -48,7 +48,7 @@ class VoiceAssistant(Control, SpeechRecognizerDelegate, CommandsContextDelegate)
     def speechRecognizerReceiveEmptyResult(self):
         self.voids += 1
 
-    # CommandsContextDelegate
+    # CommandsContextManagerDelegate
 
     def commandsContextDidReceiveResponse(self, response):
         if response.text:

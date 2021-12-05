@@ -1,4 +1,4 @@
-from telebot import TeleBot, util
+from telebot import TeleBot, util, apihelper
 
 # added callback for __threaded_polling
 class MyTeleBot(TeleBot):

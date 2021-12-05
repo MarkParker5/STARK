@@ -2,14 +2,16 @@
 # entry point
 
 import multiprocessing
+
+import Features
 import Controls
 
 def main():
     controls = [
         Controls.VoiceAssistant(),
         Controls.TelegramBot(),
-        #Controls.RemoteControl(),
-        #Controls.Django(),
+        #RemoteControl(),
+        #Django(),
     ]
 
     processes = []

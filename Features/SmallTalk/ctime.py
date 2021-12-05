@@ -10,7 +10,7 @@ from ArchieCore import Command, Response
     'время в $text',
     'который * час',
     'скольк* * (врем|час)*'])
-def method(params):
+def ctime(params):
     if city := params.get('text'):
         city     = city.title()
         responce = requests.get(f'https://www.google.ru/search?&q=время+в+{city}&lr=lang_ru&lang=ru')
