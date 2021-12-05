@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Any
 from enum import Enum, auto
 from .Command import Command
 from .ThreadData import ThreadData
@@ -8,6 +8,7 @@ class ResponseAction(Enum):
     popToRootContext = auto()
     sleep = auto()
     repeatLastAnswer = auto()
+    answerNotFound = auto()
 
 class Response:
     voice: str
@@ -15,6 +16,7 @@ class Response:
     context: list[Command]
     thread: Optional[ThreadData]
     action: Optional[ResponseAction]
+    data: dict[str, Any]
 
     def __init__(self, voice, text, context = [], thread = None, action = None):
         self.voice = voice

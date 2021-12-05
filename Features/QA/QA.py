@@ -1,5 +1,5 @@
 from bs4 import BeautifulSoup as BS
-from ArchieCore import CommandsManager, Command, Response
+from ArchieCore import CommandsManager, Command, Response, ResponseAction
 import wikipedia as wiki
 import requests
 import random
@@ -57,7 +57,7 @@ class QAHelper():
 
 @Command.new()
 def qa_start(params):
-    query = params['string']
+    query = params['string'].value
     if 'вики' in query:
         query = query.replace('википедия', '').replace('вики', '').strip()
         try:    search = QAHelper.googleSearch(query)
@@ -72,7 +72,9 @@ def qa_start(params):
         try:    search = QAHelper.googleSearch(query)
         except: search = ''
         voice = text = search or random.choice(['Не совсем понимаю, о чём вы.', 'Вот эта последняя фраза мне не ясна.', 'А вот это не совсем понятно.', 'Можете сказать то же самое другими словами?', 'Вот сейчас я совсем вас не понимаю.', 'Попробуйте выразить свою мысль по-другому',])
-    return Response(text = text, voice = voice)
+
+    action = ResponseAction.answerNotFound if not text and not voice else None
+
+    return Response(text = text, voice = voice, action = action)
 
 CommandsManager().QA = qa_start
-print(CommandsManager().QA, 'CommandsManager Sets QA')

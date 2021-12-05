@@ -44,7 +44,7 @@ class CommandsManager:
 
         if results: return results
         elif qa := self.QA: return [SearchResult(qa, {'string': acstring,}),]
-
+        
         return []
 
     def append(self, command):

@@ -1,4 +1,5 @@
 from typing import Callable, Optional
+from abc import ABC, abstractmethod
 import asyncio
 import os, sys
 import queue
@@ -11,16 +12,26 @@ import config
 
 vosk.SetLogLevel(-1)
 
+class SpeechRecognizerDelegate(ABC):
+    @abstractmethod
+    def speechRecognizerReceiveFinalResult(self, result: str): pass
+
+    @abstractmethod
+    def speechRecognizerReceivePartialResult(self, result: str): pass
+
+    @abstractmethod
+    def speechRecognizerReceiveEmptyResult(self): pass
+
+
 class SpeechRecognizer:
-    didReceivePartialResult: Callable[[str], None] = lambda  _: None
-    didReceiveFinalResult: Callable[[str], None] = lambda _: None
-    didReceiveEmptyResult: Callable[[], None] = lambda: None
+
+    delegate: SpeechRecognizerDelegate
 
     lastResult: Optional[str] = ""
     lastPartialResult: str = ""
 
-    _isListening = False
     isRecognizing = True
+    _isListening = False
 
     audioQueue = queue.Queue()
     model = vosk.Model(config.vosk_model)
@@ -31,14 +42,14 @@ class SpeechRecognizer:
     channels = 1
     kaldiRecognizer = vosk.KaldiRecognizer(model, samplerate)
 
-    def __init__(self):
-        callback = lambda indata, frames, time, status: self.audioInputCallback(indata, frames, time, status)
+    def __init__(self, delegate: SpeechRecognizerDelegate):
+        self.delegate = delegate
         self.parameters = {
             'samplerate': self.samplerate,
             'blocksize': self.blocksize,
             'dtype': self.dtype,
             'channels': self.channels,
-            'callback': callback
+            'callback': self.audioInputCallback
         }
 
     def audioInputCallback(self, indata, frames, time, status):
@@ -62,12 +73,12 @@ class SpeechRecognizer:
                     result = json.loads(self.kaldiRecognizer.Result())
                     if (string := result.get('text')) and string != self.lastResult:
                         self.lastResult = string
-                        self.didReceiveFinalResult(string)
+                        self.delegate.speechRecognizerReceiveFinalResult(string)
                     else:
                         self.lastResult = None
-                        self.didReceiveEmptyResult()
+                        self.delegate.speechRecognizerReceiveEmptyResult()
                 else:
                     result = json.loads(self.kaldiRecognizer.PartialResult())
                     if (string := result.get('partial')) and string != self.lastPartialResult:
                         self.lastPartialResult = string
-                        self.didReceivePartialResult(result['partial'])
+                        self.delegate.speechRecognizerReceivePartialResult(result['partial'])

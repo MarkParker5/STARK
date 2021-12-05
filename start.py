@@ -7,7 +7,7 @@ import Controls
 def main():
     controls = [
         Controls.VoiceAssistant(),
-        #Controls.TelegramBot(),
+        Controls.TelegramBot(),
         #Controls.RemoteControl(),
         #Controls.Django(),
     ]
