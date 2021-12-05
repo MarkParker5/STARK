@@ -1,18 +1,12 @@
 #!/usr/local/bin/python3.8
 from typing import Optional
-
+import asyncio
 import os
 
 import config
 from ..Control import Control
 from General import SpeechRecognizer, Text2Speech
-from ArchieCore import CommandsManager, Command, Response, ResponseAction, ThreadData
-
-'''
-TODO: async
-self.check_threads()
-self.report()
-'''
+from ArchieCore import CommandsManager, Command, Response, ResponseAction, ThreadData, ACTime
 
 class VoiceAssistant(Control):
     commandsManager = CommandsManager()
@@ -25,6 +19,7 @@ class VoiceAssistant(Control):
     memory: list[Response] = []
 
     voids: int = 0
+    lastInteractTime: ACTime = ACTime()
     lastClapTime: float = 0
     doubleClap: bool = False
 
@@ -35,15 +30,24 @@ class VoiceAssistant(Control):
         self.commandsContext = [self.commandsManager.allCommands,]
         self.speechRecognizer.didReceivePartialResult = lambda string: self.speechRecognizerReceivePartialResult(string)
         self.speechRecognizer.didReceiveFinalResult = lambda string: self.speechRecognizerReceiveFinalResult(string)
-        self.speechRecognizer.startListening()
+        self.speechRecognizer.didReceiveEmptyResult = lambda: self.speechRecognizerReceiveEmptyResult()
+
+        asyncio.get_event_loop().run_until_complete(
+            self.listenAndCheckThreads()
+        )
 
     def stop(self):
         self.speechRecognizer.stopListening()
+
+    def speechRecognizerReceiveEmptyResult(self):
+        self.voids += 1
 
     def speechRecognizerReceivePartialResult(self, result: str):
         print(f'\rYou: \x1B[3m{result}\x1B[0m', end = '')
 
     def speechRecognizerReceiveFinalResult(self, result: str):
+        self.voids = 0
+        self.lastInteractTime = ACTime()
         print(f'\rYou: {result}')
 
         currentContext = self.commandsContext[0] if self.commandsContext else None
@@ -59,9 +63,8 @@ class VoiceAssistant(Control):
                             self.commandsContext.pop(0)
                         case ResponseAction.popToRootContext:
                             self.commandsContext = [self.commandsManager.allCommands,]
-                            break
                         case ResponseAction.sleep:
-                            self.stopListening()
+                            self.speechRecognizer.isRecognizing = False
                         case ResponseAction.repeatLastAnswer:
                             if self.memory:
                                 previousResponse = self.memory[-1]
@@ -72,72 +75,55 @@ class VoiceAssistant(Control):
         else:
             self.commandsContext.append(self.commandsManager.allCommands)
 
-    def parse(self, response):
-        self.reply(response)
-        if response.thread:                               #   add background thread to list
+    async def listenAndCheckThreads(self):
+        while True:
+            await self.speechRecognizer.startListening()
+
+            for threadData in self.threads:
+                if not threadData.finishEvent.is_set(): continue
+
+                response = threadData.thread.join()
+                self.parse(response, silent = ACTime() - self.lastInteractTime > 30)
+                threadData.finishEvent.clear()
+
+                del threadData
+
+    def parse(self, response, silent: bool = False):
+        self.reports.insert(0, response)
+        if not silent:
+            self.report()
+        if response.thread:
             self.threads.append(response.thread)
-        if response.context:                              #   insert context if exist
+        if response.context:
             self.commandsContext.insert(0, response.context)
         self.memory.append(response)
-
-    def reply(self, response):
-        if response.text:                                 #   print answer
-            print('\nArchie: '+response.text)
-        if response.voice:                                #   say answer
-            self.voice.generate(response.voice).speak()
 
     def report(self):
         for response in self.reports:
             self.reply(response)
         self.reports = []
 
-    def check_threads(self):
-        for thread in self.threads:
-            if not thread['finish_event'].is_set(): continue
-            response = thread['thread'].join()
-            self.reply(response)
-            if response.callback:
-                if response.callback.quiet:
-                    response.callback.start()
-                else:
-                    for _ in range(3):
-                        print('\nYou: ', end='')
-                        speech = self.listener.listen()
-                        if speech['status'] == 'ok':
-                            print(speech['text'], '\n')
-                            new_response = response.callback.answer(speech['text'])
-                            self.reply(new_response)
-                            break
-                    else:
-                        self.reports.append(response)
-            thread['finish_event'].clear()
-            del thread
+    def reply(self, response):
+        if response.text:
+            print(f'\nArchie: {response.text}')
+        if response.voice:
+            wasRecognizing = self.speechRecognizer.isRecognizing
+            self.speechRecognizer.isRecognizing = False
+            self.voice.generate(response.voice).speak()
+            self.speechRecognizer.isRecognizing = wasRecognizing
 
     # check double clap from arduino microphone module
     def checkClap(self, channel):
         now = time.time()
         delta = now - self.lastClapTime
         if 0.1 < delta < 0.6:
-            self.doubleClap = True
+            self.speechRecognizer.isRecognizing = True
         else:
             self.lastClapTime = now
 
-    # waiting for double clap
-    def sleep(self):
-        self.lastClapTime = 0
-        while not self.doubleClap:
-            self.check_threads()
-            time.sleep(1)
-        else:
-            self.doubleClap = False
-
 if config.double_clap_activation:
     import RPi.GPIO as GPIO
-    import time
 
     GPIO.setmode(GPIO.BCM)
     GPIO.setup(12, GPIO.IN)
     GPIO.add_event_detect(12, GPIO.RISING, callback = VoiceAssistant().checkClap)
-
-if __name__ == '__main__':
-    VoiceAssistant().start()

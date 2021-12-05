@@ -26,7 +26,8 @@ class ACObject(ABC):
         return cls()
 
     def __repr__(self):
-        return str(self.value)
+        strValue = f'"{str(self.value)}"' if type(self.value) == str else str(self.value)
+        return f'<{type(self).__name__} value:{strValue}>'
 
     @classproperty
     def pattern() -> Pattern:
@@ -80,7 +81,7 @@ class ACObject(ABC):
     def __floordiv__(self, other: ACObject) -> ACObjet:
         return type(self).__init__(value = self.value // other.value)
 
-    def __div__(self, other: ACObject) -> ACObjet:
+    def __truediv__(self, other: ACObject) -> ACObjet:
         return type(self).__init__(value = self.value / other.value)
 
     def __mod__(self, other: ACObject) -> ACObjet:

@@ -1,10 +1,11 @@
 Python 3.10
 
 pip install sounddevice
+pip install soundfile
+pip install numpy
 pip install vosk
-# download model from https://alphacephei.com/vosk/models
+    # download model from https://alphacephei.com/vosk/models
 
-pip install pyaudio # if instalation fails, try install from .whl (https://www.lfd.uci.edu/~gohlke/pythonlibs/#pyaudio)
 pip install google-cloud-texttospeech
 
 pip install PyTelegramBotApi

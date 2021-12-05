@@ -1,7 +1,8 @@
-from typing import Callable
+from typing import Callable, Optional
+import asyncio
 import os, sys
-import json
 import queue
+import json
 
 import sounddevice
 import vosk
@@ -11,10 +12,15 @@ import config
 vosk.SetLogLevel(-1)
 
 class SpeechRecognizer:
-    didReceivePartialResult: Callable[[str], None] = lambda self, _: None
-    didReceiveFinalResult: Callable[[str], None] = lambda self, _: None
+    didReceivePartialResult: Callable[[str], None] = lambda  _: None
+    didReceiveFinalResult: Callable[[str], None] = lambda _: None
+    didReceiveEmptyResult: Callable[[], None] = lambda: None
+
+    lastResult: Optional[str] = ""
+    lastPartialResult: str = ""
 
     _isListening = False
+    isRecognizing = True
 
     audioQueue = queue.Queue()
     model = vosk.Model(config.vosk_model)
@@ -25,17 +31,9 @@ class SpeechRecognizer:
     channels = 1
     kaldiRecognizer = vosk.KaldiRecognizer(model, samplerate)
 
-    def audioInputCallback(self, indata, frames, time, status):
-        self.audioQueue.put(bytes(indata))
-
-    def stopListening(self):
-        self._isListening = False
-
-    def startListening(self):
-        self._isListening = True
-
+    def __init__(self):
         callback = lambda indata, frames, time, status: self.audioInputCallback(indata, frames, time, status)
-        kwargs = {
+        self.parameters = {
             'samplerate': self.samplerate,
             'blocksize': self.blocksize,
             'dtype': self.dtype,
@@ -43,13 +41,33 @@ class SpeechRecognizer:
             'callback': callback
         }
 
-        with sounddevice.RawInputStream(**kwargs):
+    def audioInputCallback(self, indata, frames, time, status):
+        if not self.isRecognizing: return
+        self.audioQueue.put(bytes(indata))
+
+    def stopListening(self):
+        self._isListening = False
+        audioQueue = queue.Queue()
+
+    async def startListening(self):
+        self._isListening = True
+
+        with sounddevice.RawInputStream(**self.parameters):
             while self._isListening:
+
+                await asyncio.sleep(0.1)
                 data = self.audioQueue.get()
 
                 if self.kaldiRecognizer.AcceptWaveform(data):
                     result = json.loads(self.kaldiRecognizer.Result())
-                    self.didReceiveFinalResult(result['text'])
+                    if (string := result.get('text')) and string != self.lastResult:
+                        self.lastResult = string
+                        self.didReceiveFinalResult(string)
+                    else:
+                        self.lastResult = None
+                        self.didReceiveEmptyResult()
                 else:
                     result = json.loads(self.kaldiRecognizer.PartialResult())
-                    self.didReceivePartialResult(result['partial'])
+                    if (string := result.get('partial')) and string != self.lastPartialResult:
+                        self.lastPartialResult = string
+                        self.didReceivePartialResult(result['partial'])
