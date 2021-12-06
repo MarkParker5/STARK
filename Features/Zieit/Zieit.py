@@ -1,8 +1,11 @@
+from datetime import datetime, timedelta
 import urllib.request
+import ssl
 import xlrd
 import xlwt
 from xlutils.copy import copy
-from datetime import datetime, timedelta
+
+ssl._create_default_https_context = ssl._create_unverified_context
 
 class Zieit:
     lessonsStartTime = ['08:00', '09:30', '11:10', '12:40', '14:10', '15:50', '17:20']
