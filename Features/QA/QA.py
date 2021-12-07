@@ -9,7 +9,7 @@ import re
 class QAHelper():
 
     @staticmethod
-    def googleDictionary(self, word):
+    def googleDictionary(word):
         responce = requests.get(f'https://api.dictionaryapi.dev/api/v2/entries/ru/{word}')
         if responce.status_code == 200:
             responce = json.loads(responce.content)
@@ -42,14 +42,14 @@ class QAHelper():
         return {}
 
     @staticmethod
-    def wikipedia(self, word):
+    def wikipedia(word):
         wiki.set_lang("ru")
         article = wiki.summary(word, sentences=5)
         try:    return article[:article.find('\n\n')][:600]
         except: return ''
 
     @staticmethod
-    def googleSearch(self, word):
+    def googleSearch(word):
         responce = requests.get(f'https://www.google.ru/search?&q={word}&lr=lang_ru&lang=ru')
         page = BS(responce.content, 'html.parser')
         info = page.select('div.BNeawe>div>div.BNeawe')
