@@ -52,8 +52,6 @@ class QAHelper():
     def googleSearch(word):
         responce = requests.get(f'https://www.google.ru/search?&q={word}&lr=lang_ru&lang=ru',
             headers = {'User-Agent': 'Mozilla/5.0'})
-        with open('index.html', 'wb') as f:
-            f.write(responce.content)
         page = BS(responce.content, 'html.parser')
         info = page.select('div.BNeawe>div>div.BNeawe')
         return info[0].get_text() if info else ''

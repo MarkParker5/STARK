@@ -43,8 +43,12 @@ class TelegramBot(Control, CommandsContextManagerDelegate):
         if response.text:
             self.bot.send_message(id, response.text)
         if response.voice:
-            if bytes := self.voice.generate(response.voice).getBytes():
-                self.bot.send_voice(id, bytes)
+            path = self.voice.generate(response.voice).path
+            voiceFile = open(path, 'rb')
+            try:
+                self.bot.send_voice(id, voiceFile)
+            finally:
+                voiceFile.close()
 
     # Telebot
 
