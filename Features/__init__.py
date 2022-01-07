@@ -1,4 +1,4 @@
-# from .Media import Media
+from . import Media
 from . import SmallTalk
 from . import Raspi
 from . import Zieit

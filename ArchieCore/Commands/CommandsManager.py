@@ -3,6 +3,9 @@ from .Command import Command
 from ..ACObjects import *
 from .RThread import RThread, Event
 
+import config
+from ..Pattern import Pattern
+
 class SearchResult:
     command: Command
     parameters: dict[str, ACObject]
@@ -42,10 +45,7 @@ class CommandsManager:
                     else:
                         results.append(SearchResult(command, parameters))
 
-        if results: return results
-        elif qa := self.QA: return [SearchResult(qa, {'string': acstring,}),]
-        
-        return []
+        return results
 
     def append(self, command):
         if hasattr(self, command.name):
@@ -56,6 +56,15 @@ class CommandsManager:
 
     def getCommand(self, name) -> Optional[Command]:
         return getattr(self, name) if hasattr(self, name) else None
+
+    def stringHasName(self, string) -> bool:
+        bool(
+            Pattern(
+                f'({"|".join(config.names)})'
+            ).match(
+                ACString(string.lower())
+            )
+        )
 
     @staticmethod
     def classFromString(className: str) -> ACObject:

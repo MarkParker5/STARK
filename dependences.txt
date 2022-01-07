@@ -1,18 +1,29 @@
 Python 3.10
 
+# voice assistant
 pip install sounddevice
 pip install soundfile
 pip install numpy
 pip install vosk
     # download model from https://alphacephei.com/vosk/models
 
+# tts
 pip install google-cloud-texttospeech
 
+# telegram
 pip install PyTelegramBotApi
 
+# QA
 pip install bs4
 pip install wikipedia
 
+# Zieit
 pip install xlrd
 pip install xlwt
 pip install xlutils
+
+# Media
+pip install pafy
+pip install screeninfo
+pip install psutil
+pip install youtube-dl

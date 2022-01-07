@@ -7,8 +7,10 @@ from ArchieCore import Command, CommandsContextManager, CommandsContextManagerDe
 from General import Text2Speech
 from ..Control import Control
 from .MyTeleBot import MyTeleBot
+from Features.Media import YoutubePlayer, TorrentPlayer
 
 class TelegramBot(Control, CommandsContextManagerDelegate):
+    
     threads = []
     online  = True
     voids   = 0
@@ -52,10 +54,10 @@ class TelegramBot(Control, CommandsContextManagerDelegate):
 
     # Telebot
 
-    @bot.message_handler(commands=['vlc', 'queue', 'cmd'])
+    @bot.message_handler(commands = ['vlc', 'queue', 'cmd'])
     def simple_commands(msg):
         command = msg.text.replace('/cmd', '').replace('/vlc', 'vlc')
-        if '/queue' in msg.text: command = command.replace('/queue', '') + '--playlist-enqueue'
+        if '/queue' in msg.text: command = 'vlc ' + command.replace('/queue', '') + '--playlist-enqueue'
         os.system(f'lxterminal --command="{command}"')
 
     @bot.message_handler(commands=['terminal'])
@@ -66,4 +68,9 @@ class TelegramBot(Control, CommandsContextManagerDelegate):
 
     @bot.message_handler(content_types = ['text'])
     def execute(msg):
-        TelegramBot().commandsContext.processString(msg.text.lower(), data = {'id': msg.chat.id})
+        if 'youtu' in msg.text:
+            YoutubePlayer(msg.text).play()
+        elif '.torrent' in msg.text:
+            TorrentPlayer.playUrl(msg.text)
+        else:
+            TelegramBot().commandsContext.processString(msg.text.lower(), data = {'id': msg.chat.id})

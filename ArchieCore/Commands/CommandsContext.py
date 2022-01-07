@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 import asyncio
 from typing import Any
 
-from ArchieCore import ACTime
+from ArchieCore import ACTime, ACString
 from .CommandsManager import CommandsManager
 from .Command import Command
 from .Response import Response, ResponseAction
@@ -48,10 +48,11 @@ class CommandsContextManager:
         currentContext = self.contextQueue[0]
 
         while self.contextQueue:
-
+            
             if searchResults := self.commandsManager.search(string = string, commands = currentContext.commands):
 
                 for searchResult in searchResults:
+
                     parameters = {**currentContext.parameters, **searchResult.parameters}
                     commandResponse = searchResult.command.start(parameters)
                     commandResponse.data = data
@@ -76,6 +77,10 @@ class CommandsContextManager:
                 currentContext = self.contextQueue.pop(0)
         else:
             self.contextQueue.append(currentContext)
+
+            if self.commandsManager.stringHasName(string):
+                _ = searchResult.command.start({'string': ACString(string)})
+
 
     async def asyncCheckThreads(self):
         while True:
@@ -104,6 +109,7 @@ class CommandsContextManager:
         self.memory.append(response)
 
     def report(self):
-        for response in self.reports:
-            self.delegate.commandsContextDidReceiveResponse(response)
-        self.reports = []
+        while self.reports:
+            rep = self.reports.pop(0)
+            self.delegate.commandsContextDidReceiveResponse(rep)
+            del rep
