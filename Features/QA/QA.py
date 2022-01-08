@@ -59,6 +59,10 @@ class QAHelper():
 @Command.new()
 def qa_start(params):
     query = params['string'].value
+
+    voice = text = ''
+    actions = [ResponseAction.commandNotFound]
+
     if 'вики' in query:
         query = query.replace('википедия', '').replace('вики', '').strip()
         try:    search = QAHelper.googleSearch(query)
@@ -69,13 +73,15 @@ def qa_start(params):
         except: gdict  = []
         voice          = search or (gdict['short'] if gdict else '') or wiki
         text           = (f'Google Search:\n\t{search}' if search else '') + (f'\n\nWikipedia:\n\t{wiki}' if wiki else '') + ('\n\nDictionary:'+gdict['text'] if gdict else '')
+        if not text and not voice:
+            actions.append(ResponseAction.answerNotFound)
     else:
         try:    search = QAHelper.googleSearch(query)
         except: search = ''
+        if not search:
+            actions.append(ResponseAction.answerNotFound)
         voice = text = search or random.choice(['Не совсем понимаю, о чём вы.', 'Вот эта последняя фраза мне не ясна.', 'А вот это не совсем понятно.', 'Можете сказать то же самое другими словами?', 'Вот сейчас я совсем вас не понимаю.', 'Попробуйте выразить свою мысль по-другому',])
 
-    action = ResponseAction.answerNotFound if not text and not voice else None
-
-    return Response(text = text, voice = voice, action = action)
+    return Response(text = text, voice = voice, actions = actions)
 
 CommandsManager().QA = qa_start

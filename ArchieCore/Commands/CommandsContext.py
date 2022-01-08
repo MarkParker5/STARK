@@ -57,19 +57,24 @@ class CommandsContextManager:
                     commandResponse = searchResult.command.start(parameters)
                     commandResponse.data = data
 
-                    match commandResponse.action:
-                        case ResponseAction.popContext:
-                            self.contextQueue.pop(0)
-                        case ResponseAction.popToRootContext:
-                            self.contextQueue = [self.commandsManager.allCommands,]
-                        case ResponseAction.sleep:
-                            self.speechRecognizer.isRecognizing = False
-                        case ResponseAction.repeatLastAnswer:
-                            if self.memory:
-                                previousResponse = self.memory[-1]
-                                self.delegate.didReceiveCommandsResponse(previousResponse)
-                        case ResponseAction.answerNotFound:
-                            continue
+                    needContinue = False
+
+                    for action in commandResponse.actions:
+                        match action:
+                            case ResponseAction.popContext:
+                                self.contextQueue.pop(0)
+                            case ResponseAction.popToRootContext:
+                                self.contextQueue = [self.commandsManager.allCommands,]
+                            case ResponseAction.sleep:
+                                self.speechRecognizer.isRecognizing = False
+                            case ResponseAction.repeatLastAnswer:
+                                if self.memory:
+                                    previousResponse = self.memory[-1]
+                                    self.delegate.didReceiveCommandsResponse(previousResponse)
+                            case ResponseAction.commandNotFound:
+                                needContinue = not self.commandsManager.stringHasName(string)
+                                
+                    if needContinue: continue
 
                     self.parse(commandResponse)
                 break
@@ -77,10 +82,6 @@ class CommandsContextManager:
                 currentContext = self.contextQueue.pop(0)
         else:
             self.contextQueue.append(currentContext)
-
-            if self.commandsManager.stringHasName(string):
-                _ = searchResult.command.start({'string': ACString(string)})
-
 
     async def asyncCheckThreads(self):
         while True:

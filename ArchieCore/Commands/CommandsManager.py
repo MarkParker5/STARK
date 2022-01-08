@@ -45,6 +45,9 @@ class CommandsManager:
                     else:
                         results.append(SearchResult(command, parameters))
 
+        if not results and (qa := self.QA):
+            results.append(SearchResult(qa, {'string': acstring,}))
+
         return results
 
     def append(self, command):
@@ -58,13 +61,12 @@ class CommandsManager:
         return getattr(self, name) if hasattr(self, name) else None
 
     def stringHasName(self, string) -> bool:
-        return bool(
-            Pattern(
-                f'({"|".join(config.names)})'
-            ).match(
-                ACString(string.lower())
-            )
+        match = Pattern(
+            f'({"|".join(config.names)})'
+        ).match(
+            ACString(string.lower())
         )
+        return match != None
 
     @staticmethod
     def classFromString(className: str) -> ACObject:
