@@ -58,7 +58,7 @@ class CommandsManager:
         return getattr(self, name) if hasattr(self, name) else None
 
     def stringHasName(self, string) -> bool:
-        bool(
+        return bool(
             Pattern(
                 f'({"|".join(config.names)})'
             ).match(
