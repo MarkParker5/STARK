@@ -15,5 +15,6 @@ __pycache__
 /logs.txt
 
 audio/
+downloads/
 
 .idea

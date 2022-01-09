@@ -1,82 +1,168 @@
 from typing import Tuple, List, Optional
 import os
-import json
 import re
-import requests
-import pafy
-import screeninfo
-
+import asyncio
+import aiohttp
+from aiohttp import ClientSession
+from glob import glob
+from yt_dlp import YoutubeDL
 from .MediaPlayer import MediaPlayer
+
+class YoutubeVideo:
+    id: str
+    title: str
+
+class YoutubePlaylist:
+    id: str
+    title: str
+    items: [YoutubeVideo]
+
+    def __getitem__(self, item) -> YoutubeVideo:
+        return self.items[item]
 
 class YoutubePlayer(MediaPlayer):
 
-    currentVideoId: str
-    playlistItems: list[str]
+    currentVideo: YoutubeVideo
+    currentPlaylist: Optional[YoutubePlaylist] = None
 
     def __init__(self, url: str):
-        self.currentVideoId, playlistId = self.parse(url)
+        asyncio.run(self.setup(url))
+
+    async def setup(self, url: str):
+        videoId, playlistId = YoutubeAPI.parse(url)
+
         if playlistId:
-            self.playlistItems = self.getVideosForPlaylist(playlistId)
-        if not self.currentVideoId and playlistItems:
-            self.currentVideoId = self.playlistItems[0]
+            self.currentPlaylist = await YoutubeAPI.getPlaylist(playlistId)
+        if videoId and playlistId:
+            self.currentVideo = next(filter(lambda video: video.id == videoId, self.currentPlaylist.items), None) or self.currentPlaylist[0]
+        elif not videoId and playlistID:
+            self.currentVideo = self.currentPlaylist[0]
+        else:
+            self.currentVideo = await YoutubeAPI.getVideo(videoId)
 
     def play(self):
-        self.playStreams(*[s.url for s in self.getStreamsForVideo(self.currentVideoId) if s])
+        YoutubeAPI.download(YoutubeAPI.urlForId(self.currentVideo.id))
+        if path:= YoutubeAPI.pathForId(self.currentVideo.id):
+            self.playStreams(path, title = self.currentVideo.title)
 
-    def parse(self, playlistUrl: str) -> tuple[Optional[str], Optional[str]]:
+class YoutubeAPI:
+    baseUrl = 'https://youtube.googleapis.com/youtube/v3'
+    api_key = 'AIzaSyBAiOz14QnzYNaUB9uUqvjOM2EoGjUpqvY'
+
+    @staticmethod
+    def parse(playlistUrl: str) -> tuple[Optional[str], Optional[str]]:
         if match:= re.search(r'youtu.?be(.com\/|\/)((watch\?v=)?(?P<v>[A-z0-9_]+))?(.*?list=(?P<list>[A-z0-9_]+))?', playlistUrl):
             args = match.groupdict()
             return (args.get('v'),  args.get('list'))
         return (None, None)
 
-    def getVideosForPlaylist(self, id: str) -> list[str]:
-        parts = ['contentDetails',]#['id' , 'snippet', 'contentDetails']
-        api_key = 'AIzaSyBAiOz14QnzYNaUB9uUqvjOM2EoGjUpqvY'
+    @staticmethod
+    async def getVideo(id: str, title: Optional[str] = None) -> YoutubeVideo:
+        video = YoutubeVideo()
+        video.id = id
+        video.title = title or await YoutubeAPI.titleForVideo(id)
+        return video
 
-        maxResults = 999     # 50 is max
+    @staticmethod
+    async def getPlaylist(id: str) -> YoutubePlaylist:
+        playlist = YoutubePlaylist()
+        playlist.id = id
+        playlist.title = await YoutubeAPI.titleForPlaylist(id)
+        playlist.items = await YoutubeAPI.playlistItems(id)
+        return playlist
+
+    @staticmethod
+    async def titleForVideo(id: str) -> str:
+        params = {
+            'key': YoutubeAPI.api_key,
+            'part': ['snippet',],
+            'id': id,
+        }
+
+        if json := await YoutubeAPI.get('videos', params = params):
+            return json.get('items')[0].get('snippet').get('title')
+        return ''
+
+    @staticmethod
+    async def titleForPlaylist(id: str) -> str:
+        params = {
+            'key': YoutubeAPI.api_key,
+            'part': ['snippet',],
+            'id': id,
+        }
+
+        if json := await YoutubeAPI.get('playlists', params = params):
+            return json.get('items')[0].get('snippet').get('title')
+        return ''
+
+    @staticmethod
+    async def playlistItems(id: str) -> list[YoutubeVideo]:
+        maxResults = 999 # 50 is max
         received = 0
-        nextPageToken = None
-        videoIDs = []
+        nextPageToken = ''
+        videos = []
 
         while True:
-            result = json.loads(
-                requests.get(f'https://youtube.googleapis.com/youtube/v3/playlistItems?part={"&part=".join(parts)}&playlistId={playlistID}&key={api_key}&maxResults={maxResults}&nextPageToken={nextPageToken}',
-                    headers = {
-                        'Accept':'application/json'
-                    }
-                ).text
-            )
+            params = {
+                'key': YoutubeAPI.api_key,
+                'part': ['contentDetails', 'snippet'],
+                'playlistId': id,
+                'maxResults': maxResults,
+                'nextPageToken': nextPageToken,
+            }
 
-            videoIDs += [res.get('contentDetails').get('videoId') for res in result.get('items')]
+            if json := await YoutubeAPI.get('playlistItems', params):
+                if error := json.get('error'):
+                    pprint(error)
+                    print(id, params)
+                    exit()
 
-            totalCount = result.get('pageInfo').get('totalResults')
-            received += result.get('pageInfo').get('resultsPerPage')
-            maxResults = totalCount - received
+                totalCount = json.get('pageInfo').get('totalResults')
+                nextPageToken = json.get('nextPageToken')
+                received += json.get('pageInfo').get('resultsPerPage')
+                maxResults = totalCount - received
+
+                for item in json.get('items'):
+                    videoId = item.get('contentDetails').get('videoId')
+                    videoTitle = item.get('snippet').get('title')
+                    videos.append(await YoutubeAPI.getVideo(videoId, videoTitle))
 
             if maxResults > 0: continue
             else: break
 
-        return videoIDs
+        return videos
 
-    def getStreamsForVideo(self, id: str) -> tuple[str, Optional[str]]:
-        ytvideo = pafy.new(self.urlForId(id))
+    @staticmethod
+    async def get(url, params) -> 'json':
+        url = f'{YoutubeAPI.baseUrl}/{url}'
+        headers = {
+            'Accept':'application/json'
+        }
+        async with ClientSession() as session:
+            response = await session.get(url, params = params, headers = headers)
+            json = await response.json()
+            return json
+        return None
 
-        screenWidth = max([m.width for m in screeninfo.get_monitors()])
-
-        if streams := [s for s in ytvideo.streams if s.dimensions[0] >= screenWidth]:
-            return (min(streams, key = lambda s: s.dimensions[0]), None)
-
-        elif streams := [s for s in ytvideo.videostreams if s.dimensions[0] >= screenWidth]:
-            return (min(streams, key = lambda s: s.dimensions[0]), ytvideo.getbestaudio())
-
-        else:
-            beststream = ytvideo.getbest()
-            bestvideostream = ytvideo.getbestvideo()
-
-            if beststream.dimensions[0] >= bestvideostream.dimensions[0]:
-                return (beststream, None)
-            else:
-                return (bestvideostream, ytvideo.getbestaudio())
-
-    def urlForId(self, id: str):
+    @staticmethod
+    def urlForId(id: str) -> str:
         return f'https://www.youtube.com/watch?v={id}'
+
+    @staticmethod
+    def pathForId(id: str) -> Optional[str]:
+        if files := glob(f'./downloads/{id}.*'):
+            return files[0]
+        return None
+
+    @staticmethod
+    def download(url: str):
+        with YoutubeDL({
+            'format': 'bestvideo[width<=1920][vcodec!=vp9]+bestaudio',
+            'outtmpl': 'downloads/%(id)s.%(ext)s',
+            'nopart': True,
+            'quiet': True,
+            'no_warnings': True,
+        }) as ydl:
+            ydl.download([url,])
+
+if __name__ == '__main__': main()

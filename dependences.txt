@@ -1,5 +1,9 @@
 Python 3.10
 
+# general
+requests
+aiohttp
+
 # voice assistant
 pip install sounddevice
 pip install soundfile

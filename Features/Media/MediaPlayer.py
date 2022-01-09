@@ -9,11 +9,11 @@ class MediaPlayer(ABC):
         pass
 
     @staticmethod
-    def playStreams(videoStream: str, audioStream: Optional[str] = None):
-        cmd = f'vlc "{videoStream}"'
+    def playStreams(videoStream: str, audioStream: Optional[str] = None, title: Optional[str] = None):
+        cmd = f'vlc "{videoStream}" --fullscreen'
         if audioStream: cmd += f' --input-slave "{audioStream}"'
-        print(cmd)
-        os.system(f'lxterminal --command="{cmd}"')
+        if title: cmd += f' --meta-title "{title}"'
+        os.system(f'lxterminal --command=\'{cmd}\'')
 
     def addStreamsToQueue(self, videoStream, audioStream):
         pass
