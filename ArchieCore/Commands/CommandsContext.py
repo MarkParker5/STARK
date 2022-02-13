@@ -48,7 +48,7 @@ class CommandsContextManager:
         currentContext = self.contextQueue[0]
 
         while self.contextQueue:
-            
+
             if searchResults := self.commandsManager.search(string = string, commands = currentContext.commands):
 
                 for searchResult in searchResults:
@@ -73,7 +73,7 @@ class CommandsContextManager:
                                     self.delegate.didReceiveCommandsResponse(previousResponse)
                             case ResponseAction.commandNotFound:
                                 needContinue = not self.commandsManager.stringHasName(string)
-                                
+
                     if needContinue: continue
 
                     self.parse(commandResponse)
