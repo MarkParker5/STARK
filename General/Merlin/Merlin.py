@@ -9,21 +9,21 @@ from .MerlinMessage import MerlinMessage
 GPIO.setmode(GPIO.BCM)
 
 class Merlin():
+    my_urdi = [0x00, 0x00, 0x00, 0x01]
     radio: NRF24
     send_queue: List[MerlinMessage] = []
 
     def __init__(self):
-        pipe = [0xf0, 0xf0, 0xf0, 0xf0, 0xe1]
-
         radio = NRF24(GPIO, spidev.SpiDev())
         radio.begin(0, 17)
         radio.setPALevel(NRF24.PA_HIGH)
         radio.setDataRate(NRF24.BR_2MBPS)
         radio.setChannel(0x60)
-        radio.setPayloadSize(8)
-        radio.setAutoAck(False)
-        # radio.openWritingPipe(pipe)
-        radio.openReadingPipe(1, pipe)
+        radio.setPayloadSize(2)
+        radio.setAutoAck(True)
+        radio.setAddressWidth(4)
+        radio.enableAckPayload()
+        radio.openReadingPipe(1, self.my_urdi)
 
         radio.startListening()
         radio.stopListening()
@@ -37,7 +37,8 @@ class Merlin():
 
     def _send(self, message: MerlinMessage):
         self.radio.stopListening()
-        self.radio.write(message.rawData)
+        self.radio.openWritingPipe(message.urdi)
+        self.radio.write(message.data)
         self.radio.startListening()
 
     def receiveAndTransmit(self):
@@ -52,8 +53,8 @@ class Merlin():
 
             rawData = []
             self.radio.read(rawData, self.radio.getPayloadSize())
-            message = MerlinMessage.parseRaw(rawData)
-            print(f'{message.urdi=} {message.func=} {message.arg=}')
+            func, arg = *rawData
+            print(f'{func=} {arg=}')
 
 receiveAndTransmitThread = Thread(target=Merlin().receiveAndTransmit)
 receiveAndTransmitThread.start()
