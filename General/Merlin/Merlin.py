@@ -3,9 +3,9 @@ from threading import Thread
 import RPi.GPIO as GPIO
 import spidev
 
-# from ArchieCore import Command
 from .MerlinMessage import MerlinMessage
 from .lib_nrf24 import NRF24
+
 
 GPIO.setmode(GPIO.BCM)
 
@@ -33,8 +33,8 @@ class Merlin():
 
         self.radio = radio
 
-    def send(self, data):
-        self.send_queue.append(data)
+    def send(self, message: MerlinMessage):
+        self.send_queue.append(message)
 
     def _send(self, message: MerlinMessage):
         self.radio.stopListening()

@@ -16,5 +16,5 @@ names = ['арчи', 'archie']
 #################################################
 #                   Django
 django_secret_key    = '-----123456789-----'
-django_debug         = True
+django_debug_enabled = True
 django_allowed_hosts = []

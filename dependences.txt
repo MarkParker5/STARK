@@ -1,8 +1,10 @@
 Python 3.10
 
+
 # general
 requests
 aiohttp
+
 
 # voice assistant
 pip install sounddevice
@@ -11,23 +13,34 @@ pip install numpy
 pip install vosk
     # download model from https://alphacephei.com/vosk/models
 
+
 # tts
 pip install google-cloud-texttospeech
+
+
+# Django
+pip install django
+pip install django-rest-framework
+pip install djangorestframework-simplejwt
 
 # telegram
 pip install PyTelegramBotApi
 
+
 # QA
 pip install bs4
 pip install wikipedia
+
 
 # Zieit
 pip install xlrd
 pip install xlwt
 pip install xlutils
 
+
 # Media
+pip install aiohttp
 pip install pafy
 pip install screeninfo
 pip install psutil
-pip install youtube-dl
+pip install yt_dlp #pip install youtube-dl

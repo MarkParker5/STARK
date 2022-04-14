@@ -1,7 +1,7 @@
 from typing import List
 
 class MerlinMessage:
-    urdi: bytearray
+    urdi: bytes
     func: int # unsigned 1 byte int 0...255
     arg: int  # unsigned 1 byte int 0...255
 
