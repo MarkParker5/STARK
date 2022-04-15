@@ -11,7 +11,7 @@ __pycache__
 *.torrent
 
 /config.py
-/tts-gc-key.json
+resources/tts-gc-key.json
 /logs.txt
 
 audio/

@@ -1,3 +1,6 @@
+from .DBTable import DBTable
+
+
 houses = DBTable('houses', {
     'name': 'text',
     'owner_id': 'text'

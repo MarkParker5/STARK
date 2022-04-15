@@ -91,8 +91,10 @@ class DBTable:
         return self.first(where = f'id = "{id}"')
 
     @sqlite
-    def first(self, execute, where: str) -> Optional[Dict[str, Any]]:
-        return self._parsedone(execute(f'select * from {self.table_name} where {where} limit 1').fetchone())
+    def first(self, execute, where: str = '') -> Optional[Dict[str, Any]]:
+        if where:
+            where = f' where {where}'
+        return self._parsedone(execute(f'select * from {self.table_name}{where} limit 1').fetchone())
 
     @sqlite
     def where(self, execute, condition: str) -> List[Any]:
