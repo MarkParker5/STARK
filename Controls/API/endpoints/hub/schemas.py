@@ -12,3 +12,7 @@ class Hub(BaseModel):
 
     class Config:
         orm_mode = True
+
+class TokensPair(BaseModel):
+    access_token: str
+    refresh_token: str

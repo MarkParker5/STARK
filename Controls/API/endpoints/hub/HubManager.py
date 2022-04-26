@@ -38,3 +38,9 @@ class HubManager:
 
     def wifi(self, ssid: str, password: str):
         WiFi.save_and_connect(ssid, password)
+
+    def set_tokens(tokens_pair: schemas.TokensPair):
+        with open(f'{path}/{resources}/access_token.txt', 'w') as f:
+            f.write(tokens_pair.access_token)
+        with open(f'{path}/{resources}/refresh_token.txt', 'w') as f:
+            f.write(tokens_pair.refresh_token)
