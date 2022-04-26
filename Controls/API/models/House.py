@@ -9,6 +9,7 @@ class House(Base):
     id = Column(UUIDType, index = True, primary_key = True, default = uuid1)
     name = Column(String)
     hubs = relationship('Hub', back_populates = 'house', cascade = 'all, delete-orphan')
+    rooms = relationship('Room', back_populates = 'house', cascade = 'all, delete-orphan')
 
     def __str__(self):
         return self.name or super().__str__()

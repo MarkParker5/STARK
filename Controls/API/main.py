@@ -31,7 +31,7 @@ api.include_router(endpoints.rooms.router)
 api.include_router(endpoints.devices.router)
 app.include_router(api)
 
-# endpoints.admin.setup(app)
+endpoints.admin.setup(app)
 
 # @app.get('/docs', include_in_schema = False)
 # async def custom_swagger_ui_html():

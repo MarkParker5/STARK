@@ -1,7 +1,7 @@
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
 
 
-class Base(object):
+class BaseClass(object):
 
     @declared_attr
     def __tablename__(cls):
@@ -10,4 +10,4 @@ class Base(object):
     def __str__(self):
         return f'{type(self).__name__}({self.id.hex[:8]})'
 
-Base = declarative_base(cls = Base)
+Base = declarative_base(cls = BaseClass)

@@ -1,5 +1,6 @@
 from . import (
     hub,
     rooms,
-    devices
+    devices,
+    admin
 )
