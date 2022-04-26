@@ -7,6 +7,8 @@ import multiprocessing
 import Features
 import Controls
 
+from Controls.API.main import app
+
 def multiprocess():
     controls = [
         Controls.VoiceAssistant(),
@@ -35,4 +37,4 @@ def multiterminal():
         for key in controls.keys():
             os.system(f'lxterminal --command="python start.py {key}"')
 
-if __name__ == '__main__': multiterminal()
+if __name__ == '__main__': pass#multiterminal()
