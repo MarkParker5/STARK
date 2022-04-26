@@ -47,5 +47,18 @@ pip install yt_dlp #pip install youtube-dl
 
 
 # API
+pip install uvicorn
+pip install fastapi
+pip install sqlalchemy
+pip install sqlalchemy_utils
+pip install pydantic
+pip install passlib
+pip install python-dotenv
+pip install python-jose
+pip install bcrypt
+pip install sqladmin # https://github.com/MarkParker5/sqladmin
+sudo apt-get install libssl-dev
+
+# WIFI
 pip install PyAccessPoint
 pip install wifi
