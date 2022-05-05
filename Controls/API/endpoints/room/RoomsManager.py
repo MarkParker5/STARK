@@ -16,7 +16,7 @@ class RoomsManager:
         db = self.session
         return db.get(Room, id)
 
-    def create(self, create_room: schemas.CreateRoom) -> Room:
+    def create(self, create_room: schemas.PatchRoom) -> Room:
         db = self.session
         room = Room(name = create_room.name, house_id = create_room.house_id)
         db.add(room)

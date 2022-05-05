@@ -14,7 +14,7 @@ from Controls.API.models import (
 
 class HouseAdmin(ModelAdmin, model = House):
     icon = 'fa-solid fa-house'
-    column_list = [House.name]
+    column_list = [House.name, House.rooms]
     column_details_exclude_list = [House.id]
     form_excluded_columns = [House.id]
 
@@ -26,8 +26,9 @@ class HubAdmin(ModelAdmin, model = Hub):
 
 class RoomAdmin(ModelAdmin, model = Room):
     icon = 'fa-solid fa-house-user'
-    column_list = [Room.name, Room.house]
+    column_list = [Room.name, Room.house, Room.devices]
     column_details_list = [Room.name, Room.house, Room.devices]
+    form_excluded_columns = [Room.house_id]
 
 class DeviceModelAdmin(ModelAdmin, model = DeviceModel):
     icon = 'fa-solid fa-lightbulb'
@@ -38,6 +39,7 @@ class DeviceAdmin(ModelAdmin, model = Device):
     icon = 'fa-solid fa-microchip'
     column_list = [Device.name, Device.urdi, Device.model, Device.room]
     column_details_list = [Device.name, Device.urdi, Device.model, Device.room]
+    form_excluded_columns = [Device.room_id, Device.model_id]
 
 class ParameterAdmin(ModelAdmin, model = Parameter):
     icon = 'fa-solid fa-sliders'
@@ -51,7 +53,7 @@ links = [
 def setup(app: FastAPI):
     admin = Admin(app,
         engine = database.engine,
-        title = 'Archie Cloud - Admin',
+        title = 'Archie Hub - Admin',
         links = links
     )
     admin.register_model(HouseAdmin)

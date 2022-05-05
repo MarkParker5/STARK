@@ -26,6 +26,6 @@ async def hub_patch(hub: PatchHub, manager: HubManager = Depends()):
 async def hub_wifi(ssid: str, password: str, manager: HubManager = Depends()):
     manager.wifi(ssid, password)
 
-@router.post('set_tokens')
+@router.post('/set_tokens')
 async def set_tokens(tokens: TokensPair):
     manager.save_tokens(tokens)

@@ -11,25 +11,26 @@ from Controls.API.main import app
 
 
 def start_api():
-    uvicorn.run('start:app')
+    uvicorn.run('start:app', host = '0.0.0.0', port = 8001)
 
 def multiprocess():
-    controls = [
-        Controls.VoiceAssistant(),
-        Controls.TelegramBot(),
-    ]
+    controls = {
+        'VoiceAssistant': Controls.VoiceAssistant().start,
+        'TelegramBot': Controls.TelegramBot().start,
+        'API': start_api,
+    }
 
-    starts = [control.start for control in controls]
-    starts.append(start_api)
+    if len(sys.argv) > 1:
+        controls.get(sys.argv[1])()
+    else:
+        processes = []
+        for start in controls:
+            process = multiprocessing.Process(target = start)
+            process.start()
+            processes.append(process)
 
-    processes = []
-    for start in starts:
-        process = multiprocessing.Process(target = start)
-        process.start()
-        processes.append(process)
-
-    for process in processes:
-        process.join()
+        for process in processes:
+            process.join()
 
 def multiterminal():
     controls = {

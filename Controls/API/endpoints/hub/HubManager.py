@@ -13,7 +13,7 @@ class HubManager:
     def __init__(self, session = Depends(database.get_session)):
         self.session = session
 
-    def get(self) -> Hub | None:
+    def get(self) -> Hub:
         db = self.session
         return db.query(Hub).one()
 

@@ -2,7 +2,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends
 from Controls.API import exceptions
 from .RoomsManager import RoomsManager
-from .schemas import Room, CreateRoom, PatchRoom
+from .schemas import Room, PatchRoom, PatchRoom
 
 
 router = APIRouter(
@@ -20,7 +20,7 @@ async def room_get(id: UUID, manager: RoomsManager = Depends()):
     return room
 
 @router.post('', response_model = Room)
-async def room_create(room: CreateRoom, manager: RoomsManager = Depends()):
+async def room_create(room: PatchRoom, manager: RoomsManager = Depends()):
     return manager.create(room)
 
 @router.put('')

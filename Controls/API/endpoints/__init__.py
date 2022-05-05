@@ -1,6 +1,7 @@
 from . import (
+    house,
     hub,
-    rooms,
-    devices,
+    room,
+    device,
     admin
 )

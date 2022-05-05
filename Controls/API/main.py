@@ -26,9 +26,10 @@ app = FastAPI(
 # app.mount('/static', StaticFiles(directory = 'view/static'), name = 'static')
 
 api = APIRouter(prefix = '/api')
+api.include_router(endpoints.house.router)
 api.include_router(endpoints.hub.router)
-api.include_router(endpoints.rooms.router)
-api.include_router(endpoints.devices.router)
+api.include_router(endpoints.room.router)
+api.include_router(endpoints.device.router)
 app.include_router(api)
 
 endpoints.admin.setup(app)
