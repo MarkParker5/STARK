@@ -8,7 +8,7 @@ from .Base import Base
 class Room(Base):
     id = Column(UUIDType, index = True, primary_key = True, default = uuid1)
     name = Column(String)
-    house_id = Column(UUIDType, ForeignKey('houses.id'))
+    house_id = Column(UUIDType, ForeignKey('houses.id'), nullable = False)
     house = relationship('House', back_populates = 'rooms')
     devices = relationship('Device', back_populates = 'room', cascade = 'all, delete-orphan')
 

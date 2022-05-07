@@ -20,10 +20,11 @@ app = FastAPI(
     title = 'Archie Hub',
     description = description,
     version = '0.0.1',
-    # docs_url = None,
+    swagger_ui_parameters = {
+        'syntaxHighlight.theme': 'obsidian',
+        'docExpansion': 'none',
+    }
 )
-
-# app.mount('/static', StaticFiles(directory = 'view/static'), name = 'static')
 
 api = APIRouter(prefix = '/api')
 api.include_router(endpoints.house.router)
@@ -33,7 +34,3 @@ api.include_router(endpoints.device.router)
 app.include_router(api)
 
 endpoints.admin.setup(app)
-
-# @app.get('/docs', include_in_schema = False)
-# async def custom_swagger_ui_html():
-#     return endpoints.docs.get_swagger_ui_html()

@@ -6,6 +6,7 @@ from sqlalchemy import delete
 from Controls.API.models import Device
 from Controls.API.dependencies import database
 from . import schemas
+from ..schemas import DeviceParameter, Parameter
 
 
 class DevicesManager:
@@ -15,6 +16,23 @@ class DevicesManager:
     def get(self, id: UUID) -> Device | None:
         db = self.session
         return db.get(Device, id)
+
+    def state(self, id: UUID) -> schemas.DeviceState | None:
+        db = self.session
+        device = self.get(id)
+
+        if not device:
+            return None
+
+        device_state = schemas.DeviceState(**schemas.Device.from_orm(device).dict())
+
+        def map_parameters(association: 'DeviceParameterAssociation') -> DeviceParameter:
+            parameter = Parameter.from_orm(association.parameter)
+            device_parameter = DeviceParameter(**{**parameter.dict(), 'value': association.value})
+            return device_parameter
+
+        device_state.parameters = list(map(map_parameters, device.parameters))
+        return device_state
 
     def create(self, create_device: schemas.CreateDevice) -> Device:
         db = self.session

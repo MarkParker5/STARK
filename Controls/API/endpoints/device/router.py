@@ -2,7 +2,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends
 from Controls.API import exceptions
 from .DevicesManager import DevicesManager
-from .schemas import Device, CreateDevice, PatchDevice
+from .schemas import Device, DeviceState, CreateDevice, PatchDevice
 
 
 router = APIRouter(
@@ -10,9 +10,9 @@ router = APIRouter(
     tags = ['device'],
 )
 
-@router.get('/{id}', response_model = Device)
+@router.get('/{id}', response_model = DeviceState)
 async def device_get(id: UUID, manager: DevicesManager = Depends()):
-    device = manager.get(id)
+    device = manager.state(id)
 
     if not device:
         raise exceptions.not_found

@@ -9,6 +9,7 @@ from Controls.API.models import (
     DeviceModel,
     Device,
     Parameter,
+    DeviceParameterAssociation
 )
 
 
@@ -37,14 +38,23 @@ class DeviceModelAdmin(ModelAdmin, model = DeviceModel):
 
 class DeviceAdmin(ModelAdmin, model = Device):
     icon = 'fa-solid fa-microchip'
-    column_list = [Device.name, Device.urdi, Device.model, Device.room]
-    column_details_list = [Device.name, Device.urdi, Device.model, Device.room]
-    form_excluded_columns = [Device.room_id, Device.model_id]
+    column_list = [Device.name, Device.urdi, Device.model, Device.room, Device.parameters]
+    column_details_list = [Device.name, Device.urdi, Device.model, Device.room, Device.parameters]
+    form_excluded_columns = [Device.room_id, Device.model_id, Device.parameters]
 
 class ParameterAdmin(ModelAdmin, model = Parameter):
     icon = 'fa-solid fa-sliders'
     column_list = [Parameter.name, Parameter.value_type]
-    column_details_exclude_list = [Parameter.id]
+    column_details_exclude_list = [Parameter.id, Parameter.device_parameters]
+    form_excluded_columns = [Parameter.device_parameters]
+
+class DeviceParameterAdmin(ModelAdmin, model = DeviceParameterAssociation):
+    name = 'Device Parameter'
+    name_plural = 'Device Parameters'
+    icon = 'fa-solid fa-gears'
+    column_list = [DeviceParameterAssociation.device, DeviceParameterAssociation.parameter, DeviceParameterAssociation.value]
+    column_details_list = column_list
+    form_columns = column_list
 
 links = [
     SidebarLink('API', '/docs', True),
@@ -62,3 +72,4 @@ def setup(app: FastAPI):
     admin.register_model(DeviceModelAdmin)
     admin.register_model(DeviceAdmin)
     admin.register_model(ParameterAdmin)
+    admin.register_model(DeviceParameterAdmin)

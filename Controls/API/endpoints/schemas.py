@@ -17,3 +17,6 @@ class DeviceModel(BaseModel):
 
     class Config:
         orm_mode = True
+
+class DeviceParameter(Parameter):
+    value: int
