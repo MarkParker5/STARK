@@ -11,7 +11,7 @@ from Controls.API.main import app
 
 
 def start_api():
-    uvicorn.run('start:app', host = '0.0.0.0', port = 8001)
+    uvicorn.run('start:app', host = '0.0.0.0', port = 8001, reload = True)
 
 def multiprocess():
     controls = {

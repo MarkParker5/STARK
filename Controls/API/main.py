@@ -32,5 +32,6 @@ api.include_router(endpoints.hub.router)
 api.include_router(endpoints.room.router)
 api.include_router(endpoints.device.router)
 app.include_router(api)
+app.include_router(endpoints.ws.router)
 
 endpoints.admin.setup(app)
