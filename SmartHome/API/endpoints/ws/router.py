@@ -19,7 +19,7 @@ class ConnectionManager:
 
     async def handle_socket(self, websocket: WebSocket, msg: str):
         try: socket = SocketData.parse_raw(msg)
-        except: pass
+        except: return
         match socket.type:
             case SocketType.merlin:
                 try: merlin_data = MerlinData(**socket.data)

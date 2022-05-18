@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from sqladmin import Admin, ModelAdmin, SidebarLink
-from Controls.API.dependencies import database
-from Controls.API.models import (
+from SmartHome.API.dependencies import database
+from SmartHome.API.models import (
     Base,
     House,
     Hub,

@@ -1,7 +1,8 @@
 from telebot import TeleBot, util, apihelper
 
+
 # added callback for __threaded_polling
-class MyTeleBot(TeleBot):
+class CallbackTeleBot(TeleBot):
     def polling(self, none_stop=False, interval=0, timeout=20, callback = lambda *args: None, args = () ):
         if self.threaded:
             self.__threaded_polling(none_stop, interval, timeout, callback, args)

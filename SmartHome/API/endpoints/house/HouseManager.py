@@ -2,8 +2,8 @@ from uuid import UUID
 
 from fastapi import Depends
 
-from Controls.API.models import House
-from Controls.API.dependencies import database
+from SmartHome.API.models import House
+from SmartHome.API.dependencies import database
 from . import schemas
 
 

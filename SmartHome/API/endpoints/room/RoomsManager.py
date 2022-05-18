@@ -3,8 +3,8 @@ from uuid import UUID
 from fastapi import Depends
 from sqlalchemy import delete
 
-from Controls.API.models import Room
-from Controls.API.dependencies import database
+from SmartHome.API.models import Room
+from SmartHome.API.dependencies import database
 from . import schemas
 
 

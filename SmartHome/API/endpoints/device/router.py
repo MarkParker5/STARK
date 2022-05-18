@@ -1,6 +1,6 @@
 from uuid import UUID
 from fastapi import APIRouter, Depends
-from Controls.API import exceptions
+from SmartHome.API import exceptions
 from .DevicesManager import DevicesManager
 from .schemas import Device, DeviceState, CreateDevice, PatchDevice
 

@@ -1,22 +1,21 @@
-#!/usr/local/bin/python3.8
-
 import time
 import os
+
 import config
 from ArchieCore import Command, CommandsContextManager, CommandsContextManagerDelegate
-from General import Text2Speech
-from ..Control import Control
-from .MyTeleBot import MyTeleBot
+from IO import Text2Speech
 from Features.Media import YoutubePlayer, TorrentPlayer
+from CallbackTeleBot import CallbackTeleBot
 
-class TelegramBot(Control, CommandsContextManagerDelegate):
-    
+
+class TelegramBot(CommandsContextManagerDelegate):
+
     threads = []
     online  = True
     voids   = 0
     memory  = []
     voice   = Text2Speech.Engine()
-    bot     = MyTeleBot(config.telebot)
+    bot     = CallbackTeleBot(config.telebot)
     commandsContext: CommandsContextManager
 
     # Control

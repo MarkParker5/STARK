@@ -1,6 +1,6 @@
-from Merlin import Merlin, MerlinMessage
-from Controls.API.dependencies import database
-from Controls.API.models import Device
+from SmartHome.Merlin import Merlin, MerlinMessage
+from SmartHome.API.dependencies import database
+from SmartHome.API.models import Device
 from . import schemas
 
 
@@ -8,7 +8,9 @@ class WSManager:
     merlin = Merlin()
 
     def merlin_send(self, data: schemas.MerlinData):
-        raise Exception('Not implemented')
+        print(data)
+        return
+        # raise Exception('Not implemented')
 
         db = database.get_session()
 

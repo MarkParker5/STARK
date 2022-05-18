@@ -1,13 +1,13 @@
-#!/usr/local/bin/python3.8
 from typing import Optional
 import asyncio
 
 import config
-from ..Control import Control
-from General import SpeechRecognizer, SpeechRecognizerDelegate, Text2Speech
 from ArchieCore import ACTime, CommandsContextManager, CommandsContextManagerDelegate
+from IO.SpeechRecognition import SpeechRecognizer, SpeechRecognizerDelegate
+from IO import Text2Speech
 
-class VoiceAssistant(Control, SpeechRecognizerDelegate, CommandsContextManagerDelegate):
+
+class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextManagerDelegate):
 
     speechRecognizer: SpeechRecognizer
     CommandsContextManager: CommandsContextManager
@@ -68,11 +68,9 @@ class VoiceAssistant(Control, SpeechRecognizerDelegate, CommandsContextManagerDe
         else:
             self.lastClapTime = now
 
-
-
-if config.double_clap_activation:
-    import RPi.GPIO as GPIO
-
-    GPIO.setmode(GPIO.BCM)
-    GPIO.setup(12, GPIO.IN)
-    GPIO.add_event_detect(12, GPIO.RISING, callback = VoiceAssistant().checkClap)
+# if config.double_clap_activation:
+#     import RPi.GPIO as GPIO
+#
+#     GPIO.setmode(GPIO.BCM)
+#     GPIO.setup(12, GPIO.IN)
+#     GPIO.add_event_detect(12, GPIO.RISING, callback = VoiceAssistant().checkClap)
