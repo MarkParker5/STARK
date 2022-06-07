@@ -39,6 +39,9 @@ class HubManager:
     def wifi(self, ssid: str, password: str):
         WiFi.save_and_connect(ssid, password)
 
+    def get_hotspots(self) -> list[schemas.Hotspot]:
+        return [schemas.Hotspot(**cell.__dict__) for cell in WiFi.get_list()]
+
     def set_tokens(tokens_pair: schemas.TokensPair):
         with open(f'{path}/{resources}/access_token.txt', 'w') as f:
             f.write(tokens_pair.access_token)

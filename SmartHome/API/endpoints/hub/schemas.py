@@ -16,3 +16,6 @@ class Hub(BaseModel):
 class TokensPair(BaseModel):
     access_token: str
     refresh_token: str
+
+class Hotspot(BaseModel):
+    ssid: str

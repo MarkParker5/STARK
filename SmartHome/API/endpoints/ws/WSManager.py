@@ -22,7 +22,7 @@ class WSManager:
         if not parameter:
             return
 
-        # f = #device.parameters.index(parameter)
+        # TODO:  f = #device.parameters.index(parameter)
         x = data.value
         self.merlin.send(MerlinMessage(device.urdi, f, x))
 

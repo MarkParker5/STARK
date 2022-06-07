@@ -10,10 +10,8 @@ from CallbackTeleBot import CallbackTeleBot
 
 class TelegramBot(CommandsContextManagerDelegate):
 
-    threads = []
     online  = True
     voids   = 0
-    memory  = []
     voice   = Text2Speech.Engine()
     bot     = CallbackTeleBot(config.telebot)
     commandsContext: CommandsContextManager

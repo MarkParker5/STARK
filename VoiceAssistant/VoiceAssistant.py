@@ -10,7 +10,7 @@ from IO import Text2Speech
 class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextManagerDelegate):
 
     speechRecognizer: SpeechRecognizer
-    CommandsContextManager: CommandsContextManager
+    commandsContext: CommandsContextManager
     voice = Text2Speech.Engine()
 
     voids: int = 0

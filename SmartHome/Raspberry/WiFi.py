@@ -5,7 +5,8 @@ import config
 
 __all__ = [
     'save',
-    'connect',
+    'get_list',
+    'connect_first',
     'save_and_connect',
     'start_hotspot',
     'stop_hotspot',
@@ -15,6 +16,9 @@ __all__ = [
 access_point = pyaccesspoint.AccessPoint()
 access_point.ssid = config.wifi_ssid
 access_point.password = config.wifi_password
+
+def get_list() -> list[Cell]:
+    return Cell.all('wlan0')
 
 def save(ssid: str, password: str):
     for cell in Cell.all('wlan0'):
@@ -29,7 +33,7 @@ def save_and_connect(ssid: str, password: str):
             scheme.save()
             scheme.activate()
 
-def connect() -> bool:
+def connect_first() -> bool:
     ssids = [cell.ssid for cell in Cell.all('wlan0')]
 
     for scheme in Scheme.all():
