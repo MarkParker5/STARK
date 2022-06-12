@@ -17,6 +17,9 @@ access_point = pyaccesspoint.AccessPoint()
 access_point.ssid = config.wifi_ssid
 access_point.password = config.wifi_password
 
+class ConnectionException(Exception):
+    pass
+
 def get_list() -> list[Cell]:
     return Cell.all('wlan0')
 
@@ -33,16 +36,16 @@ def save_and_connect(ssid: str, password: str):
             scheme.save()
             scheme.activate()
 
-def connect_first() -> bool:
+def connect_first() -> None | ConnectionException:
     ssids = [cell.ssid for cell in Cell.all('wlan0')]
 
     for scheme in Scheme.all():
         ssid = scheme.options.get('wpa-ssid')#, scheme.options.get('wireless-essid'))
         if ssid in ssids:
             scheme.activate()
-            return True
+            break
     else:
-        return False
+        raise ConnectionException('No schemes available')
 
 def start_hotspot():
     access_point.start()

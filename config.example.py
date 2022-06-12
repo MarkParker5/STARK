@@ -2,19 +2,36 @@ import pathlib
 path = str(pathlib.Path(__file__).parent.absolute())
 del pathlib
 
-telebot = '12345678:token'
-goole_tts_json_key = path+'google-cloud-text-to-speech-private-key.json'
 
-db_name = 'archie.db'
+src: str = path + '/resources'
 
-vosk_model = 'model-small-rus' # from alphacephei.com/vosk/models
+# Api keys
 
-double_clap_activation = False
+telebot: str
+goole_tts_json_key: str = src + '/tts-gc-key.json'
 
-names = ['арчи', 'archie']
+# Speech Recognition
 
-#################################################
-#                   Django
-django_secret_key    = '-----123456789-----'
-django_debug_enabled = True
-django_allowed_hosts = []
+vosk_model: str = src + '/model-small-rus'
+
+# TTS
+
+language_code: str = 'ru-RU'
+voice_volume: float = 1
+
+# Archie settings
+
+double_clap_activation: bool = False
+
+# Archie Core
+
+names: list[str] = ['арчи', 'archie']
+
+# DB
+
+db_url: str = 'sqlite:///./sql_app.db'
+
+# WiFi
+
+wifi_ssid: str = 'Archie Hub'
+wifi_password: str = '12345678'

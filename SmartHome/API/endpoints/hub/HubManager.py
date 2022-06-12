@@ -1,3 +1,4 @@
+from __future__ import annotations
 from uuid import UUID
 
 from fastapi import Depends
@@ -12,6 +13,14 @@ from Raspberry import WiFi
 class HubManager:
     def __init__(self, session = Depends(database.get_session)):
         self.session = session
+
+    def __del__(self):
+        self.session.close()
+
+    @classmethod
+    def default(cls, session: database.Session | None = None) -> HubManager:
+        session = session or database.create_session()
+        return cls(session)
 
     def get(self) -> Hub:
         db = self.session
