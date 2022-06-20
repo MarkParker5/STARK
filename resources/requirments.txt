@@ -1,32 +1,32 @@
 # Python 3.10
-# download vosk model from https://alphacephei.com/vosk/models
 
+# download model from https://alphacephei.com/vosk/models
+# sudo apt-get install libssl-dev
 
 
 # general
 requests
 aiohttp
 
+#Rpi
+RPi.GPIO
+spidev
 
 # voice assistant
 sounddevice
 soundfile
 numpy
-vosk # TODO: repo
-
+https://github.com/alphacep/vosk-api/releases/download/v0.3.42/vosk-0.3.42-py3-none-linux_aarch64.whl # vosk
 
 # tts
-google-cloud-texttospeech
-
+# google-cloud-texttospeech
 
 # telegram
 PyTelegramBotApi
 
-
 # QA
 bs4
 wikipedia
-
 
 # Zieit
 # xlrd
@@ -39,31 +39,22 @@ aiohttp
 pafy
 screeninfo
 psutil
-yt_dlp # pip install youtube-dl
-
-
-# DB
-pydantic
-sqlalchemy
-sqlalchemy_utils
-# aiosqlite
+yt_dlp #pip install youtube-dl
 
 
 # API
 uvicorn
 fastapi
+sqlalchemy
+sqlalchemy_utils
+pydantic
 passlib
 python-dotenv
 python-jose
 bcrypt
-libssl-dev
-git+https://github.com/MarkParker5/sqladmin
+git+https://github.com/MarkParker5/sqladmin.git # sqladmin
 
 
 # WIFI
-# pip install PyAccessPoint
-pip install wifi
-
-
-# tests
-pytest
+# PyAccessPoint
+wifi
