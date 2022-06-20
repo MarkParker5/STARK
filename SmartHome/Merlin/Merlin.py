@@ -1,13 +1,17 @@
 from typing import List
 from threading import Thread
-import RPi.GPIO as GPIO
-import spidev
+
+try:
+    import RPi.GPIO as GPIO
+    import spidev
+    GPIO.setmode(GPIO.BCM)
+    is_rpi = True
+except ModuleNotFoundError:
+    is_rpi = False
 
 from .MerlinMessage import MerlinMessage
 from .lib_nrf24 import NRF24
 
-
-GPIO.setmode(GPIO.BCM)
 
 class Merlin():
     radio: NRF24
@@ -15,6 +19,8 @@ class Merlin():
     my_urdi = [0xf0, 0xf0, 0xf0, 0xf0, 0xe1]
 
     def __init__(self):
+        if not is_rpi: return
+
         radio = NRF24(GPIO, spidev.SpiDev())
         radio.begin(0, 17)
         radio.setPALevel(NRF24.PA_HIGH)
@@ -37,7 +43,10 @@ class Merlin():
         self.send_queue.append(message)
 
     def _send(self, message: MerlinMessage):
-        print(messag.urdi, message.data, [b.to_bytes(1, 'big') for b in message.data])
+        if not is_rpi:
+            # TODO: Log
+            print(messag.urdi, message.data, [b.to_bytes(1, 'big') for b in message.data])
+            return
         self.radio.stopListening()
         self.radio.openWritingPipe(message.urdi)
         self.radio.write(message.data)
@@ -49,6 +58,8 @@ class Merlin():
             while self.send_queue and (message := self.send_queue.pop()):
                 self._send(message)
 
+            if not is_rpi: return
+
             # receiving messages
             if not self.radio.available():
                  continue
@@ -56,7 +67,7 @@ class Merlin():
             rawData = []
             self.radio.read(rawData, self.radio.getPayloadSize())
             func, arg = rawData
-            print(f'{func=} {arg=}')
+            print(f'{func=} {arg=}') # TODO: Log
 
 receiveAndTransmitThread = Thread(target = Merlin().receiveAndTransmit)
 receiveAndTransmitThread.start()

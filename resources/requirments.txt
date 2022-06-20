@@ -1,0 +1,69 @@
+# Python 3.10
+# download vosk model from https://alphacephei.com/vosk/models
+
+
+
+# general
+requests
+aiohttp
+
+
+# voice assistant
+sounddevice
+soundfile
+numpy
+vosk # TODO: repo
+
+
+# tts
+google-cloud-texttospeech
+
+
+# telegram
+PyTelegramBotApi
+
+
+# QA
+bs4
+wikipedia
+
+
+# Zieit
+# xlrd
+# xlwt
+# xlutils
+
+
+# Media
+aiohttp
+pafy
+screeninfo
+psutil
+yt_dlp # pip install youtube-dl
+
+
+# DB
+pydantic
+sqlalchemy
+sqlalchemy_utils
+# aiosqlite
+
+
+# API
+uvicorn
+fastapi
+passlib
+python-dotenv
+python-jose
+bcrypt
+libssl-dev
+git+https://github.com/MarkParker5/sqladmin
+
+
+# WIFI
+# pip install PyAccessPoint
+pip install wifi
+
+
+# tests
+pytest

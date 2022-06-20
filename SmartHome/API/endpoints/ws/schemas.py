@@ -5,7 +5,6 @@ from pydantic import BaseModel
 
 class SocketType(str, Enum):
     merlin = 'merlin'
-    merlin_raw = 'merlin_raw'
 
 class SocketData(BaseModel):
     type: SocketType
@@ -15,8 +14,3 @@ class MerlinData(BaseModel):
     device_id: str
     parameter_id: str
     value: str
-
-class MerlinRaw(BaseModel):
-    urdi: int
-    f: int
-    x: int

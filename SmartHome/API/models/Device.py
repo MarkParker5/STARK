@@ -5,7 +5,7 @@ from sqlalchemy.orm import relationship
 from .Base import Base
 
 
-class DeviceParameterAssociation(Base):
+class DeviceParameterAssociation(Base):  # TODO: remove
     id = Column(UUIDType, index = True, primary_key = True, default = uuid1)
     device_id = Column(ForeignKey('devices.id'), primary_key = True)
     parameter_id = Column(ForeignKey('parameters.id'), primary_key = True)

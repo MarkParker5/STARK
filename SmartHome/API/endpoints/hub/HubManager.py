@@ -2,48 +2,49 @@ from __future__ import annotations
 from uuid import UUID
 
 from fastapi import Depends
-from sqlalchemy import delete
+from sqlalchemy import select, update, delete
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.exc import NoResultFound
 
-from SmartHome.API.models import Hub
-from SmartHome.API.dependencies import database
-from . import schemas
 from Raspberry import WiFi
+import config
+from API import exceptions
+from API.models import Hub
+from API.dependencies import database
+from . import schemas
 
 
 class HubManager:
-    def __init__(self, session = Depends(database.get_session)):
+    session: AsyncSession
+
+    def __init__(self, session = Depends(database.get_async_session)):
         self.session = session
 
-    def __del__(self):
-        self.session.close()
+    async def init(self, create_hub: schemas.HubInit) -> Hub:
+        db: AsyncSession = self.session
 
-    @classmethod
-    def default(cls, session: database.Session | None = None) -> HubManager:
-        session = session or database.create_session()
-        return cls(session)
-
-    def get(self) -> Hub:
-        db = self.session
-        return db.query(Hub).one()
-
-    def create(self, create_hub: schemas.Hub) -> Hub:
-        db = self.session
-
-        if hub := self.get():
-            db.delete(hub)
+        if hub := await self.get():
+            await db.delete(hub)
 
         hub = Hub(id = create_hub.id, name = create_hub.name, house_id = create_hub.house_id)
         db.add(hub)
-        db.commit()
-        db.refresh(hub)
+
+        await db.commit()
+        await db.refresh(hub)
 
         return hub
 
-    def patch(self, id: UUID, hub: schemas.PatchHub):
-        db = self.session
-        values = {key: value for key, value in hub.dict().items() if key != 'id' and value != None}
-        db.execute(Hub.__table__.update().values(values).filter_by(id = id))
-        db.commit()
+    async def get(self) -> Hub | None:
+        db: AsyncSession = self.session
+        result = await db.scalars(select(Hub))
+        hub = result.first()
+        return hub
+
+    async def patch(self, hub: schemas.PatchHub):
+        db: AsyncSession = self.session
+        values = {key: value for key, value in hub.dict().items() if value != None}
+        await db.execute(update(Hub).values(**values))
+        await db.commit()
 
     def wifi(self, ssid: str, password: str):
         WiFi.save_and_connect(ssid, password)
@@ -51,8 +52,13 @@ class HubManager:
     def get_hotspots(self) -> list[schemas.Hotspot]:
         return [schemas.Hotspot(**cell.__dict__) for cell in WiFi.get_list()]
 
-    def set_tokens(tokens_pair: schemas.TokensPair):
-        with open(f'{path}/{resources}/access_token.txt', 'w') as f:
+    def save_tokens(self, tokens_pair: schemas.HubAuthItems):
+        with open(f'{config.src}/access_token.txt', 'w') as f:
             f.write(tokens_pair.access_token)
-        with open(f'{path}/{resources}/refresh_token.txt', 'w') as f:
+        with open(f'{config.src}/refresh_token.txt', 'w') as f:
             f.write(tokens_pair.refresh_token)
+
+    def save_credentials(self, credentials: schemas.HubAuthItems):
+        self.save_tokens(credentials)
+        with open(f'{config.src}/public_key.txt', 'w') as f:
+            f.write(credentials.public_key)

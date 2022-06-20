@@ -1,6 +1,8 @@
-from SmartHome.Merlin import Merlin, MerlinMessage
-from SmartHome.API.dependencies import database
-from SmartHome.API.models import Device
+from sqlalchemy import select
+
+from Merlin import Merlin, MerlinMessage
+from API.dependencies import database
+from API.models import Device, DeviceModelParameter
 from . import schemas
 
 
@@ -8,23 +10,18 @@ class WSManager:
     merlin = Merlin()
 
     def merlin_send(self, data: schemas.MerlinData):
-        print(data)
-        return
-        # raise Exception('Not implemented')
-
         db = database.get_session()
 
-        device = db.get(Device, data.device_id)
-        if not device:
+        try:
+            device = db.get(Device, data.device_id)
+            model_parameter = db.execute(
+                select(DeviceModelParameter)
+                .where(
+                    DeviceModelParameter.devicemodel_id == device.model.id,
+                    DeviceModelParameter.parameter_id == data.parameter_id
+                )
+            ).scalar_one()
+        except: # TODO: Specify exceptions
             return
 
-        parameter = next([p for p in device.parameters if p.id == data.parameter_id], None)
-        if not parameter:
-            return
-
-        # TODO:  f = #device.parameters.index(parameter)
-        x = data.value
-        self.merlin.send(MerlinMessage(device.urdi, f, x))
-
-    def merlin_send_raw(self, data: schemas.MerlinRaw):
-        self.merlin.send(MerlinMessage(data.urdi, data.f, data.x))
+        self.merlin.send(MerlinMessage(device.urdi, model_parameter.f, data.value))

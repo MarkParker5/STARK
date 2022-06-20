@@ -11,22 +11,34 @@ __all__ = [
     'create_session',
     'create_async_session',
     # dependencies
-    # 'get_session',
-    # 'get_async_session',
+    'get_session',
+    'get_async_session',
 ]
 
-engine = create_engine(config.db_url)
-create_session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+# sync
+
+engine = create_engine(
+    config.db_url, connect_args={'check_same_thread': False}
+)
+
+create_session = sessionmaker(
+    autocommit=False, autoflush=False, bind=engine
+)
 
 def get_session() -> Session:
     with create_session() as session:
         yield session
 
-# async_engine = create_async_engine(config.db_url)
-# create_async_session = sessionmaker(
-#     async_engine, class_ = AsyncSession, expire_on_commit = False
-# )
-#
-# async def get_async_session() -> AsyncSession:
-#     async with create_async_session() as session:
-#         yield session
+# async
+
+async_engine = create_async_engine(
+    config.db_async_url, connect_args={'check_same_thread': False}
+)
+
+create_async_session = sessionmaker(
+    async_engine, class_ = AsyncSession, expire_on_commit = False
+)
+
+async def get_async_session() -> AsyncSession:
+    async with create_async_session() as session:
+        yield session

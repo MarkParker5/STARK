@@ -1,5 +1,5 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-from .schemas import SocketType, SocketData, MerlinData, MerlinRaw
+from .schemas import SocketType, SocketData, MerlinData
 from .WSManager import WSManager
 
 
@@ -22,14 +22,11 @@ class ConnectionManager:
         except: return
         match socket.type:
             case SocketType.merlin:
-                try: merlin_data = MerlinData(**socket.data)
-                except: return
+                try:
+                    merlin_data = MerlinData(**socket.data)
+                except: # TODO: specify exception
+                    return
                 self.wsmanager.merlin_send(merlin_data)
-            case SocketType.merlin_raw:
-                try: merlin_raw_data = MerlinRaw(**socket.data)
-                except: return
-                self.wsmanager.merlin_send_raw(merlin_raw_data)
-        # await websocket.send_text(message)
 
 connection = ConnectionManager()
 router = APIRouter(

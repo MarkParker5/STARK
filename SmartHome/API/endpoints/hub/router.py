@@ -1,8 +1,7 @@
-from uuid import UUID
 from fastapi import APIRouter, Depends
-import SmartHome.API.exceptions
+from API import exceptions
 from .HubManager import HubManager
-from .schemas import Hub, PatchHub, TokensPair, Hotspot
+from .schemas import HubInit, Hub, HubPatch, TokensPair, Hotspot
 
 
 router = APIRouter(
@@ -10,26 +9,30 @@ router = APIRouter(
     tags = ['hub'],
 )
 
-@router.get('', response_model = Hub)
-async def hub_get(manager: HubManager = Depends()):
-    return manager.get()
-
 @router.post('', response_model = Hub)
-async def hub_create(hub: Hub, manager: HubManager = Depends()):
-    return manager.create(hub)
+async def init_hub(hub: HubInit, manager: HubManager = Depends()):
+    return await manager.init(hub)
+
+@router.get('', response_model = Hub)
+async def get_hub(manager: HubManager = Depends()):
+    hub = await manager.get()
+    if hub:
+        return hub
+    else:
+        raise exceptions.not_found
 
 @router.patch('')
-async def hub_patch(hub: PatchHub, manager: HubManager = Depends()):
-    manager.patch(hub)
+async def patch_hub(hub: HubPatch, manager: HubManager = Depends()):
+    await manager.patch(hub)
 
 @router.post('/connect')
-async def hub_connect(ssid: str, password: str, manager: HubManager = Depends()):
+async def connect_to_hub(ssid: str, password: str, manager: HubManager = Depends()):
     manager.wifi(ssid, password)
 
-@router.get('/hotspots')
-async def hub_hotspots(manager: HubManager = Depends()):
+@router.get('/hotspots', response_model = list[Hotspot])
+async def get_hub_hotspots(manager: HubManager = Depends()):
     return manager.get_hotspots()
 
 @router.post('/set_tokens')
-async def set_tokens(tokens: TokensPair):
+async def set_tokens(tokens: TokensPair, manager: HubManager = Depends()):
     manager.save_tokens(tokens)

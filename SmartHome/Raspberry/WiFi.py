@@ -1,5 +1,5 @@
 from wifi import Cell, Scheme
-from PyAccessPoint import pyaccesspoint
+# from PyAccessPoint import pyaccesspoint
 import config
 
 
@@ -13,9 +13,9 @@ __all__ = [
     'is_hotspot_running'
 ]
 
-access_point = pyaccesspoint.AccessPoint()
-access_point.ssid = config.wifi_ssid
-access_point.password = config.wifi_password
+# access_point = pyaccesspoint.AccessPoint()
+# access_point.ssid = config.wifi_ssid
+# access_point.password = config.wifi_password
 
 class ConnectionException(Exception):
     pass
@@ -48,10 +48,13 @@ def connect_first() -> None | ConnectionException:
         raise ConnectionException('No schemes available')
 
 def start_hotspot():
-    access_point.start()
+    # access_point.start()
+    ...
 
 def stop_hotspot():
-    access_point.stop()
+    # access_point.stop()
+    ...
 
-def is_hotspot_running():
-    access_point.is_running()
+def is_hotspot_running() -> bool:
+    return False
+    # access_point.is_running()
