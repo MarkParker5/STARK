@@ -20,3 +20,4 @@ downloads/
 .idea
 
 .mypy_cache
+*.pytest_cache
