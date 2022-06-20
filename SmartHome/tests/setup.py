@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from main import app
 from API.dependencies.database import get_session, get_async_session
 from API import models
+import config
 
 
 # Settings
@@ -21,12 +22,15 @@ access_token = ''
 hub_access_token = ''
 hub_refresh_token = ''
 
+db_url = f'sqlite:///{config.src}/test_database.sqlite3'
+async_db_url = f'sqlite+aiosqlite:///{config.src}/test_database.sqlite3'
+
 # Dependencies
 
     # sync db
 
 engine = create_engine(
-    'sqlite:///./test.db', connect_args={'check_same_thread': False}
+    db_url, connect_args={'check_same_thread': False}
 )
 
 create_session = sessionmaker(
@@ -40,7 +44,7 @@ def override_get_session() -> Session:
     # async db
 
 async_engine = create_async_engine(
-    'sqlite+aiosqlite:///./test.db', connect_args={'check_same_thread': False}
+    async_db_url, connect_args={'check_same_thread': False}
 )
 
 create_async_session = sessionmaker(
