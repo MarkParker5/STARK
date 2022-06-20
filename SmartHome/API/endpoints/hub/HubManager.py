@@ -2,7 +2,7 @@ from __future__ import annotations
 from uuid import UUID
 
 from fastapi import Depends
-from sqlalchemy import select, update, delete
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import NoResultFound
 
@@ -11,6 +11,7 @@ import config
 from API import exceptions
 from API.models import Hub
 from API.dependencies import database
+from API import endpoints
 from . import schemas
 
 
@@ -22,6 +23,9 @@ class HubManager:
 
     async def init(self, create_hub: schemas.HubInit) -> Hub:
         db: AsyncSession = self.session
+        house_manager = endpoints.house.HouseManager(db)
+
+        await house_manager.create(create_hub.house_id)
 
         if hub := await self.get():
             await db.delete(hub)
@@ -30,7 +34,6 @@ class HubManager:
         db.add(hub)
 
         await db.commit()
-        await db.refresh(hub)
 
         return hub
 

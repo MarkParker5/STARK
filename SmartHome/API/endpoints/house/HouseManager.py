@@ -1,6 +1,8 @@
 from uuid import UUID
 
 from fastapi import Depends
+from sqlalchemy import select, delete
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from SmartHome.API.models import House
 from SmartHome.API.dependencies import database
@@ -8,9 +10,23 @@ from . import schemas
 
 
 class HouseManager:
-    def __init__(self, session = Depends(database.get_session)):
+    session: AsyncSession
+
+    def __init__(self, session = Depends(database.get_async_session)):
         self.session = session
 
-    def get(self) -> House:
-        db = self.session
-        return db.query(House).one()
+    async def get(self) -> House:
+        db: AsyncSession = self.session
+        result = await db.scalars(select(House))
+        return result.first()
+
+    async def create(self, house_id: UUID) -> House:
+        db: AsyncSession = self.session
+
+        if house := await self.get():
+            await db.delete(house)
+
+        house = House(id = house_id)
+        db.add(house)
+        await db.commit()
+        return house

@@ -11,5 +11,5 @@ router = APIRouter(
 )
 
 @router.get('', response_model = House)
-async def house_get(manager: HouseManager = Depends()):
+async def get_house(manager: HouseManager = Depends()):
     return manager.get()

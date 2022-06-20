@@ -3,8 +3,11 @@ from pydantic import BaseModel
 from ..device.schemas import Device
 
 
-class PatchRoom(BaseModel):
+class CreateRoom(BaseModel):
     name: str
+
+class PatchRoom(CreateRoom):
+    pass
 
 class Room(BaseModel):
     id: UUID

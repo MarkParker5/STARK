@@ -27,3 +27,8 @@ already_exist = HTTPException(
     status_code = 400,
     detail = 'Resource already exist'
 )
+
+not_initialized = HTTPException(
+    status_code = 400,
+    detail = 'Hub not initialized'
+)
