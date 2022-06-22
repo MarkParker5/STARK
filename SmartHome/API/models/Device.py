@@ -24,8 +24,8 @@ class Device(Base):
     room_id = Column(UUIDType, ForeignKey('rooms.id'), nullable = False)
     model_id = Column(UUIDType, ForeignKey('devicemodels.id'), nullable = False)
     room = relationship('Room', back_populates = 'devices')
-    model = relationship('DeviceModel')
-    parameters = relationship('DeviceParameterAssociation', back_populates = 'device', cascade = 'all, delete-orphan')
+    model = relationship('DeviceModel', lazy = 'joined')
+    parameters = relationship('DeviceParameterAssociation', back_populates = 'device', cascade = 'all, delete-orphan', lazy = 'joined')
 
     def __str__(self):
         return self.name or super().__str__()

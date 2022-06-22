@@ -39,16 +39,10 @@ class RoomsManager:
 
         return room
 
-    async def update(self, room: schemas.Room):
-        db: AsyncSession = self.session
-        values = {key: value for key, value in room.dict().items() if key != 'id'}
-        await db.execute(update(Room).values(values).where(Room.id == room.id))
-        await db.commit()
-
     async def patch(self, id: UUID, room: schemas.PatchRoom):
         db: AsyncSession = self.session
-        values = {key: value for key, value in room.dict().items() if value != None}
-        await db.execute(update(Room).values(**values))
+        values = {key: value for key, value in room.dict().items() if key != 'id'}
+        await db.execute(update(Room).values(**values).where(Room.id == id))
         await db.commit()
 
     async def delete(self, room_id: UUID):

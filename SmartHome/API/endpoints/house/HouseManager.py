@@ -4,8 +4,8 @@ from fastapi import Depends
 from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from SmartHome.API.models import House
-from SmartHome.API.dependencies import database
+from API.models import House
+from API.dependencies import database
 from . import schemas
 
 
@@ -20,7 +20,7 @@ class HouseManager:
         result = await db.scalars(select(House))
         return result.first()
 
-    async def create(self, house_id: UUID) -> House:
+    async def create(self, house_id: UUID) -> House: # TODO: remove
         db: AsyncSession = self.session
 
         if house := await self.get():

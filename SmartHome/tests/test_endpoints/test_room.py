@@ -24,7 +24,7 @@ def test_delete_room_404():
 
 def test_create_room():
     response = client.post(f'/api/room', json = room)
-    new_room =  response.json()
+    new_room = response.json()
     assert response.status_code == 200
     global id
     id = new_room.get('id')

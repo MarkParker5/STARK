@@ -1,6 +1,6 @@
 from uuid import UUID
 from fastapi import APIRouter, Depends
-from SmartHome.API import exceptions
+from API import exceptions
 from .HouseManager import HouseManager
 from .schemas import House
 
@@ -12,4 +12,4 @@ router = APIRouter(
 
 @router.get('', response_model = House)
 async def get_house(manager: HouseManager = Depends()):
-    return manager.get()
+    return await manager.get()

@@ -1,6 +1,6 @@
 from uuid import UUID
 from fastapi import APIRouter, Depends
-from SmartHome.API import exceptions
+from API import exceptions
 from .DevicesManager import DevicesManager
 from .schemas import Device, DeviceState, CreateDevice, PatchDevice
 
@@ -10,27 +10,21 @@ router = APIRouter(
     tags = ['device'],
 )
 
-@router.get('/{id}', response_model = DeviceState)
-async def device_get(id: UUID, manager: DevicesManager = Depends()):
-    device = manager.state(id)
+@router.post('', response_model = Device)
+async def create_device(device: CreateDevice, manager: DevicesManager = Depends()):
+    return await manager.create(device)
 
-    if not device:
+@router.get('/{id}', response_model = DeviceState)
+async def get_device(id: UUID, manager: DevicesManager = Depends()):
+    if device := await manager.state(id):
+        return device
+    else:
         raise exceptions.not_found
 
-    return device
-
-@router.post('', response_model = Device)
-async def device_create(device: CreateDevice, manager: DevicesManager = Depends()):
-    return manager.create(device)
-
-@router.put('')
-async def device_put(device: Device, manager: DevicesManager = Depends()):
-    manager.update(device)
-
 @router.patch('/{id}')
-async def device_patch(id: UUID, device: PatchDevice, manager: DevicesManager = Depends()):
-    manager.patch(id, device)
+async def patch_device(id: UUID, device: PatchDevice, manager: DevicesManager = Depends()):
+    await manager.patch(id, device)
 
 @router.delete('/{id}')
-async def device_delete(id: UUID, manager: DevicesManager = Depends()):
-    manager.delete(id)
+async def delete_device(id: UUID, manager: DevicesManager = Depends()):
+    await manager.delete(id)

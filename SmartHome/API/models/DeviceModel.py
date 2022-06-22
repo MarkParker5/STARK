@@ -20,7 +20,7 @@ class DeviceModelParameter(Base):
 class DeviceModel(Base):
     id = Column(UUIDType, index = True, primary_key = True, default = uuid1)
     name = Column(String)
-    parameters = relationship('DeviceModelParameter', back_populates = 'devicemodel', cascade = 'all, delete-orphan')
+    parameters = relationship('DeviceModelParameter', back_populates = 'devicemodel', cascade = 'all, delete-orphan', lazy = 'joined')
 
     def __str__(self):
         return self.name or super().__str__()

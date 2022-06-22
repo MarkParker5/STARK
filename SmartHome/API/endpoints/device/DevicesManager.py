@@ -1,32 +1,37 @@
 from uuid import UUID
 
 from fastapi import Depends
-from sqlalchemy import delete
+from sqlalchemy import select, update, delete
+from sqlalchemy.orm import selectinload
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from SmartHome.API.models import Device
-from SmartHome.API.dependencies import database
+from API.models import Device, DeviceParameterAssociation
+from API.dependencies import database
+from API import exceptions
 from . import schemas
 from ..schemas import DeviceParameter, Parameter
 
 
 class DevicesManager:
-    def __init__(self, session = Depends(database.get_session)):
+    session: AsyncSession
+
+    def __init__(self, session = Depends(database.get_async_session)):
         self.session = session
 
-    def get(self, id: UUID) -> Device | None:
-        db = self.session
-        return db.get(Device, id)
+    async def get(self, id: UUID) -> Device | None:
+        db: AsyncSession = self.session
+        response = await db.scalars(select(Device).where(Device.id == id)) # .options(selectinload(Device.parameters, Device.model))
+        return response.first()
 
-    def state(self, id: UUID) -> schemas.DeviceState | None:
-        db = self.session
-        device = self.get(id)
+    async def state(self, id: UUID) -> schemas.DeviceState | None:
+        device = await self.get(id)
 
         if not device:
             return None
 
         device_state = schemas.DeviceState(**schemas.Device.from_orm(device).dict())
 
-        def map_parameters(association: 'DeviceParameterAssociation') -> DeviceParameter:
+        def map_parameters(association: DeviceParameterAssociation) -> DeviceParameter:
             parameter = Parameter.from_orm(association.parameter)
             device_parameter = DeviceParameter(**{**parameter.dict(), 'value': association.value})
             return device_parameter
@@ -34,29 +39,31 @@ class DevicesManager:
         device_state.parameters = list(map(map_parameters, device.parameters))
         return device_state
 
-    def create(self, create_device: schemas.CreateDevice) -> Device:
-        db = self.session
-        device = Device(name = create_device.name, house_id = create_device.house_id)
+    async def create(self, create_device: schemas.CreateDevice) -> Device:
+        db: AsyncSession = self.session
+        device = Device(
+            id = create_device.id, # TODO: validate id
+            name = create_device.name,
+            urdi = 1, # TODO: parse from id
+            room_id = create_device.room_id, # TODO: validate room
+            model_id = create_device.model_id, # TODO: validate by parsed id
+        )
         db.add(device)
-        db.commit()
-        db.refresh(device)
+        await db.commit()
+        await db.refresh(device)
         return device
 
-    def update(self, device: schemas.Device):
-        db = self.session
+    async def patch(self, id: UUID, device: schemas.PatchDevice):
+        db: AsyncSession = self.session
         values = {key: value for key, value in device.dict().items() if key != 'id'}
-        db.execute(Device.__table__.update().values(values).filter_by(id = device.id))
-        db.commit()
+        await db.execute(update(Device).values(**values).where(Device.id == id))
+        await db.commit()
 
-    def patch(self, id: UUID, device: schemas.PatchDevice):
-        db = self.session
-        values = {key: value for key, value in device.dict().items() if key != 'id' and value != None}
-        db.execute(Device.__table__.update().values(values).filter_by(id = id))
-        db.commit()
-
-    def delete(self, device_id: UUID):
-        db = self.session
-        device = self.get(device_id)
-        if device and device.house.owner_id == self.owner_id:
-            db.delete(device)
-            db.commit()
+    async def delete(self, device_id: UUID):
+        db: AsyncSession = self.session
+        device = await self.get(device_id)
+        if device: # and device.house.owner_id == self.owner_id:
+            await db.delete(device)
+            await db.commit()
+        else:
+            raise exceptions.not_found

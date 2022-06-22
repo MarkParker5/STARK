@@ -2,14 +2,12 @@ from tests.setup import *
 
 
 id = uuid1()
-house_id = uuid1()
 default_name = 'Inited Hub'
 
-def test_get_hub_404():
-    response = client.get('/api/hub')
-    assert response.status_code == 404
-    assert response.json() == {'detail': 'Not found'}
-
+# def test_get_hub_404():
+#     response = client.get('/api/hub')
+#     assert response.status_code == 404
+#     assert response.json() == {'detail': 'Not found'}
 
 def test_init_hub():
     response = client.post('/api/hub', json = {

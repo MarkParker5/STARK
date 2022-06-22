@@ -3,15 +3,16 @@ from pydantic import BaseModel
 from ..schemas import DeviceModel, DeviceParameter
 from typing import Optional
 
-class CreateDevice(BaseModel):
-    name: str
 
 class PatchDevice(BaseModel):
-    name: str | None
-
-class Device(BaseModel):
-    id: UUID
     name: str
+    room_id: UUID
+
+class CreateDevice(PatchDevice):
+    id: UUID
+    model_id: UUID
+
+class Device(CreateDevice):
     model: DeviceModel
 
     class Config:
