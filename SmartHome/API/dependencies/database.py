@@ -40,6 +40,5 @@ create_async_session = sessionmaker(
 )
 
 async def get_async_session() -> AsyncSession:
-    raise Exception('FUUCK')
     async with create_async_session() as session:
         yield session
