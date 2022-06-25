@@ -20,23 +20,22 @@ class DevicesManager:
 
     async def get(self, id: UUID) -> Device | None:
         db: AsyncSession = self.session
-        response = await db.scalars(select(Device).where(Device.id == id)) # .options(selectinload(Device.parameters, Device.model))
-        return response.first()
+        return await db.get(Device, id)
 
     async def state(self, id: UUID) -> schemas.DeviceState | None:
-        device = await self.get(id)
+        db: AsyncSession = self.session
+        device = await db.get(Device, id)
 
         if not device:
             return None
 
         device_state = schemas.DeviceState(**schemas.Device.from_orm(device).dict())
 
-        def map_parameters(association: DeviceParameterAssociation) -> DeviceParameter:
-            parameter = Parameter.from_orm(association.parameter)
-            device_parameter = DeviceParameter(**{**parameter.dict(), 'value': association.value})
-            return device_parameter
+        async with database.async_engine.begin() as conn:
+            parameters = await conn.run_sync(DevicesManager._read_parameters, device)
 
-        device_state.parameters = list(map(map_parameters, device.parameters))
+        device_state.parameters = list(map(DevicesManager._map_parameter, parameters))
+
         return device_state
 
     async def create(self, create_device: schemas.CreateDevice) -> Device:
@@ -67,3 +66,13 @@ class DevicesManager:
             await db.commit()
         else:
             raise exceptions.not_found
+
+    @staticmethod
+    def _read_parameters(_, device: Device) -> list[DeviceParameter]:
+        return device.parameters
+
+    @staticmethod
+    def _map_parameter(association: DeviceParameterAssociation) -> DeviceParameter:
+        parameter = Parameter.from_orm(association.parameter)
+        device_parameter = DeviceParameter(**{**parameter.dict(), 'value': association.value})
+        return device_parameter

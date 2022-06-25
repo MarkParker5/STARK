@@ -10,7 +10,7 @@ class DeviceParameterAssociation(Base):  # TODO: remove
     device_id = Column(ForeignKey('devices.id'), primary_key = True)
     parameter_id = Column(ForeignKey('parameters.id'), primary_key = True)
     value = Column(Integer, nullable = False, default = 0)
-    parameter = relationship('Parameter', lazy='joined')
+    parameter = relationship('Parameter', lazy = 'selectin')
     device = relationship('Device')
     __table_args__ = (UniqueConstraint('device_id', 'parameter_id'),)
 
@@ -24,8 +24,8 @@ class Device(Base):
     room_id = Column(UUIDType, ForeignKey('rooms.id'), nullable = False)
     model_id = Column(UUIDType, ForeignKey('devicemodels.id'), nullable = False)
     room = relationship('Room', back_populates = 'devices')
-    model = relationship('DeviceModel', lazy = 'joined')
-    parameters = relationship('DeviceParameterAssociation', back_populates = 'device', cascade = 'all, delete-orphan', lazy = 'joined')
+    model = relationship('DeviceModel', lazy = 'selectin')
+    parameters = relationship('DeviceParameterAssociation', back_populates = 'device', cascade = 'all, delete-orphan')
 
     def __str__(self):
         return self.name or super().__str__()

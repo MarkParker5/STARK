@@ -9,10 +9,12 @@ class CreateRoom(BaseModel):
 class PatchRoom(CreateRoom):
     pass
 
-class Room(BaseModel):
+class RoomInfo(BaseModel):
     id: UUID
     name: str
-    devices: list[Device]
 
     class Config:
         orm_mode = True
+
+class Room(RoomInfo):
+    devices: list[Device]

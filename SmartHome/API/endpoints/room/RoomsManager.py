@@ -18,7 +18,6 @@ class RoomsManager:
     def __init__(self, session = Depends(database.get_async_session)):
         self.session = session
 
-    # TODO: separate shallow get and deep fetch
     async def get(self, id: UUID) -> Room | None:
         db: AsyncSession = self.session
         response = await db.scalars(

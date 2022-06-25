@@ -10,6 +10,9 @@ class Parameter(BaseModel):
     class Config:
         orm_mode = True
 
+class DeviceParameter(Parameter):
+    value: int
+
 class DeviceModel(BaseModel):
     id: UUID
     name: str
@@ -17,6 +20,3 @@ class DeviceModel(BaseModel):
 
     class Config:
         orm_mode = True
-
-class DeviceParameter(Parameter):
-    value: int

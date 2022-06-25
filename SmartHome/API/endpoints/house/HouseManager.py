@@ -26,7 +26,7 @@ class HouseManager:
         if house := await self.get():
             await db.delete(house)
 
-        house = House(id = house_id)
+        house = House(id = house_id, name = '')
         db.add(house)
         await db.commit()
         return house
