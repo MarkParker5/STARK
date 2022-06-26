@@ -49,7 +49,7 @@ class RoomsManager:
     async def delete(self, room_id: UUID):
         db: AsyncSession = self.session
         room = await self.get(room_id)
-        if room: #TODO: and room.house.owner_id == self.user_id:
+        if room:
             await db.delete(room)
             await db.commit()
         else:
