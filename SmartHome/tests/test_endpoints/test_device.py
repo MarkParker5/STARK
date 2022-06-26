@@ -1,10 +1,10 @@
 from tests.setup import *
 
 
-init_hub()
+faker.init_hub()
 id = uuid1()
-room_id = create_room().id
-model_id = create_device_model().id
+room_id = faker.create_room().id
+model_id = faker.create_device_model().id
 device = {
     'id': str(id),
     'name': 'New Room',

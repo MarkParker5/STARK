@@ -13,20 +13,26 @@ class ConnectionManager:
 
     async def connect(self, websocket: WebSocket):
         await websocket.accept()
+        self.active_connections.append(websocket)
 
     def disconnect(self, websocket: WebSocket):
-        pass
+        self.active_connections.remove(websocket)
 
     async def handle_socket(self, websocket: WebSocket, msg: str):
-        try: socket = SocketData.parse_raw(msg)
-        except: return
+        socket = SocketData.parse_raw(msg)
+        # try:
+        #     socket = SocketData.parse_raw(msg)
+        # except:  # TODO: specify exception
+        #     return
+
         match socket.type:
             case SocketType.merlin:
-                try:
-                    merlin_data = MerlinData(**socket.data)
-                except: # TODO: specify exception
-                    return
-                self.wsmanager.merlin_send(merlin_data)
+                merlin_data = MerlinData(**socket.data)
+                # try:
+                #     merlin_data = MerlinData(**socket.data)
+                # except: # TODO: specify exception
+                #     return
+                await self.wsmanager.merlin_send(merlin_data)
 
 connection = ConnectionManager()
 router = APIRouter(

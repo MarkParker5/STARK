@@ -13,7 +13,7 @@ def test_init_hub():
     response = client.post('/api/hub', json = {
         'id': str(id),
         'name': default_name,
-        'house_id': str(house_id),
+        'house_id': str(faker.house_id),
         'access_token': hub_access_token,
         'refresh_token': hub_refresh_token,
         'public_key': public_key,
@@ -26,7 +26,7 @@ def test_get_hub():
     assert response.json() == {
         'id': str(id),
         'name': default_name,
-        'house_id': str(house_id),
+        'house_id': str(faker.house_id),
     }
 
 def test_patch_hub():

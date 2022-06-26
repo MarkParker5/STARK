@@ -45,7 +45,7 @@ class Merlin():
     def _send(self, message: MerlinMessage):
         if not is_rpi:
             # TODO: Log
-            print(messag.urdi, message.data, [b.to_bytes(1, 'big') for b in message.data])
+            print(message.urdi, message.data, [b.to_bytes(1, 'big') for b in message.data])
             return
         self.radio.stopListening()
         self.radio.openWritingPipe(message.urdi)
