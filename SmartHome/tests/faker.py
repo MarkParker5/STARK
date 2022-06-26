@@ -23,6 +23,7 @@ class Faker:
     house_id = uuid1()
 
     # inject
+    user_access_token: str = ''
     hub_access_token: str = ''
     hub_refresh_token: str = ''
     public_key: str = ''
@@ -42,8 +43,10 @@ class Faker:
             'access_token': self.hub_access_token,
             'refresh_token': self.hub_refresh_token,
             'public_key': self.public_key,
+        }, headers = {
+            'Authorization': f'Bearer {self.user_access_token}'
         })
-        assert response.status_code == 200, f'{response.status_code}{response.text}'
+        
         return response.json()
 
     def get_house(self) -> dict[str, Any]:

@@ -12,7 +12,9 @@ __pycache__
 
 /config.py
 resources/tts-gc-key.json
-/logs.txt
+resources/jwt_access_token
+resources/jwt_refresh_token
+resources/jwt-key.pub
 
 audio/
 downloads/

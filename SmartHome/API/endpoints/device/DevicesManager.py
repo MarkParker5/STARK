@@ -5,8 +5,8 @@ from sqlalchemy import select, update, delete
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from API.models import Device, DeviceParameterAssociation
-from API.dependencies import database
+from API.models import User, Device, DeviceParameterAssociation
+from API.dependencies import database, auth
 from API import exceptions
 from . import schemas
 from ..schemas import DeviceParameter, Parameter
@@ -14,9 +14,11 @@ from ..schemas import DeviceParameter, Parameter
 
 class DevicesManager:
     session: AsyncSession
+    user: User
 
-    def __init__(self, session = Depends(database.get_async_session)):
+    def __init__(self, session = Depends(database.get_async_session), user = Depends(auth.validate_user)):
         self.session = session
+        self.user = user
 
     async def get(self, id: UUID) -> Device | None:
         db: AsyncSession = self.session

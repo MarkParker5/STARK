@@ -1,6 +1,9 @@
 from uuid import UUID
+
 from fastapi import APIRouter, Depends
+
 from API import exceptions
+from API.dependencies import auth
 from .HouseManager import HouseManager
 from .schemas import House
 
@@ -11,5 +14,5 @@ router = APIRouter(
 )
 
 @router.get('', response_model = House)
-async def get_house(manager: HouseManager = Depends()):
+async def get_house(manager: HouseManager = Depends(), user = Depends(auth.validate_user)):
     return await manager.get()

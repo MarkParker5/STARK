@@ -7,16 +7,18 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from API import exceptions
 from API import endpoints
-from API.models import Room
-from API.dependencies import database
+from API.models import User, Room
+from API.dependencies import database, auth
 from . import schemas
 
 
 class RoomsManager:
     session: AsyncSession
+    user: User
 
-    def __init__(self, session = Depends(database.get_async_session)):
+    def __init__(self, session = Depends(database.get_async_session), user = Depends(auth.validate_user)):
         self.session = session
+        self.user = user
 
     async def get(self, id: UUID) -> Room | None:
         db: AsyncSession = self.session

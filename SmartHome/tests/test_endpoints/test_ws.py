@@ -13,7 +13,7 @@ def _test_ws():
     device = get_device()
     parameter_id = device.model.parameters[0].parameter_id
     try:
-        with client.websocket_connect('/ws/') as ws:
+        with client.websocket_connect('/ws/', headers = auth_headers) as ws:
             ws.send_json({
                 'type': 'merlin',
                 'data': {
