@@ -69,7 +69,21 @@ class HubManager:
         WiFi.save_and_connect(ssid, password)
 
     async def get_hotspots(self) -> list[schemas.Hotspot]:
-        return [schemas.Hotspot(**cell.__dict__) for cell in WiFi.get_list()]
+        hotspots: list[schemas.Hotspot] = []
+
+        for cell in WiFi.get_list():
+            if not cell.ssid: continue
+            quality, max = map(float, cell.quality.split('/'))
+            hotspot = schemas.Hotspot(
+                ssid = cell.ssid,
+                quality = quality / max,
+                frequency = cell.frequency,
+                encrypted = cell.encrypted,
+                encryption_type = cell.encryption_type or ''
+            )
+            hotspots.append(hotspot)
+
+        return hotspots
 
     def save_credentials(self, credentials: schemas.HubAuthItems):
         self.save_tokens(credentials)

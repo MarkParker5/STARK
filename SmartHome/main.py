@@ -16,4 +16,4 @@ if __name__ == '__main__':
     # except:
     #     WiFi.start_hotspot()
 
-    uvicorn.run('main:app', host = '0.0.0.0', port = 8000, reload = True, reload_dirs=[root,])
+    uvicorn.run('main:app', host = '0.0.0.0', port = 8000, reload = False, reload_dirs=[root,])

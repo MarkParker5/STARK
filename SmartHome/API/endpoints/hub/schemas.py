@@ -25,3 +25,7 @@ class HubInit(Hub, HubAuthItems):
 
 class Hotspot(BaseModel):
     ssid: str
+    quality: float
+    frequency: str
+    encrypted: bool
+    encryption_type: str
