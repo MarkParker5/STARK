@@ -36,7 +36,6 @@ async def connect_to_wifi(ssid: str, password: str, manager: HubManager = Depend
 
 @router.get('/hotspots', response_model = list[Hotspot])
 async def get_hub_hotspots(manager: HubManager = Depends()):
-    await manager.check_access()
     return await manager.get_hotspots()
 
 @router.post('/set_tokens')
