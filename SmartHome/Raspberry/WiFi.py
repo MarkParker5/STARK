@@ -164,4 +164,7 @@ def scan() -> list[Cell]:
 # Main
 
 if __name__ == '__main__':
-    start_hotspot_if_needed()
+    read_saved_networks()
+    if not networks:
+        start_hotspot()
+        start_wps()

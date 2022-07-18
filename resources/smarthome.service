@@ -1,0 +1,17 @@
+[Unit]
+Description=Smarthome Hub
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+User=mark
+WorkingDirectory=/home/mark/ArchieHub/SmartHome
+ExecStart=python3.10 main.py
+StandardOutput=append:/home/mark/logs/smarthome.log
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target
