@@ -28,4 +28,11 @@ class Hotspot(BaseModel):
     quality: float
     frequency: str
     encrypted: bool
-    encryption_type: str
+    #encryption_type: str
+
+    class Config:
+        orm_mode = True
+
+class WifiConnection(BaseModel):
+    ssid: str
+    password: str

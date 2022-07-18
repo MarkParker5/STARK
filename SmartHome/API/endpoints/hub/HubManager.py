@@ -65,25 +65,14 @@ class HubManager:
         await db.execute(update(Hub).values(**values))
         await db.commit()
 
-    async def wifi(self, ssid: str, password: str):
-        WiFi.save_and_connect(ssid, password)
+    def wifi(self, ssid: str, password: str):
+        WiFi.save(ssid, password)
 
-    async def get_hotspots(self) -> list[schemas.Hotspot]:
-        hotspots: list[schemas.Hotspot] = []
-
-        for cell in WiFi.get_list():
-            if not cell.ssid: continue
-            quality, max = map(float, cell.quality.split('/'))
-            hotspot = schemas.Hotspot(
-                ssid = cell.ssid,
-                quality = quality / max,
-                frequency = cell.frequency,
-                encrypted = cell.encrypted,
-                encryption_type = cell.encryption_type or ''
-            )
-            hotspots.append(hotspot)
-
-        return hotspots
+    def get_hotspots(self) -> list[schemas.Hotspot]:
+        try:
+            return list(WiFi.scan())
+        except WiFi.InterfaceBusyException:
+            return []
 
     def save_credentials(self, credentials: schemas.HubAuthItems):
         self.save_tokens(credentials)

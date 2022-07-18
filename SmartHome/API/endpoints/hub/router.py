@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from API import exceptions
 from API.dependencies import auth
 from .HubManager import HubManager
-from .schemas import HubInit, Hub, HubPatch, TokensPair, Hotspot
+from .schemas import HubInit, Hub, HubPatch, TokensPair, Hotspot, WifiConnection
 
 
 router = APIRouter(
@@ -30,13 +30,13 @@ async def patch_hub(hub: HubPatch, manager: HubManager = Depends()):
     await manager.patch(hub)
 
 @router.post('/connect')
-async def connect_to_wifi(ssid: str, password: str, manager: HubManager = Depends()):
+async def connect_to_wifi(wifi: WifiConnection, manager: HubManager = Depends()):
     await manager.check_access()
-    await manager.wifi(ssid, password)
+    manager.wifi(wifi.ssid, wifi.password)
 
 @router.get('/hotspots', response_model = list[Hotspot])
-async def get_hub_hotspots(manager: HubManager = Depends()):
-    return await manager.get_hotspots()
+def get_hub_hotspots(manager: HubManager = Depends()):
+    return manager.get_hotspots()
 
 @router.post('/set_tokens')
 async def set_tokens(tokens: TokensPair, manager: HubManager = Depends()):

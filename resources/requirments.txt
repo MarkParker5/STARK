@@ -53,8 +53,3 @@ python-dotenv
 python-jose
 bcrypt
 git+https://github.com/MarkParker5/sqladmin.git # sqladmin
-
-
-# WIFI
-# PyAccessPoint
-wifi
