@@ -8,6 +8,7 @@ import time
 __all__ = [
     'start_hotspot_if_needed',
     'scan',
+    'is_connected',
     'save',
     'start_wps',
     'start_hotspot',

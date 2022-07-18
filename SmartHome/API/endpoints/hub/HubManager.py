@@ -71,6 +71,12 @@ class HubManager:
     def start_wps(self):
         WiFi.start_wps()
 
+    def is_connected(self) -> bool:
+        return WiFi.is_connected()
+
+    def stop_hotspot(self):
+        WiFi.stop_hotspot()
+
     def get_hotspots(self) -> list[schemas.Hotspot]:
         try:
             return list(WiFi.scan())

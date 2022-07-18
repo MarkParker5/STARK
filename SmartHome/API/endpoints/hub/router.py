@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, BackgroundTasks
 from API import exceptions
 from API.dependencies import auth
 from .HubManager import HubManager
@@ -42,6 +42,13 @@ async def start_wps(manager: HubManager = Depends()):
 @router.get('/hotspots', response_model = list[Hotspot])
 def get_hub_hotspots(manager: HubManager = Depends()):
     return manager.get_hotspots()
+
+@router.get('/is-connected', response_model=bool)
+def is_connected(bg_tasks: BackgroundTasks, manager: HubManager = Depends()):
+    connected = manager.is_connected()
+    if connected:
+        bg_tasks.add_task(manager.stop_hotspot)
+    return connected
 
 @router.post('/set_tokens')
 async def set_tokens(tokens: TokensPair, manager: HubManager = Depends()):
