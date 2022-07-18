@@ -9,6 +9,7 @@ __all__ = [
     'start_hotspot_if_needed',
     'scan',
     'save',
+    'start_wps',
     'start_hotspot',
     'stop_hotspot',
     'InterfaceBusyException'
@@ -137,6 +138,9 @@ def save(ssid: str, password: str):
     networks.append(Network(ssid, password))
     write_networks()
     reconnect()
+
+def start_wps():
+    os.system('wpa_cli -i wlan0 wps_pbc')
 
 def scan() -> list[Cell]:
     try:

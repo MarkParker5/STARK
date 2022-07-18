@@ -68,6 +68,9 @@ class HubManager:
     def wifi(self, ssid: str, password: str):
         WiFi.save(ssid, password)
 
+    def start_wps(self):
+        WiFi.start_wps()
+
     def get_hotspots(self) -> list[schemas.Hotspot]:
         try:
             return list(WiFi.scan())

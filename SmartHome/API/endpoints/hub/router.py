@@ -34,6 +34,11 @@ async def connect_to_wifi(wifi: WifiConnection, manager: HubManager = Depends())
     await manager.check_access()
     manager.wifi(wifi.ssid, wifi.password)
 
+@router.post('/wps')
+async def start_wps(manager: HubManager = Depends()):
+    await manager.check_access()
+    manager.start_wps()
+
 @router.get('/hotspots', response_model = list[Hotspot])
 def get_hub_hotspots(manager: HubManager = Depends()):
     return manager.get_hotspots()
