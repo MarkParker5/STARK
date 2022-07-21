@@ -6,6 +6,7 @@ import time
 
 
 __all__ = [
+    'networks',
     'start_hotspot_if_needed',
     'scan',
     'is_connected',
