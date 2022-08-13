@@ -7,6 +7,7 @@ from API.models import (
     Hub,
     Room,
     DeviceModel,
+    DeviceModelParameter,
     Device,
     Parameter,
     DeviceParameterAssociation
@@ -34,7 +35,12 @@ class RoomAdmin(ModelAdmin, model = Room):
 class DeviceModelAdmin(ModelAdmin, model = DeviceModel):
     icon = 'fa-solid fa-lightbulb'
     column_list = [DeviceModel.name, DeviceModel.parameters]
-    column_details_list = [DeviceModel.id, DeviceModel.name, DeviceModel.parameters]
+    column_details_list = [DeviceModel.name, DeviceModel.parameters]
+
+class DeviceModelParameterAdmin(ModelAdmin, model = DeviceModelParameter):
+    icon = 'fa-solid fa-arrow-down-1-9'
+    column_list = [DeviceModelParameter.f, DeviceModelParameter.parameter, DeviceModelParameter.devicemodel]
+    column_details_list = column_list
     form_columns = column_details_list
 
 class DeviceAdmin(ModelAdmin, model = Device):
@@ -71,6 +77,7 @@ def setup(app: FastAPI):
     admin.register_model(RoomAdmin)
     admin.register_model(HubAdmin)
     admin.register_model(DeviceModelAdmin)
-    admin.register_model(DeviceAdmin)
+    admin.register_model(DeviceModelParameterAdmin)
     admin.register_model(ParameterAdmin)
     admin.register_model(DeviceParameterAdmin)
+    admin.register_model(DeviceAdmin)
