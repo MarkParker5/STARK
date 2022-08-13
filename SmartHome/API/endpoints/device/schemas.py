@@ -1,7 +1,8 @@
+from typing import Optional
 from uuid import UUID
 from pydantic import BaseModel
+from AUID import AUID
 from ..schemas import DeviceModel, DeviceParameter
-from typing import Optional
 
 
 class PatchDevice(BaseModel):
@@ -9,8 +10,7 @@ class PatchDevice(BaseModel):
     room_id: UUID
 
 class CreateDevice(PatchDevice):
-    id: UUID
-    model_id: UUID
+    id: AUID
 
 class Device(CreateDevice):
     model: DeviceModel

@@ -28,4 +28,4 @@ class ACTime(ACObject):
         raise NotImplementedError
 
     def __sub__(self, other: ACTime) -> ACTimeInterval:
-        return ACTimeInterval((self.value - other.value).seconds)
+        return ACTimeInterval((self.value - other.value).total_seconds())

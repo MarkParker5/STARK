@@ -32,3 +32,8 @@ not_initialized = HTTPException(
     status_code = 400,
     detail = 'Hub not initialized'
 )
+
+incorrect_format = HTTPException (
+    status_code = status.HTTP_422_UNPROCESSABLE_ENTITY,
+    detail = 'Data in incorrect format'
+)

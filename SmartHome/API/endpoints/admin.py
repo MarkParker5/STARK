@@ -34,7 +34,8 @@ class RoomAdmin(ModelAdmin, model = Room):
 class DeviceModelAdmin(ModelAdmin, model = DeviceModel):
     icon = 'fa-solid fa-lightbulb'
     column_list = [DeviceModel.name, DeviceModel.parameters]
-    column_details_list = [DeviceModel.name, DeviceModel.parameters]
+    column_details_list = [DeviceModel.id, DeviceModel.name, DeviceModel.parameters]
+    form_columns = column_details_list
 
 class DeviceAdmin(ModelAdmin, model = Device):
     icon = 'fa-solid fa-microchip'

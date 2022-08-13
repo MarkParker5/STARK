@@ -53,3 +53,8 @@ python-dotenv
 python-jose
 bcrypt
 git+https://github.com/MarkParker5/sqladmin.git # sqladmin
+
+
+# qrcode
+qrcode
+pillow
