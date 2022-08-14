@@ -5,7 +5,13 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from AUID import AUID
-from API.models import User, Device, DeviceModel, DeviceParameterAssociation
+from API.models import (
+    User,
+    Device,
+    DeviceModel,
+    DeviceParameterAssociation,
+    DeviceParameterAssociation
+)
 from API.dependencies import database, auth
 from API import exceptions
 from . import schemas
@@ -43,15 +49,13 @@ class DevicesManager:
     async def create(self, create_device: schemas.CreateDevice) -> Device:
         db: AsyncSession = self.session
 
-        if create_device.id is AUID:
-            id = create_device
-        else:
-            id = AUID(bytes=create_device.id.bytes)
-
+        id = AUID(bytes=create_device.id.bytes)
         model_id = AUID.new(model=id.items.model, now=None)
         urdi = id.items.urdi
 
-        if not db.get(DeviceModel, model_id):
+        model = await db.get(DeviceModel, model_id)
+
+        if not model:
             raise exceptions.incorrect_format
 
         if (await db.scalars(select(Device).where(Device.urdi == urdi))).first():
@@ -64,6 +68,13 @@ class DevicesManager:
             room_id = create_device.room_id,
             model_id = model_id
         )
+
+        for model_parameter in model.parameters:
+            device_parameter = DeviceParameterAssociation(
+                device_id = device.id,
+                parameter_id = model_parameter.parameter.id
+            )
+            db.add(device_parameter)
 
         db.add(device)
         await db.commit()

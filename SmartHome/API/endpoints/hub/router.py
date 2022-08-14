@@ -43,7 +43,7 @@ async def start_wps(manager: HubManager = Depends()):
 def get_hub_hotspots(manager: HubManager = Depends()):
     return manager.get_hotspots()
 
-@router.get('/is-connected', response_model=bool)
+@router.get('/is_connected', response_model=bool)
 def is_connected(bg_tasks: BackgroundTasks, manager: HubManager = Depends()):
     connected = manager.is_connected()
     if connected:

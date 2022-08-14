@@ -52,8 +52,8 @@ class DeviceAdmin(ModelAdmin, model = Device):
 class ParameterAdmin(ModelAdmin, model = Parameter):
     icon = 'fa-solid fa-sliders'
     column_list = [Parameter.name, Parameter.value_type]
-    column_details_exclude_list = [Parameter.id, Parameter.device_parameters]
-    form_excluded_columns = [Parameter.device_parameters]
+    column_details_list = [Parameter.name, Parameter.value_type]
+    form_columns = [Parameter.name, Parameter.value_type]
 
 class DeviceParameterAdmin(ModelAdmin, model = DeviceParameterAssociation):
     name = 'Device Parameter'

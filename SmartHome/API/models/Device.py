@@ -15,7 +15,10 @@ class DeviceParameterAssociation(Base):  # TODO: remove
     __table_args__ = (UniqueConstraint('device_id', 'parameter_id'),)
 
     def __str__(self):
-        return self.parameter.name or super().__str__()
+        try:
+            return self.parameter.name or super().__str__()
+        except:
+            return super().__str__()
 
 class Device(Base):
     id = Column(UUIDType, index = True, primary_key = True, default = uuid1)
