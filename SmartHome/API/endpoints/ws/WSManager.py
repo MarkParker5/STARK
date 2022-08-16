@@ -34,4 +34,4 @@ class WSManager:
 
         model_parameter = response.scalar_one()
 
-        return MerlinMessage(device.urdi, model_parameter.f, data.value)
+        return MerlinMessage(device.urdi, model_parameter.f, int(data.value))
