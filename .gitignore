@@ -11,10 +11,10 @@ __pycache__
 *.torrent
 
 /config.py
-resources/tts-gc-key.json
-resources/jwt_access_token
-resources/jwt_refresh_token
-resources/jwt-key.pub
+tts-gc-key.json
+jwt_access_token
+jwt_refresh_token
+jwt-key.pub
 
 audio/
 downloads/

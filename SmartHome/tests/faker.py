@@ -5,7 +5,7 @@ import random
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from API import models
+import models
 
 
 room_names = [ 'Atrium', 'Ballroom', 'Bathroom', 'Bedroom', 'Billiard room', 'Cabinet', 'Computer lab',
@@ -46,7 +46,7 @@ class Faker:
         }, headers = {
             'Authorization': f'Bearer {self.user_access_token}'
         })
-        
+
         return response.json()
 
     def get_house(self) -> dict[str, Any]:
@@ -62,9 +62,9 @@ class Faker:
             session.refresh(room)
             return room
 
-    def create_device_model(self) -> models.DeviceModel:
+    def create_device_model(self, id: UUID = uuid1()) -> models.DeviceModel:
         with self.create_session() as session:
-            device_model = models.DeviceModel(name = random.choice(model_names))
+            device_model = models.DeviceModel(id=id, name=random.choice(model_names))
             session.add(device_model)
             session.commit()
             session.refresh(device_model)

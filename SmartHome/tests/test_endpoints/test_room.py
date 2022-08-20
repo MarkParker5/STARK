@@ -10,17 +10,17 @@ room = {
 def test_get_room_null():
     response = client.get(f'/api/room/', headers = auth_headers)
     assert response.status_code == 405
-    assert response.json() == {'detail': 'Method Not Allowed'}
+    assert response.json().get('detail') == 'Method Not Allowed'
 
 def test_get_room_404():
     response = client.get(f'/api/room/{id}', headers = auth_headers)
     assert response.status_code == 404
-    assert response.json() == {'detail': 'Not found'}
+    assert response.json().get('detail') == 'Room not found'
 
 def test_delete_room_404():
     response = client.delete(f'/api/room/{id}', headers = auth_headers)
     assert response.status_code == 404
-    assert response.json() == {'detail': 'Not found'}
+    assert response.json().get('detail') == 'Room not found'
 
 def test_create_room():
     response = client.post(f'/api/room', json = room, headers = auth_headers)

@@ -1,2 +1,2 @@
 # sudo
-@reboot python3.10 ~/ArchieHub/SmartHome/Raspberry/WiFi.py
+@reboot python3.10 ~/ArchieHub/SmartHome/hardware/WiFi.py

@@ -18,7 +18,7 @@
    - Django
  - #### Features - Possibilities, set of functions
  - #### General - For helper classes
- - #### Raspberry - Control system and hardware
+ - #### hardware - Control system and hardware
 
 ### Root files:
  - **start.py** - entry point

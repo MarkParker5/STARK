@@ -1,5 +1,5 @@
 from typing import NamedTuple
-from enum import Enum, auto
+from enum import Enum, IntEnum, auto
 from uuid import UUID
 import time
 import qrcode
@@ -12,7 +12,7 @@ class URDI(int):
     def __repr__(self) -> str:
         return f'URDI({super().__repr__()})'
 
-class Model(int, Enum):
+class Model(IntEnum):
     zero = 0
     hub = 1
     relay = 2

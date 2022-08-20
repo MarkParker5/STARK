@@ -139,7 +139,7 @@ class YoutubeAPI:
             'Accept':'application/json'
         }
         async with ClientSession() as session:
-            response = await session.get(url, params = params, headers = headers)
+            result = await session.get(url, params = params, headers = headers)
             json = await response.json()
             return json
         return None

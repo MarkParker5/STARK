@@ -13,8 +13,8 @@ from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
 from main import app
-from API.dependencies.database import get_session, get_async_session
-from API import models
+from server.dependencies.database import get_session, get_async_session
+import models
 import config
 
 from .faker import Faker
@@ -22,9 +22,9 @@ from .faker import Faker
 
 # Settings
 
-with open(f'{config.path}/SmartHome/tests/jwt-key', 'r') as f:
+with open(f'{config.path}/tests/jwt-key', 'r') as f:
     secret_key = f.read()
-with open(f'{config.path}/SmartHome/tests/jwt-key.pub', 'r') as f:
+with open(f'{config.path}/tests/jwt-key.pub', 'r') as f:
     public_key = f.read()
 
 user_id = UUID('f085ef73-f599-11ec-acda-58961df87e73')
