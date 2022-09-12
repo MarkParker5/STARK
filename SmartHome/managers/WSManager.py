@@ -20,7 +20,7 @@ class WSManager:
     def __inti__(self, session: AsyncSession):
         self.session = session
 
-    async def handle_message(self, msg: str) -> str | None:
+    async def handle_message(self, msg: str) -> dict | None:
         socket = SocketData.parse_raw(msg)
         try:
             socket = SocketData.parse_raw(msg)
@@ -40,7 +40,9 @@ class WSManager:
                     rest_request = RestRequest(**socket.data)
                 except ValidationError:
                     return
-                return await api.local_request(rest_request)
+                if local_response := await api.local_request(rest_request):
+                    # TODO: pydantic model
+                    return {'path': rest_request.path, 'data': local_response}
 
     async def merlin_send(self, data: MerlinData):
         db: AsyncSession = self.session
