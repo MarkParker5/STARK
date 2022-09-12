@@ -8,22 +8,20 @@ ws: websocket.WebSocketApp = None
 ws_thread: Thread = None
 ws_manager = WSManager()
 
-headers = {'Auth': f'Bearer {config.access_token}'}
+headers = {'Authorization': f'Bearer {config.access_token}'}
 
 def on_message(ws, msg):
-    print('WS: ', msg)
-    ws_manager.handle_message(msg)
+    if response := ws_manager.handle_message(msg):
+        ws.send(response)
 
 def on_open(ws):
-    print('WS Open')
     pass
 
 def on_close(ws, status_code, reason):
-    start_ws()
+    start()
 
 def on_error(ws, error):
-    # start_ws()
-    pass
+    pass # TODO: log
 
 def start():
     global ws, ws_thread

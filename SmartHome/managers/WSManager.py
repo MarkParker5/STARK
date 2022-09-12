@@ -5,7 +5,13 @@ from pydantic.error_wrappers import ValidationError
 import database
 from hardware.Merlin import merlin, MerlinMessage
 from models import Device, DeviceModelParameter
-from schemas.ws import SocketType, SocketData, MerlinData
+from schemas.ws import (
+    SocketType,
+    SocketData,
+    MerlinData,
+    RestRequest
+)
+from client import api
 
 
 class WSManager:
@@ -14,7 +20,7 @@ class WSManager:
     def __inti__(self, session: AsyncSession):
         self.session = session
 
-    async def handle_message(self, msg: str):
+    async def handle_message(self, msg: str) -> str | None:
         socket = SocketData.parse_raw(msg)
         try:
             socket = SocketData.parse_raw(msg)
@@ -23,12 +29,18 @@ class WSManager:
 
         match socket.type:
             case SocketType.merlin:
-                merlin_data = MerlinData(**socket.data)
-                # try:
-                #     merlin_data = MerlinData(**socket.data)
-                # except: # TODO: specify exception
-                #     return
+                try:
+                    merlin_data = MerlinData(**socket.data)
+                except ValidationError:
+                    return
                 await self.merlin_send(merlin_data)
+
+            case SocketType.rest:
+                try:
+                    rest_request = RestRequest(**socket.data)
+                except ValidationError:
+                    return
+                return await api.local_request(rest_request)
 
     async def merlin_send(self, data: MerlinData):
         db: AsyncSession = self.session

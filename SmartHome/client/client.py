@@ -12,6 +12,7 @@ def fetch():
     asyncio.run(fetch_all())
 
 async def fetch_all():
+    await api.start_client()
     async with create_async_session() as session:
         await asyncio.gather(
             fetch_house(session),

@@ -2,23 +2,36 @@ from typing import Type
 from aiohttp import ClientSession
 from pydantic import BaseModel
 from pydantic.error_wrappers import ValidationError
+from schemas.ws import RestRequest
 import config
 
 
-headers = {'Auth': f'Bearer {config.access_token}'}
+headers = {'Authorization': f'Bearer {config.access_token}'}
+client_session: ClientSession = None
+
+async def start_client():
+    global client_session
+    if client_session:
+        client_session.close()
+    client_session = ClientSession()
 
 async def get(url: str,
-              model: Type[BaseModel],
-              client_session: ClientSession = None) -> BaseModel | None:
+              model: Type[BaseModel]) -> BaseModel | None:
     try:
-        session = client_session or ClientSession()
-        async with session.get(f'{config.api_url}/{url}') as response:
+        async with client_session.get(f'{config.api_url}/{url}') as response:
             text = await response.text()
             return model.parse_raw(text)
     except ValidationError:
-        print(f'\nAPI Error: {url}\nModel: {model}\n{text}\n')
+        print(f'\nAPI ValidationError Error: {url}\nModel: {model}\n{text}\n')
         return None
-    finally:
-        if not client_session:
-            await session.close()
-        response.close()
+
+async def local_request(request: RestRequest) -> str:
+    method = getattr(client_session, request.method)
+
+    url = f'{config.localhost}/{request.path}'
+    json = request.body
+    headers = {}
+
+    async with method(url, json = json, headers = headers) as r:
+        if 200 <= response.status < 300:
+            return await response.text()

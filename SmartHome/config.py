@@ -18,8 +18,9 @@ db_async_url: str = f'sqlite+aiosqlite:///{src}/database.sqlite3'
 
 # API
 
-api_url = 'http://home.parker-programs.com/api'
-ws_url = 'ws://home.parker-programs.com/ws/hub'
+api_url = 'https://home.parker-programs.com/api'
+ws_url = 'wss://home.parker-programs.com/ws/hub'
+localhost = 'http://localhost:8000'
 
 try:
     with open(f'{src}/jwt-key.pub', 'r') as f:
