@@ -14,7 +14,8 @@ __pycache__
 tts-gc-key.json
 jwt_access_token
 jwt_refresh_token
-jwt-key.pub
+jwt.key.pub
+jwt.key
 
 audio/
 downloads/

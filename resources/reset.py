@@ -7,7 +7,7 @@ path = str(pathlib.Path(__file__).parent.absolute())
 src: str = path + '/resources'
 
 files = []
-files.append(f'{src}/jwt-key.pub')
+files.append(f'{src}/jwt.key.pub')
 files.append(f'{src}/jwt_access_token')
 files.append(f'{src}/jwt_refresh_token')
 files.append(f'{src}/database.sqlite3')

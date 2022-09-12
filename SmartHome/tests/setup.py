@@ -22,9 +22,9 @@ from .faker import Faker
 
 # Settings
 
-with open(f'{config.path}/tests/jwt-key', 'r') as f:
+with open(f'{config.path}/tests/jwt.key', 'r') as f:
     secret_key = f.read()
-with open(f'{config.path}/tests/jwt-key.pub', 'r') as f:
+with open(f'{config.path}/tests/jwt.key.pub', 'r') as f:
     public_key = f.read()
 
 user_id = UUID('f085ef73-f599-11ec-acda-58961df87e73')

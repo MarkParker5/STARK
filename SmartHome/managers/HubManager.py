@@ -98,7 +98,7 @@ class HubManager:
         self.save_tokens(credentials)
 
         config.public_key = credentials.public_key
-        with open(f'{config.src}/jwt-key.pub', 'w') as f:
+        with open(f'{config.src}/jwt.key.pub', 'w') as f:
             f.write(credentials.public_key)
 
     def save_tokens(self, tokens_pair: schemas.HubAuthItems):

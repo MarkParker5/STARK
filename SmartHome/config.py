@@ -23,7 +23,7 @@ ws_url = 'wss://home.parker-programs.com/ws/hub'
 localhost = 'http://localhost:8000'
 
 try:
-    with open(f'{src}/jwt-key.pub', 'r') as f:
+    with open(f'{src}/jwt.key.pub', 'r') as f:
         public_key = f.read()
 except FileNotFoundError:
     public_key = ''
