@@ -1,2 +1,0 @@
-# sudo
-@reboot python3.10 ~/ArchieHub/SmartHome/hardware/WiFi.py

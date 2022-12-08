@@ -2,14 +2,14 @@
 ## Voice assistant, smart home hub, media center and smart tv
 
 ### Project structure:
- - #### ArchieCore - Core, base classes
+ - #### VICore - Core, base classes
    - Command
    - CommandsManager
    - SearchResult
    - Response
    - ThreadData
    - Pattern
-   - ACObject and subclasses
+   - VIObject and subclasses
  - #### Controls - Responsible for user interaction
    - Control(ABC)
    - VoiceAssistant

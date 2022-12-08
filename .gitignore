@@ -10,12 +10,7 @@ __pycache__
 *.xls
 *.torrent
 
-/config.py
 tts-gc-key.json
-jwt_access_token
-jwt_refresh_token
-jwt.key.pub
-jwt.key
 
 audio/
 downloads/
