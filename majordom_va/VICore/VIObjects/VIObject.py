@@ -1,20 +1,18 @@
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
+from abc import ABC
 from typing import Any
-from copy import copy
 
-from ..Pattern import Pattern
+from .. import Pattern
+
 
 class classproperty(property):
     def __get__(self, cls, owner):
         return classmethod(self.fget).__get__(None, owner)()
 
 class VIObject(ABC):
-    pattern: Pattern # static getonly
-    stringValue: str
+
     value: Any
-    formatted: str
 
     def __init__(self, value: Any):
         self.value = value
@@ -22,16 +20,20 @@ class VIObject(ABC):
     @classmethod
     def parse(cls, fromString: str) -> VIObject:
         object = cls()
-        object.stringValue = fromString
-        return cls()
+        object.value = fromString
+        return object
+
+    @classproperty
+    def pattern(cls) -> Pattern:
+        return Pattern('*')
+    
+    @property
+    def formatted(self) -> Pattern:
+        return self.value
 
     def __repr__(self):
         strValue = f'"{str(self.value)}"' if type(self.value) == str else str(self.value)
         return f'<{type(self).__name__} value:{strValue}>'
-
-    @classproperty
-    def pattern() -> Pattern:
-        return Pattern('*')
 
     def __lt__(self, other: VIObject) -> bool:
         return self.value < other.value

@@ -1,5 +1,5 @@
 [Unit]
-Description=Smarthome Hub
+Description=MajorDom VA
 After=network.target
 StartLimitIntervalSec=0
 
@@ -7,10 +7,10 @@ StartLimitIntervalSec=0
 Type=simple
 Restart=always
 RestartSec=1
-User=mark
-WorkingDirectory=/home/mark/ArchieHub/SmartHome
+User=admin
+WorkingDirectory=/home/admin/MajorDom-VA/
 ExecStart=python3.10 main.py
-StandardOutput=append:/home/mark/logs/smarthome.log
+StandardOutput=append:/home/admin/logs/majordom-va.log
 Environment=PYTHONUNBUFFERED=1
 
 [Install]
