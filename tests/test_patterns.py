@@ -2,8 +2,8 @@ import re
 from VICore import Pattern
 from VICore.patterns import expressions
 
-word = f'[{expressions.alphanumerics}]*'
-words = f'[{expressions.alphanumerics}\s]*'
+word = fr'[{expressions.alphanumerics}]*'
+words = fr'[{expressions.alphanumerics}\s]*'
 
 def test_leading_star():
     p = Pattern('*text')
@@ -118,5 +118,17 @@ def test_one_or_more_of():
     assert not p.match('Some foo')
     
 def test_typed_arguments():
-    p = Pattern('$name:VIString')
-    assert p.compiled == fr'(?P<name>{word})'
+    p = Pattern('lorem $name:VIWord dolor')
+    assert p.compiled == fr'lorem (?P<name>{word}) dolor'
+    
+    m = p.match('lorem ipsum dolor')
+    assert m
+    assert m.substring == 'lorem ipsum dolor'
+    assert m.groups == {'name': 'ipsum'}
+    assert not p.match('lorem ipsum foo dolor')
+    
+    p = Pattern('lorem $name:VIString dolor')
+    m = p.match('lorem ipsum foo bar dolor')
+    assert m
+    assert m.substring == 'lorem ipsum foo bar dolor'
+    assert m.groups == {'name': 'ipsum foo bar'}

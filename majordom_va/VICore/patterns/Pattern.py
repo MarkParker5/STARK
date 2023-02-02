@@ -29,9 +29,8 @@ class Pattern:
 
         #   transform vicore expressions to regex
         
-        for ptrn, regex in dictionary.items():
-            if res := re.search(ptrn, pattern):
-                pattern = re.sub(ptrn, regex, pattern)
+        for vi_ptrn, regex in dictionary.items():
+            pattern = re.sub(vi_ptrn, regex, pattern)
 
         #   find and transform arguments like $name:Type
         
@@ -41,19 +40,20 @@ class Pattern:
         
         for match in argumentMatches:
             
-            argName = match.group('name')
-            argTypeName = match.group('type')
-            argType: Type['VIObject'] = Pattern.argumentTypes.get(argTypeName)
+            arg_name = match.group('name')
+            arg_type_name = match.group('type')
+            arg_type: Type['VIObject'] = Pattern.argumentTypes.get(arg_type_name)
             
-            if not argType: 
-                raise ValueError(f'Unknown type: {argTypeName} for argument: {argName} in pattern: {self._origin}')
+            if not arg_type: 
+                raise ValueError(f'Unknown type: {arg_type_name} for argument: {arg_name} in pattern: {self._origin}')
             
-            pattern = re.sub('\\' + match.group(0), f'(?P<{argName}>{argType.pattern.compiled})', pattern)
+            arg_pattern = arg_type.pattern.compiled.replace('\\', r'\\')
+            print('=>', match.group(0))
+            pattern = re.sub('\\' + match.group(0), f'(?P<{arg_name}>{arg_pattern})', pattern)
             
         #   save and return
         
         self._compiled = pattern
-        print(self._compiled)
         return self._compiled
 
     def match(self, string: str) -> MatchResult | None:

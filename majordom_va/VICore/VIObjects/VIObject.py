@@ -25,7 +25,7 @@ class VIObject(ABC):
 
     @classproperty
     def pattern(cls) -> Pattern:
-        return Pattern('*')
+        return Pattern('**')
     
     @property
     def formatted(self) -> Pattern:

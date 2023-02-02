@@ -4,5 +4,5 @@ from . import VIString
 class VIWord(VIString):
 
     @classproperty
-    def pattern() -> Pattern:
-        return Pattern('[:word:]')
+    def pattern(cls) -> Pattern:
+        return Pattern('*')
