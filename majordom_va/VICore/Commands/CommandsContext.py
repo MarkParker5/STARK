@@ -9,7 +9,7 @@ from .Response import Response, ResponseAction
 from .ThreadData import ThreadData
 
 
-class CommandContext:
+class CommandsContextLayer:
     commands: list[Command] = []
     parameters: dict[str, Any]
 
@@ -17,102 +17,102 @@ class CommandContext:
         self.commands = commands
         self.parameters = parameters
 
-class CommandsContextManagerDelegate(ABC):
+class CommandsContextDelegate(ABC):
     @abstractmethod
-    def commandsContextDidReceiveResponse(self, response: Response): 
+    def commands_context_did_receive_response(self, response: Response): 
         pass
 
-class CommandsContextManager:
+class CommandsContext:
 
-    delegate: CommandsContextManagerDelegate
+    delegate: CommandsContextDelegate
 
-    commandsManager = CommandsManager()
-    lastInteractTime: datetime = datetime.now()
+    commands_manager: CommandsManager
+    last_interact_time: datetime = datetime.now()
 
-    contextQueue: list[CommandContext] = []
+    context_queue: list[CommandsContextLayer] = []
     threads: list[ThreadData] = []
     reports: list[Response] = []
     memory: list[Response] = []
 
-    delaysReports: False # if True, reports will be delayed to next interaction; if False send reports immediately
+    delays_reports: False # if True, reports will be delayed to next interaction; if False send reports immediately
 
-    def __init__(self, delegate: CommandsContextManagerDelegate):
-        self.delegate = delegate
+    def __init__(self, commands_manager):
+        self.commands_manager = commands_manager
 
     @property
-    def rootContext(self):
-        return CommandContext(self.commandsManager.commands)
+    def root_context(self):
+        return CommandsContextLayer(self.commands_manager.commands)
 
-    def processString(self, string: str, data: dict[str, Any] = {}):
-        if not self.contextQueue:
-            self.contextQueue.append(self.rootContext)
+    def process_string(self, string: str):
+        if not self.context_queue:
+            self.context_queue.append(self.root_context)
 
-        currentContext = self.contextQueue[0]
+        current_context = self.context_queue[0]
 
-        while self.contextQueue:
+        while self.context_queue:
             
-            searchResults = self.commandsManager.search(string = string, commands = currentContext.commands)
+            search_results = self.commands_manager.search(string = string, commands = current_context.commands)
             
-            if not searchResults:
-                currentContext = self.contextQueue.pop(0)
+            if not search_results:
+                current_context = self.context_queue.pop(0)
                 continue
 
-            for searchResult in searchResults:
+            for search_result in search_results:
 
-                parameters = {**currentContext.parameters, **searchResult.parameters}
-                commandResponse = searchResult.command.start(parameters)
-                # commandResponse.data = data
+                parameters = {**current_context.parameters, **search_result.parameters}
+                command_response = search_result.command.start(parameters)
+                # command_response.data = data
 
                 # needContinue = False
 
-                for action in commandResponse.actions:
+                for action in command_response.actions:
                     match action:
                         case ResponseAction.popContext:
-                            self.contextQueue.pop(0)
+                            self.context_queue.pop(0)
                         case ResponseAction.popToRootContext:
-                            self.contextQueue = [self.commandsManager.allCommands,]
+                            self.context_queue = [self.commands_manager.сommands,]
                         case ResponseAction.sleep:
-                            self.speechRecognizer.isRecognizing = False
+                            self.speechRecognizer.is_recognizing = False
                         case ResponseAction.repeatLastAnswer:
                             if self.memory:
                                 previousResponse = self.memory[-1]
                                 self.delegate.didReceiveCommandsResponse(previousResponse)
                         case ResponseAction.commandNotFound:
-                            # needContinue = not self.commandsManager.stringHasName(string)
+                            # needContinue = not self.commands_manager.stringHasName(string)
                             pass
 
                 # if needContinue: 
                 #     continue
                 
-                self.parse(commandResponse)
+                self.parse(command_response)
                 # break
 
-    async def asyncCheckThreads(self):
+    async def async_check_threads(self):
         while True:
             await asyncio.sleep(5)
-            self.checkThreads()
+            self.check_threads()
 
-    def checkThreads(self):
-        for threadData in self.threads:
-            if not threadData.finishEvent.is_set(): continue
+    def check_threads(self):
+        for thread_data in self.threads:
+            if not thread_data.finishEvent.is_set(): continue
 
-            response = threadData.thread.join()
-            self.parse(response, delaysReports = self.delaysReports and datetime.now().timestamp() - self.lastInteractTime.timestamp() > 30)
-            threadData.finishEvent.clear()
+            response = thread_data.thread.join()
+            self.parse(response, delays_reports = self.delays_reports and datetime.now().timestamp() - self.last_interact_time.timestamp() > 30)
+            thread_data.finishEvent.clear()
 
-            del threadData
+            del thread_data
 
-    def parse(self, response, delaysReports: bool = False):
+    def parse(self, response, delays_reports: bool = False):
         self.reports.insert(0, response)
         
         if response.thread:
             self.threads.append(response.thread)
         
         if response.context:
-            newContext = CommandContext(response.context, response.parameters)
-            self.contextQueue.insert(0, newContext)
+            newContext = CommandsContextLayer(response.context, response.parameters)
+            self.context_queue.insert(0, newContext)
         
-        if not delaysReports:
+        if not delays_reports:
             self.report()
         
         self.memory.append(response)
@@ -120,4 +120,4 @@ class CommandsContextManager:
     def report(self):
         while self.reports:
             rep = self.reports.pop(0)
-            self.delegate.commandsContextDidReceiveResponse(rep)
+            self.delegate.commands_context_did_receive_response(rep)

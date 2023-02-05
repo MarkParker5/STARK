@@ -1,5 +1,4 @@
 import os
-from  time import sleep
 from google.cloud import texttospeech
 import sounddevice
 import soundfile

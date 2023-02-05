@@ -1,10 +1,7 @@
+from pydantic import BaseModel
 from .RThread import RThread, Event
 
 
-class ThreadData:
+class ThreadData(BaseModel):
     thread: RThread
     finishEvent: Event
-
-    def __init__(thread: RThread, finishEvent: Event):
-        self.thread = thread
-        self.finishEvent = finishEvent

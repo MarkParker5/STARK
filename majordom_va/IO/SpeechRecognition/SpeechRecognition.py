@@ -1,7 +1,6 @@
-from typing import Callable, Optional
+from typing import Optional
 from abc import ABC, abstractmethod
 import asyncio
-import os, sys
 import queue
 import json
 
@@ -30,7 +29,7 @@ class SpeechRecognizer:
     lastResult: Optional[str] = ""
     lastPartialResult: str = ""
 
-    isRecognizing = True
+    is_recognizing = True
     _isListening = False
 
     audioQueue = queue.Queue()
@@ -53,12 +52,12 @@ class SpeechRecognizer:
         }
 
     def audioInputCallback(self, indata, frames, time, status):
-        if not self.isRecognizing: return
+        if not self.is_recognizing: return
         self.audioQueue.put(bytes(indata))
 
     def stopListening(self):
         self._isListening = False
-        audioQueue = queue.Queue()
+        self.audioQueue = queue.Queue()
 
     async def startListening(self):
         self._isListening = True
