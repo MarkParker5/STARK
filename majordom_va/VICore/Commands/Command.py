@@ -1,40 +1,21 @@
 from typing import Callable
 from abc import ABC
 
+from ..patterns import Pattern
 from ..VIObjects import VIObject
-from ..Pattern import Pattern
+from .Response import Response
+
+
+CommandRunner = Callable[[dict[str, VIObject]], Response]
 
 class Command(ABC):
     name: str
     patterns: list[Pattern]
-    start: Callable
 
-    def __init__(self, name: str, patterns: list[str] = [], primary: bool = True):
-        self._name = name
-        self._patterns = [Pattern(pattern) for pattern in patterns]
-        self.primary = primary
+    def __init__(self, name: str, patterns: list[str], runner: CommandRunner):
+        self.name = name
+        self.patterns = [Pattern(pattern) for pattern in patterns]
+        self.run = runner
 
-        from .CommandsManager import CommandsManager
-        CommandsManager().append(self)
-
-    def start(self, params: dict[str, VIObject]):
-        raise Exception(f'Method start is not implemented for command with name {name}')
-
-    def setStart(self, function):                                               #   define start (required)
-        self.start = function
-
-    @property
-    def name(self):
-        return self._name
-
-    @property
-    def patterns(self):
-        return self._patterns
-
-    @classmethod
-    def new(cls, *args, **kwargs):
-        def creator(func) -> Command:
-            cmd: Command = cls(func.__name__, *args, **kwargs)
-            cmd.setStart(func)
-            return cmd
-        return creator
+    def run(self, params: dict[str, VIObject]) -> Response:
+        raise NotImplementedError(f'Method start is not implemented for command with name {self.name}')

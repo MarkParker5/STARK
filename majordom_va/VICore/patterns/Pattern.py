@@ -3,7 +3,6 @@ from dataclasses import dataclass
 import re
 
 from .expressions import dictionary
-# from ..VIObjects import VIObject
 
 
 @dataclass

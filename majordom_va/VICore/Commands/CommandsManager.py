@@ -1,84 +1,66 @@
-from typing import Type, Optional
-from .Command import Command
+from typing import Type
+from pydantic import BaseModel
+
+from ..patterns import Pattern
 from ..VIObjects import *
 from .RThread import RThread, Event
+from .ThreadData import ThreadData
+from .Command import Command, CommandRunner
+from .Response import Response
 
-import config
-from ..Pattern import Pattern
 
-class SearchResult:
+class SearchResult(BaseModel):
     command: Command
+    origin: VIString
     parameters: dict[str, VIObject]
 
-    def __init__(self, command: Command, parameters: dict[str, VIObject] = {}):
-        self.command = command
-        self.parameters = parameters
-
 class CommandsManager:
-    allCommands: list[Command] = []
+    commands: list[Command] = []
     QA: Command = None
-
-    def __new__(cls):                                                           # Singleton
-        if not hasattr(cls, 'instance'):
-            cls.instance = super().__new__(cls)
-        return cls.instance
 
     def search(self, string: str, commands: list[Command]) -> list[SearchResult]:
         results: list[SearchResult] = []
-        acstring = VIString(string.lower())
+        origin = VIString(string)
 
-        #   find command obj by pattern
         for command in commands:
             for pattern in command.patterns:
-                groupdict = pattern.match(acstring)
+                match = pattern.match(string)
+                
+                if not match:
+                    continue
 
-                if groupdict != None:
-
-                    parameters: dict[str: VIObject] = {'string': acstring}
-
-                    for key, value in groupdict.items():
-                        name, typeName = key.split(':')
-                        VIType: Type[VIObject] = CommandsManager.classFromString(typeName)
-
-                        try: parameters[name] = VIType.parse(string = value)
-                        except: break
+                for key, value in match.groups.items():
+                    parameters: dict[str: VIObject] = {}
+                    
+                    name, type_name = key.split(':')
+                    VIType: Type[VIObject] = Pattern.argumentTypes[type_name]
+                    
+                    if vi_object := VIType.parse(string = value):
+                        parameters[name] = vi_object
                     else:
-                        results.append(SearchResult(command, parameters))
+                        break
+                else:
+                    results.append(SearchResult(command, origin, parameters))
 
         if not results and (qa := self.QA):
-            results.append(SearchResult(qa, {'string': acstring,}))
+            results.append(SearchResult(qa, origin))
 
         return results
-
-    def append(self, command):
-        if hasattr(self, command.name):
-            Exception('Error: command with name \'{command.name}\' already exist')
-        setattr(self, command.name, command)
-        if command.primary:
-            self.allCommands.append(command)
-
-    def getCommand(self, name) -> Optional[Command]:
-        return getattr(self, name) if hasattr(self, name) else None
-
-    def stringHasName(self, string) -> bool:
-        match = Pattern(
-            f'({"|".join(config.names)})'
-        ).match(
-            VIString(string.lower())
-        )
-        return match != None
+    
+    def new(self, patterns: list[str]):
+        def creator(func: CommandRunner) -> Command:
+            cmd = Command(func.__name__, patterns, func)
+            self.commands.append(cmd)
+            return cmd
+        return creator
 
     @staticmethod
-    def classFromString(className: str) -> VIObject:
-        return getattr(sys.modules[__name__], className)
-
-    @staticmethod
-    def background(answer = '', voice = ''):                                    # make background cmd
+    def background(answer = '', voice = ''):
         def decorator(func):
             def wrapper(text):
-                finishEvent = Event()
+                finish_event = Event()
                 thread = RThread(target=func, args=(text, finish_event))
                 thread.start()
-                return Response(voice = voice, text = answer, thread = ThreadData(thread, finishEvent) )
+                return Response(voice = voice, text = answer, thread = ThreadData(thread, finish_event) )
             return wrapper
         return decorator

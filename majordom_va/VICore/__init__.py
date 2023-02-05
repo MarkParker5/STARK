@@ -2,9 +2,9 @@ from .patterns import Pattern, expressions
 from .VIObjects import (
     VIString,
     VIWord,
-    VINumber,
-    VITime,
-    VITimeInterval
+    # VINumber,
+    # VITimeInterval
+    # VITime,
 )
 # from .Commands import (
     
@@ -14,7 +14,7 @@ from .VIObjects import (
 Pattern.argumentTypes = {
     'VIString': VIString,
     'VIWord': VIWord,
-    'VINumber': VINumber,
-    'VITime': VITime,
-    'VITimeInterval': VITimeInterval,
+    # 'VINumber': VINumber,
+    # 'VITimeInterval': VITimeInterval,
+    # 'VITime': VITime,
 }

@@ -1,12 +1,13 @@
 from abc import ABC, abstractmethod
-import asyncio
 from typing import Any
+from datetime import datetime
+import asyncio
 
-from VICore import VITime, VIString
 from .CommandsManager import CommandsManager
 from .Command import Command
 from .Response import Response, ResponseAction
 from .ThreadData import ThreadData
+
 
 class CommandContext:
     commands: list[Command] = []
@@ -16,16 +17,17 @@ class CommandContext:
         self.commands = commands
         self.parameters = parameters
 
-class CommandsContextManagerDelegate:
+class CommandsContextManagerDelegate(ABC):
     @abstractmethod
-    def commandsContextDidReceiveResponse(self, response: Response): pass
+    def commandsContextDidReceiveResponse(self, response: Response): 
+        pass
 
 class CommandsContextManager:
 
     delegate: CommandsContextManagerDelegate
 
     commandsManager = CommandsManager()
-    lastInteractTime: VITime = VITime()
+    lastInteractTime: datetime = datetime.now()
 
     contextQueue: list[CommandContext] = []
     threads: list[ThreadData] = []
@@ -39,7 +41,7 @@ class CommandsContextManager:
 
     @property
     def rootContext(self):
-        return CommandContext(self.commandsManager.allCommands)
+        return CommandContext(self.commandsManager.commands)
 
     def processString(self, string: str, data: dict[str, Any] = {}):
         if not self.contextQueue:
@@ -48,69 +50,74 @@ class CommandsContextManager:
         currentContext = self.contextQueue[0]
 
         while self.contextQueue:
-
-            if searchResults := self.commandsManager.search(string = string, commands = currentContext.commands):
-
-                for searchResult in searchResults:
-
-                    parameters = {**currentContext.parameters, **searchResult.parameters}
-                    commandResponse = searchResult.command.start(parameters)
-                    commandResponse.data = data
-
-                    needContinue = False
-
-                    for action in commandResponse.actions:
-                        match action:
-                            case ResponseAction.popContext:
-                                self.contextQueue.pop(0)
-                            case ResponseAction.popToRootContext:
-                                self.contextQueue = [self.commandsManager.allCommands,]
-                            case ResponseAction.sleep:
-                                self.speechRecognizer.isRecognizing = False
-                            case ResponseAction.repeatLastAnswer:
-                                if self.memory:
-                                    previousResponse = self.memory[-1]
-                                    self.delegate.didReceiveCommandsResponse(previousResponse)
-                            case ResponseAction.commandNotFound:
-                                needContinue = not self.commandsManager.stringHasName(string)
-
-                    if needContinue: continue
-
-                    self.parse(commandResponse)
-                break
-            else:
+            
+            searchResults = self.commandsManager.search(string = string, commands = currentContext.commands)
+            
+            if not searchResults:
                 currentContext = self.contextQueue.pop(0)
-        else:
-            self.contextQueue.append(currentContext)
+                continue
+
+            for searchResult in searchResults:
+
+                parameters = {**currentContext.parameters, **searchResult.parameters}
+                commandResponse = searchResult.command.start(parameters)
+                # commandResponse.data = data
+
+                # needContinue = False
+
+                for action in commandResponse.actions:
+                    match action:
+                        case ResponseAction.popContext:
+                            self.contextQueue.pop(0)
+                        case ResponseAction.popToRootContext:
+                            self.contextQueue = [self.commandsManager.allCommands,]
+                        case ResponseAction.sleep:
+                            self.speechRecognizer.isRecognizing = False
+                        case ResponseAction.repeatLastAnswer:
+                            if self.memory:
+                                previousResponse = self.memory[-1]
+                                self.delegate.didReceiveCommandsResponse(previousResponse)
+                        case ResponseAction.commandNotFound:
+                            # needContinue = not self.commandsManager.stringHasName(string)
+                            pass
+
+                # if needContinue: 
+                #     continue
+                
+                self.parse(commandResponse)
+                # break
 
     async def asyncCheckThreads(self):
         while True:
             await asyncio.sleep(5)
-            checkThreads()
+            self.checkThreads()
 
     def checkThreads(self):
         for threadData in self.threads:
             if not threadData.finishEvent.is_set(): continue
 
             response = threadData.thread.join()
-            self.parse(response, delaysReports = delaysReports and VITime() - self.lastInteractTime > 30)
+            self.parse(response, delaysReports = self.delaysReports and datetime.now().timestamp() - self.lastInteractTime.timestamp() > 30)
             threadData.finishEvent.clear()
 
             del threadData
 
     def parse(self, response, delaysReports: bool = False):
         self.reports.insert(0, response)
+        
         if response.thread:
             self.threads.append(response.thread)
+        
         if response.context:
             newContext = CommandContext(response.context, response.parameters)
             self.contextQueue.insert(0, newContext)
+        
         if not delaysReports:
             self.report()
+        
         self.memory.append(response)
 
     def report(self):
         while self.reports:
             rep = self.reports.pop(0)
             self.delegate.commandsContextDidReceiveResponse(rep)
-            del rep

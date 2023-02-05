@@ -1,5 +1,6 @@
 from .RThread import RThread, Event
 
+
 class ThreadData:
     thread: RThread
     finishEvent: Event
