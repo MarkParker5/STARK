@@ -1,3 +1,4 @@
+from pydantic import BaseModel
 from threading import Thread, Event
 
 
@@ -12,3 +13,11 @@ class RThread(Thread):
     def join(self, *args, **kwargs):
         super().join(*args, **kwargs)
         return self._return
+
+class ThreadData(BaseModel):
+    thread: RThread
+    finishEvent: Event
+    
+    class Config:
+        arbitrary_types_allowed = True
+    

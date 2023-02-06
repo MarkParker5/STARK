@@ -1,5 +1,5 @@
 import re
-from VICore import Pattern
+from VICore import Pattern, VIWord, VIString
 from VICore.patterns import expressions
 
 word = fr'[{expressions.alphanumerics}]*'
@@ -119,6 +119,7 @@ def test_one_or_more_of():
     
 def test_typed_arguments():
     p = Pattern('lorem $name:VIWord dolor')
+    assert p.arguments == {'name': VIWord}
     assert p.compiled == fr'lorem (?P<name>{word}) dolor'
     
     m = p.match('lorem ipsum dolor')
@@ -128,6 +129,7 @@ def test_typed_arguments():
     assert not p.match('lorem ipsum foo dolor')
     
     p = Pattern('lorem $name:VIString dolor')
+    assert p.arguments == {'name': VIString}
     m = p.match('lorem ipsum foo bar dolor')
     assert m
     assert m.substring == 'lorem ipsum foo bar dolor'

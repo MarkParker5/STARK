@@ -4,9 +4,8 @@ from datetime import datetime
 import asyncio
 
 from .CommandsManager import CommandsManager
-from .Command import Command
-from .Response import Response, ResponseAction
-from .ThreadData import ThreadData
+from .Command import Command, Response, ResponseAction
+from .Threads import ThreadData
 
 
 class CommandsContextLayer:

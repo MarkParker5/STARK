@@ -3,22 +3,30 @@ from pydantic import BaseModel
 
 from ..patterns import Pattern
 from ..VIObjects import *
-from .RThread import RThread, Event
-from .ThreadData import ThreadData
-from .Command import Command, CommandRunner
-from .Response import Response
+from .Threads import ThreadData, RThread, Event
+from .Command import Command, CommandRunner, Response
 
 
 class SearchResult(BaseModel):
     command: Command
-    origin: VIString
-    parameters: dict[str, VIObject]
+    substring: str
+    parameters: dict[str, VIObject] = []
+    
+    class Config:
+        arbitrary_types_allowed = True
 
 class CommandsManager:
-    commands: list[Command] = []
+    commands: list[Command]
     QA: Command = None
+    
+    def __init__(self):
+        self.commands = []
 
-    def search(self, string: str, commands: list[Command]) -> list[SearchResult]:
+    def search(self, string: str, commands: list[Command] = None) -> list[SearchResult]:
+        
+        if not commands:
+            commands = self.commands
+        
         results: list[SearchResult] = []
         origin = VIString(string)
 
@@ -28,22 +36,29 @@ class CommandsManager:
                 
                 if not match:
                     continue
-
-                for key, value in match.groups.items():
-                    parameters: dict[str: VIObject] = {}
+                
+                parameters: dict[str: VIObject] = {}
+                
+                for name, value in match.groups.items():
                     
-                    name, type_name = key.split(':')
-                    VIType: Type[VIObject] = Pattern.argumentTypes[type_name]
+                    VIType: Type[VIObject] = pattern.arguments[name]
                     
-                    if vi_object := VIType.parse(string = value):
+                    if vi_object := VIType.parse(from_string = value):
                         parameters[name] = vi_object
                     else:
                         break
                 else:
-                    results.append(SearchResult(command, origin, parameters))
+                    results.append(SearchResult(
+                        command = command,
+                        substring = match.substring,
+                        parameters = parameters
+                    ))
 
         if not results and (qa := self.QA):
-            results.append(SearchResult(qa, origin))
+            results.append(SearchResult(
+                command = qa,
+                origin = origin
+            ))
 
         return results
     

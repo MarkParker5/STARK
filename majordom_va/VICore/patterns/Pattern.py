@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Type
+from typing import Type, Generator
 from dataclasses import dataclass
 import re
 
@@ -15,15 +15,42 @@ class Pattern:
     
     argumentTypes: dict[str, Type['VIObject']] = {} # static
     
+    arguments: dict[str, Type['VIObject']]
+    compiled: str
+    
     _origin: str
-    _compiled: str | None = None
+    _argument_regex: re.compile
 
     def __init__(self, origin: str):
         self._origin = origin
-
-    @property
-    def compiled(self) -> str: # transform Pattern to classic regex with named groups
-        if self._compiled: return self._compiled
+        self._argument_regex = self._get_argument_regex()
+        self.arguments = dict(self._get_arguments())
+        self.compiled = self._compile()
+        
+    def match(self, string: str) -> MatchResult | None:
+        
+        if matches := sorted(re.finditer(self.compiled, string), key = lambda m: len(m.group(0))):
+            match = matches[-1]
+            return MatchResult(match.group(0).strip(), match.groupdict())
+        
+        return None
+        
+    def _get_argument_regex(self) -> re.compile:
+        types = '|'.join(Pattern.argumentTypes.keys())
+        return re.compile(r'\$(?P<name>[A-z]+)\:(?P<type>(?:' + types + r'))')
+    
+    def _get_arguments(self) -> Generator[tuple[str, Type['VIObject']]]:
+        for match in re.finditer(self._argument_regex, self._origin):
+            arg_name = match.group('name')
+            arg_type_name = match.group('type')
+            arg_type: Type['VIObject'] = Pattern.argumentTypes.get(arg_type_name)
+            
+            if not arg_type: 
+                raise ValueError(f'Unknown type: {arg_type_name} for argument: {arg_name} in pattern: {self._origin}')
+            
+            yield arg_name, arg_type
+            
+    def _compile(self) -> str: # transform Pattern to classic regex with named groups
         
         pattern: str = self._origin
 
@@ -34,34 +61,13 @@ class Pattern:
 
         #   find and transform arguments like $name:Type
         
-        types = '|'.join(Pattern.argumentTypes.keys())
-        argumentRegex = re.compile(r'\$(?P<name>[A-z]+)\:(?P<type>(?:' + types + r'))')
-        argumentMatches = re.finditer(argumentRegex, pattern)
-        
-        for match in argumentMatches:
+        for name, vi_type in self.arguments.items():
             
-            arg_name = match.group('name')
-            arg_type_name = match.group('type')
-            arg_type: Type['VIObject'] = Pattern.argumentTypes.get(arg_type_name)
-            
-            if not arg_type: 
-                raise ValueError(f'Unknown type: {arg_type_name} for argument: {arg_name} in pattern: {self._origin}')
-            
-            arg_pattern = arg_type.pattern.compiled.replace('\\', r'\\')
-            pattern = re.sub('\\' + match.group(0), f'(?P<{arg_name}>{arg_pattern})', pattern)
-            
-        #   save and return
+            arg_declaration = f'\\${name}\\:{vi_type.__name__}'
+            arg_pattern = vi_type.pattern.compiled.replace('\\', r'\\')
+            pattern = re.sub(arg_declaration, f'(?P<{name}>{arg_pattern})', pattern)
         
-        self._compiled = pattern
-        return self._compiled
-
-    def match(self, string: str) -> MatchResult | None:
-        
-        if matches := sorted(re.finditer(self.compiled, string), key = lambda m: len(m.group(0))):
-            match = matches[-1]
-            return MatchResult(match.group(0).strip(), match.groupdict())
-        
-        return None
+        return pattern
     
     def __eq__(self, other: Pattern) -> bool:
         return self._origin == other._origin
