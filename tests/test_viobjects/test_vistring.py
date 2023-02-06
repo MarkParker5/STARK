@@ -19,3 +19,6 @@ def test_match():
     m = p.match('foo lorem ipsum dolor sit amet baz')
     assert m
     assert m.groups['bar'] == 'lorem ipsum dolor sit amet'
+    
+def test_formatted():
+    assert VIString.parse('foo bar baz').formatted == 'foo bar baz'

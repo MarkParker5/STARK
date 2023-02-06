@@ -19,3 +19,6 @@ def test_match():
     
     m = p.match('foo lorem ipsum dolor sit amet baz')
     assert not m
+    
+def test_formatted():
+    assert VIWord.parse('foo').formatted == 'foo'
