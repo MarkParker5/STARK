@@ -1,7 +1,8 @@
-from .VIObject import Pattern, classproperty
-from . import VIString
+from .VIObject import VIObject, Pattern, classproperty
 
-class VIWord(VIString):
+
+class VIWord(VIObject):
+    value: str
 
     @classproperty
     def pattern(cls) -> Pattern:

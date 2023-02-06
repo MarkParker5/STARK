@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Type
 from dataclasses import dataclass
 import re
@@ -47,7 +48,6 @@ class Pattern:
                 raise ValueError(f'Unknown type: {arg_type_name} for argument: {arg_name} in pattern: {self._origin}')
             
             arg_pattern = arg_type.pattern.compiled.replace('\\', r'\\')
-            print('=>', match.group(0))
             pattern = re.sub('\\' + match.group(0), f'(?P<{arg_name}>{arg_pattern})', pattern)
             
         #   save and return
@@ -62,3 +62,9 @@ class Pattern:
             return MatchResult(match.group(0).strip(), match.groupdict())
         
         return None
+    
+    def __eq__(self, other: Pattern) -> bool:
+        return self._origin == other._origin
+    
+    def __repr__(self) -> str:
+        return f'<Pattern \'{self._origin}\'>'

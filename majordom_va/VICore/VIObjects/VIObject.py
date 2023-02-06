@@ -17,15 +17,13 @@ class VIObject(ABC):
     def __init__(self, value: Any):
         self.value = value
 
-    @classmethod
-    def parse(cls, fromString: str) -> VIObject:
-        object = cls()
-        object.value = fromString
-        return object
-
     @classproperty
     def pattern(cls) -> Pattern:
         return Pattern('**')
+
+    @classmethod
+    def parse(cls, from_string: str) -> VIObject:
+        return cls(from_string)
     
     @property
     def formatted(self) -> Pattern:
