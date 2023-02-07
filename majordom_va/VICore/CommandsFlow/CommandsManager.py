@@ -62,10 +62,11 @@ class CommandsManager:
 
         return results
     
-    def new(self, patterns: list[str]):
+    def new(self, patterns: list[str], hidden: bool = False):
         def creator(func: CommandRunner) -> Command:
             cmd = Command(func.__name__, patterns, func)
-            self.commands.append(cmd)
+            if not hidden:
+                self.commands.append(cmd)
             return cmd
         return creator
 

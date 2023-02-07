@@ -9,6 +9,7 @@ from .VIObjects import (
 from .CommandsFlow import (
     Command,
     Response,
+    ResponseAction,
     CommandsManager,
     CommandsContext,
     CommandsContextDelegate

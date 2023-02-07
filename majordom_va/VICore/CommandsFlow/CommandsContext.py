@@ -27,17 +27,20 @@ class CommandsContext:
 
     commands_manager: CommandsManager
 
-    context_queue: list[CommandsContextLayer] = []
-    threads: list[ThreadData] = []
-    reports: list[Response] = []
-    memory: list[Response] = []
+    context_queue: list[CommandsContextLayer]
+    threads: list[ThreadData]
+    reports: list[Response]
+    memory: list[Response]
 
-    delays_reports: False # if True, reports will be delayed to next interaction; if False send reports immediately
+    delays_reports: bool = False # if True, reports will be delayed to next interaction; if False send reports immediately
     last_interact_time: datetime = datetime.now()
 
     def __init__(self, commands_manager):
         self.commands_manager = commands_manager
-        self.context_queue.append(self.root_context)
+        self.context_queue = [self.root_context]
+        self.threads = []
+        self.reports = []
+        self.memory = []
 
     @property
     def root_context(self):
@@ -101,8 +104,8 @@ class CommandsContext:
         if response.thread:
             self.threads.append(response.thread)
         
-        if response.context:
-            newContext = CommandsContextLayer(response.context, response.parameters)
+        if response.commands:
+            newContext = CommandsContextLayer(response.commands, response.parameters)
             self.context_queue.insert(0, newContext)
         
         if not delays_reports:

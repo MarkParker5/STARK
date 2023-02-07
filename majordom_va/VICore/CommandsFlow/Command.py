@@ -34,7 +34,7 @@ class ResponseAction(Enum):
 class Response(BaseModel):
     voice: str = ''
     text: str = ''
-    context: list[Command] = []
+    commands: list[Command] = []
     parameters: dict[str, Any] = {}
     actions: list[ResponseAction] = []
     thread: Optional[ThreadData] = None
