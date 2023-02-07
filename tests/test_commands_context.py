@@ -52,10 +52,10 @@ def test_context_layers():
     assert len(context.context_queue) == 1
     
     @manager.new(['test'])
-    def test(): pass
+    def test(params): return Response()
     
     @manager.new(['lorem * dolor'])
-    def lorem(): pass
+    def lorem(params): return Response()
     
     @manager.new(['hello'], hidden = True)
     def hello_context(params): 
@@ -76,6 +76,8 @@ def test_context_layers():
             parameters = {'name': params['name']}
         )
     
+    # test second context layer
+    
     context.process_string('hello world')
     assert len(context_delegate.responses) == 1
     assert context_delegate.responses[0].text == 'Hello, world!'
@@ -88,6 +90,8 @@ def test_context_layers():
     assert len(context.context_queue) == 2
     context_delegate.responses.clear()
     
+    # test popping context layer via response action
+    
     context.process_string('bye')
     assert len(context_delegate.responses) == 1
     assert context_delegate.responses[0].text == 'Bye, world!'
@@ -97,3 +101,13 @@ def test_context_layers():
     context.process_string('hello')
     assert len(context_delegate.responses) == 0
     
+    # test popping context layer when command not found
+    
+    context.process_string('hello world')
+    assert len(context.context_queue) == 2
+    assert len(context_delegate.responses) == 1
+    context_delegate.responses.clear()
+    
+    context.process_string('lorem ipsum dolor')
+    assert len(context.context_queue) == 1
+    assert len(context_delegate.responses) == 1
