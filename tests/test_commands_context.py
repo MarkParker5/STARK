@@ -1,80 +1,27 @@
-from VICore import (
-    CommandsManager,
-    CommandsContext,
-    CommandsContextDelegate, 
-    Response,
-    ResponseAction
-)
+# from VICore import (
+#     CommandsManager,
+#     CommandsContext,
+#     CommandsContextDelegate, 
+#     Response,
+#     ResponseAction
+# )
 
 
 # TODO: test delays_reports, threads, memory, response_actions
 
-class CommandsContextDelegateMock(CommandsContextDelegate):
-    
-    responses: list[Response]
-    
-    def __init__(self):
-        self.responses = []
-    
-    def commands_context_did_receive_response(self, response: Response):
-        self.responses.append(response)
-
-def test_basic_search():
-    manager = CommandsManager()
-    context = CommandsContext(manager)
-    context_delegate = CommandsContextDelegateMock()
-    context.delegate = context_delegate
+def test_basic_search(commands_context_flow):
+    context, context_delegate = commands_context_flow
     
     assert len(context_delegate.responses) == 0
     assert len(context.context_queue) == 1
     
-    @manager.new(['test'])
-    def test(): pass
-    
-    @manager.new(['lorem * dolor'])
-    def lorem(): pass
-    
-    @manager.new(['hello $name:VIWord'])
-    def hello(params): return Response(text = f'Hello, {params["name"]}!')
-    
-    context.process_string('hello world')
+    context.process_string('lorem ipsum dolor')
     assert len(context_delegate.responses) == 1
-    assert context_delegate.responses[0].text == 'Hello, world!'
+    assert context_delegate.responses[0].text == 'Lorem!'
     assert len(context.context_queue) == 1
     
-def test_context_layers():
-    manager = CommandsManager()
-    context = CommandsContext(manager)
-    context_delegate = CommandsContextDelegateMock()
-    context.delegate = context_delegate
-    
-    assert len(context_delegate.responses) == 0
-    assert len(context.context_queue) == 1
-    
-    @manager.new(['test'])
-    def test(params): return Response()
-    
-    @manager.new(['lorem * dolor'])
-    def lorem(params): return Response()
-    
-    @manager.new(['hello'], hidden = True)
-    def hello_context(params): 
-        return Response(text = f'Hi, {params["name"]}!')
-    
-    @manager.new(['bye'], hidden = True)
-    def bye_context(params): 
-        return Response(
-            text = f'Bye, {params["name"]}!',
-            actions = [ResponseAction.popContext]
-        ) 
-    
-    @manager.new(['hello $name:VIWord'])
-    def hello(params): 
-        return Response(
-            text = f'Hello, {params["name"]}!',
-            commands = [hello_context, bye_context],
-            parameters = {'name': params['name']}
-        )
+def test_context_layers(commands_context_flow):
+    context, context_delegate = commands_context_flow
     
     # test second context layer
     
