@@ -21,4 +21,6 @@ def test_match():
     assert m.groups['bar'] == 'lorem ipsum dolor sit amet'
     
 def test_formatted():
-    assert VIString.parse('foo bar baz').formatted == 'foo bar baz'
+    string = VIString.parse('foo bar baz')
+    assert str(string) == '<VIString value: "foo bar baz">'
+    assert f'{string}' == 'foo bar baz'

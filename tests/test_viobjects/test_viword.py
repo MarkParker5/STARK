@@ -21,4 +21,6 @@ def test_match():
     assert not m
     
 def test_formatted():
-    assert VIWord.parse('foo').formatted == 'foo'
+    string = VIWord.parse('foo')
+    assert str(string) == '<VIWord value: "foo">'
+    assert f'{string}' == 'foo'

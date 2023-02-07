@@ -25,13 +25,12 @@ class VIObject(ABC):
     def parse(cls, from_string: str) -> VIObject:
         return cls(from_string)
     
-    @property
-    def formatted(self) -> Pattern:
-        return self.value
+    def __format__(self, spec) -> str:
+        return f'{self.value:{spec}}'
 
     def __repr__(self):
         strValue = f'"{str(self.value)}"' if type(self.value) == str else str(self.value)
-        return f'<{type(self).__name__} value:{strValue}>'
+        return f'<{type(self).__name__} value: {strValue}>'
 
     def __lt__(self, other: VIObject) -> bool:
         return self.value < other.value

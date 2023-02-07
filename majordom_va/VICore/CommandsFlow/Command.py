@@ -36,8 +36,8 @@ class Response(BaseModel):
     text: str = ''
     context: list[Command] = []
     parameters: dict[str, Any] = {}
+    actions: list[ResponseAction] = []
     thread: Optional[ThreadData] = None
-    actions: Optional[ResponseAction] = None
     # data: dict[str, Any]
     
     class Config:
