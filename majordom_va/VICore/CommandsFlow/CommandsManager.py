@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Type
 from pydantic import BaseModel
 
@@ -72,6 +73,9 @@ class CommandsManager:
                 self.commands.append(cmd)
             return cmd
         return creator
+    
+    def extend(self, other_manager: CommandsManager):
+        self.commands.extend(other_manager.commands)
 
     @staticmethod
     def background(first_response: Response):

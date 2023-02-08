@@ -53,3 +53,26 @@ def test_search():
             assert result.substring == 'hello new world'
             assert result.parameters == {'name': VIWord('new'), 'surname': VIWord('world')}
             
+def test_extend_manager():
+    root_manager = CommandsManager()
+    child_manager = CommandsManager('Child')
+    
+    @root_manager.new(['test'])
+    def test(): pass
+    
+    @child_manager.new(['test'])
+    def test(): pass
+    
+    assert len(child_manager.commands) == 1
+    assert len(root_manager.commands) == 1
+    assert child_manager.commands[0].name == 'Child.test'
+    assert root_manager.commands[0].name == 'CommandsManager.test'
+    
+    root_manager.extend(child_manager)
+    
+    assert len(child_manager.commands) == 1
+    assert len(root_manager.commands) == 2
+    assert child_manager.commands[0].name == 'Child.test'
+    assert root_manager.commands[0].name == 'CommandsManager.test'
+    assert root_manager.commands[1].name == 'Child.test'
+    
