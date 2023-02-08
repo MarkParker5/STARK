@@ -36,7 +36,6 @@ class Response(BaseModel):
     parameters: dict[str, Any] = {}
     actions: list[ResponseAction] = []
     thread: Optional[ThreadData] = None
-    # data: dict[str, Any]
     
     class Config:
         arbitrary_types_allowed = True

@@ -33,7 +33,7 @@ class CommandsContext:
     memory: list[Response]
 
     delays_reports: bool = False # if True, reports will be delayed to next interaction; if False send reports immediately
-    last_interact_time: datetime = datetime.now()
+    last_interaction_time: datetime
 
     def __init__(self, commands_manager):
         self.commands_manager = commands_manager
@@ -41,6 +41,7 @@ class CommandsContext:
         self.threads = []
         self.reports = []
         self.memory = []
+        self.last_interaction_time = datetime.fromtimestamp(0)
 
     @property
     def root_context(self):
@@ -64,20 +65,23 @@ class CommandsContext:
 
             parameters = {**current_context.parameters, **search_result.parameters}
             command_response = search_result.command.run(parameters)
-            # command_response.data = data
 
             for action in command_response.actions:
                 match action:
+                    
                     case ResponseAction.pop_context:
                         self.context_queue.pop(0)
+                    
                     case ResponseAction.pop_to_root_context:
-                        self.context_queue = [self.commands_manager.сommands,]
+                        self.context_queue = [self.root_context]
+                    
                     case ResponseAction.sleep:
-                        self.speechRecognizer.is_recognizing = False
+                        self.last_interaction_time = datetime.fromtimestamp(0)
+                    
                     case ResponseAction.repeat_last_answer:
                         if self.memory:
-                            previousResponse = self.memory[-1]
-                            self.delegate.didReceiveCommandsResponse(previousResponse)
+                            previous_response = self.memory[-1]
+                            self.parse(previous_response)
             
             self.parse(command_response)
 
@@ -91,7 +95,7 @@ class CommandsContext:
             if not thread_data.finishEvent.is_set(): continue
 
             response = thread_data.thread.join()
-            self.parse(response, delays_reports = self.delays_reports and datetime.now().timestamp() - self.last_interact_time.timestamp() > 30)
+            self.parse(response, delays_reports = self.delays_reports and datetime.now().timestamp() - self.last_interaction_time.timestamp() > 30)
             thread_data.finishEvent.clear()
 
             del thread_data

@@ -55,4 +55,18 @@ def commands_context_flow() -> tuple[CommandsContext, CommandsContextDelegateMoc
             parameters = {'name': params['name']}
         )
         
+    @manager.new(['sleep'])
+    def sleep(params):
+        return Response(
+            text = 'Sleeping...',
+            actions = [ResponseAction.sleep]
+        )
+        
+    @manager.new(['repeat'])
+    def repeat(params):
+        return Response(
+            text = 'Done',
+            actions = [ResponseAction.repeat_last_answer]
+        )
+        
     return context, context_delegate
