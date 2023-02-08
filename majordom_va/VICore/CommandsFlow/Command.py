@@ -24,12 +24,10 @@ class Command():
         raise NotImplementedError(f'Method start is not implemented for command with name {self.name}')
 
 class ResponseAction(Enum):
-    popContext = auto()
-    popToRootContext = auto()
+    pop_context = auto()
+    pop_to_root_context = auto()
     sleep = auto()
-    repeatLastAnswer = auto()
-    commandNotFound = auto()
-    answerNotFound = auto()
+    repeat_last_answer = auto()
 
 class Response(BaseModel):
     voice: str = ''

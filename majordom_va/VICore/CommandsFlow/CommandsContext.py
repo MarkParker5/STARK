@@ -68,18 +68,16 @@ class CommandsContext:
 
             for action in command_response.actions:
                 match action:
-                    case ResponseAction.popContext:
+                    case ResponseAction.pop_context:
                         self.context_queue.pop(0)
-                    case ResponseAction.popToRootContext:
+                    case ResponseAction.pop_to_root_context:
                         self.context_queue = [self.commands_manager.сommands,]
                     case ResponseAction.sleep:
                         self.speechRecognizer.is_recognizing = False
-                    case ResponseAction.repeatLastAnswer:
+                    case ResponseAction.repeat_last_answer:
                         if self.memory:
                             previousResponse = self.memory[-1]
                             self.delegate.didReceiveCommandsResponse(previousResponse)
-                    case ResponseAction.commandNotFound:
-                        pass
             
             self.parse(command_response)
 

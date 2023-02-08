@@ -44,7 +44,7 @@ def commands_context_flow() -> tuple[CommandsContext, CommandsContextDelegateMoc
     def bye_context(params): 
         return Response(
             text = f'Bye, {params["name"]}!',
-            actions = [ResponseAction.popContext]
+            actions = [ResponseAction.pop_context]
         ) 
     
     @manager.new(['hello $name:VIWord'])
