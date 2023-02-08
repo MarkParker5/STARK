@@ -16,10 +16,13 @@ class SearchResult(BaseModel):
         arbitrary_types_allowed = True
 
 class CommandsManager:
+    
+    name: str
     commands: list[Command]
     QA: Command = None
     
-    def __init__(self):
+    def __init__(self, name: str = ''):
+        self.name = name or 'CommandsManager'
         self.commands = []
 
     def search(self, string: str, commands: list[Command] = None) -> list[SearchResult]:
@@ -64,7 +67,7 @@ class CommandsManager:
     
     def new(self, patterns: list[str], hidden: bool = False):
         def creator(func: CommandRunner) -> Command:
-            cmd = Command(func.__name__, patterns, func)
+            cmd = Command(f'{self.name}.{func.__name__}', patterns, func)
             if not hidden:
                 self.commands.append(cmd)
             return cmd

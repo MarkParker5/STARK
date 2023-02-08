@@ -10,7 +10,7 @@ def test_new():
     def foo_bar(): pass
     
     assert len(manager.commands) == 2
-    assert manager.commands[1].name == 'foo_bar'
+    assert manager.commands[1].name == 'CommandsManager.foo_bar'
     assert manager.commands[1].patterns[0]._origin == 'foo bar'
     
 def test_search():
@@ -29,13 +29,13 @@ def test_search():
     result = manager.search('test')
     assert result is not None
     assert len(result) == 1
-    assert result[0].command.name == 'test'
+    assert result[0].command.name == 'CommandsManager.test'
     
     # hello
     result = manager.search('hello world')
     assert result is not None
     assert len(result) == 1
-    assert result[0].command.name == 'hello'
+    assert result[0].command.name == 'CommandsManager.hello'
     assert result[0].substring == 'hello world'
     assert type(result[0].parameters['name']) is VIWord
     assert result[0].parameters['name'].value == 'world'
