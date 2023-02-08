@@ -32,7 +32,7 @@ class CommandsContext:
     reports: list[Response]
     memory: list[Response]
 
-    delays_reports: bool = False # if True, reports will be delayed to next interaction; if False send reports immediately
+    delays_reports: bool = False # if True, reports will be delayed to next interaction; if False send reports immediately (for threads)
     last_interaction_time: datetime
 
     def __init__(self, commands_manager):
@@ -48,6 +48,8 @@ class CommandsContext:
         return CommandsContextLayer(self.commands_manager.commands)
 
     def process_string(self, string: str):
+        self.last_interaction_time = datetime.now()
+        
         if not self.context_queue:
             self.context_queue.append(self.root_context)
 
@@ -117,5 +119,4 @@ class CommandsContext:
 
     def report(self):
         while self.reports:
-            rep = self.reports.pop(0)
-            self.delegate.commands_context_did_receive_response(rep)
+            self.delegate.commands_context_did_receive_response(self.reports.pop(0))

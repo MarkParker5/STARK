@@ -71,12 +71,19 @@ class CommandsManager:
         return creator
 
     @staticmethod
-    def background(answer = '', voice = ''):
-        def decorator(func):
-            def wrapper(text):
+    def background(first_response: Response):
+        def decorator(origin_runner: CommandRunner):
+            def sync_command_runner(params):
                 finish_event = Event()
-                thread = RThread(target=func, args=(text, finish_event))
+                
+                def background_command_runner():
+                    response = origin_runner(params) # can be long, blocking
+                    finish_event.set()
+                    return response
+                
+                thread = RThread(target=background_command_runner)
                 thread.start()
-                return Response(voice = voice, text = answer, thread = ThreadData(thread, finish_event) )
-            return wrapper
+                first_response.thread = ThreadData(thread, finish_event)
+                return first_response
+            return sync_command_runner
         return decorator
