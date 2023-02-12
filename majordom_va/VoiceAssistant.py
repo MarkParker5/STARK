@@ -57,19 +57,3 @@ class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
             self.speech_recognizer.is_recognizing = False
             self.voice.generate(response.voice).speak()
             self.speech_recognizer.is_recognizing = was_recognizing
-
-    # check double clap from arduino microphone module
-    def checkClap(self, channel):
-        now = time.time()
-        delta = now - self.last_clap_time
-        if 0.1 < delta < 0.6:
-            self.speech_recognizer.is_recognizing = True
-        else:
-            self.last_clap_time = now
-
-# if config.double_clap_activation:
-#     import RPi.GPIO as GPIO
-#
-#     GPIO.setmode(GPIO.BCM)
-#     GPIO.setup(12, GPIO.IN)
-#     GPIO.add_event_detect(12, GPIO.RISING, callback = VoiceAssistant().checkClap)
