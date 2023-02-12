@@ -1,8 +1,6 @@
-from . import Media
-from . import SmallTalk
-from . import Raspi
-from . import Zieit
-from .QA import QA
+from VICore import CommandsManager
+from . import smalltalk
 
-try: from . import SmartHome
-except: pass
+
+default = CommandsManager('default')
+default.extend(smalltalk.manager)

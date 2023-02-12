@@ -1,5 +1,4 @@
-from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, Protocol
 from datetime import datetime
 import asyncio
 
@@ -16,10 +15,8 @@ class CommandsContextLayer:
         self.commands = commands
         self.parameters = parameters
 
-class CommandsContextDelegate(ABC):
-    @abstractmethod
-    def commands_context_did_receive_response(self, response: Response): 
-        pass
+class CommandsContextDelegate(Protocol):
+    def commands_context_did_receive_response(self, response: Response): pass
 
 class CommandsContext:
 

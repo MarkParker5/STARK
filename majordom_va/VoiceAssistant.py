@@ -34,17 +34,17 @@ class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
 
     # SpeechRecognizerDelegate
 
-    def speech_recognizerReceiveFinalResult(self, result: str):
+    def speech_recognizer_did_receive_final_result(self, result: str):
         self.voids = 0
         # self.commands_context.lastInteractTime = VITime()
         print(f'\rYou: {result}')
 
         self.commands_context.process_string(result)
 
-    def speech_recognizerReceivePartialResult(self, result: str):
+    def speech_recognizer_did_receive_partial_result(self, result: str):
         print(f'\rYou: \x1B[3m{result}\x1B[0m', end = '')
 
-    def speech_recognizerReceiveEmptyResult(self):
+    def speech_recognizer_did_receive_empty_result(self):
         self.voids += 1
 
     # CommandsContextDelegate
