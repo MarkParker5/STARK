@@ -1,5 +1,6 @@
 from .patterns import Pattern, expressions
 from .VIObjects import (
+    VIObject,
     VIString,
     VIWord,
     # VINumber,

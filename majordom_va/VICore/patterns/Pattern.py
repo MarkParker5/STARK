@@ -37,7 +37,7 @@ class Pattern:
         
     def _get_argument_regex(self) -> re.compile:
         types = '|'.join(Pattern.argumentTypes.keys())
-        return re.compile(r'\$(?P<name>[A-z]+)\:(?P<type>(?:' + types + r'))')
+        return re.compile(r'\$(?P<name>[A-z][A-z0-9]*)\:(?P<type>(?:' + types + r'))')
     
     def _get_arguments(self) -> Generator[tuple[str, Type['VIObject']]]:
         for match in re.finditer(self._argument_regex, self._origin):
