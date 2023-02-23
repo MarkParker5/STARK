@@ -1,15 +1,14 @@
 import asyncio
 
 from VICore import CommandsContext, CommandsContextDelegate
-from IO.SpeechRecognition import SpeechRecognizer, SpeechRecognizerDelegate
-from IO import Text2Speech
+from IO.protocols import SpeechRecognizer, SpeechRecognizerDelegate, SpeechSynthesizer, SpeechSynthesizerResult
 
 
 class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
 
     speech_recognizer: SpeechRecognizer
+    speech_synthesizer: SpeechSynthesizer
     commands_context: CommandsContext
-    voice = Text2Speech.Engine()
 
     voids: int = 0
     last_clap_time: float = 0
@@ -17,8 +16,9 @@ class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
 
     # Control
 
-    def __init__(self, commands_context: CommandsContext):
-        self.speech_recognizer = SpeechRecognizer(delegate = self)
+    def __init__(self, speech_recognizer: SpeechRecognizer, speech_synthesizer: SpeechSynthesizer, commands_context: CommandsContext):
+        self.speech_recognizer = speech_recognizer
+        self.speech_synthesizer = speech_synthesizer
         self.commands_context = commands_context
         commands_context.delegate = self
 
@@ -26,11 +26,11 @@ class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
         self.speech_recognizer.delegate = self
         print('Listen...')
         asyncio.get_event_loop().run_until_complete(
-            self.speech_recognizer.startListening()
+            self.speech_recognizer.start_listening()
         )
 
     def stop(self):
-        self.speech_recognizer.stopListening()
+        self.speech_recognizer.stop_listening()
 
     # SpeechRecognizerDelegate
 
@@ -55,5 +55,5 @@ class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
         if response.voice:
             was_recognizing = self.speech_recognizer.is_recognizing
             self.speech_recognizer.is_recognizing = False
-            self.voice.generate(response.voice).speak()
+            self.voice.synthesize(response.voice).play()
             self.speech_recognizer.is_recognizing = was_recognizing
