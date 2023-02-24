@@ -13,18 +13,17 @@ class MatchResult:
 
 class Pattern:
     
-    argumentTypes: dict[str, Type['VIObject']] = {} # static
-    
-    arguments: dict[str, Type['VIObject']]
+    parameters: dict[str, Type['VIObject']]
     compiled: str
     
     _origin: str
-    _argument_regex: re.compile
+    _parameter_regex: re.compile
+    _parameter_types: dict[str, Type['VIObject']] = {} # static
 
     def __init__(self, origin: str):
         self._origin = origin
-        self._argument_regex = self._get_argument_regex()
-        self.arguments = dict(self._get_arguments())
+        self._parameter_regex = self._get_parameter_regex()
+        self.parameters = dict(self._get_parameters())
         self.compiled = self._compile()
         
     def match(self, string: str) -> MatchResult | None:
@@ -34,19 +33,26 @@ class Pattern:
             return MatchResult(match.group(0).strip(), match.groupdict())
         
         return None
+    
+    @classmethod
+    def add_parameter_type(cls, vi_type: Type['VIObject']):
+        error_msg = f'Can`t add parameter type {vi_type.__name__}: pattern parameters does not match class properties'
+        assert vi_type.pattern.parameters.items() <= vi_type.__annotations__.items(), error_msg
+        assert cls._parameter_types.get(vi_type.__name__) is None, f'Can`t add parameter type: {vi_type.__name__} already exists'
+        cls._parameter_types[vi_type.__name__] = vi_type
         
-    def _get_argument_regex(self) -> re.compile:
-        types = '|'.join(Pattern.argumentTypes.keys())
+    def _get_parameter_regex(self) -> re.compile:
+        types = '|'.join(Pattern._parameter_types.keys())
         return re.compile(r'\$(?P<name>[A-z][A-z0-9]*)\:(?P<type>(?:' + types + r'))')
     
-    def _get_arguments(self) -> Generator[tuple[str, Type['VIObject']]]:
-        for match in re.finditer(self._argument_regex, self._origin):
+    def _get_parameters(self) -> Generator[tuple[str, Type['VIObject']]]:
+        for match in re.finditer(self._parameter_regex, self._origin):
             arg_name = match.group('name')
             arg_type_name = match.group('type')
-            arg_type: Type['VIObject'] = Pattern.argumentTypes.get(arg_type_name)
+            arg_type: Type['VIObject'] = Pattern._parameter_types.get(arg_type_name)
             
             if not arg_type: 
-                raise ValueError(f'Unknown type: {arg_type_name} for argument: {arg_name} in pattern: {self._origin}')
+                raise ValueError(f'Unknown type: {arg_type_name} for parameter: {arg_name} in pattern: {self._origin}')
             
             yield arg_name, arg_type
             
@@ -59,9 +65,9 @@ class Pattern:
         for vi_ptrn, regex in dictionary.items():
             pattern = re.sub(vi_ptrn, regex, pattern)
 
-        #   find and transform arguments like $name:Type
+        #   find and transform parameters like $name:Type
         
-        for name, vi_type in self.arguments.items():
+        for name, vi_type in self.parameters.items():
             
             arg_declaration = f'\\${name}\\:{vi_type.__name__}'
             arg_pattern = vi_type.pattern.compiled.replace('\\', r'\\')

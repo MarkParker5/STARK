@@ -117,9 +117,9 @@ def test_one_or_more_of():
     assert p.match('bbb Some foo bar here cccc').substring == 'Some foo bar here'
     assert not p.match('Some foo')
     
-def test_typed_arguments():
+def test_typed_parameters():
     p = Pattern('lorem $name:VIWord dolor')
-    assert p.arguments == {'name': VIWord}
+    assert p.parameters == {'name': VIWord}
     assert p.compiled == fr'lorem (?P<name>{word}) dolor'
     
     m = p.match('lorem ipsum dolor')
@@ -129,7 +129,7 @@ def test_typed_arguments():
     assert not p.match('lorem ipsum foo dolor')
     
     p = Pattern('lorem $name:VIString dolor')
-    assert p.arguments == {'name': VIString}
+    assert p.parameters == {'name': VIString}
     m = p.match('lorem ipsum foo bar dolor')
     assert m
     assert m.substring == 'lorem ipsum foo bar dolor'

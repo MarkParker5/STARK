@@ -17,10 +17,5 @@ from .CommandsFlow import (
 )
 
 
-Pattern.argumentTypes = {
-    'VIString': VIString,
-    'VIWord': VIWord,
-    # 'VINumber': VINumber,
-    # 'VITimeInterval': VITimeInterval,
-    # 'VITime': VITime,
-}
+Pattern.add_parameter_type(VIString)
+Pattern.add_parameter_type(VIWord)

@@ -13,11 +13,11 @@ CommandRunner = Callable[[dict[str, VIObject]], 'Response']
 
 class Command():
     name: str
-    patterns: list[Pattern]
+    pattern: list[Pattern]
 
-    def __init__(self, name: str, patterns: list[str], runner: CommandRunner):
+    def __init__(self, name: str, pattern: Pattern, runner: CommandRunner):
         self.name = name
-        self.patterns = [Pattern(pattern) for pattern in patterns]
+        self.pattern = pattern
         self.run = runner
 
     def run(self, params: dict[str, VIObject]) -> Response:

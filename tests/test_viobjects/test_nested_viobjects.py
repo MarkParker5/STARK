@@ -11,7 +11,7 @@ class VITwoWords(VIObject):
     def pattern(cls) -> Pattern:
         return Pattern('$word1:VIWord $word2:VIWord')
 
-Pattern.argumentTypes['VITwoWords'] = VITwoWords
+Pattern.add_parameter_type(VITwoWords)
 
 def test_nested_viobjects():
     p = Pattern('$words:VITwoWords')

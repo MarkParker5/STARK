@@ -3,27 +3,27 @@ from VICore import CommandsManager, VIWord
 
 def test_new():
     manager = CommandsManager()
-    manager.new(['test'])(lambda: None)
+    manager.new('test')(lambda: None)
     assert len(manager.commands) == 1
     
-    @manager.new(['foo bar'])
+    @manager.new('foo bar')
     def foo_bar(): pass
     
     assert len(manager.commands) == 2
     assert manager.commands[1].name == 'CommandsManager.foo_bar'
-    assert manager.commands[1].patterns[0]._origin == 'foo bar'
+    assert manager.commands[1].pattern._origin == 'foo bar'
     
 def test_search():
     manager = CommandsManager()
     
-    @manager.new(['test'])
+    @manager.new('test')
     def test(): pass
     
-    @manager.new(['hello $name:VIWord'])
-    def hello(): pass
+    @manager.new('hello $name:VIWord')
+    def hello(name: VIWord): pass
     
-    @manager.new(['hello $name:VIWord $surname:VIWord'])
-    def hello2(): pass
+    @manager.new('hello $name:VIWord $surname:VIWord')
+    def hello2(name: VIWord, surname: VIWord): pass
     
     # test
     result = manager.search('test')
@@ -57,10 +57,10 @@ def test_extend_manager():
     root_manager = CommandsManager()
     child_manager = CommandsManager('Child')
     
-    @root_manager.new(['test'])
+    @root_manager.new('test')
     def test(): pass
     
-    @child_manager.new(['test'])
+    @child_manager.new('test')
     def test(): pass
     
     assert len(child_manager.commands) == 1

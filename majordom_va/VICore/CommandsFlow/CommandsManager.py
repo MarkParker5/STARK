@@ -35,28 +35,30 @@ class CommandsManager:
         origin = VIString(string)
 
         for command in commands:
-            for pattern in command.patterns:
-                match = pattern.match(string)
+            match = command.pattern.match(string)
                 
-                if not match:
-                    continue
+            if not match:
+                continue
+            
+            parameters: dict[str: VIObject] = {}
+            
+            for name, value in match.groups.items():
                 
-                parameters: dict[str: VIObject] = {}
+                VIType: Type[VIObject] = command.pattern.parameters[name]
                 
-                for name, value in match.groups.items():
-                    
-                    VIType: Type[VIObject] = pattern.arguments[name]
-                    
-                    if vi_object := VIType.parse(from_string = value):
-                        parameters[name] = vi_object
-                    else:
-                        break
+                if vi_object := VIType.parse(from_string = value):
+                    parameters[name] = vi_object
                 else:
-                    results.append(SearchResult(
-                        command = command,
-                        substring = match.substring,
-                        parameters = parameters
-                    ))
+                    break
+            else:
+                for parameter in parameters.values():
+                    # move nested parameters to viobjects
+                    self._map_viobject(parameter, parameters)
+                results.append(SearchResult(
+                    command = command,
+                    substring = match.substring,
+                    parameters = parameters
+                ))
 
         if not results and (qa := self.QA):
             results.append(SearchResult(
@@ -66,13 +68,32 @@ class CommandsManager:
 
         return results
     
-    def new(self, patterns: list[str], hidden: bool = False):
+    def _map_viobject(self, vi_object: VIObject, parameters: dict[str, VIObject]) -> VIObject:
+        for name in vi_object.__annotations__.keys():
+            if name == 'value': 
+                continue
+            elif name in parameters:
+                value = parameters.pop(name)
+                setattr(vi_object, name, value)
+                if isinstance(value, VIObject):
+                    self._map_viobject(value, parameters)
+            else:
+                pass # TODO: raise error
+    
+    def new(self, pattern_str: str, hidden: bool = False):
         def creator(func: CommandRunner) -> Command:
-            cmd = Command(f'{self.name}.{func.__name__}', patterns, func)
+            pattern = Pattern(pattern_str)
+            error_msg = f'Command {self.name}.{func.__name__} must have all parameters from pattern: {pattern.parameters=} {func.__annotations__=}'
+            assert pattern.parameters.items() <= func.__annotations__.items(), error_msg
+            cmd = Command(f'{self.name}.{func.__name__}', pattern, func)
             if not hidden:
                 self.commands.append(cmd)
             return cmd
         return creator
+    
+    def run(self, command: Command, parameters: dict[str, VIObject]) -> Response:
+        # TODO: check command.__annotations__
+        return command.run(**parameters)
     
     def extend(self, other_manager: CommandsManager):
         self.commands.extend(other_manager.commands)
@@ -80,11 +101,11 @@ class CommandsManager:
     @staticmethod
     def background(first_response: Response):
         def decorator(origin_runner: CommandRunner):
-            def sync_command_runner(params):
+            def sync_command_runner(*args, **kwargs):
                 finish_event = Event()
                 
                 def background_command_runner():
-                    response = origin_runner(params) # can be long, blocking
+                    response = origin_runner(*args, **kwargs) # can be long, blocking
                     finish_event.set()
                     return response
                 

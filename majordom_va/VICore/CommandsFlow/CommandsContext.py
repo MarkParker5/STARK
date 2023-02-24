@@ -63,7 +63,7 @@ class CommandsContext:
         for search_result in search_results:
 
             parameters = {**current_context.parameters, **search_result.parameters}
-            command_response = search_result.command.run(parameters)
+            command_response = self.commands_manager.run(search_result.command, parameters)# search_result.command.run(parameters)
 
             for action in command_response.actions:
                 match action:
