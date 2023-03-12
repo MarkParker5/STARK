@@ -15,6 +15,7 @@ numpy = "^1.24.1"
 pydantic = "^1.10.4"
 vosk = "^0.3.45"
 google-cloud-texttospeech = "^2.14.1"
+torch = "^1.13.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.2.1"

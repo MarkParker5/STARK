@@ -55,5 +55,6 @@ class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
         if response.voice:
             was_recognizing = self.speech_recognizer.is_recognizing
             self.speech_recognizer.is_recognizing = False
-            self.voice.synthesize(response.voice).play()
+            self.speech_synthesizer.synthesize(response.voice).play()
             self.speech_recognizer.is_recognizing = was_recognizing
+        print('Listen...')

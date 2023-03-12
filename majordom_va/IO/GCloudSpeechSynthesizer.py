@@ -19,14 +19,7 @@ class Speech(SpeechSynthesizerResult):
         except Exception as e:
             print('\n[Error] Can`t play audio file\n', e)
 
-    def getBytes(self):
-        if not os.path.exists(self.path): 
-            return None
-        with open(self.path, 'rb') as b:
-            bytes = b
-        return bytes
-
-    def stopSpeaking(self):
+    def stop(self):
         pass
 
 class GCloudSpeechSynthesizer(SpeechSynthesizer):
@@ -43,7 +36,7 @@ class GCloudSpeechSynthesizer(SpeechSynthesizer):
             ssml_gender    = texttospeech.SsmlVoiceGender.FEMALE
         )
 
-    def synthesize(self, text):
+    def synthesize(self, text) -> Speech:
         dir = f'audio/{self._name}'
         path = f'{dir}/{self._transliterate(text)[:100]}.wav'
 
