@@ -36,7 +36,7 @@ class CommandsManager:
 
         for command in commands:
             match = command.pattern.match(string)
-            # TODO: use substring and disambiguate overlapping commands
+            # TODO:issue#6: use substring and disambiguate overlapping commands
                 
             if not match:
                 continue    

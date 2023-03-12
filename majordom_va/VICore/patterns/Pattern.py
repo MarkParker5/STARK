@@ -31,7 +31,7 @@ class Pattern:
     def match(self, string: str) -> MatchResult | None:
         
         if matches := sorted(re.finditer(self.compiled, string), key = lambda m: len(m.group(0))):
-            # TODO: sort by parameters count instead of substring length
+            # TODO:issue#6: sort by parameters count instead of substring length
             match = matches[-1]
             substring = match.group(0).strip()
             str_groups = match.groupdict()

@@ -5,7 +5,7 @@ from IO.GCloudSpeechSynthesizer import GCloudSpeechSynthesizer
 from features import default
 
 
-# TODO: typer
+# TODO:issue#16: typer
 if __name__ == '__main__':
     cm = CommandsContext(commands_manager = default)
     va = VoiceAssistant(
