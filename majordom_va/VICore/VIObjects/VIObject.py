@@ -22,8 +22,17 @@ class VIObject(ABC):
         return Pattern('**')
 
     @classmethod
-    def parse(cls, from_string: str) -> VIObject:
-        return cls(from_string)
+    def parse(cls, from_string: str, parameters: dict[str, str] = None) -> VIObject | None:
+        obj = cls(from_string)
+        parameters = parameters or {}
+        
+        for name, vi_type in cls.pattern.parameters.items():
+            if not parameters.get(name):
+                continue
+            value = parameters.pop(name)
+            setattr(obj, name, vi_type.parse(from_string = value, parameters = parameters))
+        
+        return obj
     
     def __format__(self, spec) -> str:
         return f'{self.value:{spec}}'

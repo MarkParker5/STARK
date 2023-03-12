@@ -14,11 +14,11 @@ def test_match():
     
     m = p.match('foo qwerty baz')
     assert m
-    assert m.groups['bar'] == 'qwerty'
+    assert m.parameters['bar'] == VIString('qwerty')
     
     m = p.match('foo lorem ipsum dolor sit amet baz')
     assert m
-    assert m.groups['bar'] == 'lorem ipsum dolor sit amet'
+    assert m.parameters['bar'] == VIString('lorem ipsum dolor sit amet')
     
 def test_formatted():
     string = VIString.parse('foo bar baz')

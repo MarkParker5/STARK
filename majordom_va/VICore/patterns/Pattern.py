@@ -1,24 +1,26 @@
 from __future__ import annotations
-from typing import Type, Generator
+from typing import Type, Generator, TypeAlias
 from dataclasses import dataclass
 import re
 
 from .expressions import dictionary
 
 
+VIObjectType: TypeAlias = Type['VIObject']
+
 @dataclass
 class MatchResult:
     substring: str
-    groups: dict[str, str]
+    parameters: dict[str, 'VIObject']
 
 class Pattern:
     
-    parameters: dict[str, Type['VIObject']]
+    parameters: dict[str, VIObjectType]
     compiled: str
     
     _origin: str
     _parameter_regex: re.compile
-    _parameter_types: dict[str, Type['VIObject']] = {} # static
+    _parameter_types: dict[str, VIObjectType] = {} # static
 
     def __init__(self, origin: str):
         self._origin = origin
@@ -29,30 +31,43 @@ class Pattern:
     def match(self, string: str) -> MatchResult | None:
         
         if matches := sorted(re.finditer(self.compiled, string), key = lambda m: len(m.group(0))):
+            # TODO: sort by parameters count instead of substring length
             match = matches[-1]
-            return MatchResult(match.group(0).strip(), match.groupdict())
+            substring = match.group(0).strip()
+            str_groups = match.groupdict()
+            
+            parameters: dict[str, 'VIObject'] = {}
+            
+            for name, vi_type in self.parameters.items():
+                if not str_groups.get(name):
+                    continue
+                parameters[name] = vi_type.parse(from_string = str_groups[name], parameters = str_groups)
+            
+            return MatchResult(substring, parameters)
         
         return None
     
     @classmethod
-    def add_parameter_type(cls, vi_type: Type['VIObject']):
-        error_msg = f'Can`t add parameter type {vi_type.__name__}: pattern parameters does not match class properties'
+    def add_parameter_type(cls, vi_type: VIObjectType):
+        error_msg = f'Can`t add parameter type "{vi_type.__name__}": pattern parameters do not match properties annotated in class'
         assert vi_type.pattern.parameters.items() <= vi_type.__annotations__.items(), error_msg
         assert cls._parameter_types.get(vi_type.__name__) is None, f'Can`t add parameter type: {vi_type.__name__} already exists'
         cls._parameter_types[vi_type.__name__] = vi_type
         
     def _get_parameter_regex(self) -> re.compile:
-        types = '|'.join(Pattern._parameter_types.keys())
-        return re.compile(r'\$(?P<name>[A-z][A-z0-9]*)\:(?P<type>(?:' + types + r'))')
+        # types = '|'.join(Pattern._parameter_types.keys())
+        # return re.compile(r'\$(?P<name>[A-z][A-z0-9]*)\:(?P<type>(?:' + types + r'))')
+        # do not use types list because it prevents validation of unknown types
+        return re.compile(r'\$(?P<name>[A-z][A-z0-9]*)\:(?P<type>[A-z][A-z0-9]*)')
     
-    def _get_parameters(self) -> Generator[tuple[str, Type['VIObject']]]:
+    def _get_parameters(self) -> Generator[tuple[str, VIObjectType]]:
         for match in re.finditer(self._parameter_regex, self._origin):
             arg_name = match.group('name')
             arg_type_name = match.group('type')
-            arg_type: Type['VIObject'] = Pattern._parameter_types.get(arg_type_name)
+            arg_type: VIObjectType = Pattern._parameter_types.get(arg_type_name)
             
             if not arg_type: 
-                raise ValueError(f'Unknown type: {arg_type_name} for parameter: {arg_name} in pattern: {self._origin}')
+                raise NameError(f'Unknown type: "{arg_type_name}" for parameter: "{arg_name}" in pattern: "{self._origin}"')
             
             yield arg_name, arg_type
             

@@ -15,7 +15,7 @@ def test_match():
     
     m = p.match('foo qwerty baz')
     assert m
-    assert m.groups['bar'] == 'qwerty'
+    assert m.parameters['bar'] == VIWord('qwerty')
     
     m = p.match('foo lorem ipsum dolor sit amet baz')
     assert not m

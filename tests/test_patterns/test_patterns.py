@@ -1,6 +1,6 @@
-import re
 from VICore import Pattern, VIWord, VIString
 from VICore.patterns import expressions
+
 
 word = fr'[{expressions.alphanumerics}]*'
 words = fr'[{expressions.alphanumerics}\s]*'
@@ -116,21 +116,3 @@ def test_one_or_more_of():
     assert p.match('bbb Some bar here cccc').substring == 'Some bar here'
     assert p.match('bbb Some foo bar here cccc').substring == 'Some foo bar here'
     assert not p.match('Some foo')
-    
-def test_typed_parameters():
-    p = Pattern('lorem $name:VIWord dolor')
-    assert p.parameters == {'name': VIWord}
-    assert p.compiled == fr'lorem (?P<name>{word}) dolor'
-    
-    m = p.match('lorem ipsum dolor')
-    assert m
-    assert m.substring == 'lorem ipsum dolor'
-    assert m.groups == {'name': 'ipsum'}
-    assert not p.match('lorem ipsum foo dolor')
-    
-    p = Pattern('lorem $name:VIString dolor')
-    assert p.parameters == {'name': VIString}
-    m = p.match('lorem ipsum foo bar dolor')
-    assert m
-    assert m.substring == 'lorem ipsum foo bar dolor'
-    assert m.groups == {'name': 'ipsum foo bar'}

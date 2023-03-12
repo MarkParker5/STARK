@@ -36,29 +36,16 @@ class CommandsManager:
 
         for command in commands:
             match = command.pattern.match(string)
+            # TODO: use substring and disambiguate overlapping commands
                 
             if not match:
-                continue
-            
-            parameters: dict[str: VIObject] = {}
-            
-            for name, value in match.groups.items():
-                
-                VIType: Type[VIObject] = command.pattern.parameters[name]
-                
-                if vi_object := VIType.parse(from_string = value):
-                    parameters[name] = vi_object
-                else:
-                    break
-            else:
-                for parameter in parameters.values():
-                    # move nested parameters to viobjects
-                    self._map_viobject(parameter, parameters)
-                results.append(SearchResult(
-                    command = command,
-                    substring = match.substring,
-                    parameters = parameters
-                ))
+                continue    
+        
+            results.append(SearchResult(
+                command = command,
+                substring = match.substring,
+                parameters = match.parameters
+            ))
 
         if not results and (qa := self.QA):
             results.append(SearchResult(
@@ -67,18 +54,6 @@ class CommandsManager:
             ))
 
         return results
-    
-    def _map_viobject(self, vi_object: VIObject, parameters: dict[str, VIObject]) -> VIObject:
-        for name in vi_object.__annotations__.keys():
-            if name == 'value': 
-                continue
-            elif name in parameters:
-                value = parameters.pop(name)
-                setattr(vi_object, name, value)
-                if isinstance(value, VIObject):
-                    self._map_viobject(value, parameters)
-            else:
-                pass # TODO: raise error
     
     def new(self, pattern_str: str, hidden: bool = False):
         def creator(func: CommandRunner) -> Command:
@@ -92,7 +67,7 @@ class CommandsManager:
         return creator
     
     def run(self, command: Command, parameters: dict[str, VIObject]) -> Response:
-        # TODO: check command.__annotations__
+        # TODO: check command.func.__annotations__, pass required, raise error if annotations have params that are not in parsed dict
         return command.run(**parameters)
     
     def extend(self, other_manager: CommandsManager):
