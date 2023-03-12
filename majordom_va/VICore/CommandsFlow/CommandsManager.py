@@ -58,17 +58,16 @@ class CommandsManager:
     def new(self, pattern_str: str, hidden: bool = False):
         def creator(func: CommandRunner) -> Command:
             pattern = Pattern(pattern_str)
+            
             error_msg = f'Command {self.name}.{func.__name__} must have all parameters from pattern: {pattern.parameters=} {func.__annotations__=}'
             assert pattern.parameters.items() <= func.__annotations__.items(), error_msg
+            
             cmd = Command(f'{self.name}.{func.__name__}', pattern, func)
             if not hidden:
                 self.commands.append(cmd)
+            
             return cmd
         return creator
-    
-    def run(self, command: Command, parameters: dict[str, VIObject]) -> Response:
-        # TODO: check command.func.__annotations__, pass required, raise error if annotations have params that are not in parsed dict
-        return command.run(**parameters)
     
     def extend(self, other_manager: CommandsManager):
         self.commands.extend(other_manager.commands)
