@@ -67,8 +67,7 @@ def test_sleep_response_action(commands_context_flow):
     assert len(context_delegate._responses) == 1
     assert context_delegate._responses[0].text == 'Sleeping...'
     assert context._last_interaction_time.timestamp() == 0
-
-@pytest.mark.skip(reason = 'Not implemented yet') # TODO:    
+   
 def test_repeat_last_answer_response_action(commands_context_flow):
     context, context_delegate = commands_context_flow
     
@@ -79,6 +78,5 @@ def test_repeat_last_answer_response_action(commands_context_flow):
     assert len(context_delegate._responses) == 0
     
     context.process_string('repeat')
-    assert len(context_delegate._responses) == 2
+    assert len(context_delegate._responses) == 1
     assert context_delegate._responses[0].text == 'Hello, world!'
-    assert context_delegate._responses[1].text == 'Done'

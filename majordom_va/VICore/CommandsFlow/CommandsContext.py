@@ -23,6 +23,7 @@ class CommandsContext:
     delegate: CommandsContextDelegate
     commands_manager: CommandsManager
 
+    last_response: Response = None
     _context_queue: list[CommandsContextLayer]
     _threads: list[ThreadData]
     
@@ -67,15 +68,15 @@ class CommandsContext:
                 continue
             
             # process response
-            self.process_response(command_response)
-            # if command_response == Response.repeat_last and self.last_response:
-            #     self.process_response(self.last_response)
-            # else:
-            #     self.process_response(command_response)
+            if command_response is Response.repeat_last and self.last_response:
+                self.process_response(self.last_response)
+            else:
+                self.process_response(command_response)
 
     # ResponseHandler
     
     def process_response(self, response: Response):
+        self.last_response = response 
         
         if response.thread:
             self._threads.append(response.thread)
