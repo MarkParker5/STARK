@@ -3,12 +3,9 @@ from __future__ import annotations
 from abc import ABC
 from typing import Any
 
+from general.classproperty import classproperty
 from .. import Pattern
 
-
-class classproperty(property):
-    def __get__(self, cls, owner):
-        return classmethod(self.fget).__get__(None, owner)()
 
 class VIObject(ABC):
 

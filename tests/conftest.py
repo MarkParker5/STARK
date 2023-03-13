@@ -4,7 +4,7 @@ from VICore import (
     CommandsContext,
     CommandsContextDelegate, 
     Response,
-    ResponseAction,
+    ResponseHandler,
     VIWord
 )
 
@@ -14,10 +14,10 @@ class CommandsContextDelegateMock(CommandsContextDelegate):
     responses: list[Response]
     
     def __init__(self):
-        self.responses = []
+        self._responses = []
     
     def commands_context_did_receive_response(self, response: Response):
-        self.responses.append(response)
+        self._responses.append(response)
 
 @pytest.fixture
 def commands_context_flow() -> tuple[CommandsContext, CommandsContextDelegateMock]:
@@ -26,8 +26,8 @@ def commands_context_flow() -> tuple[CommandsContext, CommandsContextDelegateMoc
     context_delegate = CommandsContextDelegateMock()
     context.delegate = context_delegate
     
-    assert len(context_delegate.responses) == 0
-    assert len(context.context_queue) == 1
+    assert len(context_delegate._responses) == 0
+    assert len(context._context_queue) == 1
     
     @manager.new('test')
     def test(): 
@@ -42,10 +42,10 @@ def commands_context_flow() -> tuple[CommandsContext, CommandsContextDelegateMoc
         return Response(text = f'Hi, {params["name"]}!')
     
     @manager.new('bye', hidden = True)
-    def bye_context(name: VIWord): 
+    def bye_context(name: VIWord, handler: ResponseHandler):
+        handler.pop_context()
         return Response(
-            text = f'Bye, {name}!',
-            actions = [ResponseAction.pop_context]
+            text = f'Bye, {name}!'
         ) 
     
     @manager.new('hello $name:VIWord')
@@ -58,16 +58,10 @@ def commands_context_flow() -> tuple[CommandsContext, CommandsContextDelegateMoc
         
     @manager.new('sleep')
     def sleep():
-        return Response(
-            text = 'Sleeping...',
-            actions = [ResponseAction.sleep]
-        )
+        return None
         
     @manager.new('repeat')
     def repeat():
-        return Response(
-            text = 'Done',
-            actions = [ResponseAction.repeat_last_answer]
-        )
+        return Response.repeat_last
         
     return context, context_delegate

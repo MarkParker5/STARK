@@ -1,3 +1,3 @@
-from .Command import Command, Response, ResponseAction
+from .Command import Command, Response, ResponseHandler
 from .CommandsManager import CommandsManager, SearchResult
 from .CommandsContext import CommandsContext, CommandsContextDelegate
