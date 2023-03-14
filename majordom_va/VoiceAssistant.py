@@ -83,7 +83,7 @@ class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
     def _play_response(self, response: Response):
         self.commands_context.last_response = response
         if response.text:
-            print(f'Archie: {response.text} | voice: {response.voice}')
+            print(f'Archie: {response.text}')
         if response.voice:
             was_recognizing = self.speech_recognizer.is_recognizing
             self.speech_recognizer.is_recognizing = False
