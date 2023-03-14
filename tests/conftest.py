@@ -15,10 +15,10 @@ class CommandsContextDelegateMock(CommandsContextDelegate):
     responses: list[Response]
     
     def __init__(self):
-        self._responses = []
+        self.responses = []
     
     def commands_context_did_receive_response(self, response: Response):
-        self._responses.append(response)
+        self.responses.append(response)
 
 @pytest.fixture
 def commands_context_flow() -> tuple[CommandsContext, CommandsContextDelegateMock]:
@@ -27,7 +27,7 @@ def commands_context_flow() -> tuple[CommandsContext, CommandsContextDelegateMoc
     context_delegate = CommandsContextDelegateMock()
     context.delegate = context_delegate
     
-    assert len(context_delegate._responses) == 0
+    assert len(context_delegate.responses) == 0
     assert len(context._context_queue) == 1
     
     @manager.new('test')
