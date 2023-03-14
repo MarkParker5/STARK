@@ -81,7 +81,7 @@ def test_background_inactive_needs_input(voice_assistant):
     # receive context output
     voice_assistant.commands_context._check_threads()
     
-    # voice assistant should receive all but not say anything
+    # voice assistant should save all responses for later
     assert len(voice_assistant._responses) == 8
     assert len(voice_assistant.speech_synthesizer.results) == 8
     voice_assistant.speech_synthesizer.results.clear()
@@ -106,7 +106,28 @@ def test_background_inactive_needs_input(voice_assistant):
         assert voice_assistant.speech_synthesizer.results.pop(0).text == response
     
 def test_background_inactive_with_context(voice_assistant):
-    pass
+    voice_assistant.speech_recognizer_did_receive_final_result('background with context')
+    assert len(voice_assistant.commands_context._threads) == 1
+    
+    # force inactive mode by settings zero time
+    voice_assistant._last_interaction_time = datetime.fromtimestamp(0)
+    
+    # wait for thread to finish
+    voice_assistant.commands_context._threads[0].thread.join()
+    
+    # receive context output
+    voice_assistant.commands_context._check_threads()
+    
+    # voice assistant should play all (including adding context) and save all responses for later
+    assert len(voice_assistant.speech_synthesizer.results) == 2 # 2 = first and returned
+    assert len(voice_assistant._responses) == 1 # first response is not saved because it plays immediately
+    assert len(voice_assistant.commands_context._context_queue) == 2
+    voice_assistant.speech_synthesizer.results.clear()
+    
+    # interact to disable inactive mode, voice assistant should reset context, repeat responses and add response context
+    voice_assistant.speech_recognizer_did_receive_final_result('lorem ipsum dolor')
+    assert len(voice_assistant.speech_synthesizer.results) == 2
+    assert len(voice_assistant.commands_context._context_queue) == 2
 
 def test_background_inactive_remove_response(voice_assistant):
     pass

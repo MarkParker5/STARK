@@ -60,7 +60,7 @@ def commands_context_flow() -> tuple[CommandsContext, CommandsContextDelegateMoc
     
     @manager.new('lorem * dolor')
     def lorem(): 
-        return Response(text = 'Lorem!')
+        return Response(text = 'Lorem!', voice = 'Lorem!')
     
     @manager.new('hello', hidden = True)
     def hello_context(**params):
@@ -112,15 +112,6 @@ def commands_context_flow() -> tuple[CommandsContext, CommandsContextDelegateMoc
         text = voice = 'Finished long background task'
         return Response(text = text, voice = voice)
     
-    @manager.new('background multiple contexts')
-    @manager.background(Response(text = 'Starting long background task'))
-    def background_multiple_contexts(handler: ResponseHandler):
-        
-        
-            
-        text = voice = 'Finished long background task'
-        return Response(text = text, voice = voice)
-    
     @manager.new('background needs input')
     @manager.background(Response(text = 'Starting long background task'))
     def background_needs_input(handler: ResponseHandler):
@@ -137,6 +128,13 @@ def commands_context_flow() -> tuple[CommandsContext, CommandsContextDelegateMoc
         
         text = voice = 'Finished long background task'
         return Response(text = text, voice = voice)
+    
+    @manager.new('background with context')
+    @manager.background(Response(text = 'Starting long background task', voice = 'Starting long background task'))
+    def background_multiple_contexts(handler: ResponseHandler):
+        time.sleep(0.01)
+        text = voice = 'Finished long background task'
+        return Response(text = text, voice = voice, commands = [hello_context, bye_context], parameters = {'name': 'John'})
     
     @manager.new('background remove response')
     @manager.background(Response(text = 'Starting long background task'))
