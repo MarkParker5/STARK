@@ -112,6 +112,38 @@ def commands_context_flow() -> tuple[CommandsContext, CommandsContextDelegateMoc
         text = voice = 'Finished long background task'
         return Response(text = text, voice = voice)
     
+    @manager.new('background multiple contexts')
+    @manager.background(Response(text = 'Starting long background task'))
+    def background_multiple_contexts(handler: ResponseHandler):
+        
+        
+            
+        text = voice = 'Finished long background task'
+        return Response(text = text, voice = voice)
+    
+    @manager.new('background needs input')
+    @manager.background(Response(text = 'Starting long background task'))
+    def background_needs_input(handler: ResponseHandler):
+        time.sleep(0.01)
+        
+        for text in ['First response', 'Second response', 'Third response']:
+            handler.process_response(Response(text = text, voice = text))
+            
+        text = 'Needs input'
+        handler.process_response(Response(text = text, voice = text, needs_user_input = True))
+        
+        for text in ['Fourth response', 'Fifth response', 'Sixth response']:
+            handler.process_response(Response(text = text, voice = text))
+        
+        text = voice = 'Finished long background task'
+        return Response(text = text, voice = voice)
+    
+    @manager.new('background remove response')
+    @manager.background(Response(text = 'Starting long background task'))
+    def background_remove_response():
+        
+        text = voice = 'Finished long background task'
+        return Response(text = text, voice = voice)
         
     return context, context_delegate
 
