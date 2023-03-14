@@ -2,8 +2,6 @@ import pytest
 import config
 
 
-# TODO:issue#2: test delays_reports, threads
-
 def test_basic_search(commands_context_flow):
     context, context_delegate = commands_context_flow
     

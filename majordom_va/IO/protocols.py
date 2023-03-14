@@ -7,9 +7,10 @@ class SpeechRecognizerDelegate(Protocol):
     def speech_recognizer_did_receive_empty_result(self): pass
    
 class SpeechRecognizer(Protocol):
+    is_recognizing: bool
     delegate: SpeechRecognizerDelegate
     
-    def start_listening(self): pass
+    async def start_listening(self): pass
     async def stop_listening(self): pass
  
 class SpeechSynthesizerResult(Protocol):

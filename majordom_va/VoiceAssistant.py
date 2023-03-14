@@ -32,7 +32,7 @@ class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
     def start(self):
         self.speech_recognizer.delegate = self
         print('Listen...')
-        asyncio.get_event_loop().run_until_complete(
+        asyncio.new_event_loop().run_until_complete(
             self.speech_recognizer.start_listening()
         )
 
@@ -53,7 +53,8 @@ class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
         self.commands_context.process_string(result)
         
         # repeat responses
-        while response := self._responses.pop(0): # TODO: if datetime.now() - response.time > 10:
+        while self._responses: # TODO: if datetime.now() - response.time > 10:
+            response = self._responses.pop(0)
             self._play_response(response)
             self.commands_context.add_context(CommandsContextLayer(response.commands, response.parameters))
             if response.needs_user_input:
@@ -82,7 +83,7 @@ class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
     def _play_response(self, response: Response):
         self.commands_context.last_response = response
         if response.text:
-            print(f'Archie: {response.text}')
+            print(f'Archie: {response.text} | voice: {response.voice}')
         if response.voice:
             was_recognizing = self.speech_recognizer.is_recognizing
             self.speech_recognizer.is_recognizing = False

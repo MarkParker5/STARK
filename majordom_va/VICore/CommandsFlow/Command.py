@@ -47,7 +47,7 @@ class Command():
 class Response(BaseModel):
     voice: str = ''
     text: str = ''
-    needs_input: bool = False
+    needs_user_input: bool = False
     commands: list[Command] = []
     parameters: dict[str, Any] = {}
     thread: Optional[ThreadData] = None
