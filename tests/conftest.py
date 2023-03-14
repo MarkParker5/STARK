@@ -1,5 +1,6 @@
 import pytest
 import config
+import time
 from VICore import (
     CommandsManager,
     CommandsContext,
@@ -65,5 +66,22 @@ def commands_context_flow() -> tuple[CommandsContext, CommandsContextDelegateMoc
     @manager.new('repeat')
     def repeat():
         return Response.repeat_last
+    
+    # background commands
+    
+    @manager.new('background min')
+    @manager.background(Response(text = 'Starting background task'))
+    def background():
+        return Response(text = 'Finished background task')
+        
+    @manager.new('background multiple responses')
+    @manager.background(Response(text = 'Starting long background task'))
+    def background_multiple_responses(handler: ResponseHandler):
+        time.sleep(0.05)
+        handler.process_response(Response(text = 'First response'))
+        time.sleep(0.05)
+        handler.process_response(Response(text = 'Second response'))
+        time.sleep(0.05)
+        return Response(text = 'Finished long background task')
         
     return context, context_delegate

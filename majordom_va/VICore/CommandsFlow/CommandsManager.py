@@ -85,7 +85,11 @@ class CommandsManager:
                 
                 thread = RThread(target=background_command_runner)
                 thread.start()
-                first_response.thread = ThreadData(thread, finish_event)
+                first_response.thread = ThreadData(thread = thread, finish_event = finish_event)
                 return first_response
+            
+            sync_command_runner.__annotations__ = origin_runner.__annotations__
+            sync_command_runner.__name__ = f'background<{origin_runner.__name__}>'
+
             return sync_command_runner
         return decorator

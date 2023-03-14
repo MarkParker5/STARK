@@ -57,9 +57,9 @@ class CommandsContext:
             parameters = {**current_context.parameters, **search_result.parameters}
             
             # pass dependencies as parameters
-            for arg in inspect.signature(search_result.command._runner).parameters.values():
-                if arg.annotation == ResponseHandler:
-                    parameters[arg.name] = self
+            for name, annotation in search_result.command._runner.__annotations__.items():
+                if annotation == ResponseHandler:
+                    parameters[name] = self
             
             # execute command
             command_response = search_result.command(parameters)
@@ -110,10 +110,10 @@ class CommandsContext:
 
     def _check_threads(self):
         for thread_data in self._threads:
-            if not thread_data.finishEvent.is_set(): continue
+            if not thread_data.finish_event.is_set(): continue
 
             response = thread_data.thread.join()
-            self.parse(response)
-            thread_data.finishEvent.clear()
+            self.process_response(response)
+            thread_data.finish_event.clear()
 
             del thread_data

@@ -17,7 +17,7 @@ class RThread(Thread):
 
 class ThreadData(BaseModel):
     thread: RThread
-    finishEvent: Event
+    finish_event: Event
     
     class Config:
         arbitrary_types_allowed = True
