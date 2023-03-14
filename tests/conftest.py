@@ -138,10 +138,13 @@ def commands_context_flow() -> tuple[CommandsContext, CommandsContextDelegateMoc
     
     @manager.new('background remove response')
     @manager.background(Response(text = 'Starting long background task'))
-    def background_remove_response():
-        
-        text = voice = 'Finished long background task'
-        return Response(text = text, voice = voice)
+    def background_remove_response(handler: ResponseHandler):
+        time.sleep(0.01)
+        response = Response(text = 'Deleted response', voice = 'Deleted response')
+        handler.process_response(response)
+        time.sleep(0.05)
+        handler.remove_response(response)
+        return None
         
     return context, context_delegate
 

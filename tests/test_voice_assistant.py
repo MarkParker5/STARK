@@ -130,4 +130,29 @@ def test_background_inactive_with_context(voice_assistant):
     assert len(voice_assistant.commands_context._context_queue) == 2
 
 def test_background_inactive_remove_response(voice_assistant):
-    pass
+    voice_assistant.speech_recognizer_did_receive_final_result('background remove response')
+    assert len(voice_assistant.commands_context._threads) == 1
+    voice_assistant.speech_synthesizer.results.clear()
+    
+    # force inactive mode by settings zero time
+    voice_assistant._last_interaction_time = datetime.fromtimestamp(0)
+    
+    # catch all responses
+    responses_cache = voice_assistant._responses.copy()
+    
+    while voice_assistant.commands_context._threads[0].thread.is_alive():
+        for response in voice_assistant._responses:
+            if not response in responses_cache:
+                responses_cache.append(response)
+    
+    # check response cached, removed and will not be repeated
+    assert len(responses_cache) == 1
+    assert len(voice_assistant.speech_synthesizer.results) == 1
+    assert responses_cache.pop(0).text == 'Deleted response'
+    assert len(voice_assistant._responses) == 0
+    voice_assistant.speech_synthesizer.results.clear()
+    
+    # interact to disable inactive mode, check that removed response is not repeated
+    voice_assistant.speech_recognizer_did_receive_final_result('hello world')
+    assert len(voice_assistant.speech_synthesizer.results) == 1
+    assert voice_assistant.speech_synthesizer.results.pop(0).text == 'Hello, world!'
