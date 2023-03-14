@@ -1,4 +1,5 @@
 import pytest
+import config
 from VICore import (
     CommandsManager,
     CommandsContext,
@@ -56,9 +57,10 @@ def commands_context_flow() -> tuple[CommandsContext, CommandsContextDelegateMoc
             parameters = {'name': name}
         )
         
-    @manager.new('sleep')
-    def sleep():
-        return None
+    @manager.new('afk')
+    def afk():
+        config.is_afk = True
+        return Response(text = 'Sleeping...')
         
     @manager.new('repeat')
     def repeat():

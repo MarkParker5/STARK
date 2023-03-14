@@ -1,6 +1,7 @@
 import asyncio
 from datetime import datetime
 
+import config
 from VICore import CommandsContext, CommandsContextLayer, CommandsContextDelegate, Response
 from IO.protocols import SpeechRecognizer, SpeechRecognizerDelegate, SpeechSynthesizer, SpeechSynthesizerResult
 
@@ -41,16 +42,18 @@ class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
     # SpeechRecognizerDelegate
 
     def speech_recognizer_did_receive_final_result(self, result: str):
+        print(f'\rYou: {result}')
         
         if self.inactive:
             self.commands_context.pop_to_root_context()
         
-        print(f'\rYou: {result}')
         self._last_interaction_time = datetime.now()
+        config.is_afk = False
+        
         self.commands_context.process_string(result)
         
         # repeat responses
-        while response := self._responses.pop(0):
+        while response := self._responses.pop(0): # TODO: if datetime.now() - response.time > 10:
             self._play_response(response)
             self.commands_context.add_context(CommandsContextLayer(response.commands, response.parameters))
             if response.needs_user_input:
@@ -65,10 +68,11 @@ class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
     # CommandsContextDelegate
 
     def commands_context_did_receive_response(self, response: Response):
-        if self.inactive:
+        if self.inactive or config.is_afk:
             self._responses.append(response)
             
-        self._play_response(response)
+        if not config.is_afk:
+            self._play_response(response)
         
     def remove_response(self, response: Response):
         self._responses.remove(response)

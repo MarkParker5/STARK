@@ -1,4 +1,5 @@
 import pytest
+import config
 
 
 # TODO:issue#2: test delays_reports, threads
@@ -59,14 +60,13 @@ def test_context_pop_context_response_action(commands_context_flow):
     context.process_string('hello')
     assert len(context_delegate._responses) == 0
 
-@pytest.mark.skip(reason = 'Not implemented yet') # TODO: 
 def test_sleep_response_action(commands_context_flow):
     context, context_delegate = commands_context_flow
 
-    context.process_string('sleep')
+    context.process_string('afk')
     assert len(context_delegate._responses) == 1
     assert context_delegate._responses[0].text == 'Sleeping...'
-    assert context._last_interaction_time.timestamp() == 0
+    assert config.is_afk == True
    
 def test_repeat_last_answer_response_action(commands_context_flow):
     context, context_delegate = commands_context_flow
