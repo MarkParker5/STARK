@@ -31,12 +31,13 @@ class CommandsManager:
         if not commands:
             commands = self.commands
         
+        viobjects_cache: dict[str, VIObject] = {}
         results: list[SearchResult] = []
         origin = VIString(string)
 
         i = 0
         for command in commands:
-            for match in command.pattern.match(string):
+            for match in command.pattern.match(string, viobjects_cache):
                 results.append(SearchResult(
                     command = command,
                     match_result = match,
@@ -48,11 +49,14 @@ class CommandsManager:
         
         results = sorted(results, key = lambda result: result.match_result.start)
         
-        for prev, current in zip(results.copy(), results[1:]): # copy to prevent affecting iteration by removing items; slice makes copy automatically
+        # copy to prevent affecting iteration by removing items; slice makes copy automatically
+        for prev, current in zip(results.copy(), results[1:]): 
             if prev.match_result.start == current.match_result.start or prev.match_result.end > current.match_result.start:
                 
-                prev_cut = prev.command.pattern.match(string[prev.match_result.start:current.match_result.start]) # constrain prev end to current start
-                current_cut = current.command.pattern.match(string[prev.match_result.end:current.match_result.end]) # constrain current start to prev end
+                # constrain prev end to current start
+                prev_cut = prev.command.pattern.match(string[prev.match_result.start:current.match_result.start], viobjects_cache) 
+                # constrain current start to prev end
+                current_cut = current.command.pattern.match(string[prev.match_result.end:current.match_result.end], viobjects_cache)
 
                 # less index = more priority to save full match
                 priority1, priority2 = prev, current if prev.index < current.index else current, prev
@@ -73,7 +77,9 @@ class CommandsManager:
                 origin = origin
             ))
 
-        return results
+        # TODO: log results if config.enable_logging
+
+        return results 
     
     def new(self, pattern_str: str, hidden: bool = False):
         def creator(func: CommandRunner) -> Command:

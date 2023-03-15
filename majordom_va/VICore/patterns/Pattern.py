@@ -30,32 +30,48 @@ class Pattern:
         self.parameters = dict(self._get_parameters())
         self.compiled = self._compile()
         
-    def match(self, string: str) -> list[MatchResult]:
+    def match(self, string: str, viobjects_cache: dict[str, 'VIObject'] = None) -> list[MatchResult]:
         
+        viobjects_cache = viobjects_cache or {}
         matches: list[MatchResult] = []
         
         for match in sorted(re.finditer(self.compiled, string), key = lambda match: match.start()):
             
-            substring = match.group(0).strip()
-            start = match.start()
-            end = match.end()
-            str_groups = match.groupdict()
+            match_start = match.start()
+            match_end = match.end()
+            match_str_groups = match.groupdict()
             
             # parse parameters
             
             parameters: dict[str, 'VIObject'] = {}
             
             for name, vi_type in self.parameters.items():
-                if not str_groups.get(name):
+                if not match_str_groups.get(name):
                     continue
-                parameters[name] = vi_type.parse(from_string = str_groups[name], parameters = str_groups) # TODO: parsed (start, end) in group string 
-            
-            # TODO: adjust start, end and substring after parsing parameters
+                
+                parameter_str = match_str_groups[name]
+                
+                for parsed_substr, parsed_obj in viobjects_cache.items():
+                    if parsed_substr in parameter_str:
+                        parameters[name] = parsed_obj.copy()
+                        parameter_start = parameter_str.find(parsed_substr)
+                        parameter_end = parameter_start + len(parsed_substr)
+                        break
+                else:
+                    parameters[name], parameter_start, parameter_end = vi_type.parse(from_string = parameter_str, parameters = match_str_groups) 
+                    parameter_substr = parameter_str[parameter_start:parameter_end]
+                    viobjects_cache[parameter_substr] = parameters[name]
+                    
+                # adjust start, end and substring after parsing parameters
+                if match.start(name) == 0 and parameter_start != 0:
+                    match_start = parameter_start
+                if match.end(name) == len(string) and parameter_end != len(parameter_str):
+                    match_end = parameter_end 
             
             matches.append(MatchResult(
-                substring = substring,
-                start = start,
-                end = end,
+                substring = match.group(0).strip()[match_start:match_end],
+                start = match_start,
+                end = match_end,
                 parameters = parameters
             ))
             
@@ -65,7 +81,7 @@ class Pattern:
             if prev.start == current.start or prev.end > current.start: # if overlap 
                 matches.remove(min(prev, current, key = lambda m: len(m.substring))) # remove shorter
                 
-        # TODO: filter by unique parameters
+        # TODO: filter by unique parameters | handle the same command with the same parameters
             
         return matches
     

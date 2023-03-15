@@ -1,11 +1,13 @@
 from __future__ import annotations
-
-from abc import ABC
 from typing import Any
+from collections import namedtuple
+from abc import ABC
 
 from general.classproperty import classproperty
 from .. import Pattern
 
+
+ParseResult = namedtuple('ParseResult', ['obj', 'start', 'end'])
 
 class VIObject(ABC):
 
@@ -19,7 +21,7 @@ class VIObject(ABC):
         return Pattern('**')
 
     @classmethod
-    def parse(cls, from_string: str, parameters: dict[str, str] = None) -> VIObject | None:
+    def parse(cls, from_string: str, parameters: dict[str, str] = None) -> ParseResult | None:
         obj = cls(from_string)
         parameters = parameters or {}
         
@@ -29,7 +31,7 @@ class VIObject(ABC):
             value = parameters.pop(name)
             setattr(obj, name, vi_type.parse(from_string = value, parameters = parameters))
         
-        return obj
+        return ParseResult(obj, 0, len(from_string))
     
     def __format__(self, spec) -> str:
         return f'{self.value:{spec}}'
