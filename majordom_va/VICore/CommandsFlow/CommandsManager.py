@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import Type
 from pydantic import BaseModel
 
-from ..patterns import Pattern
+from ..patterns import Pattern, MatchResult
 from ..VIObjects import *
 from .Threads import ThreadData, RThread, Event
 from .Command import Command, CommandRunner, Response
@@ -10,8 +10,8 @@ from .Command import Command, CommandRunner, Response
 
 class SearchResult(BaseModel):
     command: Command
-    substring: str
-    parameters: dict[str, VIObject] = []
+    match_result: MatchResult = None
+    index: int = 0
     
     class Config:
         arbitrary_types_allowed = True
@@ -34,18 +34,38 @@ class CommandsManager:
         results: list[SearchResult] = []
         origin = VIString(string)
 
+        i = 0
         for command in commands:
-            match = command.pattern.match(string)
-            # TODO:issue#6: use substring and disambiguate overlapping commands
+            for match in command.pattern.match(string):
+                results.append(SearchResult(
+                    command = command,
+                    match_result = match,
+                    index = i
+                ))
+                i += 1
                 
-            if not match:
-                continue    
+        # resolve overlapped results
         
-            results.append(SearchResult(
-                command = command,
-                substring = match.substring,
-                parameters = match.parameters
-            ))
+        results = sorted(results, key = lambda result: result.match_result.start)
+        
+        for prev, current in zip(results.copy(), results[1:]): # copy to prevent affecting iteration by removing items; slice makes copy automatically
+            if prev.match_result.start == current.match_result.start or prev.match_result.end > current.match_result.start:
+                
+                prev_cut = prev.command.pattern.match(string[prev.match_result.start:current.match_result.start]) # constrain prev end to current start
+                current_cut = current.command.pattern.match(string[prev.match_result.end:current.match_result.end]) # constrain current start to prev end
+
+                # less index = more priority to save full match
+                priority1, priority2 = prev, current if prev.index < current.index else current, prev
+                priority1_cut, priority2_cut = prev_cut, current_cut if prev.index < current.index else current_cut, prev_cut
+                
+                if new_matches := priority2_cut: # if can cut less priority
+                    priority2.match_result = new_matches[0]
+                elif new_matches := priority1_cut: # else if can cut more priority
+                    priority1.match_result = new_matches[0]
+                else: # else remove less priority
+                    results.remove(priority2)
+                
+        # fallback to QA
 
         if not results and (qa := self.QA):
             results.append(SearchResult(

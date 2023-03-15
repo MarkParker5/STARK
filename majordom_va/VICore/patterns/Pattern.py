@@ -11,6 +11,8 @@ VIObjectType: TypeAlias = Type['VIObject']
 @dataclass
 class MatchResult:
     substring: str
+    start: int
+    end: int
     parameters: dict[str, 'VIObject']
 
 class Pattern:
@@ -28,24 +30,44 @@ class Pattern:
         self.parameters = dict(self._get_parameters())
         self.compiled = self._compile()
         
-    def match(self, string: str) -> MatchResult | None:
+    def match(self, string: str) -> list[MatchResult]:
         
-        if matches := sorted(re.finditer(self.compiled, string), key = lambda m: len(m.group(0))):
-            # TODO:issue#6: sort by parameters count instead of substring length
-            match = matches[-1]
+        matches: list[MatchResult] = []
+        
+        for match in sorted(re.finditer(self.compiled, string), key = lambda match: match.start()):
+            
             substring = match.group(0).strip()
+            start = match.start()
+            end = match.end()
             str_groups = match.groupdict()
+            
+            # parse parameters
             
             parameters: dict[str, 'VIObject'] = {}
             
             for name, vi_type in self.parameters.items():
                 if not str_groups.get(name):
                     continue
-                parameters[name] = vi_type.parse(from_string = str_groups[name], parameters = str_groups)
+                parameters[name] = vi_type.parse(from_string = str_groups[name], parameters = str_groups) # TODO: parsed (start, end) in group string 
             
-            return MatchResult(substring, parameters)
+            # TODO: adjust start, end and substring after parsing parameters
+            
+            matches.append(MatchResult(
+                substring = substring,
+                start = start,
+                end = end,
+                parameters = parameters
+            ))
+            
+        # filter overlapping matches
         
-        return None
+        for prev, current in zip(matches.copy(), matches[1:]): # copy to prevent affecting iteration by removing items; slice makes copy automatically
+            if prev.start == current.start or prev.end > current.start: # if overlap 
+                matches.remove(min(prev, current, key = lambda m: len(m.substring))) # remove shorter
+                
+        # TODO: filter by unique parameters
+            
+        return matches
     
     @classmethod
     def add_parameter_type(cls, vi_type: VIObjectType):
