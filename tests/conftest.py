@@ -45,7 +45,7 @@ class SpeechSynthesizerMock:
         return result
 
 @pytest.fixture
-def commands_context_flow() -> tuple[CommandsContext, CommandsContextDelegateMock]:
+def commands_context_flow() -> tuple[CommandsManager, CommandsContext, CommandsContextDelegateMock]:
     manager = CommandsManager()
     context = CommandsContext(manager)
     context_delegate = CommandsContextDelegateMock()
@@ -53,6 +53,13 @@ def commands_context_flow() -> tuple[CommandsContext, CommandsContextDelegateMoc
     
     assert len(context_delegate.responses) == 0
     assert len(context._context_queue) == 1
+    
+    return manager, context, context_delegate
+
+@pytest.fixture
+def commands_context_flow_filled(commands_context_flow) -> tuple[CommandsContext, CommandsContextDelegateMock]:
+    
+    manager, context, context_delegate = commands_context_flow
     
     @manager.new('test')
     def test(): 
@@ -149,8 +156,8 @@ def commands_context_flow() -> tuple[CommandsContext, CommandsContextDelegateMoc
     return context, context_delegate
 
 @pytest.fixture
-def voice_assistant(commands_context_flow):
-    context, _ = commands_context_flow
+def voice_assistant(commands_context_flow_filled):
+    context, _ = commands_context_flow_filled
     voice_assistant = VoiceAssistant(
         speech_recognizer = SpeechRecognizerMock(),
         speech_synthesizer = SpeechSynthesizerMock(),

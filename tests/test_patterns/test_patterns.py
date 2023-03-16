@@ -1,4 +1,4 @@
-from VICore import Pattern, VIWord, VIString
+from VICore import Pattern
 from VICore.patterns import expressions
 
 
@@ -80,10 +80,10 @@ def test_optional_one_of():
     assert p.compiled == r'(?:foo|bar)?'
     assert p.match('foo')
     assert p.match('bar')
-    assert p.match('')
+    assert not p.match('')
+    assert not p.match('bbb cccc')
     assert p.match('bbb foo cccc')[0].substring == 'foo'
     assert p.match('bbb bar cccc')[0].substring == 'bar'
-    assert p.match('bbb cccc')[0].substring == ''
     
     p = Pattern('Some (foo|bar)? here')
     assert p.compiled == r'Some (?:foo|bar)? here'

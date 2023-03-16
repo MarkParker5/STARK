@@ -1,6 +1,6 @@
 
-def test_background_command(commands_context_flow):
-    context, context_delegate = commands_context_flow
+def test_background_command(commands_context_flow_filled):
+    context, context_delegate = commands_context_flow_filled
     
     context.process_string('background min')
     assert len(context_delegate.responses) == 1
@@ -11,8 +11,8 @@ def test_background_command(commands_context_flow):
     assert len(context_delegate.responses) == 1
     assert context_delegate.responses.pop(0).text == 'Finished background task'
     
-def test_background_with_multiple_responses(commands_context_flow):
-    context, context_delegate = commands_context_flow
+def test_background_with_multiple_responses(commands_context_flow_filled):
+    context, context_delegate = commands_context_flow_filled
     
     context.process_string('background multiple responses')
     

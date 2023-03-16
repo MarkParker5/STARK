@@ -38,9 +38,12 @@ class Pattern:
         
         for match in sorted(re.finditer(self.compiled, string), key = lambda match: match.start()):
             
-            # start and end in match.group(0), not in string
-            match_start = 0
-            match_end = len(string)
+            if match.start() == match.end():
+                continue # skip empty
+            
+            # start and end in string, not in match.group(0) 
+            match_start = match.start()
+            match_end = match.end()
             match_str_groups = match.groupdict()
             
             # parse parameters
@@ -51,29 +54,38 @@ class Pattern:
                 if not match_str_groups.get(name):
                     continue
                 
-                parameter_str = match_str_groups[name]
+                parameter_str = match_str_groups[name].strip()
                 
                 for parsed_substr, parsed_obj in viobjects_cache.items():
                     if parsed_substr in parameter_str:
                         parameters[name] = parsed_obj.copy()
-                        parameter_start = parameter_str.find(parsed_substr)
-                        parameter_end = parameter_start + len(parsed_substr)
+                        parameter_str = parsed_substr
                         break
                 else:
-                    parameters[name], parameter_start, parameter_end = vi_type.parse(from_string = parameter_str, parameters = match_str_groups) 
-                    parameter_substr = parameter_str[parameter_start:parameter_end]
-                    viobjects_cache[parameter_substr] = parameters[name]
+                    parse_result = vi_type.parse(from_string = parameter_str, parameters = match_str_groups) 
+                    viobjects_cache[parse_result.substring] = parse_result.obj
+                    parameters[name] = parse_result.obj
+                    parameter_str = parse_result.substring
+                
+                parameter_start = match_str_groups[name].find(parameter_str)
+                parameter_end = parameter_start + len(parameter_str)
                 
                 # adjust start, end and substring after parsing parameters
-                if match.start(name) == 0 and parameter_start != 0:
-                    match_start = parameter_start
-                if match.end(name) == len(string) and parameter_end != len(parameter_str):
-                    match_end = parameter_end 
+                if match.start(name) == match.start() and parameter_start != 0:
+                    match_start = match.start(name) + parameter_start
+                if match.end(name) == match.end() and parameter_end != len(parameter_str):
+                    match_end = match.start(name) + parameter_start + parameter_end 
+                    
+            # strip original string
+            
+            substring = string[match_start:match_end].strip()
+            start = match_start + string[match_start:match_end].find(substring)
+            end = start + len(substring)
             
             matches.append(MatchResult(
-                substring = match.group(0).strip()[match_start:match_end],
-                start = match_start,
-                end = match_end,
+                substring = substring,
+                start = start,
+                end = end,
                 parameters = parameters
             ))
             
@@ -85,7 +97,7 @@ class Pattern:
                 
         # TODO: filter by unique parameters | handle the same command with the same parameters
             
-        return matches
+        return sorted(matches, key = lambda m: len(m.substring), reverse = True)
     
     @classmethod
     def add_parameter_type(cls, vi_type: VIObjectType):

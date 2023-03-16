@@ -7,7 +7,7 @@ from general.classproperty import classproperty
 from .. import Pattern
 
 
-ParseResult = namedtuple('ParseResult', ['obj', 'start', 'end'])
+ParseResult = namedtuple('ParseResult', ['obj', 'substring'])
 
 class ParseError(Exception):
     pass
@@ -41,7 +41,7 @@ class VIObject(ABC):
         return from_string
 
     @classmethod
-    def parse(cls, from_string: str, parameters: dict[str, str] = None) -> ParseResult | None:
+    def parse(cls, from_string: str, parameters: dict[str, str] = None) -> ParseResult:
         '''
         For internal use only.
         You will very rarely, if ever, need to override or even call this method.
@@ -61,13 +61,8 @@ class VIObject(ABC):
             setattr(obj, name, vi_type.parse(from_string = value, parameters = parameters).obj)
         
         substring = obj.did_parse(from_string)
-        start = from_string.find(substring)
-        end = start + len(substring)
         
-        if start == -1:
-            raise ParseError(f'{cls}.did_parse() returned substring that is not in from_string')
-        
-        return ParseResult(obj, start, end)
+        return ParseResult(obj, substring)
     
     def __format__(self, spec) -> str:
         return f'{self.value:{spec}}'
