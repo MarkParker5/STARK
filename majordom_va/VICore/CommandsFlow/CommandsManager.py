@@ -35,7 +35,6 @@ class CommandsManager:
         i = 0
         for command in commands:
             for match in command.pattern.match(string, viobjects_cache):
-                print('Match', match)
                 results.append(SearchResult(
                     command = command,
                     match_result = match,
@@ -50,7 +49,7 @@ class CommandsManager:
         # copy to prevent affecting iteration by removing items; slice makes copy automatically
         for prev, current in zip(results.copy(), results[1:]): 
             if prev.match_result.start == current.match_result.start or prev.match_result.end > current.match_result.start:
-                print('Overlapped', prev.match_result, current.match_result)
+                
                 # constrain prev end to current start
                 prev_cut = prev.command.pattern.match(string[prev.match_result.start:current.match_result.start], viobjects_cache) 
                 # constrain current start to prev end

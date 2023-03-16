@@ -33,7 +33,7 @@ class Pattern:
         
     def match(self, string: str, viobjects_cache: dict[str, 'VIObject'] = None) -> list[MatchResult]:
         
-        viobjects_cache = viobjects_cache or {}
+        viobjects_cache = viobjects_cache if viobjects_cache != None else {}
         matches: list[MatchResult] = []
         
         for match in sorted(re.finditer(self.compiled, string), key = lambda match: match.start()):

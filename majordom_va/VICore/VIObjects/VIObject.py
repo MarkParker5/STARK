@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import Any
 from collections import namedtuple
 from abc import ABC
+import copy
 
 from general.classproperty import classproperty
 from .. import Pattern
@@ -63,6 +64,9 @@ class VIObject(ABC):
         substring = obj.did_parse(from_string)
         
         return ParseResult(obj, substring)
+    
+    def copy(self) -> VIObject:
+        return copy.copy(self)
     
     def __format__(self, spec) -> str:
         return f'{self.value:{spec}}'
