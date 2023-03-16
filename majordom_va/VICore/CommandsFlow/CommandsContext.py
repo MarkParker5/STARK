@@ -1,5 +1,5 @@
 from typing import Any, Protocol
-import inspect
+from dataclasses import dataclass
 import asyncio
 
 from .CommandsManager import CommandsManager
@@ -7,13 +7,10 @@ from .Command import Command, Response, ResponseHandler
 from .Threads import ThreadData
 
 
+@dataclass
 class CommandsContextLayer:
-    commands: list[Command] = []
+    commands: list[Command]
     parameters: dict[str, Any]
-
-    def __init__(self, commands, parameters = {}):
-        self.commands = commands
-        self.parameters = parameters
 
 class CommandsContextDelegate(Protocol):
     def commands_context_did_receive_response(self, response: Response): pass
@@ -34,7 +31,7 @@ class CommandsContext:
 
     @property
     def root_context(self):
-        return CommandsContextLayer(self.commands_manager.commands)
+        return CommandsContextLayer(self.commands_manager.commands, {})
 
     def process_string(self, string: str):
         
@@ -54,7 +51,7 @@ class CommandsContext:
 
         for search_result in search_results:
 
-            parameters = {**current_context.parameters, **search_result.parameters}
+            parameters = {**current_context.parameters, **search_result.match_result.parameters}
             
             # pass dependencies as parameters
             for name, annotation in search_result.command._runner.__annotations__.items():

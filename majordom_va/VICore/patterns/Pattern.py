@@ -5,6 +5,7 @@ import re
 
 from .expressions import dictionary
 
+
 # TODO: resolve circular import
 VIObjectType: TypeAlias = Type['VIObject']
 
@@ -37,8 +38,9 @@ class Pattern:
         
         for match in sorted(re.finditer(self.compiled, string), key = lambda match: match.start()):
             
-            match_start = match.start()
-            match_end = match.end()
+            # start and end in match.group(0), not in string
+            match_start = 0
+            match_end = len(string)
             match_str_groups = match.groupdict()
             
             # parse parameters
@@ -61,7 +63,7 @@ class Pattern:
                     parameters[name], parameter_start, parameter_end = vi_type.parse(from_string = parameter_str, parameters = match_str_groups) 
                     parameter_substr = parameter_str[parameter_start:parameter_end]
                     viobjects_cache[parameter_substr] = parameters[name]
-                    
+                
                 # adjust start, end and substring after parsing parameters
                 if match.start(name) == 0 and parameter_start != 0:
                     match_start = parameter_start

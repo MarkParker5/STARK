@@ -29,9 +29,9 @@ def test_nested_viobjects():
     
     m = p.match('John Galt')
     assert m
-    assert set(m.parameters.keys()) == {'name'}
-    assert m.parameters['name'].first == VIWord('John')
-    assert m.parameters['name'].second == VIWord('Galt')
+    assert set(m[0].parameters.keys()) == {'name'}
+    assert m[0].parameters['name'].first == VIWord('John')
+    assert m[0].parameters['name'].second == VIWord('Galt')
     
 def test_extra_parameter_in_annotation():
     Pattern.add_parameter_type(ExtraParameterInAnnotation)
@@ -42,7 +42,7 @@ def test_extra_parameter_in_annotation():
     
     m = p.match('John Galt')
     assert m
-    assert set(m.parameters.keys()) == {'name'}
-    assert m.parameters['name'].word1 == VIWord('John')
-    assert m.parameters['name'].word2 == VIWord('Galt')
-    assert m.parameters['name'].word3 == None
+    assert set(m[0].parameters.keys()) == {'name'}
+    assert m[0].parameters['name'].word1 == VIWord('John')
+    assert m[0].parameters['name'].word2 == VIWord('Galt')
+    assert m[0].parameters['name'].word3 == None

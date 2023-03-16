@@ -57,7 +57,6 @@ class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
             response = self._responses.pop(0)
             self._play_response(response)
             self.commands_context.add_context(CommandsContextLayer(response.commands, response.parameters))
-            print('Left:', [r.text for r in self._responses])
             if response.needs_user_input:
                 break
 

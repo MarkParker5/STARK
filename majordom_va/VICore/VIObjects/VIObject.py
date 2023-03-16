@@ -58,7 +58,7 @@ class VIObject(ABC):
             if not parameters.get(name):
                 continue
             value = parameters.pop(name)
-            setattr(obj, name, vi_type.parse(from_string = value, parameters = parameters))
+            setattr(obj, name, vi_type.parse(from_string = value, parameters = parameters).obj)
         
         substring = obj.did_parse(from_string)
         start = from_string.find(substring)

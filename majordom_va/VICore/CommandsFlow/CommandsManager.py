@@ -1,6 +1,5 @@
 from __future__ import annotations
-from typing import Type
-from pydantic import BaseModel
+from dataclasses import dataclass
 
 from ..patterns import Pattern, MatchResult
 from ..VIObjects import *
@@ -8,13 +7,11 @@ from .Threads import ThreadData, RThread, Event
 from .Command import Command, CommandRunner, Response
 
 
-class SearchResult(BaseModel):
+@dataclass
+class SearchResult:
     command: Command
     match_result: MatchResult = None
     index: int = 0
-    
-    class Config:
-        arbitrary_types_allowed = True
 
 class CommandsManager:
     
@@ -59,8 +56,8 @@ class CommandsManager:
                 current_cut = current.command.pattern.match(string[prev.match_result.end:current.match_result.end], viobjects_cache)
 
                 # less index = more priority to save full match
-                priority1, priority2 = prev, current if prev.index < current.index else current, prev
-                priority1_cut, priority2_cut = prev_cut, current_cut if prev.index < current.index else current_cut, prev_cut
+                priority1, priority2 = (prev, current) if prev.index < current.index else (current, prev)
+                priority1_cut, priority2_cut = (prev_cut, current_cut) if prev.index < current.index else (current_cut, prev_cut)
                 
                 if new_matches := priority2_cut: # if can cut less priority
                     priority2.match_result = new_matches[0]

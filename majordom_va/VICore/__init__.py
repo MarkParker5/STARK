@@ -1,7 +1,7 @@
 from .patterns import Pattern, expressions
 from .VIObjects import (
     ParseError,
-    ParseResult
+    ParseResult,
     VIObject,
     VIString,
     VIWord,
