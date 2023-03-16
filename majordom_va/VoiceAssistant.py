@@ -53,7 +53,7 @@ class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
         self.commands_context.process_string(result)
         
         # repeat responses
-        while self._responses: # TODO: if datetime.now() - response.time > 10:
+        while self._responses:
             response = self._responses.pop(0)
             self._play_response(response)
             self.commands_context.add_context(CommandsContextLayer(response.commands, response.parameters))

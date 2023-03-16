@@ -6,7 +6,6 @@ from IO.SileroSpeechSynthesizer import SileroSpeechSynthesizer
 from features import default
 
 
-# TODO:issue#16: typer
 if __name__ == '__main__':
     cm = CommandsContext(commands_manager = default)
     va = VoiceAssistant(

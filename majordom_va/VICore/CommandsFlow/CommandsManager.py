@@ -66,10 +66,6 @@ class CommandsManager:
                 else: # else remove less priority
                     results.remove(priority2)
                 
-        # TODO: fallback to QA
-
-        # TODO: log results if config.enable_logging
-
         return results 
     
     def new(self, pattern_str: str, hidden: bool = False):

@@ -6,7 +6,6 @@ import re
 from .expressions import dictionary
 
 
-# TODO: resolve circular import
 VIObject: TypeAlias = 'VIObject' # type: ignore
 VIObjectType: TypeAlias = Type[VIObject] # type: ignore
 
@@ -97,8 +96,6 @@ class Pattern:
         for prev, current in zip(matches.copy(), matches[1:]): # copy to prevent affecting iteration by removing items; slice makes copy automatically
             if prev.start == current.start or prev.end > current.start: # if overlap 
                 matches.remove(min(prev, current, key = lambda m: len(m.substring))) # remove shorter
-                
-        # TODO: filter by unique parameters | handle the same command with the same parameters
             
         return sorted(matches, key = lambda m: len(m.substring), reverse = True)
     
