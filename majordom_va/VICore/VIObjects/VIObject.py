@@ -9,20 +9,49 @@ from .. import Pattern
 
 ParseResult = namedtuple('ParseResult', ['obj', 'start', 'end'])
 
+class ParseError(Exception):
+    pass
+
 class VIObject(ABC):
 
     value: Any
-
-    def __init__(self, value: Any):
-        self.value = value
-
+    
     @classproperty
     def pattern(cls) -> Pattern:
         return Pattern('**')
 
+    def __init__(self, value: Any):
+        '''Just init with wrapped value.'''
+        self.value = value
+        
+    def did_parse(self, from_string: str) -> str:
+        '''
+        This method is called after parsing from string and setting parameters found in pattern. 
+        You will very rarely, if ever, need to call this method directly.
+        
+        Override this method for more complex parsing from string. 
+        
+        Returns:
+            Minimal substring that is required to parse value.
+        
+        Raises:
+            ParseError: if parsing failed.
+        '''
+        self.value = from_string
+        return from_string
+
     @classmethod
     def parse(cls, from_string: str, parameters: dict[str, str] = None) -> ParseResult | None:
-        obj = cls(from_string)
+        '''
+        For internal use only.
+        You will very rarely, if ever, need to override or even call this method.
+        Override `def did_parse(self, from_string: str) -> str` if you need complex parsing.
+        
+        Raises:
+            ParseError: if parsing failed.
+        '''
+        
+        obj = cls(None)
         parameters = parameters or {}
         
         for name, vi_type in cls.pattern.parameters.items():
@@ -31,7 +60,14 @@ class VIObject(ABC):
             value = parameters.pop(name)
             setattr(obj, name, vi_type.parse(from_string = value, parameters = parameters))
         
-        return ParseResult(obj, 0, len(from_string))
+        substring = obj.did_parse(from_string)
+        start = from_string.find(substring)
+        end = start + len(substring)
+        
+        if start == -1:
+            raise ParseError(f'{cls}.did_parse() returned substring that is not in from_string')
+        
+        return ParseResult(obj, start, end)
     
     def __format__(self, spec) -> str:
         return f'{self.value:{spec}}'

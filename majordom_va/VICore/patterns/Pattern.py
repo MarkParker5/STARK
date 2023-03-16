@@ -5,7 +5,7 @@ import re
 
 from .expressions import dictionary
 
-
+# TODO: resolve circular import
 VIObjectType: TypeAlias = Type['VIObject']
 
 @dataclass
@@ -92,6 +92,8 @@ class Pattern:
         assert cls._parameter_types.get(vi_type.__name__) is None, f'Can`t add parameter type: {vi_type.__name__} already exists'
         cls._parameter_types[vi_type.__name__] = vi_type
         
+    # private
+    
     def _get_parameter_regex(self) -> re.compile:
         # types = '|'.join(Pattern._parameter_types.keys())
         # return re.compile(r'\$(?P<name>[A-z][A-z0-9]*)\:(?P<type>(?:' + types + r'))')
