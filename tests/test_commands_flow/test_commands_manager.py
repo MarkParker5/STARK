@@ -28,11 +28,11 @@ def test_search():
     @manager.new('test')
     def test(): pass
     
-    @manager.new('hello $name:VIWord')
-    def hello(name: VIWord): pass
-    
     @manager.new('hello $name:VIWord $surname:VIWord')
     def hello2(name: VIWord, surname: VIWord): pass
+    
+    @manager.new('hello $name:VIWord')
+    def hello(name: VIWord): pass
     
     # test
     result = manager.search('test')
@@ -45,22 +45,17 @@ def test_search():
     assert result is not None
     assert len(result) == 1
     assert result[0].command.name == 'CommandsManager.hello'
-    assert result[0].substring == 'hello world'
-    assert type(result[0].parameters['name']) is VIWord
-    assert result[0].parameters['name'].value == 'world'
+    assert result[0].match_result.substring == 'hello world'
+    assert type(result[0].match_result.parameters['name']) is VIWord
+    assert result[0].match_result.parameters['name'].value == 'world'
     
     # hello2
     result = manager.search('hello new world')
     assert result is not None
-    assert len(result) == 2
-    assert hello in [result[0].command, result[1].command] and hello2 in [result[0].command, result[1].command]
-    
-    for result in result:
-        if result.command == hello:
-            assert result.substring == 'hello new'
-        elif result.command == hello2:
-            assert result.substring == 'hello new world'
-            assert result.parameters == {'name': VIWord('new'), 'surname': VIWord('world')}
+    assert len(result) == 1
+    assert result[0].command == hello2
+    assert result[0].match_result.substring == 'hello new world'
+    assert result[0].match_result.parameters == {'name': VIWord('new'), 'surname': VIWord('world')}
             
 def test_extend_manager():
     root_manager = CommandsManager()

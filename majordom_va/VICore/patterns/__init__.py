@@ -1,2 +1,2 @@
 from . import expressions
-from .Pattern import Pattern
+from .Pattern import Pattern, MatchResult

@@ -23,16 +23,16 @@ def test_typed_parameters():
     
     m = p.match('lorem ipsum dolor')
     assert m
-    assert m.substring == 'lorem ipsum dolor'
-    assert m.parameters == {'name': VIString('ipsum')}
+    assert m[0].substring == 'lorem ipsum dolor'
+    assert m[0].parameters == {'name': VIString('ipsum')}
     assert not p.match('lorem ipsum foo dolor')
     
     p = Pattern('lorem $name:VIString dolor')
     assert p.parameters == {'name': VIString}
     m = p.match('lorem ipsum foo bar dolor')
     assert m
-    assert m.substring == 'lorem ipsum foo bar dolor'
-    assert m.parameters == {'name': VIString('ipsum foo bar')}
+    assert m[0].substring == 'lorem ipsum foo bar dolor'
+    assert m[0].parameters == {'name': VIString('ipsum foo bar')}
     
 def test_undefined_typed_parameters():
     pattern = 'lorem $name:Lorem dolor'

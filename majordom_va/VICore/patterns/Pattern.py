@@ -6,11 +6,14 @@ import re
 from .expressions import dictionary
 
 
+# TODO: resolve circular import
 VIObjectType: TypeAlias = Type['VIObject']
 
 @dataclass
 class MatchResult:
     substring: str
+    start: int
+    end: int
     parameters: dict[str, 'VIObject']
 
 class Pattern:
@@ -28,24 +31,73 @@ class Pattern:
         self.parameters = dict(self._get_parameters())
         self.compiled = self._compile()
         
-    def match(self, string: str) -> MatchResult | None:
+    def match(self, string: str, viobjects_cache: dict[str, 'VIObject'] = None) -> list[MatchResult]:
         
-        if matches := sorted(re.finditer(self.compiled, string), key = lambda m: len(m.group(0))):
-            # TODO:issue#6: sort by parameters count instead of substring length
-            match = matches[-1]
-            substring = match.group(0).strip()
-            str_groups = match.groupdict()
+        viobjects_cache = viobjects_cache if viobjects_cache != None else {}
+        matches: list[MatchResult] = []
+        
+        for match in sorted(re.finditer(self.compiled, string), key = lambda match: match.start()):
+            
+            if match.start() == match.end():
+                continue # skip empty
+            
+            # start and end in string, not in match.group(0) 
+            match_start = match.start()
+            match_end = match.end()
+            match_str_groups = match.groupdict()
+            
+            # parse parameters
             
             parameters: dict[str, 'VIObject'] = {}
             
             for name, vi_type in self.parameters.items():
-                if not str_groups.get(name):
+                if not match_str_groups.get(name):
                     continue
-                parameters[name] = vi_type.parse(from_string = str_groups[name], parameters = str_groups)
+                
+                parameter_str = match_str_groups[name].strip()
+                
+                for parsed_substr, parsed_obj in viobjects_cache.items():
+                    if parsed_substr in parameter_str:
+                        parameters[name] = parsed_obj.copy()
+                        parameter_str = parsed_substr
+                        break
+                else:
+                    parse_result = vi_type.parse(from_string = parameter_str, parameters = match_str_groups) 
+                    viobjects_cache[parse_result.substring] = parse_result.obj
+                    parameters[name] = parse_result.obj
+                    parameter_str = parse_result.substring
+                
+                parameter_start = match_str_groups[name].find(parameter_str)
+                parameter_end = parameter_start + len(parameter_str)
+                
+                # adjust start, end and substring after parsing parameters
+                if match.start(name) == match.start() and parameter_start != 0:
+                    match_start = match.start(name) + parameter_start
+                if match.end(name) == match.end() and parameter_end != len(parameter_str):
+                    match_end = match.start(name) + parameter_start + parameter_end 
+                    
+            # strip original string
             
-            return MatchResult(substring, parameters)
+            substring = string[match_start:match_end].strip()
+            start = match_start + string[match_start:match_end].find(substring)
+            end = start + len(substring)
+            
+            matches.append(MatchResult(
+                substring = substring,
+                start = start,
+                end = end,
+                parameters = parameters
+            ))
+            
+        # filter overlapping matches
         
-        return None
+        for prev, current in zip(matches.copy(), matches[1:]): # copy to prevent affecting iteration by removing items; slice makes copy automatically
+            if prev.start == current.start or prev.end > current.start: # if overlap 
+                matches.remove(min(prev, current, key = lambda m: len(m.substring))) # remove shorter
+                
+        # TODO: filter by unique parameters | handle the same command with the same parameters
+            
+        return sorted(matches, key = lambda m: len(m.substring), reverse = True)
     
     @classmethod
     def add_parameter_type(cls, vi_type: VIObjectType):
@@ -54,6 +106,8 @@ class Pattern:
         assert cls._parameter_types.get(vi_type.__name__) is None, f'Can`t add parameter type: {vi_type.__name__} already exists'
         cls._parameter_types[vi_type.__name__] = vi_type
         
+    # private
+    
     def _get_parameter_regex(self) -> re.compile:
         # types = '|'.join(Pattern._parameter_types.keys())
         # return re.compile(r'\$(?P<name>[A-z][A-z0-9]*)\:(?P<type>(?:' + types + r'))')
