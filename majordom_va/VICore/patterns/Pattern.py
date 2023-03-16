@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Type, Generator, TypeAlias
+from typing import Type, Generator, TypeAlias, Protocol
 from dataclasses import dataclass
 import re
 
@@ -7,14 +7,15 @@ from .expressions import dictionary
 
 
 # TODO: resolve circular import
-VIObjectType: TypeAlias = Type['VIObject']
+VIObject: TypeAlias = 'VIObject' # type: ignore
+VIObjectType: TypeAlias = Type[VIObject] # type: ignore
 
 @dataclass
 class MatchResult:
     substring: str
     start: int
     end: int
-    parameters: dict[str, 'VIObject']
+    parameters: dict[str, VIObject]
 
 class Pattern:
     
@@ -22,7 +23,7 @@ class Pattern:
     compiled: str
     
     _origin: str
-    _parameter_regex: re.compile
+    _parameter_regex: re.Pattern
     _parameter_types: dict[str, VIObjectType] = {} # static
 
     def __init__(self, origin: str):
@@ -31,9 +32,11 @@ class Pattern:
         self.parameters = dict(self._get_parameters())
         self.compiled = self._compile()
         
-    def match(self, string: str, viobjects_cache: dict[str, 'VIObject'] = None) -> list[MatchResult]:
+    def match(self, string: str, viobjects_cache: dict[str, VIObject] | None = None) -> list[MatchResult]:
         
-        viobjects_cache = viobjects_cache if viobjects_cache != None else {}
+        if viobjects_cache is None:
+            viobjects_cache = {}
+            
         matches: list[MatchResult] = []
         
         for match in sorted(re.finditer(self.compiled, string), key = lambda match: match.start()):
@@ -48,7 +51,7 @@ class Pattern:
             
             # parse parameters
             
-            parameters: dict[str, 'VIObject'] = {}
+            parameters: dict[str, VIObject] = {}
             
             for name, vi_type in self.parameters.items():
                 if not match_str_groups.get(name):
@@ -108,17 +111,17 @@ class Pattern:
         
     # private
     
-    def _get_parameter_regex(self) -> re.compile:
+    def _get_parameter_regex(self) -> re.Pattern:
         # types = '|'.join(Pattern._parameter_types.keys())
         # return re.compile(r'\$(?P<name>[A-z][A-z0-9]*)\:(?P<type>(?:' + types + r'))')
         # do not use types list because it prevents validation of unknown types
         return re.compile(r'\$(?P<name>[A-z][A-z0-9]*)\:(?P<type>[A-z][A-z0-9]*)')
     
-    def _get_parameters(self) -> Generator[tuple[str, VIObjectType]]:
+    def _get_parameters(self) -> Generator[tuple[str, VIObjectType], None, None]:
         for match in re.finditer(self._parameter_regex, self._origin):
             arg_name = match.group('name')
             arg_type_name = match.group('type')
-            arg_type: VIObjectType = Pattern._parameter_types.get(arg_type_name)
+            arg_type: VIObjectType | None = Pattern._parameter_types.get(arg_type_name)
             
             if not arg_type: 
                 raise NameError(f'Unknown type: "{arg_type_name}" for parameter: "{arg_name}" in pattern: "{self._origin}"')
@@ -144,7 +147,9 @@ class Pattern:
         
         return pattern
     
-    def __eq__(self, other: Pattern) -> bool:
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Pattern):
+            raise NotImplementedError(f'Can`t compare Pattern with {type(other)}')
         return self._origin == other._origin
     
     def __repr__(self) -> str:

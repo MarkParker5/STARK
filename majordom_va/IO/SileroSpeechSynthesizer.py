@@ -8,7 +8,7 @@ from .protocols import SpeechSynthesizer, SpeechSynthesizerResult
 
 class Speech(SpeechSynthesizerResult):
 
-    def __init__(self, audio: numpy.array, sample_rate: int):
+    def __init__(self, audio: numpy.ndarray, sample_rate: int):
         self.audio = audio
         self.sample_rate = sample_rate
 

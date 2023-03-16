@@ -1,28 +1,27 @@
 from __future__ import annotations
 from typing import Callable, Any, Optional, Protocol
-from enum import Enum, auto
 import inspect
 
 from pydantic import BaseModel
 
 from general.classproperty import classproperty
 from ..patterns import Pattern
-from ..VIObjects import VIObject
 from .Threads import ThreadData
 
 
-CommandRunner = Callable[[dict[str, VIObject]], 'Response']
+CommandRunner = Callable[..., 'Response']
 
 class Command():
     name: str
-    pattern: list[Pattern]
+    pattern: Pattern
+    _runner: CommandRunner
 
     def __init__(self, name: str, pattern: Pattern, runner: CommandRunner):
         self.name = name
         self.pattern = pattern
         self._runner = runner
 
-    def run(self, parameters_dict: dict[str, VIObject] = None, / , **kwparameters: dict[str, VIObject]) -> Response:
+    def run(self, parameters_dict: dict[str, Any] | None = None, / , **kwparameters: dict[str, Any]) -> Response:
         # allow call both with and without dict unpacking 
         # e.g. command.run(foo = bar, lorem = ipsum), command.run(**parameters) and command.run(parameters)
         # where parameters is dict {'foo': bar, 'lorem': ipsum}
@@ -36,9 +35,6 @@ class Command():
         else:
             # avoid TypeError: self._runner got an unexpected keyword argument
             return self._runner(**{k: v for k, v in parameters.items() if k in self._runner.__annotations__})
-        
-    def _runner(self) -> Response:
-        raise NotImplementedError(f'Method start is not implemented for command with name {self.name}')
     
     def __call__(self, *args, **kwargs) -> Response:
         # just syntactic sugar for command() instead of command.run()
@@ -52,13 +48,14 @@ class Response(BaseModel):
     parameters: dict[str, Any] = {}
     thread: Optional[ThreadData] = None
     
-    _repeat_last: Response = None
+    _repeat_last: Response | None = None
     
     @classproperty
     def repeat_last(cls) -> Response:
-        if not cls._repeat_last:
-            cls._repeat_last = cls()
-        return cls._repeat_last    
+        if not Response._repeat_last:
+            Response._repeat_last = Response()
+            return Response._repeat_last
+        return Response._repeat_last    
     
     class Config:
         arbitrary_types_allowed = True

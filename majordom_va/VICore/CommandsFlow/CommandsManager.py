@@ -10,20 +10,20 @@ from .Command import Command, CommandRunner, Response
 @dataclass
 class SearchResult:
     command: Command
-    match_result: MatchResult = None
+    match_result: MatchResult
     index: int = 0
 
 class CommandsManager:
     
     name: str
     commands: list[Command]
-    QA: Command = None
+    QA: Command | None = None
     
     def __init__(self, name: str = ''):
         self.name = name or 'CommandsManager'
         self.commands = []
 
-    def search(self, string: str, commands: list[Command] = None) -> list[SearchResult]:
+    def search(self, string: str, commands: list[Command] | None = None) -> list[SearchResult]:
         
         if not commands:
             commands = self.commands
@@ -66,13 +66,7 @@ class CommandsManager:
                 else: # else remove less priority
                     results.remove(priority2)
                 
-        # fallback to QA
-
-        if not results and (qa := self.QA):
-            results.append(SearchResult(
-                command = qa,
-                origin = origin
-            ))
+        # TODO: fallback to QA
 
         # TODO: log results if config.enable_logging
 

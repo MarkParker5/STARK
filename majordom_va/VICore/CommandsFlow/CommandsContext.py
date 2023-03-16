@@ -14,13 +14,14 @@ class CommandsContextLayer:
 
 class CommandsContextDelegate(Protocol):
     def commands_context_did_receive_response(self, response: Response): pass
+    def remove_response(self, response: Response): pass
 
 class CommandsContext:
 
     delegate: CommandsContextDelegate
     commands_manager: CommandsManager
 
-    last_response: Response = None
+    last_response: Response | None = None
     _context_queue: list[CommandsContextLayer]
     _threads: list[ThreadData]
     

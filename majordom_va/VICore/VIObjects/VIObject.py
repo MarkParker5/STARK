@@ -42,7 +42,7 @@ class VIObject(ABC):
         return from_string
 
     @classmethod
-    def parse(cls, from_string: str, parameters: dict[str, str] = None) -> ParseResult:
+    def parse(cls, from_string: str, parameters: dict[str, str] | None = None) -> ParseResult:
         '''
         For internal use only.
         You will very rarely, if ever, need to override or even call this method.
@@ -75,6 +75,8 @@ class VIObject(ABC):
         strValue = f'"{str(self.value)}"' if type(self.value) == str else str(self.value)
         return f'<{type(self).__name__} value: {strValue}>'
 
-    def __eq__(self, other: VIObject) -> bool:
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, type(self)):
+            raise NotImplementedError(f'Cannot compare {type(self)} with {type(other)}')
         return self.value == other.value
     

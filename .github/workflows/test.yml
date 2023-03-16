@@ -22,6 +22,7 @@ jobs:
       - name: Run pytest
         run: |
           poetry run pytest
+          poetry run mypy .
 
       - name: Duck Notifier
         if: failure()

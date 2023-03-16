@@ -24,7 +24,7 @@ def test_typed_parameters():
     m = p.match('lorem ipsum dolor')
     assert m
     assert m[0].substring == 'lorem ipsum dolor'
-    assert m[0].parameters == {'name': VIString('ipsum')}
+    assert m[0].parameters == {'name': VIWord('ipsum')}
     assert not p.match('lorem ipsum foo dolor')
     
     p = Pattern('lorem $name:VIString dolor')

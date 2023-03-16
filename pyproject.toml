@@ -19,6 +19,7 @@ torch = "^1.13.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.2.1"
+mypy = "^1.1.1"
 
 [build-system]
 requires = ["poetry-core"]
@@ -27,4 +28,12 @@ build-backend = "poetry.core.masonry.api"
 [tool.pytest.ini_options]
 pythonpath = [
     "majordom_va",
+]
+
+[tool.mypy]
+ignore_missing_imports = true
+exclude = [
+    "majordom_va/features/legacy",
+    "majordom_va/VICore/VIObjects/VITime.*",
+    "majordom_va/VICore/VIObjects/VINumber.*",
 ]
