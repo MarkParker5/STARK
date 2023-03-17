@@ -2,6 +2,7 @@ from typing import Any, Protocol
 from dataclasses import dataclass
 import asyncio
 
+from general.dependencies import DependencyManager, default_dependency_manager
 from .CommandsManager import CommandsManager
 from .Command import Command, Response, ResponseHandler
 from .Threads import ThreadData
@@ -20,15 +21,18 @@ class CommandsContext:
 
     delegate: CommandsContextDelegate
     commands_manager: CommandsManager
+    dependency_manager: DependencyManager
 
     last_response: Response | None = None
     _context_queue: list[CommandsContextLayer]
     _threads: list[ThreadData]
     
-    def __init__(self, commands_manager):
+    def __init__(self, commands_manager: CommandsManager, dependency_manager: DependencyManager = default_dependency_manager):
         self.commands_manager = commands_manager
         self._context_queue = [self.root_context]
         self._threads = []
+        self.dependency_manager = dependency_manager
+        self.dependency_manager.add_dependency(None, ResponseHandler, self)
 
     @property
     def root_context(self):
@@ -52,14 +56,10 @@ class CommandsContext:
 
         for search_result in search_results:
 
-            parameters = {**current_context.parameters, **search_result.match_result.parameters}
+            parameters = current_context.parameters
+            parameters.update(search_result.match_result.parameters)
+            parameters.update(self.dependency_manager.resolve(search_result.command._runner))
             
-            # pass dependencies as parameters
-            for name, annotation in search_result.command._runner.__annotations__.items():
-                if annotation == ResponseHandler:
-                    parameters[name] = self
-            
-            # execute command
             command_response = search_result.command(parameters)
             
             if not command_response:

@@ -1,6 +1,6 @@
 import pytest
-import config
 import time
+from general.dependencies import DependencyManager
 from VICore import (
     CommandsManager,
     CommandsContext,
@@ -46,8 +46,9 @@ class SpeechSynthesizerMock:
 
 @pytest.fixture
 def commands_context_flow() -> tuple[CommandsManager, CommandsContext, CommandsContextDelegateMock]:
+    dependencies = DependencyManager()
     manager = CommandsManager()
-    context = CommandsContext(manager)
+    context = CommandsContext(manager, dependencies)
     context_delegate = CommandsContextDelegateMock()
     context.delegate = context_delegate
     

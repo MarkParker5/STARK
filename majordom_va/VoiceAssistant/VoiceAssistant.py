@@ -82,9 +82,7 @@ class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
         # repeat responses
         while self._responses:
             response = self._responses.pop(0)
-            print('Reporting:', response.text)
             if (datetime.now() - response.time).total_seconds() <= timeout_before_repeat:
-                print('Skip because of timeout', (datetime.now() - response.time).total_seconds(), timeout_before_repeat)
                 continue
             
             self._play_response(response)
