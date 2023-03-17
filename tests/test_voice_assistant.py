@@ -1,6 +1,5 @@
-import time
-from datetime import datetime
-import config
+from datetime import datetime, timedelta
+from VoiceAssistant import Mode
 
 
 def test_background_command(voice_assistant):
@@ -19,6 +18,34 @@ def test_background_command(voice_assistant):
     # check saved response
     assert len(voice_assistant._responses) == 0
 
+def test_background_command_with_waiting_mode(voice_assistant):
+    voice_assistant.speech_recognizer_did_receive_final_result('background min')
+    
+    # start background task
+    assert len(voice_assistant.speech_synthesizer.results) == 1
+    assert voice_assistant.speech_synthesizer.results.pop(0).text == 'Starting background task'
+    assert len(voice_assistant.commands_context._threads) == 1
+    
+    # force a timeout
+    voice_assistant._last_interaction_time -= timedelta(seconds = voice_assistant.mode.timeout_after_interaction + 1)
+    
+    # check finished background task
+    voice_assistant.commands_context._check_threads()
+    assert len(voice_assistant.speech_synthesizer.results) == 1
+    assert voice_assistant.speech_synthesizer.results.pop(0).text == 'Finished background task'
+    
+    # check saved response
+    assert len(voice_assistant._responses) == 1
+    
+    # emulate delay after last response before repeating
+    voice_assistant._responses[0].time -= timedelta(seconds = voice_assistant.mode.timeout_before_repeat + 1)
+    
+    # interact to reset timeout mode and repeat saved response
+    voice_assistant.speech_recognizer_did_receive_final_result('hello world')
+    assert len(voice_assistant.speech_synthesizer.results) == 2
+    assert voice_assistant.speech_synthesizer.results.pop(0).text == 'Hello, world!'   
+    assert voice_assistant.speech_synthesizer.results.pop(0).text == 'Finished background task'
+
 def test_background_command_with_inactive_mode(voice_assistant):
     voice_assistant.speech_recognizer_did_receive_final_result('background min')
     
@@ -27,33 +54,8 @@ def test_background_command_with_inactive_mode(voice_assistant):
     assert voice_assistant.speech_synthesizer.results.pop(0).text == 'Starting background task'
     assert len(voice_assistant.commands_context._threads) == 1
     
-    # force inactive mode by settings zero time
-    voice_assistant._last_interaction_time = datetime.fromtimestamp(0)
-    
-    # check finished background task
-    voice_assistant.commands_context._check_threads()
-    assert len(voice_assistant.speech_synthesizer.results) == 1
-    assert voice_assistant.speech_synthesizer.results.pop(0).text == 'Finished background task'
-    
-    # check saved response
-    assert len(voice_assistant._responses) == 1
-    
-    # interact to disable inactive mode and repeat saved response
-    voice_assistant.speech_recognizer_did_receive_final_result('hello world')
-    assert len(voice_assistant.speech_synthesizer.results) == 2
-    assert voice_assistant.speech_synthesizer.results.pop(0).text == 'Hello, world!'   
-    assert voice_assistant.speech_synthesizer.results.pop(0).text == 'Finished background task'
-
-def test_background_command_with_afk_mode(voice_assistant):
-    voice_assistant.speech_recognizer_did_receive_final_result('background min')
-    
-    # start background task
-    assert len(voice_assistant.speech_synthesizer.results) == 1
-    assert voice_assistant.speech_synthesizer.results.pop(0).text == 'Starting background task'
-    assert len(voice_assistant.commands_context._threads) == 1
-    
-    # force afk mode
-    config.is_afk = True
+    # set inactive mode
+    voice_assistant.mode = Mode.inactive
     
     # check finished background task
     voice_assistant.commands_context._check_threads()
@@ -62,18 +64,18 @@ def test_background_command_with_afk_mode(voice_assistant):
     # check saved response
     assert len(voice_assistant._responses) == 1
     
-    # interact to disable inactive mode and repeat saved response
+    # interact to reset timeout mode and repeat saved response
     voice_assistant.speech_recognizer_did_receive_final_result('hello world')
     assert len(voice_assistant.speech_synthesizer.results) == 2
     assert voice_assistant.speech_synthesizer.results.pop(0).text == 'Hello, world!'   
     assert voice_assistant.speech_synthesizer.results.pop(0).text == 'Finished background task'
     
-def test_background_inactive_needs_input(voice_assistant):
+def test_background_waiting_needs_input(voice_assistant):
     voice_assistant.speech_recognizer_did_receive_final_result('background needs input')
     assert len(voice_assistant.commands_context._threads) == 1
     
-    # force inactive mode by settings zero time
-    voice_assistant._last_interaction_time = datetime.fromtimestamp(0)
+    # force a timeout
+    voice_assistant._last_interaction_time -= timedelta(seconds = voice_assistant.mode.timeout_after_interaction + 1)
     
     # wait for thread to finish
     voice_assistant.commands_context._threads[0].thread.join()
@@ -86,7 +88,11 @@ def test_background_inactive_needs_input(voice_assistant):
     assert len(voice_assistant.speech_synthesizer.results) == 8
     voice_assistant.speech_synthesizer.results.clear()
     
-    # interact to disable inactive mode
+    # emulate delay after last response before repeating
+    for response in voice_assistant._responses:
+        response.time -= timedelta(seconds = voice_assistant.mode.timeout_before_repeat + 1)
+    
+    # interact to reset timeout mode
     voice_assistant.speech_recognizer_did_receive_final_result('hello world')
     
     # voice assistant should say all responses until needs input
@@ -105,12 +111,12 @@ def test_background_inactive_needs_input(voice_assistant):
     for response in ['Hello, world!', 'Fourth response', 'Fifth response', 'Sixth response', 'Finished long background task']:
         assert voice_assistant.speech_synthesizer.results.pop(0).text == response
     
-def test_background_inactive_with_context(voice_assistant):
+def test_background_waiting_with_context(voice_assistant):
     voice_assistant.speech_recognizer_did_receive_final_result('background with context')
     assert len(voice_assistant.commands_context._threads) == 1
     
-    # force inactive mode by settings zero time
-    voice_assistant._last_interaction_time = datetime.fromtimestamp(0)
+    # force a timeout
+    voice_assistant._last_interaction_time -= timedelta(seconds = voice_assistant.mode.timeout_after_interaction + 1)
     
     # wait for thread to finish
     voice_assistant.commands_context._threads[0].thread.join()
@@ -124,18 +130,22 @@ def test_background_inactive_with_context(voice_assistant):
     assert len(voice_assistant.commands_context._context_queue) == 2
     voice_assistant.speech_synthesizer.results.clear()
     
-    # interact to disable inactive mode, voice assistant should reset context, repeat responses and add response context
+    # emulate delay after last response before repeating
+    for response in voice_assistant._responses:
+        response.time -= timedelta(seconds = voice_assistant.mode.timeout_before_repeat + 1)
+    
+    # interact to reset timeout mode, voice assistant should reset context, repeat responses and add response context
     voice_assistant.speech_recognizer_did_receive_final_result('lorem ipsum dolor')
     assert len(voice_assistant.speech_synthesizer.results) == 2
     assert len(voice_assistant.commands_context._context_queue) == 2
 
-def test_background_inactive_remove_response(voice_assistant):
+def test_background_waiting_remove_response(voice_assistant):
     voice_assistant.speech_recognizer_did_receive_final_result('background remove response')
     assert len(voice_assistant.commands_context._threads) == 1
     voice_assistant.speech_synthesizer.results.clear()
     
-    # force inactive mode by settings zero time
-    voice_assistant._last_interaction_time = datetime.fromtimestamp(0)
+    # force a timeout by settings zero time
+    voice_assistant._last_interaction_time -= timedelta(seconds = voice_assistant.mode.timeout_after_interaction + 1)
     
     # catch all responses
     responses_cache = voice_assistant._responses.copy()
@@ -152,7 +162,7 @@ def test_background_inactive_remove_response(voice_assistant):
     assert len(voice_assistant._responses) == 0
     voice_assistant.speech_synthesizer.results.clear()
     
-    # interact to disable inactive mode, check that removed response is not repeated
+    # interact to reset timeout mode, check that removed response is not repeated
     voice_assistant.speech_recognizer_did_receive_final_result('hello world')
     assert len(voice_assistant.speech_synthesizer.results) == 1
     assert voice_assistant.speech_synthesizer.results.pop(0).text == 'Hello, world!'

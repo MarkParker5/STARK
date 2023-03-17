@@ -57,14 +57,6 @@ def test_context_pop_context_response_action(commands_context_flow_filled):
     
     context.process_string('hello')
     assert len(context_delegate.responses) == 0
-
-def test_sleep_response_action(commands_context_flow_filled):
-    context, context_delegate = commands_context_flow_filled
-
-    context.process_string('afk')
-    assert len(context_delegate.responses) == 1
-    assert context_delegate.responses[0].text == 'Sleeping...'
-    assert config.is_afk == True
    
 def test_repeat_last_answer_response_action(commands_context_flow_filled):
     context, context_delegate = commands_context_flow_filled

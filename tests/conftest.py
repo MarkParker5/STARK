@@ -91,11 +91,6 @@ def commands_context_flow_filled(commands_context_flow) -> tuple[CommandsContext
             parameters = {'name': name}
         )
         
-    @manager.new('afk')
-    def afk():
-        config.is_afk = True
-        return Response(text = 'Sleeping...')
-        
     @manager.new('repeat')
     def repeat():
         return Response.repeat_last

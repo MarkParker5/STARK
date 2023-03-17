@@ -1,7 +1,4 @@
 
-# VA settings
-is_afk: bool = False
-
 # Vosk Speech Recognition
 vosk_model: str = 'downloads/vosk_small_rus'
 

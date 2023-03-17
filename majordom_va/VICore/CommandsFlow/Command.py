@@ -1,8 +1,10 @@
 from __future__ import annotations
 from typing import Callable, Any, Optional, Protocol
+from enum import auto, Enum
+from datetime import datetime
 import inspect
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from general.classproperty import classproperty
 from ..patterns import Pattern
@@ -40,15 +42,25 @@ class Command():
         # just syntactic sugar for command() instead of command.run()
         return self.run(*args, **kwargs)
 
+class ResponseStatus(Enum):
+    none = auto()
+    not_found = auto()
+    failed = auto()
+    success = auto()
+    info = auto()
+    error = auto()
+
 class Response(BaseModel):
     voice: str = ''
     text: str = ''
+    status: ResponseStatus = ResponseStatus.success
     needs_user_input: bool = False
     commands: list[Command] = []
     parameters: dict[str, Any] = {}
+    time: datetime = Field(default_factory=datetime.now)
     thread: Optional[ThreadData] = None
     
-    _repeat_last: Response | None = None
+    _repeat_last: Response | None = None # static instance
     
     @classproperty
     def repeat_last(cls) -> Response:
