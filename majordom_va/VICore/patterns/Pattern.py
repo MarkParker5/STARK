@@ -1,13 +1,13 @@
 from __future__ import annotations
-from typing import Type, Generator, TypeAlias, Protocol
+from typing import Type, Generator, TypeAlias, TYPE_CHECKING
 from dataclasses import dataclass
 import re
 
 from .expressions import dictionary
+if TYPE_CHECKING:
+    from VICore import VIObject
+    VIObjectType: TypeAlias = Type[VIObject]
 
-
-VIObject: TypeAlias = 'VIObject' # type: ignore
-VIObjectType: TypeAlias = Type[VIObject] # type: ignore
 
 @dataclass
 class MatchResult:
