@@ -3,6 +3,7 @@ name = "majordom-va"
 version = "0.1.0"
 description = ""
 authors = ["MarkParker5 <markparker.it@gmail.com>"]
+license = "CC BY-NC-ND 4.0"
 readme = "README.md"
 packages = [{include = "majordom_va"}]
 
