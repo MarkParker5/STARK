@@ -37,7 +37,9 @@ class VoskSpeechRecognizer(SpeechRecognizer):
         self.audio_queue = queue.Queue()
         self.kaldiRecognizer = vosk.KaldiRecognizer(self.model, self.samplerate)
         
-        self.parameters = {
+    @property
+    def sounddevice_parameters(self):
+        return {
             'samplerate': self.samplerate,
             'blocksize': self.blocksize,
             'dtype': self.dtype,
@@ -52,25 +54,28 @@ class VoskSpeechRecognizer(SpeechRecognizer):
     async def start_listening(self):
         self._is_listening = True
 
-        with sounddevice.RawInputStream(**self.parameters):
+        with sounddevice.RawInputStream(**self.sounddevice_parameters):
             while self._is_listening:
 
                 await asyncio.sleep(0.05)
                 data = self.audio_queue.get()
 
-                if self.kaldiRecognizer.AcceptWaveform(data):
-                    result = json.loads(self.kaldiRecognizer.Result())
-                    if (string := result.get('text')) and string != self.last_result:
-                        self.last_result = string
-                        self.delegate.speech_recognizer_did_receive_final_result(string)
-                    else:
-                        self.last_result = None
-                        self.delegate.speech_recognizer_did_receive_empty_result()
-                else:
-                    result = json.loads(self.kaldiRecognizer.PartialResult())
-                    if (string := result.get('partial')) and string != self.last_partial_result:
-                        self.last_partial_result = string
-                        self.delegate.speech_recognizer_did_receive_partial_result(string)
+                self._transcribe(data)
+                
+    def _transcribe(self, data):
+        if self.kaldiRecognizer.AcceptWaveform(data):
+            result = json.loads(self.kaldiRecognizer.Result())
+            if (string := result.get('text')) and string != self.last_result:
+                self.last_result = string
+                self.delegate.speech_recognizer_did_receive_final_result(string)
+            else:
+                self.last_result = None
+                self.delegate.speech_recognizer_did_receive_empty_result()
+        else:
+            result = json.loads(self.kaldiRecognizer.PartialResult())
+            if (string := result.get('partial')) and string != self.last_partial_result:
+                self.last_partial_result = string
+                self.delegate.speech_recognizer_did_receive_partial_result(string)
 
     def _audio_input_callback(self, indata, frames, time, status):
         if not self.is_recognizing: return
