@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Callable
+from typing import Optional, Callable
 from pydantic import BaseModel
 from general.classproperty import classproperty
 
@@ -8,11 +8,12 @@ class Mode(BaseModel):
     
     play_responses: bool = True
     collect_responses: bool = False
-    needs_explicit_interaction: bool = False
-    timeout_after_interaction: int = 20
-    timeout_before_repeat: int = 5
+    explicit_interaction_pattern: Optional[str] = None
+    timeout_after_interaction: int = 20 # seconds
+    timeout_before_repeat: int = 5 # seconds
     mode_on_timeout: Callable[[], Mode] | None = None
     mode_on_interaction: Callable[[], Mode] | None = None
+    stop_after_interaction: bool = False
     
     @classproperty
     def active(cls) -> Mode:
@@ -37,19 +38,19 @@ class Mode(BaseModel):
             mode_on_interaction = lambda: Mode.active,
         )
     
-    @classproperty
-    def sleeping(cls) -> Mode:
+    @classmethod
+    def sleeping(cls, pattern: str) -> Mode:
         return Mode(
             play_responses = False,
             collect_responses = True,
             timeout_after_interaction = 0, # start collecting responses immediately
             timeout_before_repeat = 0, # repeat all
-            needs_explicit_interaction = True,
+            explicit_interaction_pattern = pattern,
             mode_on_interaction = lambda: Mode.active,
         )
     
-    @classproperty
-    def explicit(cls) -> Mode:
+    @classmethod
+    def explicit(cls, pattern: str) -> Mode:
         return Mode(
-            needs_explicit_interaction = True,
+            explicit_interaction_pattern = pattern,
         )

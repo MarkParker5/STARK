@@ -21,7 +21,6 @@ class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
     
     mode: Mode
     ignore_responses: list[ResponseStatus]
-    explicit_interaction_pattern: Pattern | None = None
     
     _responses: list[Response]
     _last_interaction_time: datetime
@@ -59,8 +58,8 @@ class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
         print(f'\rYou: {result}')
         
         # check explicit interaction if needed
-        if self.mode.needs_explicit_interaction and self.explicit_interaction_pattern:
-            if not self.explicit_interaction_pattern.match(result):
+        if pattern_str := self.mode.explicit_interaction_pattern:
+            if not Pattern(pattern_str).match(result):
                 return
         
         # reset context if timeout reached
@@ -71,6 +70,7 @@ class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
         
         # save timeout_before_repeat of last mode to avoid skipping responses that were not played
         timeout_before_repeat = self.mode.timeout_before_repeat
+        stop_after_interaction = self.mode.stop_after_interaction
         
         # switch mode if needed
         if self.mode.mode_on_interaction:
@@ -90,6 +90,9 @@ class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
             
             if response.needs_user_input:
                 break
+        else:
+            if stop_after_interaction:
+                self.stop()
 
     def speech_recognizer_did_receive_partial_result(self, result: str):
         print(f'\rYou: \x1B[3m{result}\x1B[0m', end = '')
