@@ -24,7 +24,7 @@ class Speech(SpeechSynthesizerResult):
 
 class GCloudSpeechSynthesizer(SpeechSynthesizer):
     
-    def __init__(self, name = 'ru-RU-Wavenet-B', language_code = config.language_code):
+    def __init__(self, name = config.voice_name, language_code = config.language_code):
         os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = config.goole_tts_json_key
         self._client       = texttospeech.TextToSpeechClient()
         self._audio_config = texttospeech.AudioConfig(audio_encoding = texttospeech.AudioEncoding.LINEAR16)
@@ -37,8 +37,8 @@ class GCloudSpeechSynthesizer(SpeechSynthesizer):
         )
 
     def synthesize(self, text) -> Speech:
-        dir = f'audio/{self._name}'
-        path = f'{dir}/{self._transliterate(text)[:100]}.wav'
+        folder = f'audio/{self._name}'
+        path = f'{folder}/{self._transliterate(text)[:100]}.wav'
 
         if os.path.exists(path):
             return Speech(text, self._name, path)
@@ -47,8 +47,8 @@ class GCloudSpeechSynthesizer(SpeechSynthesizer):
 
         try:
             response = self._client.synthesize_speech(input = synthesis_input, voice = self._voice, audio_config = self._audio_config)
-            if not os.path.exists(dir): 
-                os.makedirs(dir)
+            if not os.path.exists(folder): 
+                os.makedirs(folder)
             with open(path, 'wb') as out:
                 out.write(response.audio_content)
         except Exception as e:
