@@ -1,0 +1,105 @@
+site_name: S.T.A.R.K. Docs
+site_author: Mark Parker
+site_description: Speach and Text Algorithmic Recognition Kit (S.T.A.R.K.) is a set of tools for building custom voice assistants. It is designed to be modular and extensible, allowing you to build your own custom voice assistant with ease.
+# site_url: https://markparker5.github.io/stark
+
+repo_name: MarkParker5/STARK
+repo_url: https://github.com/MarkParker5/STARK
+
+
+copyright: Copyright &copy; Mark Parker
+
+# nav:
+
+theme:
+  name: material
+  custom_dir: overrides
+  language: en
+
+  icon:
+    repo: fontawesome/brands/github
+
+  features:
+    - content.code.annotate
+    - content.code.copy
+    - content.code.select
+    - navigation.indexes
+    - navigation.instant
+    # - navigation.instant.prefetch
+    - navigation.path
+    - navigation.top
+    - navigation.tracking
+    - search.highlight
+    - search.share
+    - search.suggest
+    - toc.follow
+
+  palette: 
+
+    # Palette toggle for automatic mode
+    # - media: "(prefers-color-scheme)"
+    #   primary: orange
+    #   accent: orange
+    #   toggle:
+    #     icon: material/brightness-auto
+    #     name: Switch to light mode
+
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      primary: orange
+      accent: orange
+      scheme: default 
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to dark mode
+
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      primary: orange
+      accent: orange
+      scheme: slate
+      toggle:
+        icon: material/weather-night
+        name: Switch to system preference
+
+extra:
+  generator: false
+  
+  social:
+    - icon: fontawesome/brands/github 
+      link: https://github.com/ParkerIndustries
+  
+  features:
+    - navigation.footer
+
+  analytics:
+    provider: google
+    property: G-NMVH5RVSYB
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.caret
+  - pymdownx.mark
+  - pymdownx.tilde
+  - toc:
+      permalink: true
+
+plugins:
+  - offline
+  - search
+  - social
+  # - optimize
+  # - tags
+  - swagger-ui-tag
+  - git-revision-date-localized:
+      enable_creation_date: true
+      type: timeago
+  # - git-committers:
+  #     repository: MarkParker5/STARK
+  #     branch: master

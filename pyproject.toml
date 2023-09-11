@@ -17,6 +17,9 @@ pydantic = "^1.10.4"
 vosk = "0.3.44"
 google-cloud-texttospeech = "^2.14.1"
 torch = "^1.13.1"
+mkdocs-material = "^9.2.8"
+mkdocs-git-revision-date-localized-plugin = "^1.2.0"
+mkdocs-swagger-ui-tag = "^0.6.4"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.2.1"
