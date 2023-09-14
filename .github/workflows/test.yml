@@ -30,4 +30,4 @@ jobs:
         with:
           to: ${{ secrets.TG_CHAT_ID }}
           token: ${{ secrets.TG_BOT_TOKEN }}
-          message: ❌ MajorDom-VA tests failed on branch ${{ github.ref }}
+          message: ❌ S.T.A.R.K. push tests failed on branch ${{ github.ref }}

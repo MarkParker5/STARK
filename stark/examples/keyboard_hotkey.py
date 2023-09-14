@@ -1,11 +1,11 @@
 import os
 from pynput.keyboard import Key, Listener
 
-from majordom_va.VICore import CommandsContext
-from majordom_va.VoiceAssistant import VoiceAssistant, Mode
-from majordom_va.IO.VoskSpeechRecognizer import VoskSpeechRecognizer
-from majordom_va.IO.SileroSpeechSynthesizer import SileroSpeechSynthesizer
-from majordom_va.features import default
+from stark.VICore import CommandsContext
+from stark.VoiceAssistant import VoiceAssistant, Mode
+from stark.IO.VoskSpeechRecognizer import VoskSpeechRecognizer
+from stark.IO.SileroSpeechSynthesizer import SileroSpeechSynthesizer
+from stark.features import default
 
 
 cm = CommandsContext(commands_manager = default)

@@ -1,11 +1,11 @@
 [tool.poetry]
-name = "majordom-va"
+name = "stark"
 version = "0.1.0"
 description = ""
 authors = ["MarkParker5 <markparker.it@gmail.com>"]
 license = "CC BY-NC-ND 4.0"
 readme = "README.md"
-packages = [{include = "majordom_va"}]
+packages = [{include = "stark"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
@@ -34,13 +34,13 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.pytest.ini_options]
 pythonpath = [
-    "majordom_va",
+    "stark",
 ]
 
 [tool.mypy]
 ignore_missing_imports = true
 exclude = [
-    "majordom_va/features/legacy",
-    "majordom_va/VICore/VIObjects/VITime.*",
-    "majordom_va/VICore/VIObjects/VINumber.*",
+    "stark/features/legacy",
+    "stark/VICore/VIObjects/VITime.*",
+    "stark/VICore/VIObjects/VINumber.*",
 ]
