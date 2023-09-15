@@ -39,7 +39,7 @@ class Command:
         if inspect.iscoroutinefunction(self._runner):
             runner = self._runner
         else:
-            runner = asyncer.asyncify(self._runner)
+            runner = asyncer.asyncify(self._runner) # type: ignore
             
         if any(p.kind == p.VAR_KEYWORD for p in inspect.signature(self._runner).parameters.values()):
             # if command runner accepts **kwargs, pass all parameters
