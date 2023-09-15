@@ -28,7 +28,7 @@ async def by_world():
 async def main(): # manager: CommandsManager, speech_recognizer: SpeechRecognizer, speech_synthesizer: SpeechSynthesizer):
     async with asyncer.create_task_group() as main_task_group:
         sr = VoskSpeechRecognizer(
-            vosk_model_path = config.vosk_model
+            model_url = config.vosk_model_url
         )
         stt = SileroSpeechSynthesizer(
             model_url = config.silero_model_url   

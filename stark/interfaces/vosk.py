@@ -1,5 +1,8 @@
 from typing import Optional
-import asyncio
+import os
+import urllib.request
+import zipfile
+import anyio
 import json
 from queue import Queue, Empty
 
@@ -30,10 +33,25 @@ class VoskSpeechRecognizer(SpeechRecognizer):
     is_recognizing = True
     _is_listening = False
 
-    def __init__(self, vosk_model_path: str, delegate: SpeechRecognizerDelegate | None = None):
+    def __init__(self, model_url: str, delegate: SpeechRecognizerDelegate | None = None):
+        downloads = 'downloads'
+        model_path = downloads + '/' + model_url.split('/')[-1].replace('.zip', '')
+        zip_path = model_path + '.zip'
+        
+        if not os.path.isdir('downloads'):
+            os.mkdir('downloads')
+
+        if not os.path.isdir(model_path):
+            print('VOSK: Downloading model...')
+            urllib.request.urlretrieve(model_url, zip_path)
+            zip_file = zipfile.ZipFile(zip_path)
+            zip_file.extractall(downloads)
+            os.remove(zip_path)
+            print('VOSK: Model downloaded!')
+        
         self.delegate = delegate
         self.samplerate = int(sounddevice.query_devices(kind = 'input')['default_samplerate'])
-        self.model = vosk.Model(vosk_model_path)
+        self.model = vosk.Model(model_path)
         self.audio_queue = Queue()
         self.kaldiRecognizer = vosk.KaldiRecognizer(self.model, self.samplerate)
         
@@ -70,7 +88,7 @@ class VoskSpeechRecognizer(SpeechRecognizer):
                         self._transcribe(data)
                 except Empty:
                     pass
-                await asyncio.sleep(0.05)
+                await anyio.sleep(0.05)
                 
     def _transcribe(self, data):
         delegate = self.delegate

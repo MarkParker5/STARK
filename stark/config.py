@@ -1,6 +1,6 @@
 
 # Vosk Speech Recognition
-vosk_model: str = 'downloads/vosk_small_rus'
+vosk_model_url: str = 'https://alphacephei.com/vosk/models/vosk-model-small-ru-0.22.zip'
 
 # Google Cloud TTS
 goole_tts_json_key: str = 'downloads/gc-tts-key.json'

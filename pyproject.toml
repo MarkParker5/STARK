@@ -29,12 +29,12 @@ sound = ["sounddevice", "soundfile"]
 [tool.poetry.group.dev.dependencies]
 # tests and static validation
 pytest = "^7.2.1"
-pytest-asyncio = "^0.21.1"
 mypy = "^1.1.1"
 # docs generation
 mkdocs-material = { version = "^9.2.8", optional = true }
 mkdocs-git-revision-date-localized-plugin = { version = "^1.2.0", optional = true }
 mkdocs-swagger-ui-tag = { version = "^0.6.4", optional = true }
+pytest-anyio = "^0.0.0"
 
 [build-system]
 requires = ["poetry-core"]
