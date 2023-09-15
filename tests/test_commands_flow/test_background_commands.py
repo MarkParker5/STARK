@@ -1,3 +1,8 @@
+import pytest
+
+
+pytestmark = pytest.mark.skip(reason = 'Background mode is deprecated')
+
 
 def test_background_command(commands_context_flow_filled):
     context, context_delegate = commands_context_flow_filled

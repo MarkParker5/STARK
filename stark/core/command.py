@@ -1,10 +1,11 @@
 from __future__ import annotations
-from typing import Callable, Awaitable, Any, Optional, Protocol
+from typing import Callable, Awaitable, Any, Protocol
 from enum import auto, Enum
 from datetime import datetime
 import inspect
 
 from pydantic import BaseModel, Field
+import asyncer
 
 from general.classproperty import classproperty
 from .patterns import Pattern
@@ -17,11 +18,10 @@ CommandRunner = Callable[..., 'Response | None'] | AsyncCommandRunner
 class Command:
     name: str
     pattern: Pattern
-    _runner: AsyncCommandRunner
+    _runner: CommandRunner
 
-    def __init__(self, name: str, pattern: Pattern, runner: AsyncCommandRunner):
+    def __init__(self, name: str, pattern: Pattern, runner: CommandRunner):
         assert isinstance(pattern, Pattern)
-        assert inspect.iscoroutinefunction(runner)
         self.name = name
         self.pattern = pattern
         self._runner = runner
@@ -32,14 +32,21 @@ class Command:
         # where parameters is dict {'foo': bar, 'lorem': ipsum}
         
         parameters = parameters_dict or {}
-        parameters.update(kwparameters) 
+        parameters.update(kwparameters)
+        
+        runner: AsyncCommandRunner
+        
+        if inspect.iscoroutinefunction(self._runner):
+            runner = self._runner
+        else:
+            runner = asyncer.asyncify(self._runner)
             
         if any(p.kind == p.VAR_KEYWORD for p in inspect.signature(self._runner).parameters.values()):
-            # all extra params will be passed as **kwargs
-            return self._runner(**parameters)
+            # if command runner accepts **kwargs, pass all parameters
+            return runner(**parameters)
         else:
-            # avoid TypeError: self._runner got an unexpected keyword argument
-            return self._runner(**{k: v for k, v in parameters.items() if k in self._runner.__annotations__})
+            # otherwise pass only parameters that are in command runner signature to prevent TypeError: got an unexpected keyword argument
+            return runner(**{k: v for k, v in parameters.items() if k in self._runner.__annotations__})
     
     def __call__(self, *args, **kwargs) -> AwaitResponse:
         # just syntactic sugar for command() instead of command.run()

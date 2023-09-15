@@ -1,5 +1,8 @@
-import pytest
+from typing import AsyncGenerator
 import time
+import contextlib
+import pytest
+import asyncer
 from general.dependencies import DependencyManager
 from core import (
     CommandsManager,
@@ -45,114 +48,70 @@ class SpeechSynthesizerMock:
         return result
 
 @pytest.fixture
-def commands_context_flow() -> tuple[CommandsManager, CommandsContext, CommandsContextDelegateMock]:
-    dependencies = DependencyManager()
-    manager = CommandsManager()
-    context = CommandsContext(manager, dependencies)
-    context_delegate = CommandsContextDelegateMock()
-    context.delegate = context_delegate
-    
-    assert len(context_delegate.responses) == 0
-    assert len(context._context_queue) == 1
-    
-    return manager, context, context_delegate
-
-@pytest.fixture
-def commands_context_flow_filled(commands_context_flow) -> tuple[CommandsContext, CommandsContextDelegateMock]:
-    
-    manager, context, context_delegate = commands_context_flow
-    
-    @manager.new('test')
-    def test(): 
-        return Response()
-    
-    @manager.new('lorem * dolor')
-    def lorem(): 
-        return Response(text = 'Lorem!', voice = 'Lorem!')
-    
-    @manager.new('hello', hidden = True)
-    def hello_context(**params):
-        voice = text = f'Hi, {params["name"]}!' 
-        return Response(text = text, voice = voice)
-    
-    @manager.new('bye', hidden = True)
-    def bye_context(name: Word, handler: ResponseHandler):
-        handler.pop_context()
-        return Response(
-            text = f'Bye, {name}!'
-        ) 
-    
-    @manager.new('hello $name:Word')
-    def hello(name: Word):
-        text = voice = f'Hello, {name}!' 
-        return Response(
-            text = text,
-            voice = voice,
-            commands = [hello_context, bye_context],
-            parameters = {'name': name}
-        )
-        
-    @manager.new('repeat')
-    def repeat():
-        return Response.repeat_last
-    
-    # background commands
-    
-    @manager.new('background min')
-    @manager.background(Response(text = 'Starting background task', voice = 'Starting background task'))
-    def background():
-        text = voice = 'Finished background task'
-        return Response(text = text, voice = voice)
-        
-    @manager.new('background multiple responses')
-    @manager.background(Response(text = 'Starting long background task'))
-    def background_multiple_responses(handler: ResponseHandler):
-        time.sleep(0.05)
-        handler.process_response(Response(text = 'First response'))
-        time.sleep(0.05)
-        handler.process_response(Response(text = 'Second response'))
-        time.sleep(0.05)
-        text = voice = 'Finished long background task'
-        return Response(text = text, voice = voice)
-    
-    @manager.new('background needs input')
-    @manager.background(Response(text = 'Starting long background task'))
-    def background_needs_input(handler: ResponseHandler):
-        time.sleep(0.01)
-        
-        for text in ['First response', 'Second response', 'Third response']:
-            handler.process_response(Response(text = text, voice = text))
+async def commands_context_flow():
+    @contextlib.asynccontextmanager
+    async def _commands_context_flow() -> AsyncGenerator[tuple[CommandsManager, CommandsContext, CommandsContextDelegateMock], None]:
+        async with asyncer.create_task_group() as main_task_group:
+            dependencies = DependencyManager()
+            manager = CommandsManager()
+            context = CommandsContext(main_task_group, manager, dependencies)
+            context_delegate = CommandsContextDelegateMock()
+            context.delegate = context_delegate
             
-        text = 'Needs input'
-        handler.process_response(Response(text = text, voice = text, needs_user_input = True))
-        
-        for text in ['Fourth response', 'Fifth response', 'Sixth response']:
-            handler.process_response(Response(text = text, voice = text))
-        
-        text = voice = 'Finished long background task'
-        return Response(text = text, voice = voice)
-    
-    @manager.new('background with context')
-    @manager.background(Response(text = 'Starting long background task', voice = 'Starting long background task'))
-    def background_multiple_contexts(handler: ResponseHandler):
-        time.sleep(0.01)
-        text = voice = 'Finished long background task'
-        return Response(text = text, voice = voice, commands = [hello_context, bye_context], parameters = {'name': 'John'})
-    
-    @manager.new('background remove response')
-    @manager.background(Response(text = 'Starting long background task'))
-    def background_remove_response(handler: ResponseHandler):
-        time.sleep(0.01)
-        response = Response(text = 'Deleted response', voice = 'Deleted response')
-        handler.process_response(response)
-        time.sleep(0.05)
-        handler.remove_response(response)
-        return None
-        
-    return context, context_delegate
+            assert len(context_delegate.responses) == 0
+            assert len(context._context_queue) == 1
+            
+            main_task_group.soonify(context.handle_responses)()
+            yield (manager, context, context_delegate)
+            context.stop()
+    return _commands_context_flow
 
 @pytest.fixture
-def voice_assistant(commands_context_flow_filled):
+async def commands_context_flow_filled(commands_context_flow):
+    @contextlib.asynccontextmanager
+    async def _commands_context_flow_filled() -> AsyncGenerator[tuple[CommandsContext, CommandsContextDelegateMock], None]:
+        async with commands_context_flow() as (manager, context, context_delegate):
+    
+            @manager.new('test')
+            def test(): 
+                return Response()
+            
+            @manager.new('lorem * dolor')
+            def lorem(): 
+                return Response(text = 'Lorem!', voice = 'Lorem!')
+            
+            @manager.new('hello', hidden = True)
+            def hello_context(**params):
+                voice = text = f'Hi, {params["name"]}!' 
+                return Response(text = text, voice = voice)
+            
+            @manager.new('bye', hidden = True)
+            def bye_context(name: Word, handler: ResponseHandler):
+                handler.pop_context()
+                return Response(
+                    text = f'Bye, {name}!'
+                ) 
+            
+            @manager.new('hello $name:Word')
+            def hello(name: Word):
+                text = voice = f'Hello, {name}!' 
+                return Response(
+                    text = text,
+                    voice = voice,
+                    commands = [hello_context, bye_context],
+                    parameters = {'name': name}
+                )
+                
+            @manager.new('repeat')
+            def repeat():
+                return Response.repeat_last
+    
+            yield (context, context_delegate)
+            
+    return _commands_context_flow_filled
+
+@pytest.fixture
+async def voice_assistant(commands_context_flow_filled):
     context, _ = commands_context_flow_filled
     voice_assistant = VoiceAssistant(
         speech_recognizer = SpeechRecognizerMock(),
@@ -160,4 +119,5 @@ def voice_assistant(commands_context_flow_filled):
         commands_context = context
     )
     voice_assistant.start()
-    return voice_assistant
+    
+    yield voice_assistant

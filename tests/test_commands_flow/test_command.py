@@ -2,7 +2,7 @@ import pytest
 from core import CommandsManager, Response
 
 
-@pytest.mark.anyio
+@pytest.mark.asyncio
 async def test_call_async_command_from_command():
     manager = CommandsManager()
     

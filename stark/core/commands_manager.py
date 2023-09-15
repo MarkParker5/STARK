@@ -76,14 +76,7 @@ class CommandsManager:
             error_msg = f'Command {self.name}.{runner.__name__} must have all parameters from pattern: {pattern.parameters=} {runner.__annotations__=}'
             assert pattern.parameters.items() <= runner.__annotations__.items(), error_msg
             
-            if not inspect.iscoroutinefunction(runner):
-                async_runner = asyncer.asyncify(runner) # type: ignore
-                async_runner.__name__ = runner.__name__
-                async_runner.__annotations__ = runner.__annotations__
-            else:
-                async_runner = runner
-            
-            cmd = Command(f'{self.name}.{runner.__name__}', pattern, async_runner) # type: ignore
+            cmd = Command(f'{self.name}.{runner.__name__}', pattern, runner)
             
             if not hidden:
                 self.commands.append(cmd)

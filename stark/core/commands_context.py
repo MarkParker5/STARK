@@ -33,7 +33,7 @@ class CommandsContext:
     _task_group: TaskGroup
     
     def __init__(self, task_group: TaskGroup, commands_manager: CommandsManager, dependency_manager: DependencyManager = default_dependency_manager):
-        assert isinstance(task_group, TaskGroup)
+        assert isinstance(task_group, TaskGroup), task_group
         assert isinstance(commands_manager, CommandsManager)
         assert isinstance(dependency_manager, DependencyManager)
         self.commands_manager = commands_manager
@@ -114,7 +114,10 @@ class CommandsContext:
         while not self.is_stopped:
             while self._response_queue:
                 self._process_response(self._response_queue.pop(0))
-            await anyio.sleep(1)
+            await anyio.sleep(0.1)
+            
+    def stop(self):
+        self.is_stopped = True
     
     def _process_response(self, response: Response):
         if response is Response.repeat_last and self.last_response:

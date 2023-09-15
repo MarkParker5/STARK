@@ -1,6 +1,9 @@
+import pytest
 from datetime import timedelta
 from voice_assistant import Mode
 
+
+pytestmark = pytest.mark.skip(reason = 'Background mode is deprecated. TODO: test VA modes with new concurrency approach')
 
 def test_background_command(voice_assistant):
     voice_assistant.speech_recognizer_did_receive_final_result('background min')

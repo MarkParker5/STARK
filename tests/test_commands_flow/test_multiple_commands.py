@@ -125,4 +125,3 @@ def test_objects_parse_caching(commands_context_flow):
     assert Mock.parsing_counter == 1
     manager.search('hello foobar 22')
     assert Mock.parsing_counter == 2
-    
