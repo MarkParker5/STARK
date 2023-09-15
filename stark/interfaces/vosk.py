@@ -1,7 +1,7 @@
 from typing import Optional
 import asyncio
 import json
-from queue import Queue
+from queue import Queue, Empty
 
 import sounddevice
 import vosk
@@ -30,7 +30,8 @@ class VoskSpeechRecognizer(SpeechRecognizer):
     is_recognizing = True
     _is_listening = False
 
-    def __init__(self, vosk_model_path: str, delegate: SpeechRecognizerDelegate):
+    def __init__(self, vosk_model_path: str, delegate: SpeechRecognizerDelegate | None = None):
+        self.delegate = delegate
         self.samplerate = int(sounddevice.query_devices(kind = 'input')['default_samplerate'])
         self.model = vosk.Model(vosk_model_path)
         self.audio_queue = Queue()
@@ -42,7 +43,7 @@ class VoskSpeechRecognizer(SpeechRecognizer):
     
     @delegate.setter
     def delegate(self, delegate: SpeechRecognizerDelegate | None):
-        assert delegate is not None and isinstance(delegate, SpeechRecognizerDelegate)
+        assert delegate is None or isinstance(delegate, SpeechRecognizerDelegate)
         self._delegate = delegate
         
     @property
@@ -64,9 +65,11 @@ class VoskSpeechRecognizer(SpeechRecognizer):
 
         with sounddevice.RawInputStream(**self.sounddevice_parameters):
             while self._is_listening:
-                data = self.audio_queue.get(block = False)
-                if data:
-                    self._transcribe(data)
+                try:
+                    if data := self.audio_queue.get(block = False):
+                        self._transcribe(data)
+                except Empty:
+                    pass
                 await asyncio.sleep(0.05)
                 
     def _transcribe(self, data):

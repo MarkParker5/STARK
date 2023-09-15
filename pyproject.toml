@@ -16,7 +16,7 @@ asyncer = "^0.0.2"
 numpy = { version = "^1.24.1", optional = true }
 sounddevice = { version = "^0.4.5", optional = true }
 soundfile = { version = "^0.11.0", optional = true }
-vosk = { version = "^0.3.44", optional = true }
+vosk = { version = "0.3.44", optional = true }
 google-cloud-texttospeech = { version = "^2.14.1", optional = true }
 torch = { version = "^1.13.1", optional = true }
 

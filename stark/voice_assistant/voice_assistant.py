@@ -42,6 +42,7 @@ class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
     # SpeechRecognizerDelegate
 
     def speech_recognizer_did_receive_final_result(self, result: str):
+        print(f'\nYou: {result}')
         # check explicit interaction if needed
         if pattern_str := self.mode.explicit_interaction_pattern:
             if not Pattern(pattern_str).match(result):
@@ -108,8 +109,8 @@ class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
     
     def _play_response(self, response: Response):
         self.commands_context.last_response = response
-        # if response.text:
-        #     print(f'Archie: {response.text}')
+        if response.text:
+            print(f'S.T.A.R.K.: {response.text}')
         if response.voice:
             was_recognizing = self.speech_recognizer.is_recognizing
             self.speech_recognizer.is_recognizing = False

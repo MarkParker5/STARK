@@ -41,8 +41,8 @@ class CommandsContext:
         self._response_queue = []
         self._task_group = task_group
         self.dependency_manager = dependency_manager
-        self.dependency_manager.add_dependency(AsyncResponseHandler, self)
-        self.dependency_manager.add_dependency(ResponseHandler, SyncResponseHandler(self))
+        self.dependency_manager.add_dependency(None, AsyncResponseHandler, self)
+        self.dependency_manager.add_dependency(None, ResponseHandler, SyncResponseHandler(self))
         
     @property
     def delegate(self):
@@ -84,7 +84,7 @@ class CommandsContext:
     def run_command(self, command: Command, parameters: dict[str, Any] = {}):
         async def command_runner():
             if response := await command(parameters):
-                self.respond(response)
+                await self.respond(response)
         self._task_group.soonify(command_runner)()
 
     # ResponseHandler

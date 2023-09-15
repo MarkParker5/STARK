@@ -20,17 +20,17 @@ class Speech(SpeechSynthesizerResult):
 
 class SileroSpeechSynthesizer(SpeechSynthesizer):
     
-    def __init__(self, speaker = 'baya', threads = 4, device ='cpu'):
-        # torch.backends.quantized.engine = 'qnnpack'
+    def __init__(self, model_url: str, speaker = 'baya', threads = 4, device ='cpu'):
+        torch.backends.quantized.engine = 'qnnpack'
         device = torch.device(device)
         torch.set_num_threads(threads)
-        local_file = 'downloads/' + config.silero_model_url.split('/')[-1]
+        local_file = 'downloads/' + model_url.split('/')[-1]
         
         if not os.path.isdir('downloads'):
             os.mkdir('downloads')
 
         if not os.path.isfile(local_file):
-            torch.hub.download_url_to_file(config.silero_model_url, local_file)
+            torch.hub.download_url_to_file(model_url, local_file)
             
         self.model = torch.package.PackageImporter(local_file).load_pickle('tts_models', 'model')
         self.model.to(device)
