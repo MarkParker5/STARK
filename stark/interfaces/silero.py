@@ -2,7 +2,6 @@ import os
 import numpy
 import torch
 import sounddevice
-import config
 from .protocols import SpeechSynthesizer, SpeechSynthesizerResult
 
 

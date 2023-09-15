@@ -2,7 +2,6 @@ import os
 from google.cloud import texttospeech
 import sounddevice
 import soundfile
-import config
 from .protocols import SpeechSynthesizer, SpeechSynthesizerResult
 
 class Speech(SpeechSynthesizerResult):
@@ -24,12 +23,12 @@ class Speech(SpeechSynthesizerResult):
 
 class GCloudSpeechSynthesizer(SpeechSynthesizer):
     
-    def __init__(self, name = config.voice_name, language_code = config.language_code):
-        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = config.goole_tts_json_key
+    def __init__(self, voice_name: str, language_code: str, json_key_path: str):
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = json_key_path
         self._client       = texttospeech.TextToSpeechClient()
         self._audio_config = texttospeech.AudioConfig(audio_encoding = texttospeech.AudioEncoding.LINEAR16)
         self._language_code= language_code
-        self._name         = name
+        self._name         = voice_name
         self._voice        = texttospeech.VoiceSelectionParams(
             language_code  = self._language_code,
             name           = self._name,

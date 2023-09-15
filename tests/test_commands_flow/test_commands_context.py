@@ -1,5 +1,4 @@
 import pytest
-import config
 
 
 def test_basic_search(commands_context_flow_filled):
