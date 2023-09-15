@@ -9,24 +9,32 @@ packages = [{include = "stark"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
-aiohttp = "^3.8.3"
-sounddevice = "^0.4.5"
-soundfile = "^0.11.0"
-numpy = "^1.24.1"
 pydantic = "^1.10.4"
-vosk = "0.3.44"
-google-cloud-texttospeech = "^2.14.1"
-torch = "^1.13.1"
-mkdocs-material = "^9.2.8"
-mkdocs-git-revision-date-localized-plugin = "^1.2.0"
-mkdocs-swagger-ui-tag = "^0.6.4"
+asyncer = "^0.0.2"
 
-[tool.poetry.group.dev.dependencies]
-pytest = "^7.2.1"
-mypy = "^1.1.1"
+# Optional dependencies
+numpy = { version = "^1.24.1", optional = true }
+sounddevice = { version = "^0.4.5", optional = true }
+soundfile = { version = "^0.11.0", optional = true }
+vosk = { version = "^0.3.44", optional = true }
+google-cloud-texttospeech = { version = "^2.14.1", optional = true }
+torch = { version = "^1.13.1", optional = true }
 
 [tool.poetry.extras]
-examples = ["pynput"]
+gcloud = ["google-cloud-texttospeech", "sounddevice", "soundfile"]
+vosk = ["vosk", "sounddevice"]
+silero = ["torch", "numpy", "sounddevice"]
+sound = ["sounddevice", "soundfile"]
+
+[tool.poetry.group.dev.dependencies]
+# tests and static validation
+pytest = "^7.2.1"
+pytest-asyncio = "^0.21.1"
+mypy = "^1.1.1"
+# docs generation
+mkdocs-material = { version = "^9.2.8", optional = true }
+mkdocs-git-revision-date-localized-plugin = { version = "^1.2.0", optional = true }
+mkdocs-swagger-ui-tag = { version = "^0.6.4", optional = true }
 
 [build-system]
 requires = ["poetry-core"]
@@ -40,7 +48,6 @@ pythonpath = [
 [tool.mypy]
 ignore_missing_imports = true
 exclude = [
-    "stark/features/legacy",
-    "stark/VICore/VIObjects/VITime.*",
-    "stark/VICore/VIObjects/VINumber.*",
+    "stark/core/types/Time.*",
+    "stark/core/types/Number.*",
 ]

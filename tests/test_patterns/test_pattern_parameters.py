@@ -1,38 +1,38 @@
 import re
 import pytest
-from VICore import Pattern, VIObject, VIWord, VIString
-from VICore.patterns import expressions
-from VICore.VIObjects.VIObject import classproperty
+from core import Pattern, Object, Word, String
+from core.patterns import expressions
+from general.classproperty import classproperty
 
 
 word = fr'[{expressions.alphanumerics}]*'
 words = fr'[{expressions.alphanumerics}\s]*'
     
-class ExtraParameterInPattern(VIObject):
-    word1: VIWord
-    word2: VIWord
+class ExtraParameterInPattern(Object):
+    word1: Word
+    word2: Word
     
     @classproperty
     def pattern(cls) -> Pattern:
-        return Pattern('$word1:VIWord $word2:VIWord $word3:VIWord')
+        return Pattern('$word1:Word $word2:Word $word3:Word')
 
 def test_typed_parameters():
-    p = Pattern('lorem $name:VIWord dolor')
-    assert p.parameters == {'name': VIWord}
+    p = Pattern('lorem $name:Word dolor')
+    assert p.parameters == {'name': Word}
     assert p.compiled == fr'lorem (?P<name>{word}) dolor'
     
     m = p.match('lorem ipsum dolor')
     assert m
     assert m[0].substring == 'lorem ipsum dolor'
-    assert m[0].parameters == {'name': VIWord('ipsum')}
+    assert m[0].parameters == {'name': Word('ipsum')}
     assert not p.match('lorem ipsum foo dolor')
     
-    p = Pattern('lorem $name:VIString dolor')
-    assert p.parameters == {'name': VIString}
+    p = Pattern('lorem $name:String dolor')
+    assert p.parameters == {'name': String}
     m = p.match('lorem ipsum foo bar dolor')
     assert m
     assert m[0].substring == 'lorem ipsum foo bar dolor'
-    assert m[0].parameters == {'name': VIString('ipsum foo bar')}
+    assert m[0].parameters == {'name': String('ipsum foo bar')}
     
 def test_undefined_typed_parameters():
     pattern = 'lorem $name:Lorem dolor'

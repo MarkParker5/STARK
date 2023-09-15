@@ -1,15 +1,15 @@
 import pytest
 import time
 from general.dependencies import DependencyManager
-from VICore import (
+from core import (
     CommandsManager,
     CommandsContext,
     CommandsContextDelegate, 
     Response,
     ResponseHandler,
-    VIWord
+    Word
 )
-from VoiceAssistant import VoiceAssistant
+from voice_assistant import VoiceAssistant
 
 
 class CommandsContextDelegateMock(CommandsContextDelegate):
@@ -25,8 +25,8 @@ class CommandsContextDelegateMock(CommandsContextDelegate):
 class SpeechRecognizerMock:
     is_recognizing: bool = False
     
-    async def start_listening(self): pass
-    async def stop_listening(self): pass
+    def start_listening(self): pass
+    def stop_listening(self): pass
         
 class SpeechSynthesizerResultMock:
     def play(self): pass
@@ -76,14 +76,14 @@ def commands_context_flow_filled(commands_context_flow) -> tuple[CommandsContext
         return Response(text = text, voice = voice)
     
     @manager.new('bye', hidden = True)
-    def bye_context(name: VIWord, handler: ResponseHandler):
+    def bye_context(name: Word, handler: ResponseHandler):
         handler.pop_context()
         return Response(
             text = f'Bye, {name}!'
         ) 
     
-    @manager.new('hello $name:VIWord')
-    def hello(name: VIWord):
+    @manager.new('hello $name:Word')
+    def hello(name: Word):
         text = voice = f'Hello, {name}!' 
         return Response(
             text = text,

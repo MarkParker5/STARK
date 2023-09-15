@@ -1,5 +1,5 @@
-from VICore import Pattern
-from VICore.patterns import expressions
+from core import Pattern
+from core.patterns import expressions
 
 
 word = fr'[{expressions.alphanumerics}]*'

@@ -1,8 +1,8 @@
-from VICore import VIObject, Pattern, Response
+from core import Object, Pattern, Response
 from general.classproperty import classproperty
 
 
-class VIMock(VIObject):
+class Mock(Object):
     
     parsing_counter = 0
     
@@ -11,7 +11,7 @@ class VIMock(VIObject):
         return Pattern('*')
     
     def did_parse(self, from_string: str) -> str:
-        VIMock.parsing_counter += 1
+        Mock.parsing_counter += 1
         return from_string
 
 def test_multiple_commands(commands_context_flow):
@@ -104,25 +104,25 @@ def test_overlapping_commands_remove_inverse(commands_context_flow):
     assert len(result) == 1
     assert result[0].command == barbaz
     
-def test_viobjects_parse_caching(commands_context_flow):
+def test_objects_parse_caching(commands_context_flow):
     manager, context, context_delegate = commands_context_flow
-    Pattern.add_parameter_type(VIMock)
+    Pattern.add_parameter_type(Mock)
     
-    @manager.new('hello $mock:VIMock')
-    def hello(mock: VIMock): pass
+    @manager.new('hello $mock:Mock')
+    def hello(mock: Mock): pass
     
-    @manager.new('hello $mock:VIMock 2')
-    def hello2(mock: VIMock): pass
+    @manager.new('hello $mock:Mock 2')
+    def hello2(mock: Mock): pass
     
-    @manager.new('hello $mock:VIMock 22')
-    def hello22(mock: VIMock): pass
+    @manager.new('hello $mock:Mock 22')
+    def hello22(mock: Mock): pass
     
-    @manager.new('test $mock:VIMock')
-    def test(mock: VIMock): pass
+    @manager.new('test $mock:Mock')
+    def test(mock: Mock): pass
     
-    assert VIMock.parsing_counter == 0
+    assert Mock.parsing_counter == 0
     manager.search('hello foobar 22')
-    assert VIMock.parsing_counter == 1
+    assert Mock.parsing_counter == 1
     manager.search('hello foobar 22')
-    assert VIMock.parsing_counter == 2
+    assert Mock.parsing_counter == 2
     

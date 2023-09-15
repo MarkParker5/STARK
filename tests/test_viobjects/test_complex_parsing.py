@@ -1,10 +1,10 @@
 
 import pytest 
-from VICore import Pattern, VIObject, ParseError
-from VICore.VIObjects.VIObject import classproperty
+from core import Pattern, Object, ParseError
+from general.classproperty import classproperty
 
 
-class VILorem(VIObject):
+class Lorem(Object):
     
     @classproperty
     def pattern(cls):
@@ -18,13 +18,13 @@ class VILorem(VIObject):
     
 def test_complex_parsing_failed():
     with pytest.raises(ParseError):
-        VILorem.parse('some lor ipsum')
+        Lorem.parse('some lor ipsum')
     
 def test_complex_parsing():
     string = 'some lorem ipsum'
-    match = VILorem.parse(string)
+    match = Lorem.parse(string)
     assert match
     assert match.obj
     assert match.obj.value == 'lorem'
     assert match.substring == 'lorem'
-    assert VILorem.pattern.match(string)[0].substring == 'lorem ipsum'
+    assert Lorem.pattern.match(string)[0].substring == 'lorem ipsum'

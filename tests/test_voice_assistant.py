@@ -1,5 +1,5 @@
-from datetime import datetime, timedelta
-from VoiceAssistant import Mode
+from datetime import timedelta
+from voice_assistant import Mode
 
 
 def test_background_command(voice_assistant):

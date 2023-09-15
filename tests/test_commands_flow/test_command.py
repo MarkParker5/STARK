@@ -1,15 +1,17 @@
-from VICore import CommandsManager, Response
+import pytest
+from core import CommandsManager, Response
 
 
-def test_call_command_from_command():
+@pytest.mark.asyncio
+async def test_call_async_command_from_command():
     manager = CommandsManager()
     
     @manager.new('foo')
-    def foo() -> Response: 
+    async def foo() -> Response: 
         return Response(text = 'foo!')
     
     @manager.new('bar')
-    def bar() -> Response: 
-        return foo()
+    async def bar() -> Response: 
+        return await foo()
     
-    assert bar().text == 'foo!'
+    assert (await bar()).text == 'foo!'

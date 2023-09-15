@@ -1,6 +1,6 @@
 import re
 import pytest
-from VICore import CommandsManager, VIWord
+from core import CommandsManager, Word
 
 
 def test_new():
@@ -19,8 +19,8 @@ def test_new_with_extra_parameters_in_pattern():
     manager = CommandsManager()
     
     with pytest.raises(AssertionError, match = re.escape('Command CommandsManager.test must have all parameters from pattern:')):
-        @manager.new('test $name:VIWord, $secondName:VIWord')
-        def test(name: VIWord): pass
+        @manager.new('test $name:Word, $secondName:Word')
+        def test(name: Word): pass
     
 def test_search():
     manager = CommandsManager()
@@ -28,11 +28,11 @@ def test_search():
     @manager.new('test')
     def test(): pass
     
-    @manager.new('hello $name:VIWord $surname:VIWord')
-    def hello2(name: VIWord, surname: VIWord): pass
+    @manager.new('hello $name:Word $surname:Word')
+    def hello2(name: Word, surname: Word): pass
     
-    @manager.new('hello $name:VIWord')
-    def hello(name: VIWord): pass
+    @manager.new('hello $name:Word')
+    def hello(name: Word): pass
     
     # test
     result = manager.search('test')
@@ -46,7 +46,7 @@ def test_search():
     assert len(result) == 1
     assert result[0].command.name == 'CommandsManager.hello'
     assert result[0].match_result.substring == 'hello world'
-    assert type(result[0].match_result.parameters['name']) is VIWord
+    assert type(result[0].match_result.parameters['name']) is Word
     assert result[0].match_result.parameters['name'].value == 'world'
     
     # hello2
@@ -55,7 +55,7 @@ def test_search():
     assert len(result) == 1
     assert result[0].command == hello2
     assert result[0].match_result.substring == 'hello new world'
-    assert result[0].match_result.parameters == {'name': VIWord('new'), 'surname': VIWord('world')}
+    assert result[0].match_result.parameters == {'name': Word('new'), 'surname': Word('world')}
             
 def test_extend_manager():
     root_manager = CommandsManager()
