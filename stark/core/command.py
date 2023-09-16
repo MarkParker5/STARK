@@ -1,4 +1,5 @@
 from __future__ import annotations
+from uuid import UUID, uuid4
 from typing import Callable, Awaitable, Any, Protocol
 from enum import auto, Enum
 from datetime import datetime
@@ -67,6 +68,8 @@ class Response(BaseModel):
     needs_user_input: bool = False
     commands: list[Command] = []
     parameters: dict[str, Any] = {}
+    
+    id: UUID = Field(default_factory=uuid4)
     time: datetime = Field(default_factory=datetime.now)
     
     _repeat_last: Response | None = None # static instance
@@ -76,10 +79,13 @@ class Response(BaseModel):
         if not Response._repeat_last:
             Response._repeat_last = Response()
             return Response._repeat_last
-        return Response._repeat_last    
+        return Response._repeat_last
     
     class Config:
         arbitrary_types_allowed = True
+    
+    def __eq__(self, other):
+        return self.id == other.id
         
 class ResponseHandler(Protocol):
     def respond(self, response: Response): pass

@@ -93,7 +93,8 @@ class CommandsContext:
         self._response_queue.append(response)
     
     async def unrespond(self, response: Response):
-        self._response_queue.remove(response)
+        if response in self._response_queue:
+            self._response_queue.remove(response)
         self.delegate.remove_response(response)
     
     async def pop_context(self):
@@ -114,7 +115,7 @@ class CommandsContext:
         while not self.is_stopped:
             while self._response_queue:
                 await self._process_response(self._response_queue.pop(0))
-            await anyio.sleep(0.1)
+            await anyio.sleep(0.05)
             
     def stop(self):
         self.is_stopped = True

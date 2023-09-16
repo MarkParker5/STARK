@@ -3,6 +3,7 @@ import time
 import contextlib
 import pytest
 import asyncer
+import anyio
 from general.dependencies import DependencyManager
 from core import (
     CommandsManager,
@@ -10,8 +11,9 @@ from core import (
     CommandsContextDelegate, 
     Response,
     ResponseHandler,
-    Word
+    AsyncResponseHandler
 )
+from core.types import Word
 from voice_assistant import VoiceAssistant
 
 
@@ -74,7 +76,8 @@ async def commands_context_flow_filled(commands_context_flow):
     
             @manager.new('test')
             def test(): 
-                return Response()
+                text = voice = 'test'
+                return Response(text = text, voice = voice)
             
             @manager.new('lorem * dolor')
             def lorem(): 
@@ -105,6 +108,46 @@ async def commands_context_flow_filled(commands_context_flow):
             @manager.new('repeat')
             def repeat():
                 return Response.repeat_last
+            
+            # background commands
+    
+            @manager.new('background min')
+            async def background(handler: AsyncResponseHandler):
+                text = voice = 'Starting background task'
+                await handler.respond(Response(text = text, voice = voice))
+                await anyio.sleep(1)
+                text = voice = 'Finished background task'
+                return Response(text = text, voice = voice)
+            
+            @manager.new('background needs input')
+            async def background_needs_input(handler: AsyncResponseHandler):
+                await anyio.sleep(1)
+                
+                for text in ['First response', 'Second response', 'Third response']:
+                    await handler.respond(Response(text = text, voice = text))
+                    
+                text = 'Needs input'
+                await handler.respond(Response(text = text, voice = text, needs_user_input = True))
+                
+                for text in ['Fourth response', 'Fifth response', 'Sixth response']:
+                    await handler.respond(Response(text = text, voice = text))
+                
+                text = voice = 'Finished long background task'
+                return Response(text = text, voice = voice)
+            
+            @manager.new('background with context')
+            async def background_multiple_contexts(handler: AsyncResponseHandler):
+                await anyio.sleep(1)
+                text = voice = 'Finished long background task'
+                return Response(text = text, voice = voice, commands = [hello_context, bye_context], parameters = {'name': 'John'})
+            
+            @manager.new('background remove response')
+            async def background_remove_response(handler: AsyncResponseHandler):
+                response = Response(text = 'Deleted response', voice = 'Deleted response')
+                await handler.respond(response)
+                await anyio.sleep(1)
+                await handler.unrespond(response)
+                return None
     
             yield (context, context_delegate)
             

@@ -12,6 +12,10 @@ from interfaces.protocols import SpeechRecognizer, SpeechRecognizerDelegate, Spe
 from .mode import Mode
 
 
+class ResponseCache(Response):
+    # needs to save timeout_before_repeat that was set by mode at the moment of saving because it can change later and may lead to skipping responses
+    timeout_before_repeat: int = 0
+
 class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
 
     speech_recognizer: SpeechRecognizer
@@ -19,9 +23,9 @@ class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
     commands_context: CommandsContext
     
     mode: Mode
-    ignore_responses: list[ResponseStatus]
+    ignore_responses: list[ResponseStatus] # TODO: to Mode
     
-    _responses: list[Response]
+    _responses: list[ResponseCache]
     _last_interaction_time: datetime
 
     def __init__(self, speech_recognizer: SpeechRecognizer, speech_synthesizer: SpeechSynthesizer, commands_context: CommandsContext):
@@ -54,31 +58,12 @@ class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
         
         self._last_interaction_time = datetime.now()
         
-        # save timeout_before_repeat of last mode to avoid skipping responses that were not played
-        timeout_before_repeat = self.mode.timeout_before_repeat
-        stop_after_interaction = self.mode.stop_after_interaction
-        
         # switch mode if needed
         if self.mode.mode_on_interaction:
             self.mode = self.mode.mode_on_interaction()
         
-        # main part
-        self.commands_context.process_string(result)
-        
-        # repeat responses
-        while self._responses:
-            response = self._responses.pop(0)
-            if (datetime.now() - response.time).total_seconds() <= timeout_before_repeat:
-                continue
-            
-            await self._play_response(response)
-            self.commands_context.add_context(CommandsContextLayer(response.commands, response.parameters))
-            
-            if response.needs_user_input:
-                break
-        else:
-            if stop_after_interaction:
-                self.stop()
+        # main part: start command; response will come by delegate
+        self.commands_context.process_string(result) # TODO: async
 
     async def speech_recognizer_did_receive_partial_result(self, result: str):
         pass # print(f'\rYou: \x1B[3m{result}\x1B[0m', end = '')
@@ -89,21 +74,48 @@ class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
     # CommandsContextDelegate
 
     async def commands_context_did_receive_response(self, response: Response):
-        
+
         if response.status in self.ignore_responses:
             return
+        
+        timeout_before_repeat = self.mode.timeout_before_repeat
         
         if self.timeout_reached and self.mode.mode_on_timeout: 
             self.mode = self.mode.mode_on_timeout()
         
         if self.timeout_reached and self.mode.collect_responses:
-            self._responses.append(response)
-            
-        if self.mode.play_responses:
-            await self._play_response(response)
+            self._responses.append(ResponseCache(**response.dict(), timeout_before_repeat = timeout_before_repeat))
         
+        # play response if needed
+            
+        if not self.mode.play_responses:
+            return
+        
+        await self._play_response(response)
+        
+        if self.timeout_reached:
+            return
+        
+        # repeat responses if interaction was recently
+        
+        while self._responses:
+            response = self._responses.pop(0)
+            if (datetime.now() - response.time).total_seconds() <= response.timeout_before_repeat:
+                self._responses.insert(0, response)
+                continue
+            
+            await self._play_response(response)
+            self.commands_context.add_context(CommandsContextLayer(response.commands, response.parameters))
+            
+            if response.needs_user_input:
+                break
+        else:
+            if self.mode.stop_after_interaction:
+                self.stop()
+    
     def remove_response(self, response: Response):
-        self._responses.remove(response)
+        if response in self._responses:
+            self._responses.remove(response)
         
     # Private
     

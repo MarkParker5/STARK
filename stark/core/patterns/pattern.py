@@ -103,7 +103,9 @@ class Pattern:
     def add_parameter_type(cls, object_type: ObjectType):
         error_msg = f'Can`t add parameter type "{object_type.__name__}": pattern parameters do not match properties annotated in class'
         assert object_type.pattern.parameters.items() <= object_type.__annotations__.items(), error_msg
-        assert cls._parameter_types.get(object_type.__name__) is None, f'Can`t add parameter type: {object_type.__name__} already exists'
+        exists_type = cls._parameter_types.get(object_type.__name__)
+        print(object_type.__name__, exists_type == object_type, exists_type is object_type)
+        assert exists_type in {object_type, None}, f'Can`t add parameter type: {object_type.__name__} already exists'
         cls._parameter_types[object_type.__name__] = object_type
         
     # private

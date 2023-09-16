@@ -1,19 +1,8 @@
 import anyio
 from core import Object, Pattern, Response, CommandsManager
 from general.classproperty import classproperty
+import random
 
-
-class Mock(Object):
-    
-    parsing_counter = 0
-    
-    @classproperty
-    def pattern(cls):
-        return Pattern('*')
-    
-    def did_parse(self, from_string: str) -> str:
-        Mock.parsing_counter += 1
-        return from_string
 
 async def test_multiple_commands(commands_context_flow, autojump_clock):
     async with commands_context_flow() as (manager, context, context_delegate):
@@ -110,19 +99,34 @@ async def test_overlapping_commands_remove_inverse(commands_context_flow, autoju
     assert result[0].command == barbaz
     
 async def test_objects_parse_caching(commands_context_flow, autojump_clock):
+    class Mock(Object):
+    
+        parsing_counter = 0
+        
+        @classproperty
+        def pattern(cls):
+            return Pattern('*')
+        
+        def did_parse(self, from_string: str) -> str:
+            Mock.parsing_counter += 1
+            return from_string
+    
+    mock_name = f'Mock{random.randint(0, 10**10)}'
+    Mock.__name__ = mock_name # prevent name collision on paralell tests
+    
     manager = CommandsManager()
     Pattern.add_parameter_type(Mock)
     
-    @manager.new('hello $mock:Mock')
+    @manager.new(f'hello $mock:{mock_name}')
     def hello(mock: Mock): pass
     
-    @manager.new('hello $mock:Mock 2')
+    @manager.new(f'hello $mock:{mock_name} 2')
     def hello2(mock: Mock): pass
     
-    @manager.new('hello $mock:Mock 22')
+    @manager.new(f'hello $mock:{mock_name} 22')
     def hello22(mock: Mock): pass
     
-    @manager.new('test $mock:Mock')
+    @manager.new(f'test $mock:{mock_name}')
     async def test(mock: Mock): pass
     
     assert Mock.parsing_counter == 0
