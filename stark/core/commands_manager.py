@@ -1,6 +1,7 @@
 from __future__ import annotations
 from dataclasses import dataclass
 import inspect
+from asyncer import create_task_group
 
 from .patterns import Pattern, MatchResult
 from .types import Object
@@ -23,18 +24,31 @@ class CommandsManager:
         self.name = name or 'CommandsManager'
         self.commands = []
 
-    def search(self, string: str, commands: list[Command] | None = None) -> list[SearchResult]:
+    async def search(self, string: str, commands: list[Command] | None = None) -> list[SearchResult]:
         
         if not commands:
             commands = self.commands
         
         objects_cache: dict[str, Object] = {}
         results: list[SearchResult] = []
-        # origin = String(string)
-
+        
         i = 0
-        for command in commands:
-            for match in command.pattern.match(string, objects_cache):
+        
+        # async with create_task_group() as group:
+        #     for command in commands:
+        #         async def match_command():
+        #             nonlocal i
+        #             for match in await command.pattern.match(string, objects_cache):
+        #                 results.append(SearchResult(
+        #                     command = command,
+        #                     match_result = match,
+        #                     index = i
+        #                 ))
+        #                 i += 1
+        #         group.soonify(match_command)()
+        
+        for command in commands: # TODO: concurrent
+            for match in await command.pattern.match(string, objects_cache):
                 results.append(SearchResult(
                     command = command,
                     match_result = match,
@@ -51,9 +65,9 @@ class CommandsManager:
             if prev.match_result.start == current.match_result.start or prev.match_result.end > current.match_result.start:
                 
                 # constrain prev end to current start
-                prev_cut = prev.command.pattern.match(string[prev.match_result.start:current.match_result.start], objects_cache) 
+                prev_cut = await prev.command.pattern.match(string[prev.match_result.start:current.match_result.start], objects_cache) 
                 # constrain current start to prev end
-                current_cut = current.command.pattern.match(string[prev.match_result.end:current.match_result.end], objects_cache)
+                current_cut = await current.command.pattern.match(string[prev.match_result.end:current.match_result.end], objects_cache)
 
                 # less index = more priority to save full match
                 priority1, priority2 = (prev, current) if prev.index < current.index else (current, prev)

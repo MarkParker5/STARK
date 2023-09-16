@@ -49,7 +49,7 @@ class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
         print(f'\nYou: {result}')
         # check explicit interaction if needed
         if pattern_str := self.mode.explicit_interaction_pattern:
-            if not Pattern(pattern_str).match(result):
+            if not await Pattern(pattern_str).match(result):
                 return
         
         # reset context if timeout reached
@@ -62,8 +62,7 @@ class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
         if self.mode.mode_on_interaction:
             self.mode = self.mode.mode_on_interaction()
         
-        # main part: start command; response will come by delegate
-        self.commands_context.process_string(result) # TODO: async
+        await self.commands_context.process_string(result)
 
     async def speech_recognizer_did_receive_partial_result(self, result: str):
         pass # print(f'\rYou: \x1B[3m{result}\x1B[0m', end = '')

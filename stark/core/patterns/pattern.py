@@ -31,7 +31,7 @@ class Pattern:
         self.parameters = dict(self._get_parameters())
         self.compiled = self._compile()
         
-    def match(self, string: str, objects_cache: dict[str, Object] | None = None) -> list[MatchResult]:
+    async def match(self, string: str, objects_cache: dict[str, Object] | None = None) -> list[MatchResult]:
         
         if objects_cache is None:
             objects_cache = {}
@@ -64,7 +64,7 @@ class Pattern:
                         parameter_str = parsed_substr
                         break
                 else:
-                    parse_result = object_type.parse(from_string = parameter_str, parameters = match_str_groups) 
+                    parse_result = await object_type.parse(from_string = parameter_str, parameters = match_str_groups) # TODO: concurrent parsing
                     objects_cache[parse_result.substring] = parse_result.obj
                     parameters[name] = parse_result.obj
                     parameter_str = parse_result.substring

@@ -57,7 +57,7 @@ class CommandsContext:
     def root_context(self):
         return CommandsContextLayer(self.commands_manager.commands, {})
 
-    def process_string(self, string: str):
+    async def process_string(self, string: str):
         
         if not self._context_queue:
             self._context_queue.append(self.root_context)
@@ -66,7 +66,7 @@ class CommandsContext:
         while self._context_queue:
             
             current_context = self._context_queue[0]
-            search_results = self.commands_manager.search(string = string, commands = current_context.commands)
+            search_results = await self.commands_manager.search(string = string, commands = current_context.commands)
             
             if search_results:
                 break

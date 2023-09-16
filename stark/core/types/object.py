@@ -25,7 +25,7 @@ class Object(ABC):
         '''Just init with wrapped value.'''
         self.value = value
         
-    def did_parse(self, from_string: str) -> str:
+    async def did_parse(self, from_string: str) -> str:
         '''
         This method is called after parsing from string and setting parameters found in pattern. 
         You will very rarely, if ever, need to call this method directly.
@@ -42,7 +42,7 @@ class Object(ABC):
         return from_string
 
     @classmethod
-    def parse(cls, from_string: str, parameters: dict[str, str] | None = None) -> ParseResult:
+    async def parse(cls, from_string: str, parameters: dict[str, str] | None = None) -> ParseResult:
         '''
         For internal use only.
         You will very rarely, if ever, need to override or even call this method.
@@ -59,9 +59,9 @@ class Object(ABC):
             if not parameters.get(name):
                 continue
             value = parameters.pop(name)
-            setattr(obj, name, object_type.parse(from_string = value, parameters = parameters).obj)
+            setattr(obj, name, (await object_type.parse(from_string = value, parameters = parameters)).obj)
         
-        substring = obj.did_parse(from_string)
+        substring = await obj.did_parse(from_string)
         
         return ParseResult(obj, substring)
     

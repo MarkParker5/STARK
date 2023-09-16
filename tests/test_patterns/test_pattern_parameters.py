@@ -16,20 +16,20 @@ class ExtraParameterInPattern(Object):
     def pattern(cls) -> Pattern:
         return Pattern('$word1:Word $word2:Word $word3:Word')
 
-def test_typed_parameters():
+async def test_typed_parameters():
     p = Pattern('lorem $name:Word dolor')
     assert p.parameters == {'name': Word}
     assert p.compiled == fr'lorem (?P<name>{word}) dolor'
     
-    m = p.match('lorem ipsum dolor')
+    m = await p.match('lorem ipsum dolor')
     assert m
     assert m[0].substring == 'lorem ipsum dolor'
     assert m[0].parameters == {'name': Word('ipsum')}
-    assert not p.match('lorem ipsum foo dolor')
+    assert not await p.match('lorem ipsum foo dolor')
     
     p = Pattern('lorem $name:String dolor')
     assert p.parameters == {'name': String}
-    m = p.match('lorem ipsum foo bar dolor')
+    m = await p.match('lorem ipsum foo bar dolor')
     assert m
     assert m[0].substring == 'lorem ipsum foo bar dolor'
     assert m[0].parameters == {'name': String('ipsum foo bar')}

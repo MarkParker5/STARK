@@ -22,7 +22,7 @@ def test_new_with_extra_parameters_in_pattern():
         @manager.new('test $name:Word, $secondName:Word')
         def test(name: Word): pass
     
-def test_search():
+async def test_search():
     manager = CommandsManager()
     
     @manager.new('test')
@@ -35,13 +35,13 @@ def test_search():
     def hello(name: Word): pass
     
     # test
-    result = manager.search('test')
+    result = await manager.search('test')
     assert result is not None
     assert len(result) == 1
     assert result[0].command.name == 'CommandsManager.test'
     
     # hello
-    result = manager.search('hello world')
+    result = await manager.search('hello world')
     assert result is not None
     assert len(result) == 1
     assert result[0].command.name == 'CommandsManager.hello'
@@ -50,7 +50,7 @@ def test_search():
     assert result[0].match_result.parameters['name'].value == 'world'
     
     # hello2
-    result = manager.search('hello new world')
+    result = await manager.search('hello new world')
     assert result is not None
     assert len(result) == 1
     assert result[0].command == hello2

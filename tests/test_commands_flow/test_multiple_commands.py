@@ -15,7 +15,7 @@ async def test_multiple_commands(commands_context_flow, autojump_clock):
         def lorem(): 
             return Response(text = 'lorem!')
         
-        context.process_string('foo bar lorem ipsum dolor')
+        await context.process_string('foo bar lorem ipsum dolor')
         await anyio.sleep(5)
 
         assert len(context_delegate.responses) == 2
@@ -28,7 +28,7 @@ async def test_repeating_command(commands_context_flow, autojump_clock):
         def lorem(): 
             return Response(text = 'lorem!')
         
-        context.process_string('lorem pisum dolor lorem ipsutest_repeating_commanduum dolor sit amet')
+        await context.process_string('lorem pisum dolor lorem ipsutest_repeating_commanduum dolor sit amet')
         await anyio.sleep(5)
         
         assert len(context_delegate.responses) == 2
@@ -46,7 +46,7 @@ async def test_overlapping_commands_less_priority_cut(commands_context_flow, aut
     def baz(): 
         return Response(text = 'baz!')
     
-    result = manager.search('foo bar test baz')
+    result = await manager.search('foo bar test baz')
     assert len(result) == 2
     assert result[0].match_result.substring == 'foo bar test'
     assert result[1].match_result.substring == 'baz'
@@ -62,7 +62,7 @@ async def test_overlapping_commands_priority_cut(commands_context_flow, autojump
     def baz(): 
         return Response(text = 'baz!')
     
-    result = manager.search('foo bar test baz')
+    result = await manager.search('foo bar test baz')
     
     assert len(result) == 2
     assert result[0].match_result.substring == 'foo bar'
@@ -79,7 +79,7 @@ async def test_overlapping_commands_remove(commands_context_flow, autojump_clock
     def barbaz(): 
         return Response(text = 'baz!')
     
-    result = manager.search('foo bar baz')
+    result = await manager.search('foo bar baz')
     assert len(result) == 1
     assert result[0].command == foobar
     
@@ -94,7 +94,7 @@ async def test_overlapping_commands_remove_inverse(commands_context_flow, autoju
     def foobar(): 
         return Response(text = 'foo!')
     
-    result = manager.search('foo bar baz')
+    result = await manager.search('foo bar baz')
     assert len(result) == 1
     assert result[0].command == barbaz
     
@@ -107,7 +107,7 @@ async def test_objects_parse_caching(commands_context_flow, autojump_clock):
         def pattern(cls):
             return Pattern('*')
         
-        def did_parse(self, from_string: str) -> str:
+        async def did_parse(self, from_string: str) -> str:
             Mock.parsing_counter += 1
             return from_string
     
@@ -130,7 +130,7 @@ async def test_objects_parse_caching(commands_context_flow, autojump_clock):
     async def test(mock: Mock): pass
     
     assert Mock.parsing_counter == 0
-    manager.search('hello foobar 22')
+    await manager.search('hello foobar 22')
     assert Mock.parsing_counter == 1
-    manager.search('hello foobar 22')
+    await manager.search('hello foobar 22')
     assert Mock.parsing_counter == 2
