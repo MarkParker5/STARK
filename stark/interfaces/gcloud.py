@@ -2,6 +2,7 @@ import os
 from google.cloud import texttospeech
 import sounddevice
 import soundfile
+import asyncer
 from .protocols import SpeechSynthesizer, SpeechSynthesizerResult
 
 class Speech(SpeechSynthesizerResult):
@@ -35,7 +36,7 @@ class GCloudSpeechSynthesizer(SpeechSynthesizer):
             ssml_gender    = texttospeech.SsmlVoiceGender.FEMALE
         )
 
-    def synthesize(self, text) -> Speech:
+    async def synthesize(self, text) -> Speech:
         folder = f'audio/{self._name}'
         path = f'{folder}/{self._transliterate(text)[:100]}.wav'
 
@@ -45,7 +46,8 @@ class GCloudSpeechSynthesizer(SpeechSynthesizer):
         synthesis_input = texttospeech.SynthesisInput(text = text)
 
         try:
-            response = self._client.synthesize_speech(input = synthesis_input, voice = self._voice, audio_config = self._audio_config)
+            synthesize_speech_async = asyncer.asyncify(self._client.synthesize_speech)
+            response = await synthesize_speech_async(input = synthesis_input, voice = self._voice, audio_config = self._audio_config)
             if not os.path.exists(folder): 
                 os.makedirs(folder)
             with open(path, 'wb') as out:

@@ -16,7 +16,7 @@ class CommandsContextLayer:
 
 @runtime_checkable
 class CommandsContextDelegate(Protocol):
-    def commands_context_did_receive_response(self, response: Response): pass
+    async def commands_context_did_receive_response(self, response: Response): pass
     def remove_response(self, response: Response): pass
 
 class CommandsContext:
@@ -113,15 +113,15 @@ class CommandsContext:
         self.is_stopped = False
         while not self.is_stopped:
             while self._response_queue:
-                self._process_response(self._response_queue.pop(0))
+                await self._process_response(self._response_queue.pop(0))
             await anyio.sleep(0.1)
             
     def stop(self):
         self.is_stopped = True
     
-    def _process_response(self, response: Response):
+    async def _process_response(self, response: Response):
         if response is Response.repeat_last and self.last_response:
-            self._process_response(self.last_response)
+            await self._process_response(self.last_response)
             return
         
         if not response is Response.repeat_last:    
@@ -131,7 +131,7 @@ class CommandsContext:
             newContext = CommandsContextLayer(response.commands, response.parameters)
             self._context_queue.insert(0, newContext)
         
-        self.delegate.commands_context_did_receive_response(response)
+        await self.delegate.commands_context_did_receive_response(response)
 
 class SyncResponseHandler: # needs for changing thread from worker to main in commands ran with asyncify
     

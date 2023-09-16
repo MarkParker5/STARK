@@ -2,6 +2,7 @@ import os
 import numpy
 import torch
 import sounddevice
+import asyncer
 from .protocols import SpeechSynthesizer, SpeechSynthesizerResult
 
 
@@ -11,11 +12,12 @@ class Speech(SpeechSynthesizerResult):
         self.audio = audio
         self.sample_rate = sample_rate
 
-    def play(self):
-        sounddevice.play(self.audio, self.sample_rate, blocking = True)
+    async def play(self):
+        play_async = asyncer.asyncify(sounddevice.play)
+        await play_async(self.audio, self.sample_rate, blocking = True)
 
     def stop(self):
-        pass
+        sounddevice.stop()
 
 class SileroSpeechSynthesizer(SpeechSynthesizer):
     
@@ -36,6 +38,7 @@ class SileroSpeechSynthesizer(SpeechSynthesizer):
         self.sample_rate = 24000
         self.speaker = speaker
 
-    def synthesize(self, text) -> Speech:
-        audio = self.model.apply_tts(text = text, speaker = self.speaker, sample_rate = self.sample_rate)
+    async def synthesize(self, text) -> Speech:
+        synthesize_async = asyncer.asyncify(self.model.apply_tts)
+        audio = await synthesize_async(text = text, speaker = self.speaker, sample_rate = self.sample_rate)
         return Speech(audio, self.sample_rate)

@@ -22,7 +22,7 @@ class CommandsContextDelegateMock(CommandsContextDelegate):
     def __init__(self):
         self.responses = []
     
-    def commands_context_did_receive_response(self, response: Response):
+    async def commands_context_did_receive_response(self, response: Response):
         self.responses.append(response)
         
 class SpeechRecognizerMock:
@@ -32,7 +32,7 @@ class SpeechRecognizerMock:
     def stop_listening(self): pass
         
 class SpeechSynthesizerResultMock:
-    def play(self): pass
+    async def play(self): pass
     
     def __init__(self, text: str):
         self.text = text
@@ -42,7 +42,7 @@ class SpeechSynthesizerMock:
     def __init__(self):
         self.results = []
     
-    def synthesize(self, text: str) -> SpeechSynthesizerResultMock:
+    async def synthesize(self, text: str) -> SpeechSynthesizerResultMock:
         result = SpeechSynthesizerResultMock(text)
         self.results.append(result)
         return result

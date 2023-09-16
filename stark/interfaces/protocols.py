@@ -3,9 +3,9 @@ from typing import Protocol, runtime_checkable
 
 @runtime_checkable
 class SpeechRecognizerDelegate(Protocol):
-    def speech_recognizer_did_receive_final_result(self, result: str): pass
-    def speech_recognizer_did_receive_partial_result(self, result: str): pass
-    def speech_recognizer_did_receive_empty_result(self): pass
+    async def speech_recognizer_did_receive_final_result(self, result: str): pass
+    async def speech_recognizer_did_receive_partial_result(self, result: str): pass
+    async def speech_recognizer_did_receive_empty_result(self): pass
    
 @runtime_checkable
 class SpeechRecognizer(Protocol):
@@ -17,8 +17,8 @@ class SpeechRecognizer(Protocol):
  
 @runtime_checkable
 class SpeechSynthesizerResult(Protocol):
-    def play(self): pass
+    async def play(self): pass
 
 @runtime_checkable   
 class SpeechSynthesizer(Protocol):
-    def synthesize(self, text: str) -> SpeechSynthesizerResult: pass
+    async def synthesize(self, text: str) -> SpeechSynthesizerResult: pass

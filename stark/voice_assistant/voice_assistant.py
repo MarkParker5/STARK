@@ -41,7 +41,7 @@ class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
 
     # SpeechRecognizerDelegate
 
-    def speech_recognizer_did_receive_final_result(self, result: str):
+    async def speech_recognizer_did_receive_final_result(self, result: str):
         print(f'\nYou: {result}')
         # check explicit interaction if needed
         if pattern_str := self.mode.explicit_interaction_pattern:
@@ -71,7 +71,7 @@ class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
             if (datetime.now() - response.time).total_seconds() <= timeout_before_repeat:
                 continue
             
-            self._play_response(response)
+            await self._play_response(response)
             self.commands_context.add_context(CommandsContextLayer(response.commands, response.parameters))
             
             if response.needs_user_input:
@@ -80,15 +80,15 @@ class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
             if stop_after_interaction:
                 self.stop()
 
-    def speech_recognizer_did_receive_partial_result(self, result: str):
+    async def speech_recognizer_did_receive_partial_result(self, result: str):
         pass # print(f'\rYou: \x1B[3m{result}\x1B[0m', end = '')
 
-    def speech_recognizer_did_receive_empty_result(self):
+    async def speech_recognizer_did_receive_empty_result(self):
         pass
 
     # CommandsContextDelegate
 
-    def commands_context_did_receive_response(self, response: Response):
+    async def commands_context_did_receive_response(self, response: Response):
         
         if response.status in self.ignore_responses:
             return
@@ -100,19 +100,22 @@ class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
             self._responses.append(response)
             
         if self.mode.play_responses:
-            self._play_response(response)
+            await self._play_response(response)
         
     def remove_response(self, response: Response):
         self._responses.remove(response)
         
     # Private
     
-    def _play_response(self, response: Response):
+    async def _play_response(self, response: Response):
         self.commands_context.last_response = response
+        
         if response.text:
             print(f'S.T.A.R.K.: {response.text}')
+        
         if response.voice:
             was_recognizing = self.speech_recognizer.is_recognizing
             self.speech_recognizer.is_recognizing = False
-            self.speech_synthesizer.synthesize(response.voice).play()
+            speech = await self.speech_synthesizer.synthesize(response.voice)
+            await speech.play()
             self.speech_recognizer.is_recognizing = was_recognizing

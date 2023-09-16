@@ -85,12 +85,12 @@ class VoskSpeechRecognizer(SpeechRecognizer):
             while self._is_listening:
                 try:
                     if data := self.audio_queue.get(block = False):
-                        self._transcribe(data)
+                        await self._transcribe(data)
                 except Empty:
                     pass
                 await anyio.sleep(0.05)
                 
-    def _transcribe(self, data):
+    async def _transcribe(self, data):
         delegate = self.delegate
         if not delegate: return
         
@@ -98,15 +98,15 @@ class VoskSpeechRecognizer(SpeechRecognizer):
             result = json.loads(self.kaldiRecognizer.Result())
             if (string := result.get('text')) and string != self.last_result:
                 self.last_result = string
-                delegate.speech_recognizer_did_receive_final_result(string)
+                await delegate.speech_recognizer_did_receive_final_result(string)
             else:
                 self.last_result = None
-                delegate.speech_recognizer_did_receive_empty_result()
+                await delegate.speech_recognizer_did_receive_empty_result()
         else:
             result = json.loads(self.kaldiRecognizer.PartialResult())
             if (string := result.get('partial')) and string != self.last_partial_result:
                 self.last_partial_result = string
-                delegate.speech_recognizer_did_receive_partial_result(string)
+                await delegate.speech_recognizer_did_receive_partial_result(string)
 
     def _audio_input_callback(self, indata, frames, time, status):
         if not self.is_recognizing: return
