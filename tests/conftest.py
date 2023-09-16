@@ -112,12 +112,13 @@ async def commands_context_flow_filled(commands_context_flow):
 
 @pytest.fixture
 async def voice_assistant(commands_context_flow_filled):
-    context, _ = commands_context_flow_filled
-    voice_assistant = VoiceAssistant(
-        speech_recognizer = SpeechRecognizerMock(),
-        speech_synthesizer = SpeechSynthesizerMock(),
-        commands_context = context
-    )
-    voice_assistant.start()
-    
-    yield voice_assistant
+    @contextlib.asynccontextmanager
+    async def _voice_assistant() -> AsyncGenerator[VoiceAssistant, None]:
+        async with commands_context_flow_filled() as (context, context_delegate):
+            voice_assistant = VoiceAssistant(
+                speech_recognizer = SpeechRecognizerMock(),
+                speech_synthesizer = SpeechSynthesizerMock(),
+                commands_context = context
+            )
+            yield voice_assistant
+    return _voice_assistant
