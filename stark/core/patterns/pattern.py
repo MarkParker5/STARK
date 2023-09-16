@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import Type, Generator, TypeAlias, TYPE_CHECKING
 from dataclasses import dataclass
 import re
+from asyncer import create_task_group
 
 from .expressions import dictionary
 if TYPE_CHECKING:
@@ -51,24 +52,36 @@ class Pattern:
             # parse parameters
             
             parameters: dict[str, Object] = {}
+            substrings: dict[str, str] = {}
             
-            for name, object_type in self.parameters.items():
-                if not match_str_groups.get(name):
-                    continue
+            futures = []
+            async with create_task_group() as group:
+                for name, object_type in self.parameters.items():
+                    if not match_str_groups.get(name):
+                        continue
+                    
+                    parameter_str = match_str_groups[name].strip()
+                    
+                    for parsed_substr, parsed_obj in objects_cache.items():
+                        if parsed_substr in parameter_str:
+                            parameters[name] = parsed_obj.copy()
+                            parameter_str = parsed_substr
+                            substrings[name] = parsed_substr
+                            break
+                    else:
+                        async def parse(from_string: str, parameters: dict[str, str]):
+                            parse_result = await object_type.parse(from_string = from_string, parameters = parameters)
+                            objects_cache[parse_result.substring] = parse_result.obj
+                            return parse_result
+                        futures.append((name, group.soonify(parse)(parameter_str, match_str_groups)))
+            
+            for name, future in futures:
+                parse_result = future.value
+                parameters[name] = parse_result.obj
+                substrings[name] = parse_result.substring
                 
-                parameter_str = match_str_groups[name].strip()
-                
-                for parsed_substr, parsed_obj in objects_cache.items():
-                    if parsed_substr in parameter_str:
-                        parameters[name] = parsed_obj.copy()
-                        parameter_str = parsed_substr
-                        break
-                else:
-                    parse_result = await object_type.parse(from_string = parameter_str, parameters = match_str_groups) # TODO: concurrent parsing
-                    objects_cache[parse_result.substring] = parse_result.obj
-                    parameters[name] = parse_result.obj
-                    parameter_str = parse_result.substring
-                
+            for name in parameters.keys():
+                parameter_str = substrings[name]
                 parameter_start = match_str_groups[name].find(parameter_str)
                 parameter_end = parameter_start + len(parameter_str)
                 
