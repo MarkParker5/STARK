@@ -42,11 +42,12 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.pytest.ini_options]
-pythonpath = [
-    "stark",
-]
+pythonpath = ["stark",]
 # asyncio_mode = "auto"
 trio_mode = "true"
+filterwarnings = [
+    "once"
+]
 
 [tool.mypy]
 ignore_missing_imports = true
