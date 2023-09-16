@@ -32,23 +32,14 @@ class CommandsManager:
         objects_cache: dict[str, Object] = {}
         results: list[SearchResult] = []
         
+        futures = []
+        async with create_task_group() as group:
+            for command in commands:
+                futures.append((command, group.soonify(command.pattern.match)(string, objects_cache)))
+        
         i = 0
-        
-        # async with create_task_group() as group:
-        #     for command in commands:
-        #         async def match_command():
-        #             nonlocal i
-        #             for match in await command.pattern.match(string, objects_cache):
-        #                 results.append(SearchResult(
-        #                     command = command,
-        #                     match_result = match,
-        #                     index = i
-        #                 ))
-        #                 i += 1
-        #         group.soonify(match_command)()
-        
-        for command in commands: # TODO: concurrent
-            for match in await command.pattern.match(string, objects_cache):
+        for command, future in futures:
+            for match in future.value:
                 results.append(SearchResult(
                     command = command,
                     match_result = match,
@@ -61,7 +52,7 @@ class CommandsManager:
         results = sorted(results, key = lambda result: result.match_result.start)
         
         # copy to prevent affecting iteration by removing items; slice makes copy automatically
-        for prev, current in zip(results.copy(), results[1:]): 
+        for prev, current in zip(results.copy(), results[1:]): # TODO: concurrent; optimize using cache
             if prev.match_result.start == current.match_result.start or prev.match_result.end > current.match_result.start:
                 
                 # constrain prev end to current start
@@ -79,7 +70,7 @@ class CommandsManager:
                     priority1.match_result = new_matches[0]
                 else: # else remove less priority
                     results.remove(priority2)
-                
+        
         return results 
     
     def new(self, pattern_str: str, hidden: bool = False):

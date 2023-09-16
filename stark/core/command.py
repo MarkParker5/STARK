@@ -52,6 +52,9 @@ class Command:
     def __call__(self, *args, **kwargs) -> AwaitResponse:
         # just syntactic sugar for command() instead of command.run()
         return self.run(*args, **kwargs)
+    
+    def __repr__(self):
+        return f'<Command {self.name}>'
 
 class ResponseStatus(Enum):
     none = auto()
