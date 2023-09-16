@@ -1,11 +1,10 @@
 from __future__ import annotations
 from dataclasses import dataclass
 import inspect
-import asyncer
 
 from .patterns import Pattern, MatchResult
 from .types import Object
-from .command import Command, CommandRunner
+from .command import Command, CommandRunner, ResponseHandler, AsyncResponseHandler
 
 
 @dataclass
@@ -73,8 +72,20 @@ class CommandsManager:
         def creator(runner: CommandRunner) -> Command:
             pattern = Pattern(pattern_str)
             
+            # check that runner has all parameters from pattern
+            
             error_msg = f'Command {self.name}.{runner.__name__} must have all parameters from pattern: {pattern.parameters=} {runner.__annotations__=}'
             assert pattern.parameters.items() <= runner.__annotations__.items(), error_msg
+            
+            # additional checks for DI
+            
+            if ResponseHandler in runner.__annotations__.values() and inspect.iscoroutinefunction(runner):
+                raise TypeError(f'`ResponseHandler` is not compatible with command {self.name}.{runner.__name__} because it is async, use `AsyncResponseHandler` instead')
+            
+            if AsyncResponseHandler in runner.__annotations__.values() and not inspect.iscoroutinefunction(runner):
+                raise TypeError(f'`AsyncResponseHandler` is not compatible with command {self.name}.{runner.__name__} because it is sync, use `ResponseHandler` instead')
+            
+            # create command
             
             cmd = Command(f'{self.name}.{runner.__name__}', pattern, runner)
             

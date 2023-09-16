@@ -1,6 +1,6 @@
 import pytest
 from asyncer import syncify
-from core import CommandsManager, Response
+from core import CommandsManager, Response, ResponseHandler, AsyncResponseHandler
 
 
 async def test_create_await_run_sync_command():
@@ -58,3 +58,18 @@ def test_call_sync_command_from_sync_command_syncify():
     # raise_sync_error needs for tests only because test function doesn't run in worker thread
     sync_bar = syncify(bar, raise_sync_error = False)
     assert sync_bar().text == 'foo!'
+
+def test_sync_command_with_sync_response_handler():
+    manager = CommandsManager()
+    
+    @manager.new('foo')
+    def foo(handler: ResponseHandler): 
+        ...
+    
+def test_sync_command_with_async_response_handler():
+    manager = CommandsManager()
+    
+    with pytest.raises(TypeError, match = '`AsyncResponseHandler` is not compatible with command .* because it is sync, use `ResponseHandler` instead'):
+        @manager.new('foo')
+        def foo(handler: AsyncResponseHandler): 
+            ...
