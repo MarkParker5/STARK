@@ -1,7 +1,6 @@
 from types import GeneratorType, AsyncGeneratorType
 from typing import Any, Protocol, runtime_checkable
 from dataclasses import dataclass
-import inspect
 import warnings
 import anyio
 from asyncer import syncify

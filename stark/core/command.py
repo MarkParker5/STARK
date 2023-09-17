@@ -1,7 +1,6 @@
 from __future__ import annotations
-from types import GeneratorType, AsyncGeneratorType
-from typing import Callable, Awaitable, Any, Protocol
-from functools import wraps
+from typing import cast, Callable, Awaitable, Any, Protocol, AsyncGenerator, Generator, Optional, TypeVar, Generic
+from functools import wraps, update_wrapper
 import warnings
 from uuid import UUID, uuid4
 from enum import auto, Enum
@@ -15,11 +14,13 @@ from general.classproperty import classproperty
 from .patterns import Pattern
 
 
-AwaitResponse = Awaitable['Response | None']
+ResponseOptions = Optional['Response'] | Generator[Optional['Response'], None, None] | AsyncGenerator[Optional['Response'], None]
+AwaitResponse = Awaitable[ResponseOptions]
 AsyncCommandRunner = Callable[..., AwaitResponse]
-CommandRunner = Callable[..., 'Response | None'] | AsyncCommandRunner
+SyncCommandRunner = Callable[..., Optional['Response']]
+CommandRunner = TypeVar('CommandRunner', bound = SyncCommandRunner | AsyncCommandRunner)
 
-class Command:
+class Command(Generic[CommandRunner]):
     name: str
     pattern: Pattern
     _runner: CommandRunner
@@ -29,6 +30,7 @@ class Command:
         self.name = name
         self.pattern = pattern
         self._runner = runner
+        update_wrapper(self, runner)
 
     def run(self, parameters_dict: dict[str, Any] | None = None, / , **kwparameters: dict[str, Any]) -> AwaitResponse:
         # allow call both with and without dict unpacking 
@@ -40,13 +42,13 @@ class Command:
         
         runner: AsyncCommandRunner
         
-        if inspect.iscoroutinefunction(self._runner) or isinstance(self._runner, AsyncGeneratorType):
+        if inspect.iscoroutinefunction(self._runner) or inspect.isasyncgen(self._runner):
              # async functions (coroutines) and async generators are remain as is
-            runner = self._runner
+            runner = cast(AsyncCommandRunner, self._runner)
         else:
             # sync functions are wrapped with asyncer.asyncify to make them async (coroutines)
             # async generators are not supported yet by asyncer.asyncify (https://github.com/tiangolo/asyncer/discussions/86)
-            runner = asyncer.asyncify(self._runner) # type: ignore
+            runner = asyncer.asyncify(cast(SyncCommandRunner, self._runner))
             
         if any(p.kind == p.VAR_KEYWORD for p in inspect.signature(self._runner).parameters.values()):
             # if command runner accepts **kwargs, pass all parameters
@@ -56,9 +58,9 @@ class Command:
             coroutine = runner(**{k: v for k, v in parameters.items() if k in self._runner.__annotations__})
             
         @wraps(runner)
-        async def coroutine_wrapper() -> Response | None:
+        async def coroutine_wrapper() -> ResponseOptions:
             response = await coroutine
-            if isinstance(response, GeneratorType):
+            if inspect.isgenerator(response):
                 message = f'[WARNING] Command {self} is a sync GeneratorType that is not fully supported and may block the main thread. ' + \
                             'Consider using the ResponseHandler.respond() or async approach instead.'
                 warnings.warn(message, UserWarning)
