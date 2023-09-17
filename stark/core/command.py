@@ -1,6 +1,9 @@
 from __future__ import annotations
-from uuid import UUID, uuid4
+from types import GeneratorType, AsyncGeneratorType
 from typing import Callable, Awaitable, Any, Protocol
+from functools import wraps
+import warnings
+from uuid import UUID, uuid4
 from enum import auto, Enum
 from datetime import datetime
 import inspect
@@ -37,20 +40,34 @@ class Command:
         
         runner: AsyncCommandRunner
         
-        if inspect.iscoroutinefunction(self._runner):
+        if inspect.iscoroutinefunction(self._runner) or isinstance(self._runner, AsyncGeneratorType):
+             # async functions (coroutines) and async generators are remain as is
             runner = self._runner
         else:
+            # sync functions are wrapped with asyncer.asyncify to make them async (coroutines)
+            # async generators are not supported yet by asyncer.asyncify (https://github.com/tiangolo/asyncer/discussions/86)
             runner = asyncer.asyncify(self._runner) # type: ignore
             
         if any(p.kind == p.VAR_KEYWORD for p in inspect.signature(self._runner).parameters.values()):
             # if command runner accepts **kwargs, pass all parameters
-            return runner(**parameters)
+            coroutine = runner(**parameters)
         else:
             # otherwise pass only parameters that are in command runner signature to prevent TypeError: got an unexpected keyword argument
-            return runner(**{k: v for k, v in parameters.items() if k in self._runner.__annotations__})
+            coroutine = runner(**{k: v for k, v in parameters.items() if k in self._runner.__annotations__})
+            
+        @wraps(runner)
+        async def coroutine_wrapper() -> Response | None:
+            response = await coroutine
+            if isinstance(response, GeneratorType):
+                message = f'[WARNING] Command {self} is a sync GeneratorType that is not fully supported and may block the main thread. ' + \
+                            'Consider using the ResponseHandler.respond() or async approach instead.'
+                warnings.warn(message, UserWarning)
+            return response
+            
+        return coroutine_wrapper()
     
     def __call__(self, *args, **kwargs) -> AwaitResponse:
-        # just syntactic sugar for command() instead of command.run()
+        # just syntactic sugar for command(...) instead of command.run(...)
         return self.run(*args, **kwargs)
     
     def __repr__(self):

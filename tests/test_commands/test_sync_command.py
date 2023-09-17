@@ -1,3 +1,4 @@
+import warnings
 import pytest
 from asyncer import syncify
 from core import CommandsManager, Response, ResponseHandler, AsyncResponseHandler
@@ -73,3 +74,35 @@ def test_sync_command_with_async_response_handler():
         @manager.new('foo')
         def foo(handler: AsyncResponseHandler): 
             ...
+            
+async def test_sync_command_generator_yielding_response():
+    manager = CommandsManager()
+    
+    with warnings.catch_warnings(record = True) as warnings_list:
+        @manager.new('foo')
+        def foo() -> Response: 
+            yield Response(text = 'foo!')
+        
+        assert next(await foo()).text == 'foo!'
+        
+        assert len(warnings_list) == 1
+        assert issubclass(warnings_list[0].category, UserWarning)
+        assert 'GeneratorType that is not fully supported and may block the main thread' in str(warnings_list[0].message)
+    
+async def test_sync_command_generator_multiple_yielding_response():
+    manager = CommandsManager()
+    
+    with warnings.catch_warnings(record = True) as warnings_list:
+        @manager.new('foo')
+        def foo() -> Response: 
+            yield Response(text = 'foo!')
+            yield Response(text = 'bar!')
+            yield Response(text = 'baz!')
+        
+        expected = ['foo!', 'bar!', 'baz!']
+        for response in await foo(): # TODO: make generator async generator and use async for
+            assert response.text == expected.pop(0)
+            
+        assert len(warnings_list) == 1
+        assert issubclass(warnings_list[0].category, UserWarning)
+        assert 'GeneratorType that is not fully supported and may block the main thread' in str(warnings_list[0].message)

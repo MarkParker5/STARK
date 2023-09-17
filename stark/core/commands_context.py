@@ -1,5 +1,8 @@
+from types import GeneratorType, AsyncGeneratorType
 from typing import Any, Protocol, runtime_checkable
 from dataclasses import dataclass
+import inspect
+import warnings
 import anyio
 from asyncer import syncify
 from asyncer._main import TaskGroup
@@ -83,13 +86,38 @@ class CommandsContext:
                 
     def run_command(self, command: Command, parameters: dict[str, Any] = {}):
         async def command_runner():
-            if response := await command(parameters):
-                await self.respond(response)
+            command_return = await command(parameters)
+            
+            print(f'command_return: {command_return}', type(command_return))
+            
+            if isinstance(command_return, Response):
+                await self.respond(command_return)
+            
+            elif isinstance(command_return, AsyncGeneratorType):
+                async for response in command_return:
+                    if response:
+                        await self.respond(response)
+                        
+            elif isinstance(command_return, GeneratorType):
+                message = f'[WARNING] Command {command} is a sync GeneratorType that is not fully supported and may block the main thread. ' + \
+                            'Consider using the ResponseHandler.respond() or async approach instead.'
+                warnings.warn(message, UserWarning)
+                for response in command_return:
+                    if response:
+                        await self.respond(response)
+            
+            elif command_return is None:            
+                pass
+            
+            else:
+                raise TypeError(f'Command {command} returned {command_return} of type {type(command_return)} instead of Response or AsyncGeneratorType[Response]')
+                
         self._task_group.soonify(command_runner)()
 
     # ResponseHandler
     
     async def respond(self, response: Response): # async forces to run in main thread
+        assert isinstance(response, Response)
         self._response_queue.append(response)
     
     async def unrespond(self, response: Response):

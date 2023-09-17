@@ -38,3 +38,32 @@ async def test_async_command_with_sync_response_handler():
         @manager.new('foo')
         async def foo(handler: ResponseHandler): 
             ...
+
+async def test_async_command_generator_yielding_response():
+    manager = CommandsManager()
+    
+    @manager.new('foo')
+    async def foo() -> Response: 
+        yield Response(text = 'foo!')
+    
+    i = 0
+    async for response in await foo():
+        assert response.text == 'foo!'
+        i += 1
+    assert i == 1
+
+async def test_async_command_generator_multiple_yielding_response():
+    manager = CommandsManager()
+    
+    @manager.new('foo')
+    async def foo() -> Response: 
+        yield Response(text = 'foo!')
+        yield Response(text = 'bar!')
+        yield Response(text = 'baz!')
+    
+    expected = ['foo!', 'bar!', 'baz!']
+    
+    async for response in await foo():
+        assert response.text == expected.pop(0)
+
+    assert not expected
