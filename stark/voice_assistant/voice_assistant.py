@@ -65,7 +65,7 @@ class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
         await self.commands_context.process_string(result)
 
     async def speech_recognizer_did_receive_partial_result(self, result: str):
-        pass # print(f'\rYou: \x1B[3m{result}\x1B[0m', end = '')
+        print(f'\rYou: \x1B[3m{result}\x1B[0m', end = '')
 
     async def speech_recognizer_did_receive_empty_result(self):
         pass

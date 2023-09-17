@@ -23,12 +23,19 @@ class DependencyManager:
     def __init__(self):
         self.dependencies = set()
     
-    def resolve(self, callable: Callable) -> dict[str, Any]:
+    def resolve(self, func: Callable) -> dict[str, Any]:
         parameters = {}
-        for name, annotation in callable.__annotations__.items():
+        
+        annotations = {name: None for name in func.__code__.co_varnames}
+        annotations.update(func.__annotations__)
+        
+        for name, annotation in annotations.items():
             for dependency in self.dependencies:
-                if dependency.annotation == annotation and (dependency.name == name or not dependency.name):
+                name_match = name == dependency.name
+                annotation_match = annotation == dependency.annotation
+                if (not dependency.name or name_match) and annotation_match:
                     parameters[name] = dependency.value
+
         return parameters
         
     def add_dependency(self, name: str | None, annotation: type, value: Any):

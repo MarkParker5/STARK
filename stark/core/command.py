@@ -55,7 +55,7 @@ class Command(Generic[CommandRunner]):
             coroutine = runner(**parameters)
         else:
             # otherwise pass only parameters that are in command runner signature to prevent TypeError: got an unexpected keyword argument
-            coroutine = runner(**{k: v for k, v in parameters.items() if k in self._runner.__annotations__})
+            coroutine = runner(**{k: v for k, v in parameters.items() if k in self._runner.__code__.co_varnames})
             
         @wraps(runner)
         async def coroutine_wrapper() -> ResponseOptions:

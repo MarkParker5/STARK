@@ -12,7 +12,6 @@ class BlockageDetector:
         self._running = True
         while self._running:
             current_time = time.time()
-            print(current_time - self._last_update, self._threshold)
             if current_time - self._last_update > self._threshold:
                 self.handle_blockage()
             self._last_update = current_time

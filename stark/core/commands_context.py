@@ -8,7 +8,7 @@ from asyncer._main import TaskGroup
 
 from general.dependencies import DependencyManager, default_dependency_manager
 from .commands_manager import CommandsManager
-from .command import Command, Response, ResponseHandler, AsyncResponseHandler
+from .command import Command, Response, ResponseHandler, AsyncResponseHandler, CommandRunner, ResponseOptions
 
 
 @dataclass
@@ -45,6 +45,7 @@ class CommandsContext:
         self.dependency_manager = dependency_manager
         self.dependency_manager.add_dependency(None, AsyncResponseHandler, self)
         self.dependency_manager.add_dependency(None, ResponseHandler, SyncResponseHandler(self))
+        self.dependency_manager.add_dependency('inject_dependencies', None, self.inject_dependencies)
         
     @property
     def delegate(self):
@@ -82,12 +83,16 @@ class CommandsContext:
             parameters.update(self.dependency_manager.resolve(search_result.command._runner))
             
             self.run_command(search_result.command, parameters)
+            
+    def inject_dependencies(self, runner: Command[CommandRunner] | CommandRunner) -> CommandRunner:
+        def injected_func(**kwargs) -> ResponseOptions:
+            kwargs.update(self.dependency_manager.resolve(runner._runner if isinstance(runner, Command) else runner))
+            return runner(**kwargs) # type: ignore
+        return injected_func # type: ignore
                 
     def run_command(self, command: Command, parameters: dict[str, Any] = {}):
         async def command_runner():
             command_return = await command(parameters)
-            
-            print(f'command_return: {command_return}', type(command_return))
             
             if isinstance(command_return, Response):
                 await self.respond(command_return)
