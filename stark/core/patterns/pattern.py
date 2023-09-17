@@ -2,11 +2,11 @@ from __future__ import annotations
 from typing import Type, Generator, TypeAlias, TYPE_CHECKING
 from dataclasses import dataclass
 import re
-from asyncer import create_task_group
+from asyncer import create_task_group, SoonValue
 
 from .expressions import dictionary
 if TYPE_CHECKING:
-    from core import Object
+    from core import Object, ParseResult
     ObjectType: TypeAlias = Type[Object]
 
 
@@ -53,8 +53,9 @@ class Pattern:
             
             parameters: dict[str, Object] = {}
             substrings: dict[str, str] = {}
+            futures: list[tuple[str, SoonValue[ParseResult]]] = []
             
-            futures = []
+            # run concurrent objects parsing
             async with create_task_group() as group:
                 for name, object_type in self.parameters.items():
                     if not match_str_groups.get(name):
@@ -75,11 +76,13 @@ class Pattern:
                             return parse_result
                         futures.append((name, group.soonify(parse)(parameter_str, match_str_groups)))
             
+            # read futures
             for name, future in futures:
                 parse_result = future.value
                 parameters[name] = parse_result.obj
                 substrings[name] = parse_result.substring
                 
+            # save parameters
             for name in parameters.keys():
                 parameter_str = substrings[name]
                 parameter_start = match_str_groups[name].find(parameter_str)
@@ -92,7 +95,6 @@ class Pattern:
                     match_end = match.start(name) + parameter_start + parameter_end 
                     
             # strip original string
-            
             substring = string[match_start:match_end].strip()
             start = match_start + string[match_start:match_end].find(substring)
             end = start + len(substring)

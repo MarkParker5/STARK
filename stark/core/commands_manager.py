@@ -1,7 +1,7 @@
 from __future__ import annotations
 from dataclasses import dataclass
 import inspect
-from asyncer import create_task_group
+from asyncer import create_task_group, SoonValue
 
 from .patterns import Pattern, MatchResult
 from .types import Object
@@ -31,15 +31,17 @@ class CommandsManager:
         
         objects_cache: dict[str, Object] = {}
         results: list[SearchResult] = []
+        futures: list[tuple[Command, SoonValue[list[MatchResult]]]] = []
         
-        futures = []
+        # run concurent commands match
         async with create_task_group() as group:
             for command in commands:
                 futures.append((command, group.soonify(command.pattern.match)(string, objects_cache)))
         
+        # read all finished matches
         i = 0
         for command, future in futures:
-            for match in future.value:
+            for match in future.value: # may be empty for most of commands
                 results.append(SearchResult(
                     command = command,
                     match_result = match,
