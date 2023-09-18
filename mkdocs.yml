@@ -19,7 +19,7 @@ nav:
   - Dependency Injection: dependency-injection.md
   - Patterns: patterns.md
   - Command Response: command-response.md
-  - Commands Context: commands-context.md # context explanation, adding context in response, pop context, multiple commands in request
+  - Commands Context: commands-context.md
   - Voice Assistant: voice-assistant.md # Modes, repeating, context handling
   - Default Speech Interfaces: # STT, TTS
   - Where to Host: where-to-host.md # personal computer: system.d or windows tray, raspberry pi: system.d, iOS: in development, android: not implemented
