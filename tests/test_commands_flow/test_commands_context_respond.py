@@ -4,7 +4,7 @@ import anyio
 from core import Response, ResponseHandler, AsyncResponseHandler
 
 
-async def test_command_return_respond(commands_context_flow, autojump_clock):
+async def test_command_return_response(commands_context_flow, autojump_clock):
     async with commands_context_flow() as (manager, context, context_delegate):
     
         @manager.new('foo')
