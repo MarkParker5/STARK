@@ -16,7 +16,7 @@ nav:
   - First Steps: first-steps.md
   - Sync vs Async Commands: sync-vs-async-commands.md
   - Creating Commands: creating-commands.md
-  - Dependency Injection: dependency-injection.md # response handler, inject_dependency, get DIContainer, add custom dependency, create a custom container
+  - Dependency Injection: dependency-injection.md
   - Patterns: patterns.md
   - Command Response: command-response.md
   - Commands Context: commands-context.md # context explanation, adding context in response, pop context, multiple commands in request

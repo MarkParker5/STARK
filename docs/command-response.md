@@ -27,19 +27,22 @@ This property indicates the state or result of the command's processing. It can 
 - **error:** An error occurred during command processing.
 
 ### `needs_user_input: bool`
+
 **Default:** `False`
 
 This property, when set to `True`, signals that the assistant is actively awaiting additional input from the user. Additionally, if the response is queued for repetition and `needs_user_input` is set to `true`, the repetition will pause following the current response. This pause gives users the opportunity to address or answer any queries posed by the assistant without being interrupted by subsequent repeated messages.
 
+### `commands: list[Command]`
+
+**Default:** `[]`
+
+This property contains a list of commands associated with the response. These commands can serve various purposes, such as providing context, suggesting subsequent actions to the user, or even structuring nested menus. It's often beneficial to utilize this in conjunction with the `needs_user_input` property to create more interactive and guided user experiences.
+
 ### `parameters: dict[str, Any]`
+
 **Default:** `{}`
 
 This property holds a dictionary of supplementary data or context useful to the voice assistant or the underlying command processing framework. Examples include specifying a city when inquiring about the weather or denoting a particular room in the context of smart home operations. This feature enables dynamic and contextual interactions, enhancing the overall user experience.
-
-### `parameters: dict[str, Any]`
-**Default:** `{}`
-
-A dictionary containing any additional data or context that might be needed by the voice assistant or the command processing mechanism. For example, it can be the city when you are asking about weather, or the room in context of smart home control.
 
 ### `id: UUID`
 
