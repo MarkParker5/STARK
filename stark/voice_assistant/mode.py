@@ -54,3 +54,9 @@ class Mode(BaseModel):
         return Mode(
             explicit_interaction_pattern = pattern,
         )
+        
+    @classmethod
+    def external(cls) -> Mode:
+        return Mode(
+            stop_after_interaction = True,
+        )
