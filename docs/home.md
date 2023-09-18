@@ -1,6 +1,6 @@
 # Welcome to S.T.A.R.K.
 
-**Speech and Text Algorithmic Recognition Kit**
+## Speech and Text Algorithmic Recognition Kit
 
 Welcome to S.T.A.R.K., a modern, advanced, asynchronous, and fast framework designed for creating intuitive natural language interfaces, especially voice-based. Think of it as the [FastAPI](https://fastapi.tiangolo.com/) but with speech instead of http.
 
@@ -8,7 +8,7 @@ New to S.T.A.R.K.? Consider reading the articles in navigation sequentially for 
 
 ---
 
-### 🔍 Key Features:
+## 🔍 Key Features
 
 - **🛡️ Autonomous and Privacy-Focused**: Stark operates entirely on-device, ensuring your data remains private. Dive deeper into hosting options [here](/where-to-host).
 
@@ -30,7 +30,7 @@ New to S.T.A.R.K.? Consider reading the articles in navigation sequentially for 
 
 ---
 
-### License
+## License
 
 The S.T.A.R.K. project is licensed under the [CC BY-NC-SA 4.0 International license](https://github.com/MarkParker5/STARK/tree/master/LICENSE.md). You're welcome to modify, contribute to the repository, create, and share forks. Just remember to attribute the original repository and its creator, abstain from commercial use, and retain the existing license.
 

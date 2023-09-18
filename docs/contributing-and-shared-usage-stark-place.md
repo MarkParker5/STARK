@@ -1,17 +1,17 @@
 # Contributing and Shared Usage: S.T.A.R.K. P.L.A.C.E.
 
-**STARK Platform Library and Community Extensions**
+## STARK Platform Library and Community Extensions
 
 Stark-Place serves as a repository filled with commands, implementations of various protocols (like speech interfaces), and other extensions that enhance the capabilities of the Stark framework. These features are systematically structured into modules, categorized based on their functionality.
 
-### 📦 Using Stark-Place
+## 📦 Using Stark-Place
 
 To integrate features from Stark-Place into your projects:
 
 1. Install it as you would with any pip module.
 2. Import the `general_manager` for access to all commands or the specific manager from a module, or any other feature you require.
 
-### 🤝 Contributing to Stark-Place
+## 🤝 Contributing to Stark-Place
 
 We welcome and appreciate contributions from the community! Here's how you can contribute:
 
@@ -21,7 +21,7 @@ We welcome and appreciate contributions from the community! Here's how you can c
 4. **Push Your Changes**: Once you're satisfied with your additions or modifications, push them to your fork.
 5. **Open a Pull Request**: Finally, head over to the main STARK-PLACE repository and open a pull request. We'll review your contributions and merge them!
 
-### License
+## License
 
 The Stark-Place project is licensed under the [CC BY-NC-SA 4.0 International license](https://github.com/MarkParker5/STARK-PLACE/tree/master/LICENSE.md). You're welcome to modify, contribute to the repository, create, and share forks. Just remember to attribute the original repository and its creator, abstain from commercial use, and retain the existing license.
 
