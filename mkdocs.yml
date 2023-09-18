@@ -10,11 +10,11 @@ repo_url: https://github.com/MarkParker5/STARK
 copyright: Copyright &copy; Mark Parker
 
 nav:
-  - Home: home.md # Home, description, all features list, where to find commands, license, usefull links
-  - Contributing and Shared Usage: contributing-and-shared-usage.md # Contributing, shared usage, code of conduct, license
+  - Home: home.md
+  - Contributing and Shared Usage: contributing-and-shared-usage.md
   - Installation: installation.md
   - First Steps: first-steps.md
-  - Sync vs Async Commands: sync-vs-async-commands.md # TLDR and in depth about worker threads and asyncify
+  - Sync vs Async Commands: sync-vs-async-commands.md
   - Creating Commands: creating-commands.md # manager.new, join managers, return, yield (async, sync), handler.respond and unrespond (sync and async), call subcommands (sync and async)
   - Patterns: patterns.md # pattern syntax, parameters parsing, native types, custom object types, nested objects, advanced parsing with did_parse
   - Command Response: command-response.md # every property explanation
