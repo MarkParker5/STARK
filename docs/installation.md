@@ -59,12 +59,12 @@ If you, like me, prefer using [poetry](https://python-poetry.org) to manage depe
 
 
 ``` bash
-pip install stark-engine
-pip install stark-engine[all]
-pip install stark-engine[gcloud]
-pip install stark-engine[vosk]
-pip install stark-engine[silero]
-pip install stark-engine[sound]
+poetry add stark-engine
+poetry add stark-engine[all]
+poetry add stark-engine[gcloud]
+poetry add stark-engine[vosk]
+poetry add stark-engine[silero]
+poetry add stark-engine[sound]
 ```
 
 If you encounter the error `zsh: no matches found`, simply enclose the package name in quotes:
