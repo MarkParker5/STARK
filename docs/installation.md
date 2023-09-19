@@ -45,11 +45,11 @@ pip install stark-engine[sound]
 If you encounter the error `zsh: no matches found`, simply enclose the package name in quotes:
 
 ```zsh
-pip install "stark[all]"
-pip install "stark[gcloud]"
-pip install "stark[vosk]"
-pip install "stark[silero]"
-pip install "stark[sound]"
+pip install "stark-engine[all]"
+pip install "stark-engine[gcloud]"
+pip install "stark-engine[vosk]"
+pip install "stark-engine[silero]"
+pip install "stark-engine[sound]"
 ```
 
 ## Installation with poetry
@@ -70,11 +70,11 @@ pip install stark-engine[sound]
 If you encounter the error `zsh: no matches found`, simply enclose the package name in quotes:
 
 ```zsh
-poetry add "stark[all]"
-poetry add "stark[gcloud]"
-poetry add "stark[vosk]"
-poetry add "stark[silero]"
-poetry add "stark[sound]"
+poetry add "stark-engine[all]"
+poetry add "stark-engine[gcloud]"
+poetry add "stark-engine[vosk]"
+poetry add "stark-engine[silero]"
+poetry add "stark-engine[sound]"
 ```
 
 ---
