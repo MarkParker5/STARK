@@ -97,7 +97,7 @@ extra:
 
   analytics:
     provider: google
-    property: G-NMVH5RVSYB
+    property: G-DK2VMEE8DP
 
 markdown_extensions:
   - pymdownx.highlight:
