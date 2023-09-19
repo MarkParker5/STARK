@@ -45,7 +45,7 @@ For more advanced access, you can extract the container as a dependency of type 
 @manager.new('baz')
 async def baz(di_container: DIContainer): 
     di_container.add_dependency(...)
-    di_container.resolve(...)
+    di_container.find(...)
 ```
 
 This is feasible because the default DI container internally registers itself as a dependency:

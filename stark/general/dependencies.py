@@ -5,7 +5,7 @@ from dataclasses import dataclass
 @dataclass
 class Dependency:
     name: str | None
-    annotation: type
+    annotation: type | None
     value: Any
     
     def __eq__(self, other: object) -> bool:
@@ -22,6 +22,14 @@ class DependencyManager:
     
     def __init__(self):
         self.dependencies = set()
+        
+    def find(self, name: str | None, annotation: type | None) -> Dependency | None:
+        for dependency in self.dependencies:
+            name_match = name == dependency.name
+            annotation_match = annotation == dependency.annotation
+            if (not dependency.name or name_match) and annotation_match:
+                return dependency
+        return None
     
     def resolve(self, func: Callable) -> dict[str, Any]:
         parameters = {}
@@ -30,15 +38,13 @@ class DependencyManager:
         annotations.update(func.__annotations__)
         
         for name, annotation in annotations.items():
-            for dependency in self.dependencies:
-                name_match = name == dependency.name
-                annotation_match = annotation == dependency.annotation
-                if (not dependency.name or name_match) and annotation_match:
-                    parameters[name] = dependency.value
+            if dependency := self.find(name, annotation):
+                parameters[name] = dependency.value
 
         return parameters
         
-    def add_dependency(self, name: str | None, annotation: type, value: Any):
+    def add_dependency(self, name: str | None, annotation: type | None, value: Any):
+        assert (name or annotation) and value
         self.dependencies.add(Dependency(name, annotation, value))
                 
 default_dependency_manager = DependencyManager()
