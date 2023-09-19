@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "stark-engine"
-version = "4.0.1"
+version = "4.0.2"
 description = ""
 authors = ["MarkParker5 <mark@parker-programs.com>"]
 license = "CC BY-NC-SA 4.0"
