@@ -18,7 +18,6 @@ class CommandsManager:
     
     name: str
     commands: list[Command]
-    QA: Command | None = None
     
     def __init__(self, name: str = ''):
         self.name = name or 'CommandsManager'

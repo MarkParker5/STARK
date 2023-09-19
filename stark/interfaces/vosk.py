@@ -33,7 +33,7 @@ class VoskSpeechRecognizer(SpeechRecognizer):
     is_recognizing = True
     _is_listening = False
 
-    def __init__(self, model_url: str, delegate: SpeechRecognizerDelegate | None = None):
+    def __init__(self, model_url: str):
         downloads = 'downloads'
         model_path = downloads + '/' + model_url.split('/')[-1].replace('.zip', '')
         zip_path = model_path + '.zip'
@@ -49,7 +49,6 @@ class VoskSpeechRecognizer(SpeechRecognizer):
             os.remove(zip_path)
             print('VOSK: Model downloaded!')
         
-        self.delegate = delegate
         self.samplerate = int(sounddevice.query_devices(kind = 'input')['default_samplerate'])
         self.model = vosk.Model(model_path)
         self.audio_queue = Queue()

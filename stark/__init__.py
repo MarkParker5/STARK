@@ -27,5 +27,5 @@ async def run(
         main_task_group.soonify(speech_recognizer.start_listening)()
         main_task_group.soonify(context.handle_responses)()
         
-        detector = BlockageDetector(threshold = 1)
+        detector = BlockageDetector()
         main_task_group.soonify(detector.monitor)()

@@ -1,7 +1,7 @@
 site_name: S.T.A.R.K. Docs
 site_author: Mark Parker
 site_description: Speach and Text Algorithmic Recognition Kit (S.T.A.R.K.) is a set of tools for building custom voice assistants. It is designed to be modular and extensible, allowing you to build your own custom voice assistant with ease.
-# site_url: https://markparker5.github.io/stark
+site_url: https://stark.markparker.me
 
 repo_name: MarkParker5/STARK
 repo_url: https://github.com/MarkParker5/STARK
@@ -21,19 +21,19 @@ nav:
   - Command Response: command-response.md
   - Commands Context: commands-context.md
   - Voice Assistant: voice-assistant.md
-  - Default Speech Interfaces: # STT, TTS
+  - Default Speech Interfaces: default-speech-interfaces.md
   - Where to Host: where-to-host.md # personal computer: system.d or windows tray, raspberry pi: system.d, iOS: in development, android: not implemented
   - Advanced Usage:
     - Optimization: advanced/optimization.md # worker threads, asyncify, asyncer group, caching
     - Custom Run: advanced/custom-run.md # custom event loop, blocking detector, typer
-    - Fallback Command: advanced/fallback-command.md # Fallback command setting and available implementations
-    - External Triggers: advanced/external-triggers.md # external triggers
-    - Localization and Multi-Language: advanced/localization-and-multi-language.md # TODO: Localization, multi-language
+    # - Fallback Command: advanced/fallback-command.md # Fallback command setting and available implementations
+    # - External Triggers: advanced/external-triggers.md # external triggers
+    # - Localization and Multi-Language: advanced/localization-and-multi-language.md # TODO: Localization, multi-language
     - Custom Interfaces: advanced/custom-interfaces.md # stt, tts, text: telebot.
     # - Speech Recognition: advanced/speech-recognition.md # available engines, create custom
     # - Speech Synthesis: advanced/speech-synthesis.md # available engines, create custom
-    - Voice Assistant: advanced/voice-assistant.md # methods for overrides
-    - Commands Context: advanced/commands-context.md # methods for overrides
+    # - Voice Assistant: advanced/voice-assistant.md # methods for overrides
+    # - Commands Context: advanced/commands-context.md # methods for overrides
     - Other: # read the code
 
 
