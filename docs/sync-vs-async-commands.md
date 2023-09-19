@@ -77,7 +77,7 @@ def hello_command() -> Response:
 
 All commands in Stark are inherently asynchronous. If you declare a command as synchronous, Stark converts it to asynchronous using [asyncer.asyncify](https://asyncer.tiangolo.com/).
 
-By default, Stark concurrently manages two vital processes: speech transcription and response handling. It also has to execute commands, adding temporary processes that last as long as the command. All these processes share a single main thread. If one process blocks the thread for an extended period (e.g., with `requests.get` or `time.sleep`), it can halt the entire application. Stark includes the `BlockageDetector` to monitor the main thread and alert you if it's blocked for longer than a specified duration (default is 1 second). Additionally, every command is timed to help identify any that might be causing blockages.
+By default, Stark concurrently manages two vital processes: speech transcription and response handling. It also has to execute commands, adding temporary processes that last as long as the command. All these processes share a single main thread. If one process blocks the thread for an extended period (e.g., with `requests.get` or `time.sleep`), it can halt the entire application. Stark includes the `BlockageDetector` to monitor the main thread and alert you if it's blocked for longer than a specified duration (default is 1 second).
 
 For commands that might cause blockages, declaring them using def is advised. Stark will then wrap these commands with asyncer.asyncify, spawning separate background threads for each process.
 
