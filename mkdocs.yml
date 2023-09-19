@@ -10,27 +10,27 @@ repo_url: https://github.com/MarkParker5/STARK
 copyright: Copyright &copy; Mark Parker
 
 nav:
-  - Home: home.md
-  - Contributing and Shared Usage: contributing-and-shared-usage.md
-  - Installation: installation.md
-  - First Steps: first-steps.md
-  - Sync vs Async Commands: sync-vs-async-commands.md
-  - Creating Commands: creating-commands.md
-  - Dependency Injection: dependency-injection.md
-  - Patterns: patterns.md
-  - Command Response: command-response.md
-  - Commands Context: commands-context.md
-  - Voice Assistant: voice-assistant.md
-  - Default Speech Interfaces: default-speech-interfaces.md
-  - Where to Host: where-to-host.md
+  - Home: 'index.md'
+  - Contributing and Shared Usage: 'contributing-and-shared-usage.md'
+  - Installation: 'installation.md'
+  - First Steps: 'first-steps.md'
+  - Sync vs Async Commands: 'sync-vs-async-commands.md'
+  - Creating Commands: 'creating-commands.md'
+  - Dependency Injection: 'dependency-injection.md'
+  - Patterns: 'patterns.md'
+  - Command Response: 'command-response.md'
+  - Commands Context: 'commands-context.md'
+  - Voice Assistant: 'voice-assistant.md'
+  - Default Speech Interfaces: 'default-speech-interfaces.md'
+  - Where to Host: 'where-to-host.md'
   - Advanced Usage:
-    - Optimization: advanced/optimization.md
-    - Custom Run: advanced/custom-run.md
-    - Fallback Command / LLM Integration: advanced/fallback-command-llm-integration.md
-    - External Triggers: advanced/external-triggers.md
-    - Localization and Multi-Language: advanced/localization-and-multi-language.md
-    - Custom Interfaces: advanced/custom-interfaces.md
-    - Other:
+    - Optimization: 'advanced/optimization.md'
+    - Custom Run: 'advanced/custom-run.md'
+    - Fallback Command / LLM Integration: 'advanced/fallback-command-llm-integration.md'
+    - External Triggers: 'advanced/external-triggers.md'
+    - Localization and Multi-Language: advan'ced/localization-and-multi-language.md'
+    - Custom Interfaces: 'advanced/custom-interfaces.md'
+    - Other: 'advanced/other.md' # TODO: <-
   # - S.T.A.R.K P.L.A.C.E Navigator: /stark-place-navigator.md
 
 theme:
@@ -115,10 +115,9 @@ markdown_extensions:
 plugins:
   - offline
   - search
-  - social
+  # - social
   # - optimize
   # - tags
-  - swagger-ui-tag
   - git-revision-date-localized:
       enable_creation_date: true
       type: timeago
