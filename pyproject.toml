@@ -1,12 +1,12 @@
 [tool.poetry]
-name = "stark"
+name = "starkit"
 version = "4.0.0"
 description = ""
 authors = ["MarkParker5 <mark@parker-programs.com>"]
 license = "CC BY-NC-SA 4.0"
 readme = "README.md"
 packages = [{include = "stark"}]
-homepage = "https://pypi.org/project/stark/"
+homepage = "https://pypi.org/project/starkit/"
 repository = "https://github.com/MarkParker5/STARK"
 documentation = "https://stark.markparker.me"
 keywords = ["python", "open-source", "natural-language-processing", "framework", "cross-platform", "natural-language", "voice", "voice-commands", "python3", "voice-recognition", "speech-recognition", "speech-to-text", "community-project", "voice-assistant", "voice-interface", "NLP", "machine-learning", "AI", "text-analysis", "stark", "stark-place", "mark parker"]
