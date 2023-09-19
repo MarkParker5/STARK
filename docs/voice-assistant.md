@@ -156,7 +156,7 @@ To have commands in the VA interact with its modes.
 
 3. Access VA in command
 
-*check [Dependency Injection](/dependency-injection) for details*
+*check [Dependency Injection](dependency-injection.md) for details*
 
 ---
 

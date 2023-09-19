@@ -24,16 +24,22 @@ class SpeechRecognizer(Protocol):
 
 ### Explanation
 
-- **SpeechRecognizerDelegate**: This protocol provides callback methods to output results of various states of the speech recognition:
-  - `speech_recognizer_did_receive_final_result`: Triggered when a final transcript is available.
-  - `speech_recognizer_did_receive_partial_result`: Fired upon receiving an interim transcript.
-  - `speech_recognizer_did_receive_empty_result`: Called when no speech was detected.
+#### SpeechRecognizerDelegate
 
-- **SpeechRecognizer**: This protocol defines the primary input interface for any speech recognition implementation. It consists of:
-  - `is_recognizing`: A flag indicating if the recognizer is currently active.
-  - `delegate`: An instance responsible for handling the recognition results.
-  - `start_listening`: A method to initiate the listening process.
-  - `stop_listening`: A method to halt the listening process.
+This protocol provides callback methods to output results of various states of the speech recognition:
+
+- `speech_recognizer_did_receive_final_result`: Triggered when a final transcript is available.
+- `speech_recognizer_did_receive_partial_result`: Fired upon receiving an interim transcript.
+- `speech_recognizer_did_receive_empty_result`: Called when no speech was detected.
+
+#### SpeechRecognizer
+
+This protocol defines the primary input interface for any speech recognition implementation. It consists of:
+
+- `is_recognizing`: A flag indicating if the recognizer is currently active.
+- `delegate`: An instance responsible for handling the recognition results.
+- `start_listening`: A method to initiate the listening process.
+- `stop_listening`: A method to halt the listening process.
 
 ### Implementation Reference
 
@@ -68,7 +74,7 @@ class SpeechSynthesizer(Protocol):
 
 For a hands-on example, the `SileroSpeechSynthesizer` and `GCloudSpeechSynthesizer` classes illustrate how one might implement the synthesizer protocol using the Silero models and Google Cloud Text-to-Speech services, respectively.
 
-To gain more insights, you can check the source code of the `SileroSpeechSynthesizer` and `GCloudSpeechSynthesizer` implementations.
+To gain more insights, you can check the source code of the `SileroSpeechSynthesizer` implementation.
 
 <script src="https://emgithub.com/embed-v2.js?target=https%3A%2F%2Fgithub.com%2FMarkParker5%2FSTARK%2Fblob%2Fmaster%2Fstark%2Finterfaces%2Fsilero.py&style=atom-one-dark&type=code&showBorder=on&showLineNumbers=on&showFileMeta=on&showFullPath=on&showCopy=on"></script>
 

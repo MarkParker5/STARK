@@ -1,6 +1,4 @@
-# Commands Context Documentation
-
-## Introduction
+# Commands Context
 
 The `Commands Context` feature provides a sophisticated means to manage multi-level command structures. By facilitating a hierarchical command interface, it ensures users enjoy an intuitive and seamless interaction.
 
@@ -33,7 +31,7 @@ Responses can include:
 - **`commands: list[Command]`**: Commands that can reshape context, propose subsequent actions, or establish layered interfaces.
 - **`parameters: dict[str, Any]`**: A supporting data list important for later processing or context definition.
 
-For additional details on responses, visit the [Command Response](/command-response) page.
+For additional details on responses, visit the [Command Response](command-response.md) page.
 
 ## Code Implementation
 
@@ -61,21 +59,24 @@ def hello(name: Word):
 
 The code example provided demonstrates how to define and manage commands using a fictional `manager` object.
 
-1. **`hello_context` Function**:
-   - This function is marked with a `hidden=True` parameter in its decorator. This means that the command will not be available in the root context, making it inaccessible as a top-level command.
-   - The function accepts all context parameters through **params, which is a dictionary.
-   - Within the function, both the `voice` and `text` variables are set to greet the user, using the context `name` parameter.
-   - It then returns a response with the generated greeting text and voice.
+### `hello_context` Function
 
-2. **`bye_context` Function**:
-   - Similarly, this function is also hidden from the root context.
-   - The function accepts specific parameters: `name` and `handler`. It's important to note that there's no `name` in the command pattern, which implies that it must be derived from the context.
-   - The `handler.pop_context()` method is called, which presumably removes the current context, signaling a transition or end of interaction.
-   - A farewell response using the `name` parameter is returned.
+- This function is marked with a `hidden=True` parameter in its decorator. This means that the command will not be available in the root context, making it inaccessible as a top-level command.
+- The function accepts all context parameters through `**params`, which is a dictionary.
+- Within the function, both the `voice` and `text` variables are set to greet the user, using the context `name` parameter.
+- It then returns a response with the generated greeting text and voice.
 
-3. **`hello` Function**:
-   - This function defines a command pattern where a name is expected as input, formatted as hello $name.
-   - Inside, it constructs a greeting using the provided name.
-   - The response not only contains the greeting but also a list of commands (`hello_context` and `bye_context`) that can be triggered next. This showcases the hierarchical and contextual nature of the system. Additionally, the name is passed as a parameter for potential use in subsequent commands.
+### `bye_context` Function
+
+- Similarly, this function is also hidden from the root context.
+- The function accepts specific parameters: `name` and `handler`. It's important to note that there's no `name` in the command pattern, which implies that it must be derived from the context.
+- The `handler.pop_context()` method is called, which presumably removes the current context, signaling a transition or end of interaction.
+- A farewell response using the `name` parameter is returned.
+
+### `hello` Function
+
+- This function defines a command pattern where a name is expected as input, formatted as `hello $name:Word`.
+- Inside, it constructs a greeting using the provided name.
+- The response not only contains the greeting but also a list of commands (`hello_context` and `bye_context`) that can be triggered next. This showcases the hierarchical and contextual nature of the system. Additionally, the name is passed as a parameter for potential use in subsequent commands.
 
 In summary, the code example gives us a glimpse into the contextual and hierarchical command management system. With the use of the `hidden` attribute, commands can be kept away from the root context, making them accessible only when they are contextually relevant.

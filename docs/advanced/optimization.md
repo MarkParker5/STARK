@@ -6,15 +6,15 @@ When it comes to Stark, or any software platform, optimization is pivotal to ens
 
 **THE MOST IMPORTANT**: Always ensure that you **DO NOT** place blocking code inside `async def` functions. Blocking code can drastically reduce the performance of asynchronous applications by halting the execution of other parts of the application.
 
-If you have commands that run blocking code, always define them using the simple `def` ([Sync-vs-Async](/sync-vs-async-commands)). This ensures that Stark creates a separate worker thread to handle the execution of that command. By doing so, Stark remains responsive, even when processing resource-intensive commands.
+If you have commands that run blocking code, always define them using the simple `def` ([Sync-vs-Async](../sync-vs-async-commands.md)). This ensures that Stark creates a separate worker thread to handle the execution of that command. By doing so, Stark remains responsive, even when processing resource-intensive commands.
 
 ## Sync vs Async
 
-Understanding the difference between synchronous and asynchronous code is crucial. Asynchronous code allows your application to perform other tasks while waiting for a particular task to complete, thus improving efficiency. The [Sync-vs-Async](/sync-vs-async-commands) page provides a comprehensive comparison and guidance on how to effectively leverage both.
+Understanding the difference between synchronous and asynchronous code is crucial. Asynchronous code allows your application to perform other tasks while waiting for a particular task to complete, thus improving efficiency. The [Sync-vs-Async](../sync-vs-async-commands.md) page provides a comprehensive comparison and guidance on how to effectively leverage both.
 
-## Utilizing the asyncer.tiangolo.com Documentation
+## Utilizing the asyncer
 
-The [asyncer.tiangolo.com](https://asyncer.tiangolo.com) documentation is a valuable resource. It provides an array of tools and methods to help convert synchronous code to asynchronous, aiding in the optimization process.
+The [asyncer](https://asyncer.tiangolo.com) documentation is a valuable resource. It provides an array of tools and methods to help convert synchronous code to asynchronous and vice-versa, aiding in the optimization process.
 
 ## Using asyncer.asyncify
 
@@ -22,7 +22,7 @@ If you need to call blocking synchronous code within an `async def` function, ut
 
 ## Grouping Asynchronous Requests
 
-If you have multiple asynchronous tasks that can be executed concurrently, group them together and await them as one unit. This approach allows tasks to be run simultaneously, improving the overall speed of the function. You can achieve this with Python's `asyncio.gather()` method.
+If you have multiple asynchronous tasks that can be executed concurrently, group them together and await them as one unit. This approach allows tasks to be run simultaneously, improving the overall speed of the function.
 
 ```python
 async def task_one():

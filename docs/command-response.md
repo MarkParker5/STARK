@@ -60,7 +60,7 @@ Static instance of the Response class, that provides a mechanism to reprocess th
 
 Responses play a vital role in the user interaction flow. The `VoiceAssistant` class, along with the `CommandsContext`, processes these responses to ensure the user receives accurate and timely feedback.
 
-- **Upon receiving a new response:** The `VoiceAssistant` initially verifies if the response status belongs to its ignore list. If it doesn't, the assistant subsequently evaluates the mode's timeout parameters and, if applicable, appends the response to its collection. For further details on this behavior, refer to the Modes section on the [VoiceAssistant](/voice-assistant) page.
+- **Upon receiving a new response:** The `VoiceAssistant` initially verifies if the response status belongs to its ignore list. If it doesn't, the assistant subsequently evaluates the mode's timeout parameters and, if applicable, appends the response to its collection. For further details on this behavior, refer to the Modes section on the [VoiceAssistant](voice-assistant.md) page.
 
 - **Playing the response:** Depending on the assistant's mode, the response may be converted to speech and played back to the user.
 

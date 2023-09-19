@@ -8,8 +8,17 @@ Stark-Place serves as a repository filled with commands, implementations of vari
 
 To integrate features from Stark-Place into your projects:
 
-1. Install it as you would with any pip module.
-2. Import the `general_manager` for access to all commands or the specific manager from a module, or any other feature you require.
+1\. Install it as you would with any pip module.
+
+```bash
+pip install stark-place
+```
+
+2\. Import the `general_manager` for access to all commands or the specific manager from a module, or any other feature you require.
+
+```python
+from stark_place.commands import general_manager
+```
 
 ## 🤝 Contributing to Stark-Place
 

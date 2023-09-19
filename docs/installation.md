@@ -9,7 +9,7 @@ Ensure you have Python 3.10 or newer installed. You can verify this with:
 python --version
 ```
 
-On some systems, you may need to use the python3 command instead of python`:
+On some systems, you may need to use the `python3` command instead of `python`:
 ```bash
 python3 --version
 ```
@@ -42,7 +42,7 @@ pip install stark[silero]
 pip install stark[sound]
 ```
 
-If you encounter the error zsh: no matches found, simply enclose the package name in quotes:
+If you encounter the error `zsh: no matches found`, simply enclose the package name in quotes:
 
 ```zsh
 pip install "stark[all]"
@@ -67,7 +67,7 @@ poetry add stark[silero]
 poetry add stark[sound]
 ```
 
-If you encounter the error zsh: no matches found, simply enclose the package name in quotes:
+If you encounter the error `zsh: no matches found`, simply enclose the package name in quotes:
 
 ```zsh
 poetry add "stark[all]"

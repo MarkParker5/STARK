@@ -9,7 +9,7 @@ The fallback command in the STARK framework serves as a safety net, ensuring tha
 In the STARK framework, integrating a fallback command is streamlined. You can assign the `fallback_command` to the `CommandsContext` directly:
 
 ```python
-CommandsContext::fallback_command: Command
+CommandsContext.fallback_command: Command
 ```
 
 Here's a practical example:

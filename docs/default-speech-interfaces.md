@@ -58,7 +58,7 @@ With the above configuration, your application will commence voice command liste
 
 ## Notes
 
-1. Confirm the required dependencies, such as Vosk, Silero, and Google Cloud, are in place (refer to [Installation](/installation)).
+1. Confirm the required dependencies, such as Vosk, Silero, and Google Cloud, are in place (refer to [Installation](installation.md)).
 2. Adequate error management and model verifications are essential for a production environment.
 3. For more nuanced interactions based on speech recognition outcomes, adjust the delegates.
 
@@ -66,4 +66,4 @@ Harness Stark's default speech interfaces to effortlessly and flexibly craft voi
 
 ## Implementing Custom Speech Interface
 
-For more information, consult [Custom Speech Interfaces](/advanced/custom-speech-interfaces) under the "Advanced" section.
+For more information, consult [Custom Speech Interfaces](advanced/custom-speech-interfaces.md) under the "Advanced" section.

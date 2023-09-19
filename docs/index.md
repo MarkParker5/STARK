@@ -10,23 +10,23 @@ New to S.T.A.R.K.? Consider reading the articles in navigation sequentially for 
 
 ## 🔍 Key Features
 
-- **🛡️ Autonomous and Privacy-Focused**: Stark operates entirely on-device, ensuring your data remains private. Dive deeper into hosting options [here](/where-to-host).
+- **🛡️ Autonomous and Privacy-Focused**: Stark operates entirely on-device, ensuring your data remains private. Dive deeper into hosting options [here](where-to-host.md).
 
-- **🧠 Context-Aware**: Easily define context and parameters for subsequent requests or parse multiple commands simultaneously. Discover the power of [Commands Context](/commands-context).
+- **🧠 Context-Aware**: Easily define context and parameters for subsequent requests or parse multiple commands simultaneously. Discover the power of [Commands Context](commands-context.md).
 
-- **🚀 Asynchronous Commands**: Start lengthy tasks and continue using Stark You'll be notified upon completion. Learn about [Sync vs Async Commands](/sync-vs-async-commands) and the intricacies of [Creating Commands](/creating-commands).
+- **🚀 Asynchronous Commands**: Start lengthy tasks and continue using Stark. You'll be notified upon completion. Learn about [Sync vs Async Commands](sync-vs-async-commands.md) and [Creating Commands](creating-commands.md).
 
-- **📈 Multiple Responses**: Get real-time updates for long tasks, like monitoring download progress. More on this in [Creating Commands](/creating-commands).
+- **📈 Multiple Responses**: Get real-time updates for long tasks, like monitoring download progress. More on this in [Creating Commands](creating-commands.md).
 
-- **🧩 Advanced Patterns Parsing**: Our custom [patterns](/patterns) syntax makes parsing any parameter from strings effortless.
+- **🧩 Advanced Patterns Parsing**: Our custom [patterns](patterns.md) syntax makes parsing any parameter from strings effortless.
 
-- 🧠 **Extendable with LLMs**: Enhance Stark's cognition by integrating leading language models like ChatGPT.
+- 🧠 **Extendable with LLMs**: Enhance Stark's cognition by integrating leading language models like ChatGPT. More in [Fallback Command](advanced/fallback-command-llm-integration.md)
 
-- 🌐 **Multilingual Support**: Interact with Stark in [multiple languages](/advanced/localization-and-multi-language).
+- 🌐 **Multilingual Support**: Interact with Stark in [multiple languages](advanced/localization-and-multi-language.md).
 
 - **🔧 Absolute Customization**: Craft complex commands, integrate various speech or text interfaces, adapt voice assistant modes, or even override existing classes.
 
-- **🌍 Community Support**: Join [STARK-PLACE](https://github.com/MarkParker5/STARK-PLACE) repository, the platform library filled with community extensions. Utilize commands crafted by others and share your creations. Further information in [Contributing and Shared Usage](/contributing-and-shared-usage).
+- **🌍 Community Support**: Join [STARK-PLACE](https://github.com/MarkParker5/STARK-PLACE) repository, the platform library filled with community extensions. Utilize commands crafted by others and share your creations. Further information in [Contributing and Shared Usage](contributing-and-shared-usage-stark-place.md).
 
 ---
 

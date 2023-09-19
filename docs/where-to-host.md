@@ -50,7 +50,7 @@ For those looking for a more robust and scalable solution, server-based hosting 
 
 2. **Home Server**: You can host Stark on a dedicated home server or even on personal PCs. This can be a dedicated machine or single-board computers like the Raspberry Pi. The advantage is local access and full control over your data and operations.
 
-3. **Custom Interfaces**: With Stark running on a server, you can develop custom interfaces for access. For example, by implementing an HTTP server, as was done in the shared example, you can connect other devices to Stark. Detailed instructions can be found at [/advanced/custom-interfaces](/advanced/custom-interfaces).
+3. **Custom Interfaces**: With Stark running on a server, you can develop custom interfaces for access. For example, by implementing an HTTP server, as was done in the shared example, you can connect other devices to Stark. Detailed instructions can be found at [Custom Interfaces](advanced/custom-interfaces.md).
 
 ---
 
@@ -63,6 +63,8 @@ Stark was set to run 24/7 on a dedicated Raspberry Pi at home, connected to a hi
 Additionally, a small HTTP server was implemented on the Raspberry Pi, allowing a mobile phone to connect to Stark at home. The native Android libraries handled Speech-to-Text (STT) and Text-to-Speech (TTS) functionalities, and the app communicated with the Raspberry Pi using transcribed text via HTTP.
 
 To ensure Stark was accessible from anywhere in the world, [ngrok](https://ngrok.com/) was set up on the Raspberry Pi, creating a secure tunnel to the localhost, making the locally hosted Stark globally accessible.
+
+Also, a telegram bot was implemented as an inerface for both voice and text messages, used as an additinal cross-platform remote communication way.
 
 ---
 

@@ -41,4 +41,4 @@ if __name__ == '__main__':
 
 In this code snippet, we defined a new command for the voice assistant. When the word "hello" is spoken, the `hello_command` function is triggered, which then issues a greeting in response.
 
-It's important to note that STARK accommodates both synchronous (`def`) and asynchronous (`async def`) command definitions. For a deeper dive into the use-cases and distinctions between these two command types, consult the [Sync vs Async Commands](/sync-vs-async-commands) article.
+It's important to note that STARK accommodates both synchronous (`def`) and asynchronous (`async def`) command definitions. For a deeper dive into the use-cases and distinctions between these two command types, consult the [Sync vs Async Commands](sync-vs-async-commands.md) article.

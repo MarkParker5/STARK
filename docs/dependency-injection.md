@@ -37,7 +37,7 @@ Here, the `foo` dependency is injected and executed within the `bar` command fun
 
 The `CommandsContext` class initializes with a `dependency_manager` of the `DependencyManager` type. This manager undertakes the role of identifying and injecting the requisite dependencies for command functions.
 
-To tap into the DIContainer inside a command, merely denote the needed dependency as a command function parameter. The `DependencyManager` will resolve this parameter and supply the appropriate object or value.
+To tap into the DIContainer inside a command, simply declare the needed dependency as a command function parameter. The `DependencyManager` will resolve this parameter and supply the appropriate object or value.
 
 For more advanced access, you can extract the container as a dependency of type `DIContainer`, as demonstrated:
 
