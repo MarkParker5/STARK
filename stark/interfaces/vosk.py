@@ -78,6 +78,8 @@ class VoskSpeechRecognizer(SpeechRecognizer):
         self.audio_queue = Queue()
 
     async def start_listening(self):
+        if self._is_listening: return
+        
         self._is_listening = True
 
         with sounddevice.RawInputStream(**self.sounddevice_parameters):
