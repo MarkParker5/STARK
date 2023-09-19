@@ -29,11 +29,7 @@ nav:
     # - Fallback Command: advanced/fallback-command.md # Fallback command setting and available implementations
     # - External Triggers: advanced/external-triggers.md # external triggers
     # - Localization and Multi-Language: advanced/localization-and-multi-language.md # TODO: Localization, multi-language
-    - Custom Interfaces: advanced/custom-interfaces.md # stt, tts, text: telebot.
-    # - Speech Recognition: advanced/speech-recognition.md # available engines, create custom
-    # - Speech Synthesis: advanced/speech-synthesis.md # available engines, create custom
-    # - Voice Assistant: advanced/voice-assistant.md # methods for overrides
-    # - Commands Context: advanced/commands-context.md # methods for overrides
+    - Custom Interfaces: advanced/custom-interfaces.md
     - Other: # read the code
 
 
