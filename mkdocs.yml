@@ -24,7 +24,7 @@ nav:
   - Default Speech Interfaces: default-speech-interfaces.md
   - Where to Host: where-to-host.md
   - Advanced Usage:
-    - Optimization: advanced/optimization.md # worker threads, asyncify, asyncer group, caching
+    - Optimization: advanced/optimization.md
     - Custom Run: advanced/custom-run.md # custom event loop, blocking detector, typer
     # - Fallback Command: advanced/fallback-command.md # Fallback command setting and available implementations
     # - External Triggers: advanced/external-triggers.md # external triggers
