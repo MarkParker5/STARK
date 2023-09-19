@@ -16,7 +16,7 @@ stop_after_interaction=True
 
 When set to `True`, this ensures that after the VA finishes its current interaction, it stops the `SpeechRecognizer`, allowing for the next interaction to be initiated by an external trigger.
 
-Details on the [Voice Assistant](voice-assistant.md) page.
+Details on the [Voice Assistant](../voice-assistant.md) page.
 
 ## Triggering Using `start_listening()`
 
@@ -24,7 +24,7 @@ Once the VA has stopped listening after an interaction, you can restart the `Spe
 
 ## Implementing External Triggers
 
-Do note that you probably need to implement a [custom run function](advanced/custom-run.md) to add cuncurrent process or create a separate thread.
+Do note that you probably need to implement a [custom run function](custom-run.md) to add cuncurrent process or create a separate thread.
 
 The beauty of external triggers lies in their versatility. Here are some ways to integrate them:
 

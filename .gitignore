@@ -13,5 +13,6 @@ __pycache__
 
 audio/
 downloads/
+site/
 
 .DS_Store

@@ -66,4 +66,4 @@ Harness Stark's default speech interfaces to effortlessly and flexibly craft voi
 
 ## Implementing Custom Speech Interface
 
-For more information, consult [Custom Speech Interfaces](advanced/custom-speech-interfaces.md) under the "Advanced" section.
+For more information, consult [Custom Speech Interfaces](advanced/custom-interfaces.md) under the "Advanced" section.

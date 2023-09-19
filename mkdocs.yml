@@ -116,7 +116,7 @@ markdown_extensions:
 plugins:
   - offline
   - search
-  # - social
+  - social
   # - optimize
   # - tags
   - git-revision-date-localized:
