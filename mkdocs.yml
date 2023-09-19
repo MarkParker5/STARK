@@ -22,7 +22,7 @@ nav:
   - Commands Context: commands-context.md
   - Voice Assistant: voice-assistant.md
   - Default Speech Interfaces: default-speech-interfaces.md
-  - Where to Host: where-to-host.md # personal computer: system.d or windows tray, raspberry pi: system.d, iOS: in development, android: not implemented
+  - Where to Host: where-to-host.md
   - Advanced Usage:
     - Optimization: advanced/optimization.md # worker threads, asyncify, asyncer group, caching
     - Custom Run: advanced/custom-run.md # custom event loop, blocking detector, typer
