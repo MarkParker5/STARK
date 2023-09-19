@@ -29,17 +29,17 @@ The STARK framework offers several extras, which are default implementations for
 To install the base version of STARK:
 
 ```bash
-pip install stark-core
+pip install stark-engine
 ```
 
 To install any of the extras:
 
 ```bash
-pip install stark-core[all]
-pip install stark-core[gcloud]
-pip install stark-core[vosk]
-pip install stark-core[silero]
-pip install stark-core[sound]
+pip install stark-engine[all]
+pip install stark-engine[gcloud]
+pip install stark-engine[vosk]
+pip install stark-engine[silero]
+pip install stark-engine[sound]
 ```
 
 If you encounter the error `zsh: no matches found`, simply enclose the package name in quotes:
@@ -59,12 +59,12 @@ If you, like me, prefer using [poetry](https://python-poetry.org) to manage depe
 
 
 ``` bash
-pip install stark-core
-pip install stark-core[all]
-pip install stark-core[gcloud]
-pip install stark-core[vosk]
-pip install stark-core[silero]
-pip install stark-core[sound]
+pip install stark-engine
+pip install stark-engine[all]
+pip install stark-engine[gcloud]
+pip install stark-engine[vosk]
+pip install stark-engine[silero]
+pip install stark-engine[sound]
 ```
 
 If you encounter the error `zsh: no matches found`, simply enclose the package name in quotes:
