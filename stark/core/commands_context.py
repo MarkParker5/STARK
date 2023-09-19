@@ -1,3 +1,4 @@
+from __future__ import annotations
 from types import GeneratorType, AsyncGeneratorType
 from typing import Any, Protocol, runtime_checkable
 from dataclasses import dataclass
@@ -7,7 +8,7 @@ from asyncer import syncify
 from asyncer._main import TaskGroup
 
 from general.dependencies import DependencyManager, default_dependency_manager
-from .commands_manager import CommandsManager
+from .commands_manager import CommandsManager, SearchResult
 from .command import Command, Response, ResponseHandler, AsyncResponseHandler, CommandRunner, ResponseOptions
 
 
@@ -24,12 +25,12 @@ class CommandsContextDelegate(Protocol):
 class CommandsContext:
     
     is_stopped = False
-
-    _delegate: CommandsContextDelegate | None = None
     commands_manager: CommandsManager
     dependency_manager: DependencyManager
-
     last_response: Response | None = None
+    fallback_command: Command | None = None
+    
+    _delegate: CommandsContextDelegate | None = None
     _response_queue: list[Response]
     _context_queue: list[CommandsContextLayer]
     _task_group: TaskGroup
@@ -75,8 +76,16 @@ class CommandsContext:
                 break
             else:
                 self._context_queue.pop(0)
+                
+        if not search_results and self.fallback_command and (matches := await self.fallback_command.pattern.match(string)):
+            for match in matches:
+                search_results = [SearchResult(
+                    command = self.fallback_command,
+                    match_result = match,
+                    index = 0
+                )]
 
-        for search_result in search_results:
+        for search_result in search_results or []:
 
             parameters = current_context.parameters
             parameters.update(search_result.match_result.parameters)

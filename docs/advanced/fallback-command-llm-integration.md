@@ -18,7 +18,7 @@ Here's a practical example:
 from stark.types import String
 ...
 
-@manager.new('$string:String', hide=True)
+@manager.new('$string:String', hidden=True)
 async def fallback(string: String):
     # Your fallback logic here
     ...
