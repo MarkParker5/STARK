@@ -31,6 +31,7 @@ nav:
     - Localization and Multi-Language: advanced/localization-and-multi-language.md
     - Custom Interfaces: advanced/custom-interfaces.md
     - Other:
+  # - S.T.A.R.K P.L.A.C.E Navigator: /stark-place-navigator.md
 
 theme:
   name: material

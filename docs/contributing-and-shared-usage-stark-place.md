@@ -1,4 +1,4 @@
-# Contributing and Shared Usage: S.T.A.R.K. P.L.A.C.E.
+# Contributing and Shared Usage: S.T.A.R.K P.L.A.C.E
 
 ## STARK Platform Library and Community Extensions
 
