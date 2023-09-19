@@ -39,6 +39,6 @@ Fallbacks aren't limited to LLMs. You can get creative with your approach. Consi
 - **Custom Database Lookups**: If you have a specific dataset or database, direct fallback queries there.
 - **Fun random "I don't know" synonyms**
 
-## Conclusion
+---
 
 Fallback commands are invaluable, ensuring your voice assistant remains responsive, intelligent, and user-friendly, even in the face of unexpected inputs. With the flexibility of STARK and the power of modern Large Language Models, creating a robust voice assistant has never been easier.

@@ -158,6 +158,6 @@ To have commands in the VA interact with its modes.
 
 *check [Dependency Injection](/dependency-injection) for details*
 
-## Conclusion
+---
 
 The VA architecture, as outlined above, provides a dynamic, context-aware, and customizable system for voice interactions. By leveraging modes and contexts, developers can create responsive and adaptive voice experiences.
