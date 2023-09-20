@@ -114,7 +114,6 @@ markdown_extensions:
       permalink: true
 
 plugins:
-  - offline
   - search
   - social
   # - optimize
