@@ -32,6 +32,7 @@ gcloud = ["google-cloud-texttospeech", "sounddevice", "soundfile"]
 vosk = ["vosk", "sounddevice"]
 silero = ["torch", "numpy", "sounddevice"]
 sound = ["sounddevice", "soundfile"]
+all = ["google-cloud-texttospeech", "vosk", "torch", "numpy", "sounddevice", "soundfile"]
 docs = ["mkdocs-material", "mkdocs-git-revision-date-localized-plugin"]
 
 [tool.poetry.group.dev.dependencies]

@@ -1969,6 +1969,7 @@ files = [
 test = ["pytest (>=6.0.0)", "setuptools (>=65)"]
 
 [extras]
+all = ["google-cloud-texttospeech", "numpy", "sounddevice", "soundfile", "torch", "vosk"]
 docs = ["mkdocs-git-revision-date-localized-plugin", "mkdocs-material"]
 gcloud = ["google-cloud-texttospeech", "sounddevice", "soundfile"]
 silero = ["numpy", "sounddevice", "torch"]
@@ -1978,4 +1979,4 @@ vosk = ["sounddevice", "vosk"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "4bdfaa66a2c24a12c5a615e6403cdf78945d08bdf170cdc00c0eb7264eecd847"
+content-hash = "cb3b08ec5b920738ceb7a28df3735875a10bee57a654c1ebc493d18782e1cf8e"
