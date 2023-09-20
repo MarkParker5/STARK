@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import Optional, Callable
 from pydantic import BaseModel
-from general.classproperty import classproperty
+from ..general.classproperty import classproperty
 
 
 class Mode(BaseModel):

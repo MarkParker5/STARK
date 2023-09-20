@@ -6,7 +6,7 @@ from asyncer import create_task_group, SoonValue
 
 from .expressions import dictionary
 if TYPE_CHECKING:
-    from core import Object, ParseResult
+    from ..types import Object, ParseResult
     ObjectType: TypeAlias = Type[Object]
 
 

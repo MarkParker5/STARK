@@ -1,5 +1,5 @@
-from core import Pattern
-from core.patterns import expressions
+from stark.core import Pattern
+from stark.core.patterns import expressions
 
 
 word = fr'[{expressions.alphanumerics}]*'

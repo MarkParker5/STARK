@@ -1,7 +1,8 @@
 import pytest
 import anyio
-from core import Object, Pattern, Response, CommandsManager
-from general.classproperty import classproperty
+from stark.core import Pattern, Response, CommandsManager
+from stark.core.types import Object
+from stark.general.classproperty import classproperty
 import random
 
 

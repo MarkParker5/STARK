@@ -1,14 +1,5 @@
 from .patterns import Pattern, expressions
-from .types import (
-    ParseError,
-    ParseResult,
-    Object,
-    String,
-    Word,
-    # Number,
-    # TimeInterval
-    # Time,
-)
+from . import types
 from .command import (
     Command,
     Response,
@@ -26,5 +17,5 @@ from .commands_context import (
 )
 
 
-Pattern.add_parameter_type(String)
-Pattern.add_parameter_type(Word)
+Pattern.add_parameter_type(types.String)
+Pattern.add_parameter_type(types.Word)

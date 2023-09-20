@@ -15,7 +15,7 @@ CommandsContext.fallback_command: Command
 Here's a practical example:
 
 ```python
-from stark.types import String
+from stark.core.types import String
 ...
 
 @manager.new('$string:String', hidden=True)

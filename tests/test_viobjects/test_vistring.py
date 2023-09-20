@@ -1,4 +1,5 @@
-from core import String, Pattern
+from stark.core import Pattern
+from stark.core.types import String
 
 
 def test_pattern():

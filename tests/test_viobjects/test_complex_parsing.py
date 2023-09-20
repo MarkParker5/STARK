@@ -1,7 +1,8 @@
 
 import pytest 
-from core import Pattern, Object, ParseError
-from general.classproperty import classproperty
+from stark.core import Pattern
+from stark.core.types import Object, ParseError
+from stark.general.classproperty import classproperty
 
 
 class Lorem(Object):

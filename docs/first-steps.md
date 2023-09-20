@@ -16,7 +16,8 @@ At the heart of STARK is the `CommandsManager`, a component dedicated to managin
 ```py
 import anyio
 from stark import run, CommandsManager, Response
-from stark.interfaces import VoskSpeechRecognizer, SileroSpeechSynthesizer
+from stark.interfaces.vosk import VoskSpeechRecognizer
+from stark.interfaces.silero import SileroSpeechSynthesizer
 
 
 VOSK_MODEL_URL = "YOUR_CHOSEN_VOSK_MODEL_URL"
@@ -36,7 +37,7 @@ async def main():
     await run(manager, recognizer, synthesizer)
 
 if __name__ == '__main__':
-    anyio.run(main())
+    anyio.run(main)
 ```
 
 In this code snippet, we defined a new command for the voice assistant. When the word "hello" is spoken, the `hello_command` function is triggered, which then issues a greeting in response.

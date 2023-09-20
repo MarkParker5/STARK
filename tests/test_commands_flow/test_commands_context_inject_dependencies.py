@@ -1,5 +1,5 @@
 import anyio
-from core import AsyncResponseHandler, Response
+from stark.core import AsyncResponseHandler, Response
 
 
 async def test_commands_context_inject_dependencies(commands_context_flow, autojump_clock):

@@ -39,7 +39,7 @@ However, ensure that the function declaration tied to a command pattern includes
 Here's an example:
 
 ```python
-from stark.types import Word
+from stark.core.types import Word
 
 @manager.new('Hello $name:Word')
 async def example_function(name: Word) -> Response:

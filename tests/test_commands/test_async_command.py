@@ -1,5 +1,6 @@
+from typing import AsyncGenerator
 import pytest
-from core import CommandsManager, Response, ResponseHandler, AsyncResponseHandler
+from stark.core import CommandsManager, Response, ResponseHandler, AsyncResponseHandler
 
 
 async def test_create_run_async_command():
@@ -43,7 +44,7 @@ async def test_async_command_generator_yielding_response():
     manager = CommandsManager()
     
     @manager.new('foo')
-    async def foo() -> Response: 
+    async def foo() -> AsyncGenerator[Response, None]:
         yield Response(text = 'foo!')
     
     i = 0
@@ -56,7 +57,7 @@ async def test_async_command_generator_multiple_yielding_response():
     manager = CommandsManager()
     
     @manager.new('foo')
-    async def foo() -> Response: 
+    async def foo() -> AsyncGenerator[Response, None]: 
         yield Response(text = 'foo!')
         yield Response(text = 'bar!')
         yield Response(text = 'baz!')

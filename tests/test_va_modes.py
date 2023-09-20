@@ -1,7 +1,7 @@
 import pytest
 import anyio
 from datetime import timedelta
-from voice_assistant import Mode
+from stark.voice_assistant import Mode
 
 
 async def test_background_command_with_waiting_mode(voice_assistant, autojump_clock):

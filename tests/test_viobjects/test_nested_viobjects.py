@@ -1,6 +1,7 @@
 import pytest
-from core import Object, Word, Pattern
-from general.classproperty import classproperty
+from stark.core import Pattern
+from stark.core.types import Object, Word
+from stark.general.classproperty import classproperty
 
 
 class FullName(Object):
@@ -12,9 +13,9 @@ class FullName(Object):
         return Pattern('$first:Word $second:Word')
 
 class ExtraParameterInAnnotation(Object):
-    word1: Word = None
-    word2: Word = None
-    word3: Word = None
+    word1: Word
+    word2: Word
+    word3: Word
     
     @classproperty
     def pattern(cls) -> Pattern:
@@ -45,4 +46,4 @@ async def test_extra_parameter_in_annotation():
     assert set(m[0].parameters.keys()) == {'name'}
     assert m[0].parameters['name'].word1 == Word('John')
     assert m[0].parameters['name'].word2 == Word('Galt')
-    assert m[0].parameters['name'].word3 == None
+    assert not hasattr(m[0].parameters['name'], 'word3')

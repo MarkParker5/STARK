@@ -4,7 +4,7 @@ from collections import namedtuple
 from abc import ABC
 import copy
 
-from general.classproperty import classproperty
+from stark.general.classproperty import classproperty
 from .. import Pattern
 
 

@@ -1,7 +1,7 @@
 import warnings
 import pytest
 import anyio
-from core import Response
+from stark.core import Response
 
 
 async def test_commands_context_handle_async_generator(commands_context_flow, autojump_clock):

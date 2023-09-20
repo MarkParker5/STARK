@@ -1,6 +1,7 @@
 import re
 import pytest
-from core import CommandsManager, Word
+from stark.core import CommandsManager
+from stark.core.types import Word
 
 
 def test_new():

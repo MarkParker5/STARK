@@ -1,6 +1,7 @@
+from typing import cast
 from datetime import datetime
 
-from core import (
+from ..core import (
     CommandsContext,
     CommandsContextLayer,
     CommandsContextDelegate,
@@ -8,7 +9,7 @@ from core import (
     ResponseStatus,
     Pattern
 )
-from interfaces.protocols import SpeechRecognizer, SpeechRecognizerDelegate, SpeechSynthesizer
+from ..interfaces.protocols import SpeechRecognizer, SpeechRecognizerDelegate, SpeechSynthesizer
 from .mode import Mode
 
 
@@ -29,6 +30,10 @@ class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
     _last_interaction_time: datetime
 
     def __init__(self, speech_recognizer: SpeechRecognizer, speech_synthesizer: SpeechSynthesizer, commands_context: CommandsContext):
+        assert isinstance(speech_recognizer, SpeechRecognizer)
+        assert isinstance(speech_synthesizer, SpeechSynthesizer)
+        assert isinstance(commands_context, CommandsContext)
+        
         self.speech_recognizer = speech_recognizer
         self.speech_synthesizer = speech_synthesizer
         self.commands_context = commands_context
@@ -110,11 +115,11 @@ class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
                 break
         else:
             if self.mode.stop_after_interaction:
-                self.stop()
+                self.speech_recognizer.stop_listening()
     
     def remove_response(self, response: Response):
         if response in self._responses:
-            self._responses.remove(response)
+            self._responses.remove(cast(ResponseCache, response))
         
     # Private
     

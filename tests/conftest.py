@@ -4,8 +4,8 @@ import contextlib
 import pytest
 import asyncer
 import anyio
-from general.dependencies import DependencyManager
-from core import (
+from stark.general.dependencies import DependencyManager
+from stark.core import (
     CommandsManager,
     CommandsContext,
     CommandsContextDelegate, 
@@ -13,8 +13,9 @@ from core import (
     ResponseHandler,
     AsyncResponseHandler
 )
-from core.types import Word
-from voice_assistant import VoiceAssistant
+from stark.core.types import Word
+from stark.interfaces.protocols import SpeechRecognizerDelegate
+from stark.voice_assistant import VoiceAssistant
 
 
 class CommandsContextDelegateMock(CommandsContextDelegate):
@@ -27,10 +28,14 @@ class CommandsContextDelegateMock(CommandsContextDelegate):
     async def commands_context_did_receive_response(self, response: Response):
         self.responses.append(response)
         
+    async def remove_response(self, response: Response):
+        self.responses.remove(response)
+        
 class SpeechRecognizerMock:
     is_recognizing: bool = False
+    delegate: SpeechRecognizerDelegate | None = None
     
-    def start_listening(self): pass
+    async def start_listening(self): pass
     def stop_listening(self): pass
         
 class SpeechSynthesizerResultMock:

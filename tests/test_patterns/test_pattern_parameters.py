@@ -1,8 +1,9 @@
 import re
 import pytest
-from core import Pattern, Object, Word, String
-from core.patterns import expressions
-from general.classproperty import classproperty
+from stark.core import Pattern
+from stark.core.types import Object, Word, String
+from stark.core.patterns import expressions
+from stark.general.classproperty import classproperty
 
 
 word = fr'[{expressions.alphanumerics}]*'

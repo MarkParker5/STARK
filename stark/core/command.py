@@ -10,7 +10,7 @@ import inspect
 from pydantic import BaseModel, Field
 import asyncer
 
-from general.classproperty import classproperty
+from ..general.classproperty import classproperty
 from .patterns import Pattern
 
 

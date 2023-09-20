@@ -1,7 +1,8 @@
+from typing import Generator
 import warnings
 import pytest
 from asyncer import syncify
-from core import CommandsManager, Response, ResponseHandler, AsyncResponseHandler
+from stark.core import CommandsManager, Response, ResponseHandler, AsyncResponseHandler
 
 
 async def test_create_await_run_sync_command():
@@ -80,7 +81,7 @@ async def test_sync_command_generator_yielding_response():
     
     with warnings.catch_warnings(record = True) as warnings_list:
         @manager.new('foo')
-        def foo() -> Response: 
+        def foo() -> Generator[Response, None, None]: 
             yield Response(text = 'foo!')
         
         assert next(await foo()).text == 'foo!'
@@ -94,7 +95,7 @@ async def test_sync_command_generator_multiple_yielding_response():
     
     with warnings.catch_warnings(record = True) as warnings_list:
         @manager.new('foo')
-        def foo() -> Response: 
+        def foo() -> Generator[Response, None, None]: 
             yield Response(text = 'foo!')
             yield Response(text = 'bar!')
             yield Response(text = 'baz!')

@@ -1,4 +1,5 @@
-from core import Word, Pattern
+from stark.core import Pattern
+from stark.core.types import Word
 
 
 def test_pattern():

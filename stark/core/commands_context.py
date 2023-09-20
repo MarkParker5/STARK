@@ -3,11 +3,12 @@ from types import GeneratorType, AsyncGeneratorType
 from typing import Any, Protocol, runtime_checkable
 from dataclasses import dataclass
 import warnings
+
 import anyio
 from asyncer import syncify
 from asyncer._main import TaskGroup
 
-from general.dependencies import DependencyManager, default_dependency_manager
+from ..general.dependencies import DependencyManager, default_dependency_manager
 from .commands_manager import CommandsManager, SearchResult
 from .command import Command, Response, ResponseHandler, AsyncResponseHandler, CommandRunner, ResponseOptions
 

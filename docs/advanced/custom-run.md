@@ -124,7 +124,8 @@ To kickstart your customization, replicate the default run function as your foun
 import asyncer
 from stark import CommandsContext, CommandsManager, Response
 from stark.interfaces.protocols import SpeechRecognizer, SpeechSynthesizer
-from stark.interfaces import VoskSpeechRecognizer, SileroSpeechSynthesizer
+from stark.interfaces.vosk import VoskSpeechRecognizer
+from stark.interfaces.silero import SileroSpeechSynthesizer
 from stark.voice_assistant import VoiceAssistant
 from stark.general.blockage_detector import BlockageDetector
 
@@ -170,5 +171,5 @@ async def main():
     await run(manager, recognizer, synthesizer)
 
 if __name__ == '__main__':
-    asyncer.runnify(main)() # or anyio.run(main()), same thing
+    asyncer.runnify(main)() # or anyio.run(main), same thing
 ```

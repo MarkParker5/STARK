@@ -1,7 +1,7 @@
 import pytest
 import warnings
 import anyio
-from core import Response, ResponseHandler, AsyncResponseHandler
+from stark.core import Response, ResponseHandler, AsyncResponseHandler
 
 
 async def test_command_return_response(commands_context_flow, autojump_clock):
@@ -51,7 +51,7 @@ async def test_sync_command_call_async_respond(commands_context_flow, autojump_c
         def foo(handler: AsyncResponseHandler): 
             with warnings.catch_warnings(record = True) as warnings_list:
                 assert len(warnings_list) == 0
-                handler.respond(Response(text = 'foo!'))
+                handler.respond(Response(text = 'foo!')) # type: ignore
                 assert len(warnings_list) == 1
                 assert issubclass(warnings_list[0].category, RuntimeWarning)
                 assert 'was never awaited' in str(warnings_list[0].message)
