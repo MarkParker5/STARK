@@ -3,6 +3,7 @@ from typing import Type, Generator, TypeAlias, TYPE_CHECKING
 from dataclasses import dataclass
 import re
 from asyncer import create_task_group, SoonValue
+import json
 
 from .expressions import dictionary
 if TYPE_CHECKING:

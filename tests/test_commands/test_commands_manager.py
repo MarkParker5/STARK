@@ -81,3 +81,28 @@ def test_extend_manager():
     assert root_manager.commands[0].name == 'CommandsManager.test'
     assert root_manager.commands[1].name == 'Child.test'
     
+def test_manager_get_command_by_name():
+    manager = CommandsManager('TestManager')
+    child = CommandsManager('Child')
+    
+    @manager.new('')
+    def test(): ...
+    
+    @manager.new('')
+    def test2(): ...
+    
+    @manager.new('')
+    def test3(): ...
+    
+    @manager.new('')
+    def test4(): ...
+    
+    @child.new('')
+    def test5(): ...
+    
+    manager.extend(child)
+    
+    assert manager.get_by_name('test2') == test2
+    assert manager.get_by_name('TestManager.test3') == test3
+    assert manager.get_by_name('test5') == None
+    assert manager.get_by_name('Child.test5') == test5

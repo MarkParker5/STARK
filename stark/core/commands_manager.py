@@ -2,6 +2,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import inspect
 from asyncer import create_task_group, SoonValue
+import json
 
 from .patterns import Pattern, MatchResult
 from .types import Object
@@ -22,6 +23,12 @@ class CommandsManager:
     def __init__(self, name: str = ''):
         self.name = name or 'CommandsManager'
         self.commands = []
+        
+    def get_by_name(self, name: str) -> Command | None:
+        for command in self.commands:
+            if command.name in {f'{self.name}.{name}', name}:
+                return command
+        return None
 
     async def search(self, string: str, commands: list[Command] | None = None) -> list[SearchResult]:
         
