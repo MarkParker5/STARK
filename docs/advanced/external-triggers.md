@@ -40,6 +40,10 @@ For those looking for a hands-free approach, integrating hardware can be a fasci
 
 Wakeword detection is a popular approach in modern VAs. Using fast lightweight wakeword detectors like Picovoice's Porcupine, you can have your VA spring into action upon hearing a specific keyword or phrase.
 
+### Implementations and Examples
+
+You can find external trigger implementations at [stark_place/triggers](https://github.com/MarkParker5/STARK-PLACE/tree/master/stark_place/triggers) and examples of usage at [stark_place/examples](https://github.com/MarkParker5/STARK-PLACE/tree/master/stark_place/examples).
+
 ---
 
 By embracing external triggers, you can elevate the adaptability and user experience of your voice assistant. Whether it's a simple keyboard shortcut or an intricate hardware setup, STARK's flexibility ensures that your VA is always ready and responsive, aligned with the needs of your user base.
