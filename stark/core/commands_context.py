@@ -157,7 +157,7 @@ class CommandsContext:
         while not self.is_stopped:
             while self._response_queue:
                 await self._process_response(self._response_queue.pop(0))
-            await anyio.sleep(0.05)
+            await anyio.sleep(0.01)
             
     def stop(self):
         self.is_stopped = True

@@ -1,6 +1,12 @@
 from typing import AsyncGenerator
 import pytest
-from stark.core import CommandsManager, Response, ResponseHandler, AsyncResponseHandler
+from stark.core import (
+    CommandsManager,
+    Response,
+    ResponseHandler,
+    AsyncResponseHandler,
+    ResponseStatus
+)
 
 
 async def test_create_run_async_command():
@@ -68,3 +74,15 @@ async def test_async_command_generator_multiple_yielding_response():
         assert response.text == expected.pop(0)
 
     assert not expected
+
+async def test_exception_in_command():
+    manager = CommandsManager()
+    
+    @manager.new('foo')
+    async def foo() -> Response: 
+        raise Exception('foo exception')
+    
+    # with pytest.raises(Exception, match = 'foo exception'):
+    #     await foo()
+    
+    assert (await foo()).status == ResponseStatus.error

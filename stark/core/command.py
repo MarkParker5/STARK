@@ -59,7 +59,14 @@ class Command(Generic[CommandRunner]):
             
         @wraps(runner)
         async def coroutine_wrapper() -> ResponseOptions:
-            response = await coroutine
+            try:
+                response = await coroutine
+            except Exception as e:
+                response = Response(
+                    text = f'Command {self} raised an exception: {e.__class__.__name__}',
+                    voice = f'Command {self} raised an exception: {e.__class__.__name__}',
+                    status = ResponseStatus.error
+                )
             if inspect.isgenerator(response):
                 message = f'[WARNING] Command {self} is a sync GeneratorType that is not fully supported and may block the main thread. ' + \
                             'Consider using the ResponseHandler.respond() or async approach instead.'

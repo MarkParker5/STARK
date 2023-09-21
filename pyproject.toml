@@ -9,7 +9,7 @@ packages = [{include = "stark"}]
 homepage = "https://pypi.org/project/stark-engine/"
 repository = "https://github.com/MarkParker5/STARK"
 documentation = "https://stark.markparker.me"
-keywords = ["python", "open-source", "natural-language-processing", "framework", "cross-platform", "natural-language", "voice", "voice-commands", "python3", "voice-recognition", "speech-recognition", "speech-to-text", "community-project", "voice-assistant", "voice-interface", "NLP", "machine-learning", "AI", "text-analysis", "stark", "stark-place", "mark parker"]
+keywords = ["python", "open-source", "natural-language-processing", "framework", "cross-platform", "natural-language", "voice", "voice-commands", "python3", "voice-recognition", "speech-recognition", "speech-to-text", "community-project", "voice-assistant", "voice-interface", "NLP", "machine-learning", "AI", "text-analysis", "stark", "stark-place", "stark-engine", "mark parker"]
 
 
 [tool.poetry.dependencies]

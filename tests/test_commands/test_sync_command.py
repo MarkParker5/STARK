@@ -2,7 +2,13 @@ from typing import Generator
 import warnings
 import pytest
 from asyncer import syncify
-from stark.core import CommandsManager, Response, ResponseHandler, AsyncResponseHandler
+from stark.core import (
+    CommandsManager,
+    Response,
+    ResponseHandler,
+    AsyncResponseHandler,
+    ResponseStatus
+)
 
 
 async def test_create_await_run_sync_command():
@@ -107,3 +113,15 @@ async def test_sync_command_generator_multiple_yielding_response():
         assert len(warnings_list) == 1
         assert issubclass(warnings_list[0].category, UserWarning)
         assert 'GeneratorType that is not fully supported and may block the main thread' in str(warnings_list[0].message)
+
+async def test_exception_in_command():
+    manager = CommandsManager()
+    
+    @manager.new('foo')
+    def foo() -> Response: 
+        raise Exception('foo exception')
+    
+    # with pytest.raises(Exception, match = 'foo exception'):
+    #     await foo()
+    
+    assert (await foo()).status == ResponseStatus.error

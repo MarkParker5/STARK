@@ -21,8 +21,9 @@ class Speech(SpeechSynthesizerResult):
 
 class SileroSpeechSynthesizer(SpeechSynthesizer):
     
-    def __init__(self, model_url: str, speaker: str = 'baya', threads: int = 4, device ='cpu', torch_backends_quantized_engine: str = 'qnnpack'):
-        torch.backends.quantized.engine = torch_backends_quantized_engine
+    def __init__(self, model_url: str, speaker: str = 'baya', threads: int = 4, device ='cpu', torch_backends_quantized_engine: str | None = 'qnnpack'):
+        if torch_backends_quantized_engine:
+            torch.backends.quantized.engine = torch_backends_quantized_engine
         device = torch.device(device)
         torch.set_num_threads(threads)
         local_file = 'downloads/' + model_url.split('/')[-1]
