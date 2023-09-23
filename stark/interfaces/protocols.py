@@ -10,10 +10,12 @@ class SpeechRecognizerDelegate(Protocol):
 @runtime_checkable
 class SpeechRecognizer(Protocol):
     is_recognizing: bool
+    language_code: str
     delegate: SpeechRecognizerDelegate | None
     
     async def start_listening(self): pass
     def stop_listening(self): pass
+    def microphone_did_receive_sample(self, data): ...
  
 @runtime_checkable
 class SpeechSynthesizerResult(Protocol):
