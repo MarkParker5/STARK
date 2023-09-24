@@ -1,11 +1,12 @@
+from __future__ import annotations
 from typing import Protocol, runtime_checkable
 
 
 @runtime_checkable
 class SpeechRecognizerDelegate(Protocol):
-    async def speech_recognizer_did_receive_final_result(self, result: str): pass
-    async def speech_recognizer_did_receive_partial_result(self, result: str): pass
-    async def speech_recognizer_did_receive_empty_result(self): pass
+    async def speech_recognizer_did_receive_final_result(self, speech_recognizer: SpeechRecognizer, result: str): pass
+    async def speech_recognizer_did_receive_partial_result(self, speech_recognizer: SpeechRecognizer, result: str): pass
+    async def speech_recognizer_did_receive_empty_result(self, speech_recognizer: SpeechRecognizer): pass
    
 @runtime_checkable
 class SpeechRecognizer(Protocol):
