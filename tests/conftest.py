@@ -39,6 +39,7 @@ class SpeechRecognizerMock:
     async def start_listening(self): pass
     def stop_listening(self): pass
     def microphone_did_receive_sample(self, data): pass
+    def reset(self): pass
         
 class SpeechSynthesizerResultMock:
     async def play(self): pass

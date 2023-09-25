@@ -66,20 +66,20 @@ def test_extend_manager():
     def test(): pass
     
     @child_manager.new('test')
-    def test(): pass
+    def test2(): pass
     
     assert len(child_manager.commands) == 1
     assert len(root_manager.commands) == 1
-    assert child_manager.commands[0].name == 'Child.test'
+    assert child_manager.commands[0].name == 'Child.test2'
     assert root_manager.commands[0].name == 'CommandsManager.test'
     
     root_manager.extend(child_manager)
     
     assert len(child_manager.commands) == 1
     assert len(root_manager.commands) == 2
-    assert child_manager.commands[0].name == 'Child.test'
+    assert child_manager.commands[0].name == 'Child.test2'
     assert root_manager.commands[0].name == 'CommandsManager.test'
-    assert root_manager.commands[1].name == 'Child.test'
+    assert root_manager.commands[1].name == 'Child.test2'
     
 def test_manager_get_command_by_name():
     manager = CommandsManager('TestManager')

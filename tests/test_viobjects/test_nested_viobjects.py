@@ -31,6 +31,7 @@ async def test_nested_objects():
     m = await p.match('John Galt')
     assert m
     assert set(m[0].parameters.keys()) == {'name'}
+    assert isinstance(m[0].parameters['name'], FullName)
     assert m[0].parameters['name'].first == Word('John')
     assert m[0].parameters['name'].second == Word('Galt')
     
@@ -44,6 +45,7 @@ async def test_extra_parameter_in_annotation():
     m = await p.match('John Galt')
     assert m
     assert set(m[0].parameters.keys()) == {'name'}
+    assert isinstance(m[0].parameters['name'], ExtraParameterInAnnotation)
     assert m[0].parameters['name'].word1 == Word('John')
     assert m[0].parameters['name'].word2 == Word('Galt')
     assert not hasattr(m[0].parameters['name'], 'word3')

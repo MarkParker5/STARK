@@ -77,6 +77,8 @@ class VoskSpeechRecognizer(SpeechRecognizer):
     def delegate(self, delegate: SpeechRecognizerDelegate | None):
         assert delegate is None or isinstance(delegate, SpeechRecognizerDelegate)
         self._delegate = delegate
+        
+    # SpeechRecognizer Protocol Implmenetation
 
     def stop_listening(self):
         self._is_listening = False
@@ -99,6 +101,11 @@ class VoskSpeechRecognizer(SpeechRecognizer):
             
     def microphone_did_receive_sample(self, data):
         self._audio_queue.put(data)
+        
+    def reset(self):
+        self._kaldiRecognizer.Reset()
+        
+    # Private
                 
     async def _transcribe(self, data):
         delegate = self.delegate
@@ -116,6 +123,7 @@ class VoskSpeechRecognizer(SpeechRecognizer):
                     word.language_code = self.language_code
                     
                 transcription = Transcription(
+                    best = result,
                     origins = {
                         self.language_code: result
                     }
@@ -123,8 +131,9 @@ class VoskSpeechRecognizer(SpeechRecognizer):
                 
                 await delegate.speech_recognizer_did_receive_final_transcription(self, transcription)
                 
-            except ValidationError:
-                await delegate.speech_recognizer_did_receive_empty_result()
+            except ValidationError as e:
+                # print(e)
+                await delegate.speech_recognizer_did_receive_empty_result(self)
                 # try:
                 #     result = KaldiResult.parse_raw(raw_json)
                 #     transcription = result.alternatives[0]
@@ -132,9 +141,9 @@ class VoskSpeechRecognizer(SpeechRecognizer):
                 # except ValidationError:
                 #     text = json.loads(raw_json).get('text')    
         else:
-            result = json.loads(self._kaldiRecognizer.PartialResult())
+            partial = json.loads(self._kaldiRecognizer.PartialResult())
             # partial always returns {"partial": "..."}
-            if (string := result.get('partial')) and string != self._last_partial_result:
+            if (string := partial.get('partial')) and string != self._last_partial_result:
                 self._last_partial_result = string
                 self._last_partial_update_time = datetime.now()
-                await delegate.speech_recognizer_did_receive_partial_result(string)
+                await delegate.speech_recognizer_did_receive_partial_result(self, string)

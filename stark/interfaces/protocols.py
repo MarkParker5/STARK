@@ -17,7 +17,8 @@ class SpeechRecognizer(Protocol):
     
     async def start_listening(self): pass
     def stop_listening(self): pass
-    def microphone_did_receive_sample(self, data): ...
+    def microphone_did_receive_sample(self, data): pass
+    def reset(self): pass
  
 @runtime_checkable
 class SpeechSynthesizerResult(Protocol):

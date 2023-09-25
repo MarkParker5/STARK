@@ -1,4 +1,5 @@
 from typing import Generator
+import time
 import anyio
 from asyncer._main import TaskGroup
 from stark.interfaces.protocols import SpeechRecognizer
@@ -10,12 +11,14 @@ class SpeechRecognizerRelay:
     
     language_code: str = ''
     
-    _is_recognizing: bool
     _speech_recognizers: list[SpeechRecognizer]
     _current_transcription: Transcription | None = None
     _delegate: SpeechRecognizerDelegate | None = None
+    _is_recognizing: bool = False
     
     def __init__(self, speech_recognizers: list[SpeechRecognizer]):
+        for recognizer in speech_recognizers:
+            assert isinstance(recognizer, SpeechRecognizer)
         self.speech_recognizers = speech_recognizers
         
     @property
@@ -39,6 +42,7 @@ class SpeechRecognizerRelay:
         self._delegate = delegate
     
     def start_speech_recognizers(self, task_group: TaskGroup):
+        self.is_recognizing = True
         for recognizer in self.speech_recognizers:    
             recognizer.delegate = self
             task_group.soonify(recognizer.start_listening)()
@@ -53,20 +57,30 @@ class SpeechRecognizerRelay:
             recognizer.stop_listening()
         
     def microphone_did_receive_sample(self, data):
+        if not self.is_recognizing:
+            return
         for recognizer in self.speech_recognizers:
             recognizer.microphone_did_receive_sample(data)
+            
+    def reset(self):
+        for recognizer in self.speech_recognizers:
+            recognizer.reset()
         
     # SpeechRecognizerDelegate Protocol Implmenetation
     
     async def speech_recognizer_did_receive_final_transcription(self, speech_recognizer: SpeechRecognizer, transcription: Transcription): 
         # NOTE: this executes for each SR, be aware of duplicating output
-        
+
         current_transcription = self._current_transcription or transcription
         self._current_transcription = current_transcription
-            
-        current_transcription.origins.update(transcription.origins)
         
-        while current_transcription.origins.keys() != set([sr.language_code for sr in self.speech_recognizers]):
+        current_transcription.origins.update(transcription.origins) # TODO: append instead of override, update timestamps if needed
+        
+        start_time = time.monotonic()
+        timeout = 2 # TODO: make configurable
+        languages = set(sr.language_code for sr in self.speech_recognizers)
+        
+        while current_transcription.origins.keys() != languages or time.monotonic() - start_time < timeout:
             await anyio.sleep(0.01) # wait other languages
         
         if not self._current_transcription:
@@ -74,16 +88,13 @@ class SpeechRecognizerRelay:
         
         # build best confedence
         
-        print('\n--------------------------\n')
-        for lang, request in current_transcription.origins.items():
-            print(lang, '\t', request.confidence, '\t', ''.join([f'[{w.word}]' for w in request.result]))
-        
         current_transcription.best = self._build_best_confidence(set(current_transcription.origins.values()))
         current_transcription.best.language_code = 'best'
-        
-        print('Best:', '\t', current_transcription.best.confidence, '\t', ''.join([f'[{w.word}]' for w in current_transcription.best.result]))
             
         self.current_transcription = None # reset for next recognition and exit concurrent calls\
+        
+        for recognizer in self.speech_recognizers:
+            recognizer.reset()
         
         if delegate := self.delegate:
             await delegate.speech_recognizer_did_receive_final_transcription(self, current_transcription)

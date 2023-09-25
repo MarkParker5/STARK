@@ -25,7 +25,7 @@ class KaldiMBR(BaseModel):
     
     @property
     def confidence(self):
-        return sum(word.conf for word in self.result) / len(self.result) if self.result else 0
+        return sum(word.conf or 0 for word in self.result) / len(self.result) if self.result else 0
     
     def __hash__(self) -> int:
         return hash(self.text)
