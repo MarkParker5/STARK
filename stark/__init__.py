@@ -23,26 +23,37 @@ from stark.voice_assistant import (
     Mode
 )
 from stark.general.blockage_detector import BlockageDetector
+from stark.general.localisation import Localizator
 
 
 async def run(
     manager: CommandsManager,
     speech_recognizers: list[SpeechRecognizer],
-    speech_synthesizer: SpeechSynthesizer
+    speech_synthesizer: SpeechSynthesizer,
+    languages: set[str] | None = None
 ):
     async with run_task_group(
         manager = manager,
         speech_recognizers = speech_recognizers,
-        speech_synthesizer = speech_synthesizer
+        speech_synthesizer = speech_synthesizer,
+        languages = languages
     ): pass
     
 @contextlib.asynccontextmanager
 async def run_task_group(
     manager: CommandsManager,
     speech_recognizers: list[SpeechRecognizer],
-    speech_synthesizer: SpeechSynthesizer
+    speech_synthesizer: SpeechSynthesizer,
+    languages: set[str] | None = None
 ):
     async with asyncer.create_task_group() as main_task_group:
+        
+        # Localisation
+        
+        localizator = Localizator(languages or {'en'})
+        localizator.load()
+        
+        # Core
         
         relay = SpeechRecognizerRelay(speech_recognizers)
         

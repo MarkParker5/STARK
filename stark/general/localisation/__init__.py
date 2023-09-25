@@ -1,0 +1,1 @@
+from .localizator import Localizator
