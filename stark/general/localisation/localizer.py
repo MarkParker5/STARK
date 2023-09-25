@@ -1,11 +1,12 @@
 from typing import Generator
 from pathlib import Path
+import warnings
 from .strings import String, StringsFile, FileGroup
 
 
 Languages = dict[str, StringsFile]
 
-class Localizator:
+class Localizer:
     
     localizable: Languages
     recognizable: Languages
@@ -30,7 +31,25 @@ class Localizator:
             f'\nActive: {self.languages}' + \
             f'\nLocalizable: {self.localizable.keys()}' + \
             f'\nRecognizable: {self.recognizable.keys()}'
+            
+        self.check(self.localizable)
         
+    def check(self, source: Languages):
+        first = next(iter(source.values()))
+        all_keys = set(first.strings.keys())
+        
+        for strings_file in source.values():
+            all_keys.update(strings_file.strings.keys())
+            
+        for strings_file in source.values():
+            if all_keys != set(strings_file.strings.keys()):
+                warnings.warn(
+                    f'Not all keys are present in strings files, check the files' \
+                    + f'\nFile: {strings_file.path}' \
+                    + f'\nKeys: {all_keys - set(strings_file.strings.keys())}',
+                    RuntimeWarning
+                )
+
     # Private
     
     def _get_string(self, key: str, language: str, source: Languages) -> str | None:

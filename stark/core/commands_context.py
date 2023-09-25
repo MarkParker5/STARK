@@ -75,7 +75,7 @@ class CommandsContext:
             
             if search_results:
                 break
-            else:
+            elif self._context_queue: # must be checked again because of async
                 self._context_queue.pop(0)
                 
         if not search_results and self.fallback_command and (matches := await self.fallback_command.pattern.match(string)):

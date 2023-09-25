@@ -5,21 +5,28 @@ from asyncer._main import TaskGroup
 from stark.interfaces.protocols import SpeechRecognizer
 from stark.models.transcription import Transcription, KaldiMBR, KaldiWord
 from stark.interfaces.protocols import SpeechRecognizerDelegate
+from stark.general.localisation import Localizer
 
 
 class SpeechRecognizerRelay:
     
     language_code: str = ''
+    localizer: Localizer
     
     _speech_recognizers: list[SpeechRecognizer]
     _current_transcription: Transcription | None = None
     _delegate: SpeechRecognizerDelegate | None = None
     _is_recognizing: bool = False
     
-    def __init__(self, speech_recognizers: list[SpeechRecognizer]):
+    def __init__(self, speech_recognizers: list[SpeechRecognizer], localizer: Localizer):
         for recognizer in speech_recognizers:
             assert isinstance(recognizer, SpeechRecognizer)
+        assert isinstance(localizer, Localizer)
+        assert {sr.language_code for sr in speech_recognizers} == localizer.languages, 'Languages of SpeechRecognizers must be equal to Localizer languages'
         self.speech_recognizers = speech_recognizers
+        self.localizer = localizer
+        
+    # properties
         
     @property
     def is_recognizing(self) -> bool:
@@ -40,6 +47,8 @@ class SpeechRecognizerRelay:
     def delegate(self, delegate: SpeechRecognizerDelegate | None):
         assert delegate is None or isinstance(delegate, SpeechRecognizerDelegate)
         self._delegate = delegate
+        
+    # methods
     
     def start_speech_recognizers(self, task_group: TaskGroup):
         self.is_recognizing = True
@@ -80,16 +89,28 @@ class SpeechRecognizerRelay:
         timeout = 2 # TODO: make configurable
         languages = set(sr.language_code for sr in self.speech_recognizers)
         
+        # wait other languages
         while current_transcription.origins.keys() != languages or time.monotonic() - start_time < timeout:
-            await anyio.sleep(0.01) # wait other languages
+            await anyio.sleep(0.01)
         
+        # avoid duplicating because SRs calling this method concurrently
         if not self._current_transcription:
-            return # avoid duplicating because SRs calling this method concurrently
+            return
+        
+        # use recognizable dictioanry
+        
+        for language, origin in current_transcription.origins.items():
+            for key, string in self.localizer.recognizable[language].strings.items():
+                origin.replace(key, string.value)
+        
+        # TODO: add suggestions
         
         # build best confedence
         
         current_transcription.best = self._build_best_confidence(set(current_transcription.origins.values()))
         current_transcription.best.language_code = 'best'
+        
+        # finish
             
         self.current_transcription = None # reset for next recognition and exit concurrent calls\
         

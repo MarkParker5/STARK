@@ -27,6 +27,14 @@ class KaldiMBR(BaseModel):
     def confidence(self):
         return sum(word.conf or 0 for word in self.result) / len(self.result) if self.result else 0
     
+    def replace(self, substring: str, replacement: str):
+        self.text = self.text.replace(substring, replacement)
+        
+        for word in self.result:
+            word.word = word.word.replace(substring, replacement)
+            
+        # TODO: handle substring split between words
+    
     def __hash__(self) -> int:
         return hash(self.text)
 
@@ -42,3 +50,7 @@ class Transcription(BaseModel):
     best: KaldiMBR
     origins: dict[str, KaldiMBR] = Field(default_factory = dict)
     # suggestions: dict[str, KaldiWord] # list[tuple(str, str)]
+    
+    def replace(self, substring: str, replacement: str):
+        for origin in [*self.origins.values(), self.best]:
+            origin.replace(substring, replacement)
