@@ -34,9 +34,11 @@ class CommandsContextDelegateMock(CommandsContextDelegate):
 class SpeechRecognizerMock:
     is_recognizing: bool = False
     delegate: SpeechRecognizerDelegate | None = None
+    language_code: str = ''
     
     async def start_listening(self): pass
     def stop_listening(self): pass
+    def microphone_did_receive_sample(self, data): pass
         
 class SpeechSynthesizerResultMock:
     async def play(self): pass

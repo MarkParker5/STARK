@@ -7,7 +7,7 @@ from stark.interfaces.protocols import (
     SpeechSynthesizer,
     SpeechSynthesizerResult
 )
-from stark.interfaces.recognizer_relay import RecognizerRelay
+from stark.interfaces.recognizer_relay import SpeechRecognizerRelay
 from stark.interfaces.microphone import Microphone
 from stark.core import (
     Command,
@@ -43,38 +43,40 @@ async def run_task_group(
     speech_synthesizer: SpeechSynthesizer
 ):
     async with asyncer.create_task_group() as main_task_group:
+        
+        relay = SpeechRecognizerRelay(speech_recognizers)
+        
         context = CommandsContext(
             task_group = main_task_group, 
             commands_manager = manager
         )
+        
         voice_assistant = VoiceAssistant(
-            speech_recognizer = speech_recognizers[0], # TODO: list or callbacks
+            speech_recognizer = relay,
             speech_synthesizer = speech_synthesizer,
             commands_context = context
         )
         
+        # Set delegates
+        
+        relay.delegate = voice_assistant
         context.delegate = voice_assistant
+        
+        # Start main tasks
+        
+        relay.start_speech_recognizers(main_task_group)
         main_task_group.soonify(context.handle_responses)()
         
-        # Speech Recognition
-        
-        relay = RecognizerRelay()
-        # relay.delegate = voice_assistant # TODO: implement
-        
-        def microphone_callback(data):
-            for recognizer in speech_recognizers:
-                recognizer.microphone_did_receive_sample(data)
+        # Microphone
                 
-        microphone = Microphone(microphone_callback)
-        
+        microphone = Microphone(relay.microphone_did_receive_sample)
         main_task_group.soonify(microphone.start_listening)()
-        for recognizer in speech_recognizers:    
-            recognizer.delegate = relay
-            main_task_group.soonify(recognizer.start_listening)()
         
         # Blockage Detector
         
         detector = BlockageDetector()
         main_task_group.soonify(detector.monitor)()
+        
+        # Yield main task group to allow to add tasks from outside
         
         yield main_task_group

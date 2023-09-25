@@ -2,11 +2,16 @@ import pytest
 import anyio
 from datetime import timedelta
 from stark.voice_assistant import Mode
+from stark.models.transcription import Transcription, KaldiMBR
+from conftest import SpeechRecognizerMock
 
 
 async def test_background_command_with_waiting_mode(voice_assistant, autojump_clock):
     async with voice_assistant() as voice_assistant:
-        await voice_assistant.speech_recognizer_did_receive_final_result('background min')
+        await voice_assistant.speech_recognizer_did_receive_final_transcription(
+            SpeechRecognizerMock(),
+            Transcription(best=KaldiMBR(text='background min'))
+        )
         
         await anyio.sleep(0.2) # allow to capture first command response
         
@@ -31,14 +36,20 @@ async def test_background_command_with_waiting_mode(voice_assistant, autojump_cl
         voice_assistant._responses[0].time -= timedelta(seconds = voice_assistant.mode.timeout_before_repeat + 1)
         
         # interact to reset timeout mode and repeat saved response
-        await voice_assistant.speech_recognizer_did_receive_final_result('test')
+        await voice_assistant.speech_recognizer_did_receive_final_transcription(
+            SpeechRecognizerMock(),
+            Transcription(best=KaldiMBR(text='test'))
+        )
         await anyio.sleep(0.2) # allow to capture command response
         assert len(voice_assistant.speech_synthesizer.results) == 2
         assert [r.text for r in voice_assistant.speech_synthesizer.results] == ['test', 'Finished background task']
 
 async def test_background_command_with_inactive_mode(voice_assistant, autojump_clock):
     async with voice_assistant() as voice_assistant:
-        await voice_assistant.speech_recognizer_did_receive_final_result('background min')
+        await voice_assistant.speech_recognizer_did_receive_final_transcription(
+            SpeechRecognizerMock(),
+            Transcription(best=KaldiMBR(text='background min'))
+        )
         
         await anyio.sleep(0.2) # allow to capture first command response
         
@@ -59,7 +70,10 @@ async def test_background_command_with_inactive_mode(voice_assistant, autojump_c
         assert len(voice_assistant._responses) == 1
         
         # interact to reset timeout mode and repeat saved response
-        await voice_assistant.speech_recognizer_did_receive_final_result('test')
+        await voice_assistant.speech_recognizer_did_receive_final_transcription(
+            SpeechRecognizerMock(),
+            Transcription(best=KaldiMBR(text='test'))
+        )
         await anyio.sleep(0.2) # allow to capture command response
         assert len(voice_assistant.speech_synthesizer.results) == 2
         assert voice_assistant.speech_synthesizer.results.pop(0).text == 'test'   
@@ -67,7 +81,10 @@ async def test_background_command_with_inactive_mode(voice_assistant, autojump_c
     
 async def test_background_waiting_needs_input(voice_assistant, autojump_clock):
     async with voice_assistant() as voice_assistant:
-        await voice_assistant.speech_recognizer_did_receive_final_result('background needs input')
+        await voice_assistant.speech_recognizer_did_receive_final_transcription(
+            SpeechRecognizerMock(),
+            Transcription(best=KaldiMBR(text='background needs input'))
+        )
         
         await anyio.sleep(0.2) # allow to capture first command response
         
@@ -87,7 +104,10 @@ async def test_background_waiting_needs_input(voice_assistant, autojump_clock):
             response.time -= timedelta(seconds = voice_assistant.mode.timeout_before_repeat + 1)
         
         # interact to reset timeout mode
-        await voice_assistant.speech_recognizer_did_receive_final_result('test')
+        await voice_assistant.speech_recognizer_did_receive_final_transcription(
+            SpeechRecognizerMock(),
+            Transcription(best=KaldiMBR(text='test'))
+        )
         
         await anyio.sleep(0.2) # allow to capture command response
         
@@ -99,7 +119,10 @@ async def test_background_waiting_needs_input(voice_assistant, autojump_clock):
             assert voice_assistant.speech_synthesizer.results.pop(0).text == response
         
         # interact to emulate user input and continue repeating responses
-        await voice_assistant.speech_recognizer_did_receive_final_result('test')
+        await voice_assistant.speech_recognizer_did_receive_final_transcription(
+            SpeechRecognizerMock(),
+            Transcription(best=KaldiMBR(text='test'))
+        )
         await anyio.sleep(0.2) # allow to capture command response
         
         # voice assistant should say all left responses
@@ -110,7 +133,10 @@ async def test_background_waiting_needs_input(voice_assistant, autojump_clock):
     
 async def test_background_waiting_with_context(voice_assistant, autojump_clock):
     async with voice_assistant() as voice_assistant:
-        await voice_assistant.speech_recognizer_did_receive_final_result('background with context')
+        await voice_assistant.speech_recognizer_did_receive_final_transcription(
+            SpeechRecognizerMock(),
+            Transcription(best=KaldiMBR(text='background with context'))
+        )
         
         # force a timeout
         voice_assistant._last_interaction_time -= timedelta(seconds = voice_assistant.mode.timeout_after_interaction + 1)
@@ -129,14 +155,20 @@ async def test_background_waiting_with_context(voice_assistant, autojump_clock):
             response.time -= timedelta(seconds = voice_assistant.mode.timeout_before_repeat + 1)
         
         # interact to reset timeout mode, voice assistant should reset context, repeat responses and add response context
-        await voice_assistant.speech_recognizer_did_receive_final_result('lorem ipsum dolor')
+        await voice_assistant.speech_recognizer_did_receive_final_transcription(
+            SpeechRecognizerMock(),
+            Transcription(best=KaldiMBR(text='lorem ipsum dolor'))
+        )
         await anyio.sleep(0.2) # allow to capture command response
         assert len(voice_assistant.speech_synthesizer.results) == 2
         assert len(voice_assistant.commands_context._context_queue) == 2
 
 async def test_background_waiting_remove_response(voice_assistant, autojump_clock):
     async with voice_assistant() as voice_assistant:
-        await voice_assistant.speech_recognizer_did_receive_final_result('background remove response')
+        await voice_assistant.speech_recognizer_did_receive_final_transcription(
+            SpeechRecognizerMock(),
+            Transcription(best=KaldiMBR(text='background remove response'))
+        )
         voice_assistant.speech_synthesizer.results.clear()
         
         # force a timeout by settings zero time
@@ -157,7 +189,10 @@ async def test_background_waiting_remove_response(voice_assistant, autojump_cloc
         voice_assistant.speech_synthesizer.results.clear()
         
         # interact to reset timeout mode, check that removed response is not repeated
-        await voice_assistant.speech_recognizer_did_receive_final_result('test')
+        await voice_assistant.speech_recognizer_did_receive_final_transcription(
+            SpeechRecognizerMock(),
+            Transcription(best=KaldiMBR(text='test'))
+        )
         await anyio.sleep(1) # allow to capture command response
         assert len(voice_assistant.speech_synthesizer.results) == 1
         assert voice_assistant.speech_synthesizer.results.pop(0).text == 'test'

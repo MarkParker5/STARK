@@ -10,7 +10,7 @@ import anyio
 import sounddevice
 import vosk
 
-from stark.models.transcription import KaldiMBR, KaldiResult, ValidationError
+from stark.models.transcription import Transcription, KaldiMBR, KaldiResult, ValidationError
 from .protocols import SpeechRecognizer, SpeechRecognizerDelegate
 
 
@@ -114,8 +114,14 @@ class VoskSpeechRecognizer(SpeechRecognizer):
                 
                 for word in result.result:
                     word.language_code = self.language_code
+                    
+                transcription = Transcription(
+                    origins = {
+                        self.language_code: result
+                    }
+                )
                 
-                await delegate.speech_recognizer_did_receive_final_result(self, result)
+                await delegate.speech_recognizer_did_receive_final_transcription(self, transcription)
                 
             except ValidationError:
                 await delegate.speech_recognizer_did_receive_empty_result()

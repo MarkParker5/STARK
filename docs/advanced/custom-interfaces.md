@@ -9,7 +9,7 @@ When working with voice-driven applications, a robust and flexible architecture 
 ```python
 @runtime_checkable
 class SpeechRecognizerDelegate(Protocol):
-    async def speech_recognizer_did_receive_final_result(self, result: str): pass
+    async def speech_recognizer_did_receive_final_transcription(self, result: str): pass
     async def speech_recognizer_did_receive_partial_result(self, result: str): pass
     async def speech_recognizer_did_receive_empty_result(self): pass
 
@@ -28,7 +28,7 @@ class SpeechRecognizer(Protocol):
 
 This protocol provides callback methods to output results of various states of the speech recognition:
 
-- `speech_recognizer_did_receive_final_result`: Triggered when a final transcript is available.
+- `speech_recognizer_did_receive_final_transcription`: Triggered when a final transcript is available.
 - `speech_recognizer_did_receive_partial_result`: Fired upon receiving an interim transcript.
 - `speech_recognizer_did_receive_empty_result`: Called when no speech was detected.
 

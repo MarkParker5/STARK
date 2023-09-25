@@ -39,6 +39,6 @@ class KaldiResult(BaseModel):
     alternatives: list[KaldiTranscription]
 
 class Transcription(BaseModel):
-    best: str
-    origins: dict[str, KaldiMBR]
+    best: KaldiMBR
+    origins: dict[str, KaldiMBR] = Field(default_factory = dict)
     # suggestions: dict[str, KaldiWord] # list[tuple(str, str)]

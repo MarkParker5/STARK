@@ -9,7 +9,12 @@ from ..core import (
     ResponseStatus,
     Pattern
 )
-from ..interfaces.protocols import SpeechRecognizer, SpeechRecognizerDelegate, SpeechSynthesizer
+from ..interfaces.protocols import (
+    SpeechRecognizer,
+    SpeechRecognizerDelegate,
+    SpeechSynthesizer
+)
+from ..models.transcription import Transcription
 from .mode import Mode
 
 
@@ -50,7 +55,8 @@ class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
 
     # SpeechRecognizerDelegate
 
-    async def speech_recognizer_did_receive_final_result(self, result: str):
+    async def speech_recognizer_did_receive_final_transcription(self, speech_recognizer: SpeechRecognizer, transcription: Transcription):
+        result = transcription.best.text
         print(f'\nYou: {result}')
         # check explicit interaction if needed
         if pattern_str := self.mode.explicit_interaction_pattern:
@@ -69,10 +75,10 @@ class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
         
         await self.commands_context.process_string(result)
 
-    async def speech_recognizer_did_receive_partial_result(self, result: str):
+    async def speech_recognizer_did_receive_partial_result(self, speech_recognizer: SpeechRecognizer, result: str):
         print(f'\rYou: \x1B[3m{result}\x1B[0m', end = '')
 
-    async def speech_recognizer_did_receive_empty_result(self):
+    async def speech_recognizer_did_receive_empty_result(self, speech_recognizer: SpeechRecognizer):
         pass
 
     # CommandsContextDelegate
