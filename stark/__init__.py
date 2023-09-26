@@ -24,6 +24,7 @@ from stark.voice_assistant import (
 )
 from stark.general.blockage_detector import BlockageDetector
 from stark.general.localisation import Localizer
+from stark.general.suggestions import SuggestionsManager
 
 
 async def run(
@@ -44,18 +45,27 @@ async def run_task_group(
     manager: CommandsManager,
     speech_recognizers: list[SpeechRecognizer],
     speech_synthesizer: SpeechSynthesizer,
-    languages: set[str] | None = None
+    languages: set[str] | None = None,
+    base_language: str = 'en'
 ):
     async with asyncer.create_task_group() as main_task_group:
         
         # Localisation
         
-        localizer = Localizer(languages or {'en'})
+        localizer = Localizer((languages or set()) | {'base'}, base_language = base_language)
         localizer.load()
+        
+        # Suggestions Dictionary
+
+        suggestions = SuggestionsManager()
+        
+        for language, recognizable in localizer.recognizable.items():
+            for string in recognizable.strings.values():
+                suggestions.add_keyword(string.value, string.key, language, recognizable.is_base)
         
         # Core
         
-        relay = SpeechRecognizerRelay(speech_recognizers, localizer)
+        relay = SpeechRecognizerRelay(speech_recognizers, localizer, suggestions)
         
         context = CommandsContext(
             task_group = main_task_group, 
@@ -90,4 +100,4 @@ async def run_task_group(
         
         # Yield main task group to allow to add tasks from outside
         
-        yield main_task_group
+        yield (main_task_group, suggestions)

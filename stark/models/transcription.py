@@ -49,7 +49,7 @@ class KaldiResult(BaseModel):
 class Transcription(BaseModel):
     best: KaldiMBR
     origins: dict[str, KaldiMBR] = Field(default_factory = dict)
-    # suggestions: dict[str, KaldiWord] # list[tuple(str, str)]
+    suggestions: list[tuple[str, str]] = Field(default_factory = list) # TODO: namedtuple
     
     def replace(self, substring: str, replacement: str):
         for origin in [*self.origins.values(), self.best]:

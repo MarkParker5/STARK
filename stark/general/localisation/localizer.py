@@ -11,9 +11,11 @@ class Localizer:
     localizable: Languages
     recognizable: Languages
     languages: set[str]
+    base_language: str
     
-    def __init__(self, languages: set[str]):
+    def __init__(self, languages: set[str], base_language: str):
         self.languages = languages
+        self.base_language = base_language
         self.localizable = {}
         self.recognizable = {}
         
@@ -55,16 +57,21 @@ class Localizer:
     def _get_string(self, key: str, language: str, source: Languages) -> str | None:
         if language not in source:
             return None
-        return source[language].get(key)
+        return source[language].get(key) or source['base'].get(key)
                 
     def _load_files(self, name: str, output: Languages):
         for language, strings_file in self._search_files(name):
-            if language in self.languages:
-                output[language] = strings_file
-                strings_file.read()
+            if not language in self.languages: 
+                continue
+            output[language] = strings_file
+            strings_file.read()
+            
+            if language == 'base':
+                strings_file.is_base = True
+                strings_file.language_code = self.base_language
         
     def _search_files(self, filename: str) -> Generator[tuple[str, StringsFile], None, None]:
         for path in Path('.').rglob(f'strings/*/{filename}.strings'):
             language = path.parent.stem
-            strings_file = StringsFile(path)
+            strings_file = StringsFile(path, language)
             yield language, strings_file

@@ -32,12 +32,15 @@ class FileGroup:
 
 class StringsFile:
 
-    path: Path
     strings: dict[str, String]
+    language_code: str
+    is_base: bool = False
     is_read: bool = False
+    path: Path
 
-    def __init__(self, path: Path):
+    def __init__(self, path: Path, language_code: str):
         self.path = path
+        self.language_code = language_code
         self.strings = {}
 
     def __repr__(self):

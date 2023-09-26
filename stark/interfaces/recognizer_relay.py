@@ -6,25 +6,29 @@ from stark.interfaces.protocols import SpeechRecognizer
 from stark.models.transcription import Transcription, KaldiMBR, KaldiWord
 from stark.interfaces.protocols import SpeechRecognizerDelegate
 from stark.general.localisation import Localizer
+from stark.general.suggestions import SuggestionsManager
 
 
 class SpeechRecognizerRelay:
     
     language_code: str = ''
     localizer: Localizer
+    suggestions: SuggestionsManager
     
     _speech_recognizers: list[SpeechRecognizer]
     _current_transcription: Transcription | None = None
     _delegate: SpeechRecognizerDelegate | None = None
     _is_recognizing: bool = False
     
-    def __init__(self, speech_recognizers: list[SpeechRecognizer], localizer: Localizer):
+    def __init__(self, speech_recognizers: list[SpeechRecognizer], localizer: Localizer, suggestions: SuggestionsManager):
         for recognizer in speech_recognizers:
             assert isinstance(recognizer, SpeechRecognizer)
         assert isinstance(localizer, Localizer)
-        assert {sr.language_code for sr in speech_recognizers} == localizer.languages, 'Languages of SpeechRecognizers must be equal to Localizer languages'
+        assert isinstance(suggestions, SuggestionsManager)
+        assert {sr.language_code for sr in speech_recognizers} | {'base'} == localizer.languages, 'Languages of SpeechRecognizers must be equal to Localizer languages'
         self.speech_recognizers = speech_recognizers
         self.localizer = localizer
+        self.suggestions = suggestions
         
     # properties
         
@@ -103,7 +107,8 @@ class SpeechRecognizerRelay:
             for key, string in self.localizer.recognizable[language].strings.items():
                 origin.replace(key, string.value)
         
-        # TODO: add suggestions
+        # add suggestions
+        self.suggestions.add_transcription_suggestions(current_transcription)
         
         # build best confedence
         
@@ -112,7 +117,7 @@ class SpeechRecognizerRelay:
         
         # finish
             
-        self.current_transcription = None # reset for next recognition and exit concurrent calls\
+        self._current_transcription = None # reset for next recognition and exit concurrent calls
         
         for recognizer in self.speech_recognizers:
             recognizer.reset()
