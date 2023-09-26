@@ -9,6 +9,8 @@ from asyncer import syncify
 from asyncer._main import TaskGroup
 
 from ..general.dependencies import DependencyManager, default_dependency_manager
+from ..general.localisation import Localizer
+from ..models.transcription import Transcription
 from .commands_manager import CommandsManager, SearchResult
 from .command import Command, Response, ResponseHandler, AsyncResponseHandler, CommandRunner, ResponseOptions
 
@@ -36,14 +38,22 @@ class CommandsContext:
     _context_queue: list[CommandsContextLayer]
     _task_group: TaskGroup
     
-    def __init__(self, task_group: TaskGroup, commands_manager: CommandsManager, dependency_manager: DependencyManager = default_dependency_manager):
+    def __init__(
+        self,
+        task_group: TaskGroup,
+        commands_manager: CommandsManager,
+        localizer: Localizer,
+        dependency_manager: DependencyManager = default_dependency_manager
+    ):
         assert isinstance(task_group, TaskGroup), task_group
         assert isinstance(commands_manager, CommandsManager)
+        assert isinstance(localizer, Localizer)
         assert isinstance(dependency_manager, DependencyManager)
         self.commands_manager = commands_manager
         self._context_queue = [self.root_context]
         self._response_queue = []
         self._task_group = task_group
+        self.localizer = localizer
         self.dependency_manager = dependency_manager
         self.dependency_manager.add_dependency(None, AsyncResponseHandler, self)
         self.dependency_manager.add_dependency(None, ResponseHandler, SyncResponseHandler(self))
@@ -62,7 +72,7 @@ class CommandsContext:
     def root_context(self):
         return CommandsContextLayer(self.commands_manager.commands, {})
 
-    async def process_string(self, string: str):
+    async def process_transcription(self, transcription: Transcription):
         
         if not self._context_queue:
             self._context_queue.append(self.root_context)
@@ -71,14 +81,14 @@ class CommandsContext:
         while self._context_queue:
             
             current_context = self._context_queue[0]
-            search_results = await self.commands_manager.search(string = string, commands = current_context.commands)
+            search_results = await self.commands_manager.search(transcription, self.localizer, current_context.commands)
             
             if search_results:
                 break
             elif self._context_queue: # must be checked again because of async
                 self._context_queue.pop(0)
                 
-        if not search_results and self.fallback_command and (matches := await self.fallback_command.pattern.match(string)):
+        if not search_results and self.fallback_command and (matches := await self.fallback_command.pattern.match(transcription, self.localizer)):
             for match in matches:
                 search_results = [SearchResult(
                     command = self.fallback_command,

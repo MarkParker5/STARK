@@ -17,7 +17,7 @@ async def test_multiple_commands(commands_context_flow, autojump_clock):
         def lorem(): 
             return Response(text = 'lorem!')
         
-        await context.process_string('foo bar lorem ipsum dolor')
+        await context.process_transcription('foo bar lorem ipsum dolor')
         await anyio.sleep(5)
 
         assert len(context_delegate.responses) == 2
@@ -30,7 +30,7 @@ async def test_repeating_command(commands_context_flow, autojump_clock):
         def lorem(): 
             return Response(text = 'lorem!')
         
-        await context.process_string('lorem pisum dolor lorem ipsutest_repeating_commanduum dolor sit amet')
+        await context.process_transcription('lorem pisum dolor lorem ipsutest_repeating_commanduum dolor sit amet')
         await anyio.sleep(5)
         
         assert len(context_delegate.responses) == 2

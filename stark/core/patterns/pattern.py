@@ -3,11 +3,12 @@ from typing import Type, Generator, TypeAlias, TYPE_CHECKING
 from dataclasses import dataclass
 import re
 from asyncer import create_task_group, SoonValue
-import json
 
+from stark.models.transcription import Transcription
+from stark.general.localisation import Localizer
 from .expressions import dictionary
 if TYPE_CHECKING:
-    from ..types import Object, ParseResult
+    from ..types import Object, ParseResult, ParseError
     ObjectType: TypeAlias = Type[Object]
 
 
@@ -21,7 +22,7 @@ class MatchResult:
 class Pattern:
     
     parameters: dict[str, ObjectType]
-    compiled: str
+    compiled: dict[str, str]
     
     _origin: str
     _parameter_regex: re.Pattern
@@ -31,81 +32,105 @@ class Pattern:
         self._origin = origin
         self._parameter_regex = self._get_parameter_regex()
         self.parameters = dict(self._get_parameters())
-        self.compiled = self._compile()
         
-    async def match(self, string: str, objects_cache: dict[str, Object] | None = None) -> list[MatchResult]:
+    def prepare(self, localizer: Localizer):
+        for language in localizer.languages:
+            self.compiled[language] = self._get_compiled(language, localizer)
+        
+    async def match(self, transcription: Transcription, localizer: Localizer, objects_cache: dict[str, Object] | None = None) -> list[MatchResult]:
+        if not self._origin:
+            return []
         
         if objects_cache is None:
             objects_cache = {}
             
         matches: list[MatchResult] = []
         
-        for match in sorted(re.finditer(self.compiled, string), key = lambda match: match.start()):
+        for language_code, track in transcription.origins.items():
             
-            if match.start() == match.end():
-                continue # skip empty
+            compiled = self._get_compiled(language_code, localizer) # TODO: use suggestions for extra matches
+            string = track.text
             
-            # start and end in string, not in match.group(0) 
-            match_start = match.start()
-            match_end = match.end()
-            match_str_groups = match.groupdict()
-            
-            # parse parameters
-            
-            parameters: dict[str, Object] = {}
-            substrings: dict[str, str] = {}
-            futures: list[tuple[str, SoonValue[ParseResult]]] = []
-            
-            # run concurrent objects parsing
-            async with create_task_group() as group:
-                for name, object_type in self.parameters.items():
-                    if not match_str_groups.get(name):
+            for match in sorted(re.finditer(compiled, string), key = lambda match: match.start()):
+                
+                if match.start() == match.end():
+                    continue # skip empty
+                
+                # start and end in string, not in match.group(0) 
+                match_start = match.start()
+                match_end = match.end()
+                match_str_groups = match.groupdict()
+                
+                # parse parameters
+                
+                parameters: dict[str, Object] = {}
+                substrings: dict[str, str] = {}
+                futures: list[tuple[str, SoonValue[ParseResult | None]]] = []
+                
+                # run concurrent objects parsing
+                async with create_task_group() as group:
+                    for name, object_type in self.parameters.items():
+                        if not match_str_groups.get(name):
+                            continue
+                        
+                        parameter_str = match_str_groups[name].strip()
+                        
+                        for parsed_substr, parsed_obj in objects_cache.items():
+                            if parsed_substr in parameter_str:
+                                parameters[name] = parsed_obj.copy()
+                                parameter_str = parsed_substr
+                                substrings[name] = parsed_substr
+                                break
+                        else:
+                            
+                            start_index = match.start(name)
+                            end_index = match.end(name)
+                            time_range = next(iter(track.get_time(parameter_str, start_index, end_index)))
+                            subtrack = track.get_slice(*time_range)
+                            subtranscription = transcription.get_slice(*time_range)
+                            subtranscription.suggestions = [s for s in subtranscription.suggestions if s[0] in subtrack.text]
+                            
+                            async def parse() -> ParseResult | None:
+                                try:
+                                    parse_result = await object_type.parse(subtrack, subtranscription, match_str_groups)
+                                except ParseError:
+                                    return None
+                                objects_cache[parse_result.substring] = parse_result.obj
+                                return parse_result
+                            
+                            futures.append((name, group.soonify(parse)()))
+                
+                # read futures
+                for name, future in futures:
+                    parse_result = future.value
+                    if not parse_result:
                         continue
+                    parameters[name] = parse_result.obj
+                    substrings[name] = parse_result.substring
                     
-                    parameter_str = match_str_groups[name].strip()
+                # save parameters
+                for name in parameters.keys():
+                    parameter_str = substrings[name]
+                    parameter_start = match_str_groups[name].find(parameter_str)
+                    parameter_end = parameter_start + len(parameter_str)
                     
-                    for parsed_substr, parsed_obj in objects_cache.items():
-                        if parsed_substr in parameter_str:
-                            parameters[name] = parsed_obj.copy()
-                            parameter_str = parsed_substr
-                            substrings[name] = parsed_substr
-                            break
-                    else:
-                        async def parse(from_string: str, parameters: dict[str, str]):
-                            parse_result = await object_type.parse(from_string = from_string, parameters = parameters)
-                            objects_cache[parse_result.substring] = parse_result.obj
-                            return parse_result
-                        futures.append((name, group.soonify(parse)(parameter_str, match_str_groups)))
-            
-            # read futures
-            for name, future in futures:
-                parse_result = future.value
-                parameters[name] = parse_result.obj
-                substrings[name] = parse_result.substring
+                    # adjust start, end and substring after parsing parameters
+                    if match.start(name) == match.start() and parameter_start != 0:
+                        match_start = match.start(name) + parameter_start
+                    if match.end(name) == match.end() and parameter_end != len(parameter_str):
+                        match_end = match.start(name) + parameter_start + parameter_end 
+                        
+                # strip original string
+                substring = string[match_start:match_end].strip()
+                start = match_start + string[match_start:match_end].find(substring)
+                end = start + len(substring)
                 
-            # save parameters
-            for name in parameters.keys():
-                parameter_str = substrings[name]
-                parameter_start = match_str_groups[name].find(parameter_str)
-                parameter_end = parameter_start + len(parameter_str)
-                
-                # adjust start, end and substring after parsing parameters
-                if match.start(name) == match.start() and parameter_start != 0:
-                    match_start = match.start(name) + parameter_start
-                if match.end(name) == match.end() and parameter_end != len(parameter_str):
-                    match_end = match.start(name) + parameter_start + parameter_end 
-                    
-            # strip original string
-            substring = string[match_start:match_end].strip()
-            start = match_start + string[match_start:match_end].find(substring)
-            end = start + len(substring)
-            
-            matches.append(MatchResult(
-                substring = substring,
-                start = start,
-                end = end,
-                parameters = parameters
-            ))
+                matches.append(MatchResult( # TODO: add language / track
+                    substring = substring,
+                    start = start,
+                    end = end,
+                    parameters = parameters
+                ))
             
         # filter overlapping matches
         
@@ -142,9 +167,11 @@ class Pattern:
             
             yield arg_name, arg_type
             
-    def _compile(self) -> str: # transform Pattern to classic regex with named groups
+    def _get_compiled(self, language: str, localizer: Localizer) -> str: # transform Pattern to classic regex with named groups
+        if language in self.compiled:
+            return self.compiled[language]
         
-        pattern: str = self._origin
+        pattern: str = localizer.get_localizable(self._origin, language) or self._origin
 
         #   transform core expressions to regex
         
@@ -160,6 +187,8 @@ class Pattern:
             pattern = re.sub(arg_declaration, f'(?P<{name}>{arg_pattern})', pattern)
         
         return pattern
+    
+    # magic methods
     
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Pattern):

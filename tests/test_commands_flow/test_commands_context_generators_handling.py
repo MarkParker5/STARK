@@ -21,7 +21,7 @@ async def test_commands_context_handle_async_generator(commands_context_flow, au
             yield Response(text = 'foo4')
             # return is not allowed in generators (functions with yield)
         
-        await context.process_string('foo')
+        await context.process_transcription('foo')
         
         last_count = 0
         while last_count < 5:
@@ -47,7 +47,7 @@ async def test_commands_context_handle_sync_generator(commands_context_flow, aut
             # return is not allowed in generators (functions with yield)
         
         with warnings.catch_warnings(record = True) as warnings_list:
-            await context.process_string('foo')
+            await context.process_transcription('foo')
             await anyio.sleep(1)
         
         assert len(warnings_list) == 2

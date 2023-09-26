@@ -52,8 +52,10 @@ async def run_task_group(
         
         # Localisation
         
-        localizer = Localizer((languages or set()) | {'base'}, base_language = base_language)
+        languages = languages or set()
+        localizer = Localizer(languages | {'base'}, base_language = base_language)
         localizer.load()
+        manager.prepare(localizer, languages)
         
         # Suggestions Dictionary
 

@@ -7,6 +7,8 @@ import json
 from .patterns import Pattern, MatchResult
 from .types import Object
 from .command import Command, CommandRunner, ResponseHandler, AsyncResponseHandler
+from ..models.transcription import Transcription
+from ..general.localisation import Localizer
 
 
 @dataclass
@@ -29,8 +31,12 @@ class CommandsManager:
             if command.name in {f'{self.name}.{name}', name}:
                 return command
         return None
+    
+    def prepare(self, localizer: Localizer):
+        for command in self.commands:
+            command.pattern.prepare(localizer)
 
-    async def search(self, string: str, commands: list[Command] | None = None) -> list[SearchResult]:
+    async def search(self, transcription: Transcription, localizer: Localizer, commands: list[Command] | None = None) -> list[SearchResult]:
         
         if not commands:
             commands = self.commands
@@ -42,7 +48,7 @@ class CommandsManager:
         # run concurent commands match
         async with create_task_group() as group:
             for command in commands:
-                futures.append((command, group.soonify(command.pattern.match)(string, objects_cache)))
+                futures.append((command, group.soonify(command.pattern.match)(transcription, localizer, objects_cache)))
         
         # read all finished matches
         i = 0
@@ -55,7 +61,7 @@ class CommandsManager:
                 ))
                 i += 1
                 
-        # resolve overlapped results
+        # resolve overlapped results # TODO: adapt for transcriptions by timestamps, limit to single track (language)
         
         results = sorted(results, key = lambda result: result.match_result.start)
         

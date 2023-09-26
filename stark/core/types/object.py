@@ -5,6 +5,7 @@ from abc import ABC
 import copy
 
 from stark.general.classproperty import classproperty
+from stark.models.transcription import Transcription, KaldiMBR
 from .. import Pattern
 
 
@@ -25,45 +26,50 @@ class Object(ABC):
         '''Just init with wrapped value.'''
         self.value = value
         
-    async def did_parse(self, from_string: str) -> str:
+    async def did_parse(self, track: KaldiMBR, transcription: Transcription, re_match_groups: dict[str, str]) -> Transcription:
         '''
         This method is called after parsing from string and setting parameters found in pattern. 
         You will very rarely, if ever, need to call this method directly.
         
-        Override this method for more complex parsing from string. 
+        Override this method for more complex custom parsing from string. 
         
         Returns:
-            Minimal substring that is required to parse value.
+            Minimal transcription slice that is required to parse value. See `Transcription.slice`.
         
         Raises:
             ParseError: if parsing failed.
         '''
-        self.value = from_string
-        return from_string
+        return transcription
 
     @classmethod
-    async def parse(cls, from_string: str, parameters: dict[str, str] | None = None) -> ParseResult:
+    async def parse(cls, track: KaldiMBR, transcription: Transcription, re_match_groups: dict[str, str] | None = None) -> ParseResult:
         '''
         For internal use only.
         You will very rarely, if ever, need to override or even call this method.
-        Override `def did_parse(self, from_string: str) -> str` if you need complex parsing.
+        Override `async def did_parse(...) -> Transcription` if you need custom complex parsing.
+        
+        Returns:
+            Minimal transcription slice that is required to parse value.
         
         Raises:
             ParseError: if parsing failed.
         '''
         
         obj = cls(None)
-        parameters = parameters or {}
+        re_match_groups = re_match_groups or {}
         
         for name, object_type in cls.pattern.parameters.items():
-            if not parameters.get(name):
+            if not re_match_groups.get(name):
                 continue
-            value = parameters.pop(name)
-            setattr(obj, name, (await object_type.parse(from_string = value, parameters = parameters)).obj)
+            
+            value = re_match_groups.pop(name)
+            time_range = next(iter(track.get_time(value)))
+            sub_track = track.get_slice(*time_range)
+            sub_transcription = transcription.get_slice(*time_range)
+            
+            setattr(obj, name, (await object_type.parse(sub_track, sub_transcription, re_match_groups)).obj)
         
-        substring = await obj.did_parse(from_string)
-        
-        return ParseResult(obj, substring)
+        return ParseResult(obj, await obj.did_parse(sub_track, sub_transcription, re_match_groups))
     
     def copy(self) -> Object:
         return copy.copy(self)

@@ -11,7 +11,7 @@ async def test_command_return_response(commands_context_flow, autojump_clock):
         async def foo() -> Response: 
             return Response(text = 'foo!')
         
-        await context.process_string('foo')
+        await context.process_transcription('foo')
         await anyio.sleep(5)
 
         assert len(context_delegate.responses) == 1
@@ -24,7 +24,7 @@ async def test_sync_command_call_sync_respond(commands_context_flow, autojump_cl
         def foo(handler: ResponseHandler): 
             handler.respond(Response(text = 'foo!'))
         
-        await context.process_string('foo')
+        await context.process_transcription('foo')
         await anyio.sleep(5)
 
         assert len(context_delegate.responses) == 1
@@ -37,7 +37,7 @@ async def test_async_command_call_sync_respond(commands_context_flow, autojump_c
         async def foo(handler: AsyncResponseHandler): 
             await handler.respond(Response(text = 'foo!'))
         
-        await context.process_string('foo')
+        await context.process_transcription('foo')
         await anyio.sleep(5)
 
         assert len(context_delegate.responses) == 1
@@ -56,7 +56,7 @@ async def test_sync_command_call_async_respond(commands_context_flow, autojump_c
                 assert issubclass(warnings_list[0].category, RuntimeWarning)
                 assert 'was never awaited' in str(warnings_list[0].message)
         
-        await context.process_string('foo')
+        await context.process_transcription('foo')
         await anyio.sleep(5)
 
         assert len(context_delegate.responses) == 0
@@ -70,7 +70,7 @@ async def test_async_command_call_async_respond(commands_context_flow, autojump_
             with pytest.raises(RuntimeError, match = 'can only be run from an AnyIO worker thread'):
                 handler.respond(Response(text = 'foo!'))
         
-        await context.process_string('foo')
+        await context.process_transcription('foo')
         await anyio.sleep(5)
 
         assert len(context_delegate.responses) == 0
@@ -91,7 +91,7 @@ async def test_command_multiple_respond(commands_context_flow, autojump_clock):
             await anyio.sleep(2)
             return Response(text = 'foo4')
         
-        await context.process_string('foo')
+        await context.process_transcription('foo')
         
         last_count = 0
         while last_count < 5:
