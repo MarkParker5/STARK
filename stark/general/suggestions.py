@@ -1,10 +1,8 @@
-from typing import Generator, Iterable
+import numpy as np
 from dataclasses import dataclass
 import subprocess
 import re
 import warnings
-from spellwise import CaverphoneOne
-from jellyfish import levenshtein_distance
 from stark.models.transcription import Transcription
 
 
@@ -47,52 +45,178 @@ class SuggestionsManager:
     def get_string_suggestions(self, string: str, language_code: str) -> set[tuple[str, str]]:
         suggestions: set[tuple[str, str]] = set()
         
-        for word in string.split():
-            # word = string # TODO: match few words, use "contains" instead of "equals"
-            
-            for variants in self.keywords.values():
-                for variant in variants.values():
-                    
-                    suggestion = (word, variant.keyword)
-                    match_language = variant.language_code is None or variant.language_code == language_code
-                    unique = not suggestion in suggestions
-                    
-                    if match_language and unique and self._compare(variant, word, language_code):
-                        suggestions.add(suggestion)
+        for variants in self.keywords.values():
+            for variant in variants.values():
+                
+                match_language = variant.language_code is None or variant.language_code == language_code
+                
+                if match_language and (substring := self._search(variant, string, language_code)):
+                    suggestions.add((substring, variant.keyword))
                         
         return suggestions
     
     # private
     
-    def _compare(self, keyword: KeywordMeta, string: str, language_code: str) -> bool:
-        if self._caverphone1(string) == keyword.caverphone:
-            return True
+    def _search(self, keyword: KeywordMeta, string: str, language_code: str) -> str | None:
+        if self._customphone(string) == keyword.caverphone:
+            return string
         
         phonetic = self._ipa_to_latin(self._espeak(string, language_code))
         
-        return self._caverphone1(phonetic) == keyword.caverphone \
-            or self._levenshtein(phonetic, keyword.simple_phonetic) < 0.1
+        caverphone_substring = lambda: self._levenshtein(keyword.caverphone, self._customphone(phonetic) or '', 0)
+        phonetic_substring = lambda: self._levenshtein(keyword.simple_phonetic, phonetic, 0.1)
+            
+        # return caverphone_substring() or phonetic_substring()
+        return '' # TODO: back transformation to get original substring
 
     def _espeak(self, string: str, language_code: str) -> str:
-        result = subprocess.run(['espeak', '--ipa', f'-v{language_code}', '-q', string], capture_output=True, text=True) # TODO: read espeak docs
+        result = subprocess.run(['espeak', '--ipa', f'-v{language_code}', '-q', string], capture_output=True, text=True)
         return re.compile(r'\(.*?\)').sub('', result.stdout.strip()).strip()
         
-    def _caverphone1(self, string: str) -> str:
-        return CaverphoneOne()._pre_process(string).replace('1', '') # TODO: return None if needed
+    def _customphone(self, word: str) -> str | None:
+        '''Caverphone 2.0 based algorithm for phonetic encoding of words. No filling with "1", no length limit, return None if word is empty.'''
         
-    def _levenshtein(self, string1: str, string2: str) -> float:
-        if string1 == string2:
-            return 0
-        if len(string1) == 0 or len(string2) == 0:
-            return 1
-        return min(
-            levenshtein_distance(string1, string2) for string1, string2 in [
-                (string1, string2),
-                # (word1.replace('W', 'V'), word2.replace('W', 'V')),
-                # (word1.replace('W', 'F'), word2.replace('W', 'F')),
-                # (string1.replace('W', 'V').replace('F', 'V'), string2.replace('W', 'V').replace('F', 'V')),
-            ]
-        ) / min(len(string1), len(string2))
+        alphabet = "abcdefghijklmnopqrstuvwxyz"
+        vowels = "aeiou"
+
+        word = word.lower()
+        word = "".join(_w for _w in word if _w in alphabet)
+        
+        if not word:
+            return None
+
+        if word[-1:] == "e":
+            word = word[0:-1]
+
+        if word[0:5] == "cough":
+            word = "cou2f" + word[5:]
+        if word[0:5] == "rough":
+            word = "rou2f" + word[5:]
+        if word[0:5] == "tough":
+            word = "tou2f" + word[5:]
+        if word[0:6] == "enough":
+            word = "enou2f" + word[5:]
+        if word[0:6] == "trough":
+            word = "trou2f" + word[5:]
+        if word[0:2] == "gn":
+            word = "2n" + word[2:]
+        if word[-2:] == "mb":
+            word = word[0:-2] + "m2"
+
+        word = word.replace("cq", "2q")
+        word = word.replace("ci", "si")
+        word = word.replace("ce", "se")
+        word = word.replace("cy", "sy")
+        word = word.replace("tch", "2ch")
+        word = word.replace("c", "k")
+        word = word.replace("q", "k")
+        word = word.replace("x", "k")
+        word = word.replace("v", "f")
+        word = word.replace("dg", "2g")
+        word = word.replace("tio", "sio")
+        word = word.replace("tia", "sia")
+        word = word.replace("d", "t")
+        word = word.replace("ph", "fh")
+        word = word.replace("b", "p")
+        word = word.replace("sh", "s2")
+        word = word.replace("z", "s")
+
+        if word[0:1] in vowels:
+            word = "A" + word[1:]
+        for _v in vowels:
+            word = word.replace(_v, "3")
+
+        word = word.replace("j", "y")
+        word = word.replace("y3", "Y3")
+
+        if word[0:2] == "y3":
+            word = "Y3" + word[2:]
+        if word[0] == "y":
+            word = "A" + word[1:]
+
+        word = word.replace("y", "3")
+        word = word.replace("3gh3", "3kh3")
+        word = word.replace("gh", "22")
+        word = word.replace("g", "k")
+
+        for _w in "stpkfmn":
+            while _w * 2 in word:
+                word = word.replace(_w * 2, _w)
+            word = word.replace(_w, _w.upper())
+
+        word = word.replace("w3", "W3")
+        word = word.replace("wh3", "Wh3")
+
+        if word[-1:] == "w":
+            word = word[0:-1] + "3"
+
+        word = word.replace("w", "2")
+
+        if word[0:1] == "h":
+            word = "A" + word[1:]
+
+        word = word.replace("h", "2")
+        word = word.replace("r3", "R3")
+
+        if word[-1:] == "r":
+            word = word[0:-1] + "3"
+
+        word = word.replace("r", "2")
+        word = word.replace("l3", "L3")
+
+        if word[-1:] == "l":
+            word = word[0:-1] + "3"
+
+        word = word.replace("l", "2")
+        word = word.replace("2", "")
+
+        if word[-1:] == "3":
+            word = word[0:-1] + "A"
+
+        word = word.replace("3", "")
+        
+        # while len(word) < 10:
+        #     word += '1'
+        
+        if word == 'A':
+            return None
+
+        return word
+        
+    def _levenshtein(self, query: str, string: str, trashhold: float) -> str | None:
+        if not query or not string:
+            return None
+        
+        max_distance = int(max(len(query), len(string)) * trashhold)
+        n = len(query)
+        m = len(string)
+        best_distance = float('inf')
+        suggested_substring = None
+        
+        for i in range(m - n + 1):
+            substring = string[i:i + n]
+            dp = np.zeros((n + 1, 2), dtype=int)
+            dp[:, 0] = np.arange(n + 1)
+            
+            for j in range(1, n + 1):
+                dp[j, 1] = min(
+                    dp[j - 1, 0] + 1,
+                    dp[j, 0] + 1,
+                    dp[j - 1, 1] + (query[j - 1] != substring[j - 1])
+                )
+            
+            distance = dp[-1, 1]
+            if distance < best_distance:
+                best_distance = distance
+                suggested_substring = substring
+                
+            if best_distance <= max_distance:
+                break
+        
+        if best_distance <= max_distance:
+            return suggested_substring
+        else:
+            return None
         
     def _ipa_to_latin(self, origin: str) -> str:
         mapping = {

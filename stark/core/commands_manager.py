@@ -45,7 +45,7 @@ class CommandsManager:
         results: list[SearchResult] = []
         futures: list[tuple[Command, SoonValue[list[MatchResult]]]] = []
         
-        # run concurent commands match
+        # run concurent commands match 
         async with create_task_group() as group:
             for command in commands:
                 futures.append((command, group.soonify(command.pattern.match)(transcription, localizer, objects_cache)))
@@ -60,27 +60,30 @@ class CommandsManager:
                     index = i
                 ))
                 i += 1
-                
-        # resolve overlapped results # TODO: adapt for transcriptions by timestamps, limit to single track (language)
+        
+        # resolve overlapped results
         
         results = sorted(results, key = lambda result: result.match_result.start)
         
         # copy to prevent affecting iteration by removing items; slice makes copy automatically
-        for prev, current in zip(results.copy(), results[1:]): # TODO: concurrent; optimize using cache
+        for prev, current in zip(results.copy(), results[1:]):
             if prev.match_result.start == current.match_result.start or prev.match_result.end > current.match_result.start:
                 
                 # constrain prev end to current start
-                prev_cut = await prev.command.pattern.match(string[prev.match_result.start:current.match_result.start], objects_cache) 
+                prev_slice = transcription.get_slice(prev.match_result.start, current.match_result.start)
+                prev_slice_match = await prev.command.pattern.match(prev_slice, localizer, objects_cache) 
+                
                 # constrain current start to prev end
-                current_cut = await current.command.pattern.match(string[prev.match_result.end:current.match_result.end], objects_cache)
+                current_slice = transcription.get_slice(prev.match_result.end, current.match_result.end)
+                current_slice_match = await current.command.pattern.match(current_slice, localizer, objects_cache)
 
                 # less index = more priority to save full match
                 priority1, priority2 = (prev, current) if prev.index < current.index else (current, prev)
-                priority1_cut, priority2_cut = (prev_cut, current_cut) if prev.index < current.index else (current_cut, prev_cut)
+                priority1_slice_match, priority2_slice_match = (prev_slice_match, current_slice_match) if prev.index < current.index else (current_slice_match, prev_slice_match)
                 
-                if new_matches := priority2_cut: # if can cut less priority
+                if new_matches := priority2_slice_match: # if can cut less priority
                     priority2.match_result = new_matches[0]
-                elif new_matches := priority1_cut: # else if can cut more priority
+                elif new_matches := priority1_slice_match: # else if can cut more priority
                     priority1.match_result = new_matches[0]
                 else: # else remove less priority
                     results.remove(priority2)

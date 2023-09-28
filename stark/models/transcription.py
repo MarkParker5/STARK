@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Generator
+from typing import Generator, NamedTuple
 from pydantic import BaseModel, Field, ValidationError
 
 
@@ -151,11 +151,15 @@ class KaldiTranscription(BaseModel):
     
 class KaldiResult(BaseModel):
     alternatives: list[KaldiTranscription]
+    
+class Suggestion(NamedTuple):
+    variant: str
+    keyword: str
 
 class Transcription(BaseModel):
     best: KaldiMBR
     origins: dict[str, KaldiMBR] = Field(default_factory = dict)
-    suggestions: list[tuple[str, str]] = Field(default_factory = list) # TODO: namedtuple
+    suggestions: list[Suggestion] = Field(default_factory = list)
     
     def replace(self, substring: str, replacement: str):
         for origin in [*self.origins.values(), self.best]:
@@ -167,6 +171,3 @@ class Transcription(BaseModel):
             origins = {k: v.get_slice(start, end) for k, v in self.origins.items()},
             suggestions = self.suggestions
         )
-    
-    # def get_time(self, substring: str, from_index: int, to_index: int) -> tuple[float, float]:
-    #     raise NotImplementedError

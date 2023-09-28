@@ -4,7 +4,7 @@ from dataclasses import dataclass
 import re
 from asyncer import create_task_group, SoonValue
 
-from stark.models.transcription import Transcription
+from stark.models.transcription import Transcription, KaldiMBR
 from stark.general.localisation import Localizer
 from .expressions import dictionary
 if TYPE_CHECKING:
@@ -14,9 +14,9 @@ if TYPE_CHECKING:
 
 @dataclass
 class MatchResult:
-    substring: str
-    start: int
-    end: int
+    subtrack: KaldiMBR
+    start: float
+    end: float
     parameters: dict[str, Object]
 
 class Pattern:
@@ -48,8 +48,24 @@ class Pattern:
         
         for language_code, track in transcription.origins.items():
             
-            compiled = self._get_compiled(language_code, localizer) # TODO: use suggestions for extra matches
             string = track.text
+            compiled = self._get_compiled(language_code, localizer)
+            
+            # map suggestions to more comfortable data structure
+            
+            suggestions: dict[str, set[str]] = dict()
+            for variant, keyword in transcription.suggestions:
+                if not keyword in suggestions:
+                    suggestions[keyword] = set()
+                suggestions[keyword].add(variant)
+            
+            # update compiled re to match keyword variants
+            
+            for keyword, variants in suggestions.items():
+                if keyword in compiled:
+                    compiled = compiled.replace(keyword, f'[{keyword}|{"|".join(variants)}]')
+                    
+            # search all matches
             
             for match in sorted(re.finditer(compiled, string), key = lambda match: match.start()):
                 
@@ -121,12 +137,13 @@ class Pattern:
                         match_end = match.start(name) + parameter_start + parameter_end 
                         
                 # strip original string
-                substring = string[match_start:match_end].strip()
-                start = match_start + string[match_start:match_end].find(substring)
-                end = start + len(substring)
                 
-                matches.append(MatchResult( # TODO: add language / track
-                    substring = substring,
+                substring = string[match_start:match_end].strip()
+                start, end = next(iter(track.get_time(substring)))
+                subtrack = track.get_slice(start, end)
+                
+                matches.append(MatchResult(
+                    subtrack = subtrack,
                     start = start,
                     end = end,
                     parameters = parameters
