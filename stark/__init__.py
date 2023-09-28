@@ -55,7 +55,7 @@ async def run_task_group(
         languages = languages or set()
         localizer = Localizer(languages | {'base'}, base_language = base_language)
         localizer.load()
-        manager.prepare(localizer, languages)
+        manager.prepare(localizer)
         
         # Suggestions Dictionary
 
@@ -71,13 +71,15 @@ async def run_task_group(
         
         context = CommandsContext(
             task_group = main_task_group, 
-            commands_manager = manager
+            commands_manager = manager,
+            localizer = localizer,
         )
         
         voice_assistant = VoiceAssistant(
             speech_recognizer = relay,
             speech_synthesizer = speech_synthesizer,
-            commands_context = context
+            commands_context = context,
+            localizer = localizer,
         )
         
         # Set delegates

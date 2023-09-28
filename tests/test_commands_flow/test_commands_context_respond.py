@@ -51,7 +51,7 @@ async def test_sync_command_call_async_respond(commands_context_flow, autojump_c
         def foo(handler: AsyncResponseHandler): 
             with warnings.catch_warnings(record = True) as warnings_list:
                 assert len(warnings_list) == 0
-                handler.respond(Response(text = 'foo!')) # type: ignore
+                handler.respond(Response(text = 'foo!'))
                 assert len(warnings_list) == 1
                 assert issubclass(warnings_list[0].category, RuntimeWarning)
                 assert 'was never awaited' in str(warnings_list[0].message)

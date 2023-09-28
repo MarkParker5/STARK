@@ -11,6 +11,7 @@ from asyncer._main import TaskGroup
 from ..general.dependencies import DependencyManager, default_dependency_manager
 from ..general.localisation import Localizer
 from ..models.transcription import Transcription
+from ..models.localizable_string import LocalizableString
 from .commands_manager import CommandsManager, SearchResult
 from .command import Command, Response, ResponseHandler, AsyncResponseHandler, CommandRunner, ResponseOptions
 
@@ -102,25 +103,27 @@ class CommandsContext:
             parameters.update(search_result.match_result.parameters)
             parameters.update(self.dependency_manager.resolve(search_result.command._runner))
             
-            self.run_command(search_result.command, parameters)
+            self.run_command(search_result.command, parameters, search_result.match_result.subtrack.language_code)
             
     def inject_dependencies(self, runner: Command[CommandRunner] | CommandRunner) -> CommandRunner:
         def injected_func(**kwargs) -> ResponseOptions:
             kwargs.update(self.dependency_manager.resolve(runner._runner if isinstance(runner, Command) else runner))
-            return runner(**kwargs) # type: ignore
-        return injected_func # type: ignore
+            return runner(**kwargs)
+        return injected_func
                 
-    def run_command(self, command: Command, parameters: dict[str, Any] = {}):
+    def run_command(self, command: Command, parameters: dict[str, Any] | None = None, language_code: str | None = None):
+        parameters = parameters or {}
+        
         async def command_runner():
             command_return = await command(parameters)
             
             if isinstance(command_return, Response):
-                await self.respond(command_return)
+                await self.respond(command_return, language_code)
             
             elif isinstance(command_return, AsyncGeneratorType):
                 async for response in command_return:
                     if response:
-                        await self.respond(response)
+                        await self.respond(response, language_code)
                         
             elif isinstance(command_return, GeneratorType):
                 message = f'[WARNING] Command {command} is a sync GeneratorType that is not fully supported and may block the main thread. ' + \
@@ -128,7 +131,7 @@ class CommandsContext:
                 warnings.warn(message, UserWarning)
                 for response in command_return:
                     if response:
-                        await self.respond(response)
+                        await self.respond(response, language_code)
             
             elif command_return is None:            
                 pass
@@ -140,8 +143,15 @@ class CommandsContext:
 
     # ResponseHandler
     
-    async def respond(self, response: Response): # async forces to run in main thread
+    async def respond(self, response: Response, language_code: str | None = None): # async forces to run in main thread
         assert isinstance(response, Response)
+        
+        if language_code and isinstance(response.text, LocalizableString):
+            response.text.language_code = language_code
+            
+        if language_code and isinstance(response.voice, LocalizableString):
+            response.voice.language_code = language_code
+        
         self._response_queue.append(response)
     
     async def unrespond(self, response: Response):
@@ -195,8 +205,8 @@ class SyncResponseHandler: # needs for changing thread from worker to main in co
     
     # ResponseHandler
     
-    def respond(self, response: Response):
-        syncify(self.async_response_handler.respond)(response)
+    def respond(self, response: Response, language_code: str | None = None):
+        syncify(self.async_response_handler.respond)(response, language_code)
         
     def unrespond(self, response: Response):
         syncify(self.async_response_handler.unrespond)(response)

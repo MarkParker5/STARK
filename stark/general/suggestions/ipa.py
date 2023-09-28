@@ -1,3 +1,9 @@
+'''alternatives for espeak:
+https://github.com/pettarin/ipapy
+https://github.com/rhasspy/gruut-ipa
+https://github.com/dmort27/epitran
+'''
+
 import warnings
 import subprocess
 import re

@@ -15,6 +15,7 @@ from ..interfaces.protocols import (
     SpeechSynthesizer
 )
 from ..models.transcription import Transcription
+from ..general.localisation import Localizer
 from .mode import Mode
 
 
@@ -27,6 +28,7 @@ class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
     speech_recognizer: SpeechRecognizer
     speech_synthesizer: SpeechSynthesizer
     commands_context: CommandsContext
+    localizer: Localizer
     
     mode: Mode
     ignore_responses: list[ResponseStatus] # TODO: to Mode
@@ -34,11 +36,19 @@ class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
     _responses: list[ResponseCache]
     _last_interaction_time: datetime
 
-    def __init__(self, speech_recognizer: SpeechRecognizer, speech_synthesizer: SpeechSynthesizer, commands_context: CommandsContext):
+    def __init__(
+        self,
+        speech_recognizer: SpeechRecognizer,
+        speech_synthesizer: SpeechSynthesizer,
+        commands_context: CommandsContext,
+        localizer: Localizer
+    ):
         assert isinstance(speech_recognizer, SpeechRecognizer)
         assert isinstance(speech_synthesizer, SpeechSynthesizer)
         assert isinstance(commands_context, CommandsContext)
+        assert isinstance(localizer, Localizer)
         
+        self.localizer = localizer
         self.speech_recognizer = speech_recognizer
         self.speech_synthesizer = speech_synthesizer
         self.commands_context = commands_context
@@ -60,7 +70,7 @@ class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
         
         # check explicit interaction if needed
         if pattern_str := self.mode.explicit_interaction_pattern:
-            if not await Pattern(pattern_str).match(transcription):
+            if not await Pattern(pattern_str).match(transcription, self.localizer):
                 return
         
         # reset context if timeout reached
@@ -130,14 +140,18 @@ class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
     # Private
     
     async def _play_response(self, response: Response):
+        
+        text = self.localizer.localize(response.text) or response.text
+        voice = self.localizer.localize(response.voice) or response.voice
+        
         self.commands_context.last_response = response
         
         if response.text:
-            print(f'S.T.A.R.K.: {response.text}')
+            print(f'S.T.A.R.K.: {text}')
         
-        if response.voice:
+        if voice:
             was_recognizing = self.speech_recognizer.is_recognizing
             self.speech_recognizer.is_recognizing = False
-            speech = await self.speech_synthesizer.synthesize(response.voice)
+            speech = await self.speech_synthesizer.synthesize(voice)
             await speech.play()
             self.speech_recognizer.is_recognizing = was_recognizing

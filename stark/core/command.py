@@ -5,12 +5,12 @@ import warnings
 from uuid import UUID, uuid4
 from enum import auto, Enum
 from datetime import datetime
-import json
 import inspect
 
 from pydantic import BaseModel, Field
 import asyncer
 
+from ..models.localizable_string import LocalizableString
 from ..general.classproperty import classproperty
 from .patterns import Pattern
 
@@ -92,13 +92,15 @@ class ResponseStatus(Enum):
     error = auto()
 
 class Response(BaseModel):
-    voice: str = ''
-    text: str = ''
+    
+    voice: str | LocalizableString = ''
+    text: str | LocalizableString = ''
     status: ResponseStatus = ResponseStatus.success
     needs_user_input: bool = False
     commands: list[Command] = []
     parameters: dict[str, Any] = {}
     
+    # for internal use
     id: UUID = Field(default_factory=uuid4)
     time: datetime = Field(default_factory=datetime.now)
     
@@ -118,11 +120,11 @@ class Response(BaseModel):
         return self.id == other.id
         
 class ResponseHandler(Protocol):
-    def respond(self, response: Response): pass
+    def respond(self, response: Response, language_code: str | None = None): pass
     def unrespond(self, response: Response): pass
     def pop_context(self): pass
 
 class AsyncResponseHandler(Protocol):
-    async def respond(self, response: Response): pass
+    async def respond(self, response: Response, language_code: str | None = None): pass
     async def unrespond(self, response: Response): pass
     async def pop_context(self): pass

@@ -1,7 +1,9 @@
 from typing import Generator
 from pathlib import Path
 import warnings
+import re
 from .strings import String, StringsFile, FileGroup
+from stark.models.localizable_string import LocalizableString
 
 
 Languages = dict[str, StringsFile]
@@ -18,6 +20,14 @@ class Localizer:
         self.base_language = base_language
         self.localizable = {}
         self.recognizable = {}
+        
+    def localize(self, localizable_string: LocalizableString | str) -> str:
+        if not isinstance(localizable_string, LocalizableString):
+            return localizable_string
+        
+        string = self.get_localizable(localizable_string.string, localizable_string.language_code) or localizable_string.string
+        
+        return string.format(**localizable_string.arguments)
         
     def get_localizable(self, key: str, language: str) -> str | None:
         return self._get_string(key, language, self.localizable)

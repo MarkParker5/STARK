@@ -22,20 +22,21 @@ class MatchResult:
 class Pattern:
     
     parameters: dict[str, ObjectType]
-    compiled: dict[str, str]
     
     _origin: str
     _parameter_regex: re.Pattern
     _parameter_types: dict[str, ObjectType] = {} # static
+    _compiled: dict[str, str]
 
     def __init__(self, origin: str):
         self._origin = origin
         self._parameter_regex = self._get_parameter_regex()
+        self._compiled = {}
         self.parameters = dict(self._get_parameters())
         
     def prepare(self, localizer: Localizer):
         for language in localizer.languages:
-            self.compiled[language] = self._get_compiled(language, localizer)
+            self._compiled[language] = self._get_compiled(language, localizer)
         
     async def match(self, transcription: Transcription, localizer: Localizer, objects_cache: dict[str, Object] | None = None) -> list[MatchResult]:
         if not self._origin:
@@ -153,9 +154,9 @@ class Pattern:
         
         for prev, current in zip(matches.copy(), matches[1:]): # copy to prevent affecting iteration by removing items; slice makes copy automatically
             if prev.start == current.start or prev.end > current.start: # if overlap 
-                matches.remove(min(prev, current, key = lambda m: len(m.substring))) # remove shorter
+                matches.remove(min(prev, current, key = lambda m: len(m.subtrack.text))) # remove shorter
             
-        return sorted(matches, key = lambda m: len(m.substring), reverse = True)
+        return sorted(matches, key = lambda m: len(m.subtrack.text), reverse = True)
     
     @classmethod
     def add_parameter_type(cls, object_type: ObjectType):
@@ -168,9 +169,10 @@ class Pattern:
     # private
     
     def _get_parameter_regex(self) -> re.Pattern:
-        # types = '|'.join(Pattern._parameter_types.keys())
+        # types = '|'.join(Pattern._parameter_types.keys()) # NOTE: do not use types list because it prevents validation of unknown types
         # return re.compile(r'\$(?P<name>[A-z][A-z0-9]*)\:(?P<type>(?:' + types + r'))')
-        # do not use types list because it prevents validation of unknown types
+        
+        # TODO: add support for the {f-string} syntax for patterns, resolve types from annotation
         return re.compile(r'\$(?P<name>[A-z][A-z0-9]*)\:(?P<type>[A-z][A-z0-9]*)')
     
     def _get_parameters(self) -> Generator[tuple[str, ObjectType], None, None]:
@@ -184,9 +186,11 @@ class Pattern:
             
             yield arg_name, arg_type
             
-    def _get_compiled(self, language: str, localizer: Localizer) -> str: # transform Pattern to classic regex with named groups
-        if language in self.compiled:
-            return self.compiled[language]
+    def _get_compiled(self, language: str, localizer: Localizer) -> str:
+        '''transform Pattern to classic regex with named groups'''
+        
+        if language in self._compiled:
+            return self._compiled[language]
         
         pattern: str = localizer.get_localizable(self._origin, language) or self._origin
 
@@ -203,6 +207,7 @@ class Pattern:
             arg_pattern = object_type.pattern.compiled.replace('\\', r'\\')
             pattern = re.sub(arg_declaration, f'(?P<{name}>{arg_pattern})', pattern)
         
+        self._compiled[language] = pattern
         return pattern
     
     # magic methods
