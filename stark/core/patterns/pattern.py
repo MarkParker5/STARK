@@ -4,7 +4,7 @@ from dataclasses import dataclass
 import re
 from asyncer import create_task_group, SoonValue
 
-from stark.models.transcription import Transcription, KaldiMBR
+from stark.models.transcription import Transcription, TranscriptionTrack
 from stark.general.localisation import Localizer
 from .expressions import dictionary
 if TYPE_CHECKING:
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 @dataclass
 class MatchResult:
-    subtrack: KaldiMBR
+    subtrack: TranscriptionTrack
     start: float
     end: float
     parameters: dict[str, Object]

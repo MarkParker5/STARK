@@ -3,11 +3,11 @@ from typing import Generator, NamedTuple
 from pydantic import BaseModel, Field, ValidationError
 
 
-class KaldiWord(BaseModel):
+class TranscriptionWord(BaseModel):
     word: str
     start: float
     end: float
-    conf: float | None = None # only for KaldiMBR
+    conf: float | None = None # only for TranscriptionTrack
     language_code: str = ''
     
     @property
@@ -18,9 +18,9 @@ class KaldiWord(BaseModel):
     def middle(self):
         return self.start + self.duration / 2
     
-class KaldiMBR(BaseModel): # TODO: rename to TranscriptionTrack
+class TranscriptionTrack(BaseModel): # TODO: rename to TranscriptionTrack
     text: str = ''
-    result: list[KaldiWord] = Field(default_factory = list)
+    result: list[TranscriptionWord] = Field(default_factory = list)
     spk: list[float] = Field(default_factory = list)
     spk_frames: int = 0
     language_code: str = ''
@@ -42,9 +42,9 @@ class KaldiMBR(BaseModel): # TODO: rename to TranscriptionTrack
         
         start_time: float | None = None
         remaining = substring[:]
-        new_words: list[KaldiWord] = []
-        to_remove: list[KaldiWord] = []
-        to_remove_candidates: list[KaldiWord] = []
+        new_words: list[TranscriptionWord] = []
+        to_remove: list[TranscriptionWord] = []
+        to_remove_candidates: list[TranscriptionWord] = []
         
         for word in self.result:
             if remaining.startswith(word.word):
@@ -58,7 +58,7 @@ class KaldiMBR(BaseModel): # TODO: rename to TranscriptionTrack
                 to_remove_candidates = []
             
             if not remaining and start_time is not None:
-                new_words.append(KaldiWord(
+                new_words.append(TranscriptionWord(
                     word = replacement,
                     start = start_time,
                     end = word.end,
@@ -82,8 +82,8 @@ class KaldiMBR(BaseModel): # TODO: rename to TranscriptionTrack
         if new_words:
             self.result.extend(new_words)
         
-    def get_slice(self, start: float, end: float) -> 'KaldiMBR':
-        new_mbr = KaldiMBR(
+    def get_slice(self, start: float, end: float) -> 'TranscriptionTrack':
+        new_track = TranscriptionTrack(
             text = '',
             result = [],
             spk = self.spk,
@@ -96,16 +96,16 @@ class KaldiMBR(BaseModel): # TODO: rename to TranscriptionTrack
                 continue
             if word.start >= end:
                 break
-            new_word = KaldiWord(
+            new_word = TranscriptionWord(
                 word = word.word,
                 start = max(word.start - start, 0),
                 end = min(word.end - start, end - start),
                 conf = word.conf
             )
-            new_mbr.result.append(new_word)
+            new_track.result.append(new_word)
         
-        new_mbr.text = ' '.join(word.word for word in new_mbr.result)
-        return new_mbr
+        new_track.text = ' '.join(word.word for word in new_track.result)
+        return new_track
     
     def get_time(self, substring: str, from_index: int = 0, to_index: int | None = None) -> Generator[tuple[float, float], None, None]:
         if not substring:
@@ -143,22 +143,14 @@ class KaldiMBR(BaseModel): # TODO: rename to TranscriptionTrack
     
     def __hash__(self) -> int:
         return hash(self.text)
-
-class KaldiTranscription(BaseModel):
-    text: str
-    result: list[KaldiWord] = Field(default_factory = list)
-    confidence: float
-    
-class KaldiResult(BaseModel):
-    alternatives: list[KaldiTranscription]
     
 class Suggestion(NamedTuple):
     variant: str
     keyword: str
 
 class Transcription(BaseModel):
-    best: KaldiMBR
-    origins: dict[str, KaldiMBR] = Field(default_factory = dict)
+    best: TranscriptionTrack
+    origins: dict[str, TranscriptionTrack] = Field(default_factory = dict)
     suggestions: list[Suggestion] = Field(default_factory = list)
     
     def replace(self, substring: str, replacement: str):
@@ -171,3 +163,11 @@ class Transcription(BaseModel):
             origins = {k: v.get_slice(start, end) for k, v in self.origins.items()},
             suggestions = self.suggestions
         )
+
+class KaldiTranscription(BaseModel):
+    text: str
+    result: list[TranscriptionWord] = Field(default_factory = list)
+    confidence: float
+    
+class KaldiResult(BaseModel):
+    alternatives: list[KaldiTranscription]

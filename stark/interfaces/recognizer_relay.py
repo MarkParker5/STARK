@@ -3,7 +3,7 @@ import time
 import anyio
 from asyncer._main import TaskGroup
 from stark.interfaces.protocols import SpeechRecognizer
-from stark.models.transcription import Transcription, KaldiMBR, KaldiWord
+from stark.models.transcription import Transcription, TranscriptionTrack, TranscriptionWord
 from stark.interfaces.protocols import SpeechRecognizerDelegate
 from stark.general.localisation import Localizer
 from stark.general.suggestions import SuggestionsManager
@@ -133,10 +133,10 @@ class SpeechRecognizerRelay:
     
     # Private
     
-    def _build_best_confidence(self, tracks: set[KaldiMBR], until: float | None = None) -> KaldiMBR:
-        if not tracks: return KaldiMBR()
+    def _build_best_confidence(self, tracks: set[TranscriptionTrack], until: float | None = None) -> TranscriptionTrack:
+        if not tracks: return TranscriptionTrack()
         
-        best = KaldiMBR()
+        best = TranscriptionTrack()
         
         while tracks:
             # check tracks are not empty within `until`
@@ -162,7 +162,7 @@ class SpeechRecognizerRelay:
                 continue
             
             # build complex
-            complex_alternative = KaldiWord(word = '', start = base_word.start, end = base_word.end)
+            complex_alternative = TranscriptionWord(word = '', start = base_word.start, end = base_word.end)
             complex_alternative.word = ' '.join(word.word for word in alternative_words)
             complex_alternative.end = max(word.end for word in alternative_words)
             complex_alternative.start = min(word.start for word in alternative_words)
@@ -180,7 +180,7 @@ class SpeechRecognizerRelay:
             
         return best
     
-    def _pop_words_until_time(self, track: KaldiMBR, time: float) -> Generator[KaldiWord, None, None]:
+    def _pop_words_until_time(self, track: TranscriptionTrack, time: float) -> Generator[TranscriptionWord, None, None]:
         for word in track.result:
             if word.middle > time:
                 break

@@ -10,7 +10,7 @@ import anyio
 import sounddevice
 import vosk
 
-from stark.models.transcription import Transcription, KaldiMBR, KaldiResult, ValidationError
+from stark.models.transcription import Transcription, TranscriptionTrack, KaldiResult, ValidationError
 from .protocols import SpeechRecognizer, SpeechRecognizerDelegate
 
 
@@ -63,7 +63,7 @@ class VoskSpeechRecognizer(SpeechRecognizer):
         speaker_model = vosk.SpkModel(speaker_model_path) if speaker_model_path else None
         
         self._kaldiRecognizer = vosk.KaldiRecognizer(vosk_model, self.samplerate)
-        self._kaldiRecognizer.SetMaxAlternatives(0) # 0 (default) returns KaldiMBR; 1+ returns KaldiResult (with bad confidence implementation)
+        self._kaldiRecognizer.SetMaxAlternatives(0) # 0 (default) returns TranscriptionTrack; 1+ returns KaldiResult (with bad confidence implementation)
         self._kaldiRecognizer.SetWords(True) # needs to calculate MBR average confidence; (default: False)
         
         if speaker_model_url:
@@ -116,7 +116,7 @@ class VoskSpeechRecognizer(SpeechRecognizer):
             raw_json = self._kaldiRecognizer.Result()
             
             try:
-                result = KaldiMBR.parse_raw(raw_json)
+                result = TranscriptionTrack.parse_raw(raw_json)
                 result.language_code = self.language_code
                 
                 for word in result.result:

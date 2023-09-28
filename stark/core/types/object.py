@@ -5,7 +5,7 @@ from abc import ABC
 import copy
 
 from stark.general.classproperty import classproperty
-from stark.models.transcription import Transcription, KaldiMBR
+from stark.models.transcription import Transcription, TranscriptionTrack
 from .. import Pattern
 
 
@@ -26,7 +26,7 @@ class Object(ABC):
         '''Just init with wrapped value.'''
         self.value = value
         
-    async def did_parse(self, track: KaldiMBR, transcription: Transcription, re_match_groups: dict[str, str]) -> Transcription:
+    async def did_parse(self, track: TranscriptionTrack, transcription: Transcription, re_match_groups: dict[str, str]) -> Transcription:
         '''
         This method is called after parsing from string and setting parameters found in pattern. 
         You will very rarely, if ever, need to call this method directly.
@@ -42,7 +42,7 @@ class Object(ABC):
         return transcription
 
     @classmethod
-    async def parse(cls, track: KaldiMBR, transcription: Transcription, re_match_groups: dict[str, str] | None = None) -> ParseResult:
+    async def parse(cls, track: TranscriptionTrack, transcription: Transcription, re_match_groups: dict[str, str] | None = None) -> ParseResult:
         '''
         For internal use only.
         You will very rarely, if ever, need to override or even call this method.
