@@ -5,11 +5,18 @@ import re
 
 def string_to_ipa(string: str, language_code: str) -> str:
     '''Converts a string to IPA using espeak.'''
-    result = subprocess.run(['espeak', '--ipa', f'-v{language_code}', '-q', string], capture_output=True, text=True)
-    return re.compile(r'\(.*?\)').sub('', result.stdout.strip()).strip()
+    try:
+        result = subprocess.run(['espeak', '--ipa', f'-v{language_code}', '-q', string], capture_output=True, text=True)
+        return re.compile(r'\(.*?\)').sub('', result.stdout.strip()).strip()
+    except subprocess.CalledProcessError:
+        return ''
 
 def ipa_to_latin(origin: str) -> str:
     '''Converts IPA to a simplified latin transcription.'''
+    
+    if not origin:
+        return ''
+    
     mapping = {
         # Vowels
         'i': 'i', 'y': 'i', 'ɨ': 'i', 'ʉ': 'u', 'ɯ': 'u', 'u': 'u',

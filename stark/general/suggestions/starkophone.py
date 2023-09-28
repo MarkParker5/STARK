@@ -1,4 +1,7 @@
-def starkophone(word: str) -> str | None:
+def starkophone(text: str) -> str | None:
+    return ' '.join(starkophone_word(word) or '' for word in text.split()) or None
+
+def starkophone_word(word: str) -> str | None:
     '''Caverphone 2.0 based algorithm for phonetic encoding of words. No filling with "1", no length limit, return None if word is empty.'''
     
     alphabet = "abcdefghijklmnopqrstuvwxyz"

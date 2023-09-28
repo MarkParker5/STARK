@@ -1,3 +1,5 @@
+from typing import Callable
+from collections import OrderedDict
 from dataclasses import dataclass
 from stark.models.transcription import Transcription
 from .levenshtein import levenshtein
@@ -9,7 +11,7 @@ from .ipa import ipa_to_latin, string_to_ipa
 class KeywordMeta:
     keyword: str
     variant: str
-    simple_phonetic: str
+    phonetic: str
     starkophone: str
     language_code: str | None = None
 
@@ -28,7 +30,7 @@ class SuggestionsManager:
         elif variant in self.keywords[keyword]:
             return
         
-        simple_phonetic = ipa_to_latin(self._espeak(variant, language_code))
+        simple_phonetic = self._get_phonetic(variant, language_code)
         starkophone = get_starkophone(simple_phonetic) or ''
         
         self.keywords[keyword][variant] = KeywordMeta(keyword, variant, simple_phonetic, starkophone, language_code if multilingual else None)
@@ -60,10 +62,17 @@ class SuggestionsManager:
         if get_starkophone(string) == keyword.starkophone:
             return string
         
-        phonetic = ipa_to_latin(string_to_ipa(string, language_code))
+        starkophone_substring = lambda: self._get_substring(keyword.starkophone, string, 0, get_starkophone)
+        phonetic_substring = lambda: self._get_substring(keyword.phonetic, string, 0, lambda word: self._get_phonetic(word, language_code))
         
-        starkophone_substring = lambda: levenshtein(keyword.starkophone, get_starkophone(phonetic) or '', 0)
-        phonetic_substring = lambda: levenshtein(keyword.simple_phonetic, phonetic, 0.1)
-            
-        # return starkophone_substring() or phonetic_substring()
-        return '' # TODO: back transformation to get original substring
+        return starkophone_substring() or phonetic_substring()
+        
+    def _get_substring(self, query: str, string: str, threshold: float, modifier: Callable[[str], str | None]) -> str | None:
+        dictionary = OrderedDict((modifier(word), word) for word in string.split())
+        full = ' '.join(key for key in dictionary.keys() if key)
+        if substring := levenshtein(query, full, threshold):
+            return ' '.join(dictionary[word] for word in substring.split())
+        return None
+    
+    def _get_phonetic(self, string: str, language_code: str) -> str:
+        return ipa_to_latin(string_to_ipa(string, language_code))
