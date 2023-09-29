@@ -10,12 +10,10 @@ __pycache__
 *.db
 *.sqlite3
 *.save
-
-audio/
-downloads/
-site/
-
 .DS_Store
-test.py
 
-strings/
+/site/
+/audio/
+/downloads/
+/strings
+/test.py

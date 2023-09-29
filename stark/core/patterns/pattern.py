@@ -61,10 +61,9 @@ class Pattern:
                 suggestions[keyword].add(variant)
             
             # update compiled re to match keyword variants
-            
             for keyword, variants in suggestions.items():
                 if keyword in compiled:
-                    compiled = compiled.replace(keyword, f'[{keyword}|{"|".join(variants)}]')
+                    compiled = compiled.replace(keyword, f'({keyword}|{"|".join(variants)})')
                     
             # search all matches
             
@@ -140,7 +139,7 @@ class Pattern:
                 # strip original string
                 
                 substring = string[match_start:match_end].strip()
-                start, end = next(iter(track.get_time(substring)))
+                start, end = next(iter(track.get_time(substring, match_start, match_end)))
                 subtrack = track.get_slice(start, end)
                 
                 matches.append(MatchResult(

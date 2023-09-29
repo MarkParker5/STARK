@@ -94,7 +94,7 @@ class SpeechRecognizerRelay:
         languages = set(sr.language_code for sr in self.speech_recognizers)
         
         # wait other languages
-        while current_transcription.origins.keys() != languages or time.monotonic() - start_time < timeout:
+        while current_transcription.origins.keys() != languages and time.monotonic() - start_time < timeout:
             await anyio.sleep(0.01)
         
         # avoid duplicating because SRs calling this method concurrently
@@ -111,12 +111,11 @@ class SpeechRecognizerRelay:
         self.suggestions.add_transcription_suggestions(current_transcription)
         
         # build best confedence
-        
-        current_transcription.best = self._build_best_confidence(set(current_transcription.origins.values()))
+        tracks = set(track.copy(deep = True) for track in current_transcription.origins.values())
+        current_transcription.best = self._build_best_confidence(tracks)
         current_transcription.best.language_code = 'best'
         
         # finish
-            
         self._current_transcription = None # reset for next recognition and exit concurrent calls
         
         for recognizer in self.speech_recognizers:

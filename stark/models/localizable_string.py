@@ -1,12 +1,9 @@
-from stark.core.types import Object
-
-
 class LocalizableString:
     string: str
     language_code: str
-    arguments: dict[str, str | Object]
+    arguments: dict[str, str]
     
-    def __init__(self, string: str, language_code: str = '', /, **arguments: str | Object):
+    def __init__(self, string: str, language_code: str = '', /, **arguments: str):
         self.string = string
         self.language_code = language_code
         self.arguments = arguments

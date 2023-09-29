@@ -7,7 +7,7 @@ class TranscriptionWord(BaseModel):
     word: str
     start: float
     end: float
-    conf: float | None = None # only for TranscriptionTrack
+    conf: float | None = None
     language_code: str = ''
     
     @property
@@ -18,7 +18,7 @@ class TranscriptionWord(BaseModel):
     def middle(self):
         return self.start + self.duration / 2
     
-class TranscriptionTrack(BaseModel): # TODO: rename to TranscriptionTrack
+class TranscriptionTrack(BaseModel):
     text: str = ''
     result: list[TranscriptionWord] = Field(default_factory = list)
     spk: list[float] = Field(default_factory = list)
@@ -116,13 +116,17 @@ class TranscriptionTrack(BaseModel): # TODO: rename to TranscriptionTrack
         remaining = substring[:].strip()
         
         for word in self.result:
-            current_index = self.result[current_index:].index(word)
+
+            current_index = self.text.index(word.word, current_index)
             
             if current_index < from_index:
+                current_index += len(word.word)
                 continue
             
             if to_index and current_index >= to_index:
                 break
+            
+            current_index += len(word.word)
             
             if substring in word.word:
                 yield word.start, word.end

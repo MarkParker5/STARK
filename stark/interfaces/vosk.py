@@ -117,6 +117,11 @@ class VoskSpeechRecognizer(SpeechRecognizer):
             
             try:
                 result = TranscriptionTrack.parse_raw(raw_json)
+                
+                if not result.text:
+                    await delegate.speech_recognizer_did_receive_empty_result(self)
+                    return
+                
                 result.language_code = self.language_code
                 
                 for word in result.result:
@@ -132,8 +137,8 @@ class VoskSpeechRecognizer(SpeechRecognizer):
                 await delegate.speech_recognizer_did_receive_final_transcription(self, transcription)
                 
             except ValidationError as e:
-                # print(e)
                 await delegate.speech_recognizer_did_receive_empty_result(self)
+                # print(e)
                 # try:
                 #     result = KaldiResult.parse_raw(raw_json)
                 #     transcription = result.alternatives[0]
