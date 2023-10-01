@@ -1,42 +1,58 @@
+from typing import Generator
 import numpy as np
 
-def levenshtein(query: str, string: str, threshold: float) -> str | None: # TODO: return set of all matches
+
+def levenshtein(query: str, string: str, threshold: float) -> Generator[str, None, None]:
     if not query or not string:
-        return None
-    
-    query_filtered = query.replace(' ', '')
-    max_distance = int(round(len(query_filtered) * threshold))
+        return
+
+    query = query.replace(' ', '')
+    string = string.strip()
+    max_distance = int(round(len(query) * threshold))
     n = len(query)
     m = len(string)
-    best_distance = float('inf')
+    # best_distance = float('inf')
     suggested_substring = None
     
-    for i in range(m - n + 1): # replace slices with better solution and build matrix once (see stackoverflow answer about filling first row with zeros, etc)
-        substring = string[i:i + n] # slice doesn't work because string can have unlimited number of spaces
-        dp = np.zeros((n + 1, n + 1), dtype=int)
-        dp[:, 0] = np.arange(n + 1)
-        dp[0, :] = np.arange(n + 1)
-        
+    # Initialize the DP matrix
+    dp = np.zeros((n + 1, n + 1), dtype=int)
+    dp[:, 0] = np.arange(n + 1)
+    dp[0, :] = np.arange(n + 1)
+    
+    for i in range(0, m - n + 1):
+        if string[i - 1] == ' ':
+            continue # string with leading space and without are the same, so we can skip it
         for j in range(1, n + 1):
-            for k in range(1, n + 1):
-                dp[j, k] = dp[j - 1, k - 1] if query[j - 1] == substring[k - 1] else 1e6
+            # for k in range(1, n + 1):
+            k = 0
+            dk = 0
+            dn = n
+            spaces = 0
+            while dk < dn:
+                dk += 1
+                k = dk - spaces
                 
-                if query[j - 1] != ' ' and substring[k - 1] != ' ':
+                if i + dk - 1 >= m:
+                    break # we reached the end of the string
+                
+                if query[j - 1] == string[i + dk - 1]:
+                    dp[j, k] = dp[j - 1, k - 1]
+                
+                elif string[i + dk - 1] == ' ':
+                    dp[j, k] = dp[j - 1, k - 1]
+                    dn += 1
+                    spaces += 1
+                    
+                else:
                     dp[j, k] = min(
-                        dp[j, k],
+                        1e6,
                         dp[j - 1, k] + 1,
                         dp[j, k - 1] + 1,
                         dp[j - 1, k - 1] + 1
                     )
-                
+                    
         distance = dp[-1, -1]
-        if distance < best_distance:
-            best_distance = distance
-            suggested_substring = substring
-    
-    if best_distance <= max_distance:
-        return suggested_substring
-    else:
-        return None
-
-print('lnknpk', 'lorem ispum ln kn pk sit amet', 0) # must return 'ln kn pk'
+        if distance <= max_distance:
+            # best_distance = distance
+            suggested_substring = string[i:i + n + spaces]
+            yield suggested_substring.strip()
