@@ -1,4 +1,3 @@
-
 def find_substring_in_words(substr: str, words: list[str]) -> list[list[int]]:
     
     remaining = substr.strip()
@@ -29,8 +28,26 @@ def find_substring_in_words(substr: str, words: list[str]) -> list[list[int]]:
             to_return_candidates = []
     
     return to_return
+
+def startswith_endof(s1: str, s2: str) -> str:
+    i, j = 0, 0
+    n1, n2 = len(s1), len(s2)
     
-def startswith_endof(str1: str, str2: str) -> str:
-    if str1.startswith(str2):
-        return str2
+    while i < n1:
+        j = 0
+        temp = ''
+        while j < n2 and i + j < n1:
+            if s1[i + j] != s2[j]:
+                break
+            temp += s1[i + j]
+            j += 1
+        
+        if j == n2:
+            return s2
+
+        if j > 0 and i + j == n1:
+            return temp
+        
+        i += 1
+    
     return ''
