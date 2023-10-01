@@ -10,7 +10,7 @@ def find_substring_in_words(substr: str, words: list[str]) -> list[list[int]]:
             remaining = ''
             to_return_candidates.append(i)
             
-        elif interception := startswith_endof(substr, word):
+        elif interception := endswith_startof(word, remaining):
             remaining = remaining[len(interception):].strip()
             to_return_candidates.append(i)
             
@@ -19,17 +19,17 @@ def find_substring_in_words(substr: str, words: list[str]) -> list[list[int]]:
             to_return_candidates.append(i)
             
         else:
-            remaining = word.strip()
+            remaining = substr.strip()
             to_return_candidates = []
         
         if not remaining:
-            remaining = word.strip()
+            remaining = substr.strip()
             to_return.append(to_return_candidates)
             to_return_candidates = []
     
     return to_return
 
-def startswith_endof(s1: str, s2: str) -> str:
+def endswith_startof(s1: str, s2: str) -> str:
     i, j = 0, 0
     n1, n2 = len(s1), len(s2)
     
