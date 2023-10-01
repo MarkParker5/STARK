@@ -33,10 +33,9 @@ class TranscriptionTrack(BaseModel):
         if not substring:
             return
         
-        self.text = self.text.replace(substring, replacement)
-        
-        for word in self.result:
-            word.word = word.word.replace(substring, replacement)
+        # self.text = self.text.replace(substring, replacement)
+        # for word in self.result:
+        #     word.word = word.word.replace(substring, replacement)
         
         # handle multiple words substring
         
@@ -72,15 +71,18 @@ class TranscriptionTrack(BaseModel):
         for word in to_remove:
             self.result.remove(word)
                 
+        new_count = len(new_words) # compensate `i` after insertions in `self.result`
         for i, word in enumerate(self.result):
             if not new_words:
                 break
             
-            if word.end <= new_words[0].start:
-                self.result.insert(i, new_words.pop(0))
+            if word.start >= new_words[0].end:
+                self.result.insert(i + new_count - len(new_words), new_words.pop(0))
                 
         if new_words:
             self.result.extend(new_words)
+            
+        self.text = ' '.join(word.word for word in self.result)
         
     def get_slice(self, start: float, end: float) -> 'TranscriptionTrack':
         new_track = TranscriptionTrack(
@@ -92,14 +94,14 @@ class TranscriptionTrack(BaseModel):
         )
         
         for word in self.result:
-            if word.end <= start:
+            if word.middle <= start:
                 continue
-            if word.start >= end:
+            if word.middle >= end:
                 break
             new_word = TranscriptionWord(
                 word = word.word,
-                start = max(word.start - start, 0),
-                end = min(word.end - start, end - start),
+                start = word.start,
+                end = word.end,
                 conf = word.conf
             )
             new_track.result.append(new_word)
