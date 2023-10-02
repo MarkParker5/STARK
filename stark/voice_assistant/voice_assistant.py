@@ -15,6 +15,7 @@ from ..interfaces.protocols import (
     SpeechSynthesizer
 )
 from ..models.transcription import Transcription
+from ..models.localizable_string import LocalizableString
 from ..general.localisation import Localizer
 from .mode import Mode
 
@@ -141,8 +142,15 @@ class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
     
     async def _play_response(self, response: Response):
         
-        text = self.localizer.localize(response.text) or response.text
-        voice = self.localizer.localize(response.voice) or response.voice
+        if isinstance(response.text, LocalizableString):
+            text = self.localizer.localize(response.text)
+        else:
+            text = response.text
+            
+        if isinstance(response.voice, LocalizableString):
+            voice = self.localizer.localize(response.voice)
+        else:
+            voice = response.voice
         
         self.commands_context.last_response = response
         

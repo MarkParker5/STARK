@@ -2,6 +2,7 @@ import re
 import pytest
 from stark.core import CommandsManager
 from stark.core.types import Word
+from stark.general.localisation import Localizer
 
 
 def test_new():
@@ -23,7 +24,7 @@ def test_new_with_extra_parameters_in_pattern():
         @manager.new('test $name:Word, $secondName:Word')
         def test(name: Word): pass
     
-async def test_search():
+async def test_search(get_transcription):
     manager = CommandsManager()
     
     @manager.new('test')
@@ -36,26 +37,26 @@ async def test_search():
     def hello(name: Word): pass
     
     # test
-    result = await manager.search('test')
+    result = await manager.search(get_transcription('test'), Localizer())
     assert result is not None
     assert len(result) == 1
     assert result[0].command.name == 'CommandsManager.test'
     
     # hello
-    result = await manager.search('hello world')
+    result = await manager.search(get_transcription('hello world'), Localizer())
     assert result is not None
     assert len(result) == 1
     assert result[0].command.name == 'CommandsManager.hello'
-    assert result[0].match_result.substring == 'hello world'
+    assert result[0].match_result.subtrack.text == 'hello world'
     assert type(result[0].match_result.parameters['name']) is Word
     assert result[0].match_result.parameters['name'].value == 'world'
     
     # hello2
-    result = await manager.search('hello new world')
+    result = await manager.search(get_transcription('hello new world'), Localizer())
     assert result is not None
     assert len(result) == 1
     assert result[0].command == hello2
-    assert result[0].match_result.substring == 'hello new world'
+    assert result[0].match_result.subtrack.text == 'hello new world'
     assert result[0].match_result.parameters == {'name': Word('new'), 'surname': Word('world')}
             
 def test_extend_manager():

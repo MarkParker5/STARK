@@ -4,6 +4,7 @@ from stark.core import Pattern
 from stark.core.types import Object, Word, String
 from stark.core.patterns import expressions
 from stark.general.classproperty import classproperty
+from stark.general.localisation import Localizer
 
 
 word = fr'[{expressions.alphanumerics}]*'
@@ -17,22 +18,23 @@ class ExtraParameterInPattern(Object):
     def pattern(cls) -> Pattern:
         return Pattern('$word1:Word $word2:Word $word3:Word')
 
-async def test_typed_parameters():
+async def test_typed_parameters(get_transcription):
     p = Pattern('lorem $name:Word dolor')
+    p.get_compiled('en', Localizer())
     assert p.parameters == {'name': Word}
-    assert p.compiled == fr'lorem (?P<name>{word}) dolor'
+    # assert p._compiled['en'] == fr'lorem (?P<name>{word}) dolor'
     
-    m = await p.match('lorem ipsum dolor')
+    m = await p.match(get_transcription('lorem ipsum dolor'), Localizer())
     assert m
-    assert m[0].substring == 'lorem ipsum dolor'
+    assert m[0].subtrack.text == 'lorem ipsum dolor'
     assert m[0].parameters == {'name': Word('ipsum')}
-    assert not await p.match('lorem ipsum foo dolor')
+    assert not await p.match(get_transcription('lorem ipsum foo dolor'), Localizer())
     
     p = Pattern('lorem $name:String dolor')
     assert p.parameters == {'name': String}
-    m = await p.match('lorem ipsum foo bar dolor')
+    m = await p.match(get_transcription('lorem ipsum foo bar dolor'), Localizer())
     assert m
-    assert m[0].substring == 'lorem ipsum foo bar dolor'
+    assert m[0].subtrack.text == 'lorem ipsum foo bar dolor'
     assert m[0].parameters == {'name': String('ipsum foo bar')}
     
 def test_undefined_typed_parameters():

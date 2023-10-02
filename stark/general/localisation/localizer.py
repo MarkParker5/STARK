@@ -13,10 +13,10 @@ class Localizer:
     localizable: Languages
     recognizable: Languages
     languages: set[str]
-    base_language: str
+    base_language: str # language of the base.strings file
     
-    def __init__(self, languages: set[str], base_language: str):
-        self.languages = languages
+    def __init__(self, languages: set[str] | None = None, base_language: str = 'en'):
+        self.languages = languages or {'en'}
         self.base_language = base_language
         self.localizable = {}
         self.recognizable = {}

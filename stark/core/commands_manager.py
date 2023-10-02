@@ -88,6 +88,7 @@ class CommandsManager:
                 else: # else remove less priority
                     results.remove(priority2)
         
+        print('results:', [result.command.name for result in results])
         return results 
     
     def new(self, pattern_str: str, hidden: bool = False):

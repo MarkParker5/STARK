@@ -20,7 +20,6 @@ def transcription_track():
     
 def check_sorted(track: TranscriptionTrack):
     for i, word in enumerate(track.result):
-        print(i, word)
         assert i == 0 or track.result[i-1].end <= word.start
 
 def test_replace(transcription_track):

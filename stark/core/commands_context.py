@@ -1,6 +1,6 @@
 from __future__ import annotations
 from types import GeneratorType, AsyncGeneratorType
-from typing import Any, Protocol, runtime_checkable
+from typing import Any, Protocol, runtime_checkable, cast
 from dataclasses import dataclass
 import warnings
 
@@ -13,7 +13,7 @@ from ..general.localisation import Localizer
 from ..models.transcription import Transcription
 from ..models.localizable_string import LocalizableString
 from .commands_manager import CommandsManager, SearchResult
-from .command import Command, Response, ResponseHandler, AsyncResponseHandler, CommandRunner, ResponseOptions
+from .command import Command, Response, ResponseHandler, AsyncResponseHandler, CommandRunner, ResponseOptions, AwaitResponse, AwaitResponse
 
 
 @dataclass
@@ -106,10 +106,10 @@ class CommandsContext:
             self.run_command(search_result.command, parameters, search_result.match_result.subtrack.language_code)
             
     def inject_dependencies(self, runner: Command[CommandRunner] | CommandRunner) -> CommandRunner:
-        def injected_func(**kwargs) -> ResponseOptions:
+        def injected_func(**kwargs) -> AwaitResponse | Response | None:
             kwargs.update(self.dependency_manager.resolve(runner._runner if isinstance(runner, Command) else runner))
             return runner(**kwargs)
-        return injected_func
+        return cast(CommandRunner, injected_func)
                 
     def run_command(self, command: Command, parameters: dict[str, Any] | None = None, language_code: str | None = None):
         parameters = parameters or {}

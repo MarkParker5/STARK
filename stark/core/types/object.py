@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import Any
-from collections import namedtuple
+from typing import NamedTuple
 from abc import ABC
 import copy
 
@@ -9,7 +9,10 @@ from stark.models.transcription import Transcription, TranscriptionTrack
 from .. import Pattern
 
 
-ParseResult = namedtuple('ParseResult', ['obj', 'substring'])
+class ParseResult(NamedTuple):
+    obj: Object
+    track: TranscriptionTrack
+    transcription: Transcription
 
 class ParseError(Exception):
     pass
@@ -26,7 +29,7 @@ class Object(ABC):
         '''Just init with wrapped value.'''
         self.value = value
         
-    async def did_parse(self, track: TranscriptionTrack, transcription: Transcription, re_match_groups: dict[str, str]) -> Transcription:
+    async def did_parse(self, track: TranscriptionTrack, transcription: Transcription, re_match_groups: dict[str, str]) -> tuple[TranscriptionTrack, Transcription]:
         '''
         This method is called after parsing from string and setting parameters found in pattern. 
         You will very rarely, if ever, need to call this method directly.
@@ -39,7 +42,8 @@ class Object(ABC):
         Raises:
             ParseError: if parsing failed.
         '''
-        return transcription
+        self.value = track.text
+        return track, transcription
 
     @classmethod
     async def parse(cls, track: TranscriptionTrack, transcription: Transcription, re_match_groups: dict[str, str] | None = None) -> ParseResult:
@@ -66,10 +70,9 @@ class Object(ABC):
             time_range = next(iter(track.get_time(value)))
             sub_track = track.get_slice(*time_range)
             sub_transcription = transcription.get_slice(*time_range)
-            
             setattr(obj, name, (await object_type.parse(sub_track, sub_transcription, re_match_groups)).obj)
         
-        return ParseResult(obj, await obj.did_parse(sub_track, sub_transcription, re_match_groups))
+        return ParseResult(obj, *(await obj.did_parse(track, transcription, re_match_groups)))
     
     def copy(self) -> Object:
         return copy.copy(self)

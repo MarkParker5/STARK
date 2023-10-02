@@ -36,21 +36,21 @@ class Pattern:
         
     def prepare(self, localizer: Localizer):
         for language in localizer.languages:
-            self._compiled[language] = self._get_compiled(language, localizer)
+            self._compiled[language] = self.get_compiled(language, localizer)
         
     async def match(self, transcription: Transcription, localizer: Localizer, objects_cache: dict[str, Object] | None = None) -> list[MatchResult]:
         if not self._origin:
             return []
         
         if objects_cache is None:
-            objects_cache = {}
+            objects_cache = dict()
             
         matches: list[MatchResult] = []
         
         for language_code, track in transcription.origins.items():
             
             string = track.text
-            compiled = self._get_compiled(language_code, localizer)
+            compiled = self.get_compiled(language_code, localizer)
             
             # map suggestions to more comfortable data structure
             
@@ -81,7 +81,7 @@ class Pattern:
                 
                 parameters: dict[str, Object] = {}
                 substrings: dict[str, str] = {}
-                futures: list[tuple[str, SoonValue[ParseResult | None]]] = []
+                futures: list[tuple[str, SoonValue[ParseResult]]] = []
                 
                 # run concurrent objects parsing
                 async with create_task_group() as group:
@@ -106,23 +106,18 @@ class Pattern:
                             subtranscription = transcription.get_slice(*time_range)
                             subtranscription.suggestions = [s for s in subtranscription.suggestions if s[0] in subtrack.text]
                             
-                            async def parse() -> ParseResult | None:
-                                try:
-                                    parse_result = await object_type.parse(subtrack, subtranscription, match_str_groups)
-                                except ParseError:
-                                    return None
-                                objects_cache[parse_result.substring] = parse_result.obj
+                            async def parse(track: TranscriptionTrack, transcription: Transcription, re_match_groups: dict[str, str] | None = None) -> ParseResult:
+                                parse_result = await object_type.parse(track, transcription, re_match_groups)
+                                objects_cache[parse_result.track.text] = parse_result.obj
                                 return parse_result
                             
-                            futures.append((name, group.soonify(parse)()))
+                            futures.append((name, group.soonify(parse)(subtrack, subtranscription, match_str_groups)))
                 
                 # read futures
                 for name, future in futures:
                     parse_result = future.value
-                    if not parse_result:
-                        continue
                     parameters[name] = parse_result.obj
-                    substrings[name] = parse_result.substring
+                    substrings[name] = parse_result.track.text
                     
                 # save parameters
                 for name in parameters.keys():
@@ -185,7 +180,7 @@ class Pattern:
             
             yield arg_name, arg_type
             
-    def _get_compiled(self, language: str, localizer: Localizer) -> str:
+    def get_compiled(self, language: str, localizer: Localizer) -> str:
         '''transform Pattern to classic regex with named groups'''
         
         if language in self._compiled:
@@ -195,7 +190,7 @@ class Pattern:
 
         #   transform core expressions to regex
         
-        for pattern_re, regex in dictionary.items():
+        for pattern_re, regex in dictionary:
             pattern = re.sub(pattern_re, regex, pattern)
 
         #   find and transform parameters like $name:Type
@@ -203,7 +198,7 @@ class Pattern:
         for name, object_type in self.parameters.items():
             
             arg_declaration = f'\\${name}\\:{object_type.__name__}'
-            arg_pattern = object_type.pattern.compiled.replace('\\', r'\\')
+            arg_pattern = object_type.pattern.get_compiled(language, localizer).replace('\\', r'\\')
             pattern = re.sub(arg_declaration, f'(?P<{name}>{arg_pattern})', pattern)
         
         self._compiled[language] = pattern

@@ -1,10 +1,10 @@
-from typing import AsyncGenerator
-import time
+from typing import AsyncGenerator, Callable
 import contextlib
 import pytest
 import asyncer
 import anyio
 from stark.general.dependencies import DependencyManager
+from stark.general.localisation import Localizer
 from stark.core import (
     CommandsManager,
     CommandsContext,
@@ -16,6 +16,7 @@ from stark.core import (
 from stark.core.types import Word
 from stark.interfaces.protocols import SpeechRecognizerDelegate
 from stark.voice_assistant import VoiceAssistant
+from stark.models.transcription import Transcription, TranscriptionTrack, TranscriptionWord
 
 
 class CommandsContextDelegateMock(CommandsContextDelegate):
@@ -64,7 +65,7 @@ async def commands_context_flow():
         async with asyncer.create_task_group() as main_task_group:
             dependencies = DependencyManager()
             manager = CommandsManager()
-            context = CommandsContext(main_task_group, manager, dependencies)
+            context = CommandsContext(main_task_group, manager, Localizer(), dependencies)
             context_delegate = CommandsContextDelegateMock()
             context.delegate = context_delegate
             
@@ -169,7 +170,30 @@ async def voice_assistant(commands_context_flow_filled):
             voice_assistant = VoiceAssistant(
                 speech_recognizer = SpeechRecognizerMock(),
                 speech_synthesizer = SpeechSynthesizerMock(),
-                commands_context = context
+                commands_context = context,
+                localizer = Localizer(),
             )
             yield voice_assistant
     return _voice_assistant
+
+@pytest.fixture
+def get_transcription() -> Callable[[str], Transcription]:
+    def getter(string: str) -> Transcription:
+        track = TranscriptionTrack(
+            text = string,
+            result = [
+                TranscriptionWord(
+                    word = word,
+                    start = i,
+                    end = i + 0.5,
+                    conf = 1
+                ) for i, word in enumerate(string.split())
+            ]
+        )
+        return Transcription(
+            best = track,
+            origins = {
+                'en': track
+            }
+        )
+    return getter

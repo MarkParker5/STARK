@@ -1,5 +1,6 @@
+from typing import cast, Iterable
 from dataclasses import dataclass
-from stark.models.transcription import Transcription
+from stark.models.transcription import Transcription, Suggestion
 from .strings.levenshtein import levenshtein
 from .strings.starkophone import starkophone as get_starkophone
 from .strings.ipa import ipa_to_latin, string_to_ipa
@@ -39,7 +40,7 @@ class SuggestionsManager:
             
     def add_transcription_suggestions(self, transcription: Transcription):
         for language, track in transcription.origins.items():
-            transcription.suggestions.extend(self.get_string_suggestions(track.text, language))
+            transcription.suggestions.extend(cast(Iterable[Suggestion], self.get_string_suggestions(track.text, language)))
             
     def get_string_suggestions(self, string: str, language_code: str) -> set[tuple[str, str]]:
         # TODO: cache all long shit

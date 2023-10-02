@@ -4,7 +4,7 @@ import anyio
 from stark.core import Response
 
 
-async def test_commands_context_handle_async_generator(commands_context_flow, autojump_clock):
+async def test_commands_context_handle_async_generator(commands_context_flow, autojump_clock, get_transcription):
     async with commands_context_flow() as (manager, context, context_delegate):
         
         @manager.new('foo')
@@ -21,7 +21,7 @@ async def test_commands_context_handle_async_generator(commands_context_flow, au
             yield Response(text = 'foo4')
             # return is not allowed in generators (functions with yield)
         
-        await context.process_transcription('foo')
+        await context.process_transcription(get_transcription('foo'))
         
         last_count = 0
         while last_count < 5:
@@ -34,7 +34,7 @@ async def test_commands_context_handle_async_generator(commands_context_flow, au
         assert len(context_delegate.responses) == 5
         assert [r.text for r in context_delegate.responses] == [f'foo{i}' for i in range(5)]
 
-async def test_commands_context_handle_sync_generator(commands_context_flow, autojump_clock):
+async def test_commands_context_handle_sync_generator(commands_context_flow, autojump_clock, get_transcription):
     async with commands_context_flow() as (manager, context, context_delegate):
         
         @manager.new('foo')
@@ -47,7 +47,7 @@ async def test_commands_context_handle_sync_generator(commands_context_flow, aut
             # return is not allowed in generators (functions with yield)
         
         with warnings.catch_warnings(record = True) as warnings_list:
-            await context.process_transcription('foo')
+            await context.process_transcription(get_transcription('foo'))
             await anyio.sleep(1)
         
         assert len(warnings_list) == 2
