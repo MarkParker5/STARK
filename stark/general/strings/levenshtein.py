@@ -15,10 +15,10 @@ def levenshtein(query: str, string: str, threshold: float) -> Generator[str, Non
     suggested_substring = None
     
     # Initialize the DP matrix
-    dp = np.zeros((n + 1, n + 1), dtype=int)
+    dp = np.full((n + 1, n + 1), 1e6, dtype=int)
     dp[:, 0] = np.arange(n + 1)
     dp[0, :] = np.arange(n + 1)
-    
+
     for i in range(0, m - n + 1):
         if string[i - 1] == ' ':
             continue # string with leading space and without are the same, so we can skip it
@@ -45,7 +45,6 @@ def levenshtein(query: str, string: str, threshold: float) -> Generator[str, Non
                     
                 else:
                     dp[j, k] = min(
-                        1e6,
                         dp[j - 1, k] + 1,
                         dp[j, k - 1] + 1,
                         dp[j - 1, k - 1] + 1

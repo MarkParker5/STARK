@@ -57,17 +57,13 @@ class SuggestionsManager:
                 if variant.language_code and variant.language_code != language_code:
                     continue
                 
-                if phonetic_substrings := levenshtein(variant.phonetic, phonetic_string, 0.2):
+                matches: list[list[int]] = []
+                for phonetic_substrings in levenshtein(variant.phonetic, phonetic_string, 0.2):
+                    matches.extend(find_substring_in_words(phonetic_substrings, phonetic_words))
                     
-                    matches = find_substring_in_words(phonetic_substrings, phonetic_words)
+                for starkophone_substrings in levenshtein(variant.starkophone, starkophone_string, 0.1):
+                    matches.extend(find_substring_in_words(starkophone_substrings, starkophone_words))
                     
-                elif starkophone_substrings := levenshtein(variant.starkophone, starkophone_string, 0.1):
-                    
-                    matches = find_substring_in_words(starkophone_substrings, starkophone_words)
-                    
-                else:
-                    continue
-                
                 for match in matches:
                     substring = ' '.join(words[i] for i in match)
                     suggestions.add((substring, variant.keyword))

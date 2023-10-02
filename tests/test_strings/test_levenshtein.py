@@ -37,3 +37,7 @@ def test_levenshtein_substring_with_spaces_match():
 def test_multiple_levenshtein_substring_with_spaces_match():
     # the very most important and difficult case
     assert set(levenshtein('lnknpk', 'lorem ispum ln kn pk sit amet lnk npk foo bar baz', 0)) == {'ln kn pk', 'lnk npk'}
+
+def test_debug_cases():
+    assert set(levenshtein('AWATAAA', 'LNKN PK', 0)) == set()
+    assert set(levenshtein('ANSTKRM', 'LNKN PK', 0)) == set()
