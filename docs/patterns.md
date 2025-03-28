@@ -72,6 +72,8 @@ class FullName(Object):
     @classproperty
     def pattern(cls) -> Pattern:
         return Pattern('$first_name:Word $second_name:Word')
+
+Pattern.add_parameter_type(FullName)
 ```
 
 Upon successfully matching the pattern, S.T.A.R.K will autonomously parse and assign values to `first_name` and `second_name`. It's imperative, just as with command patterns, that class properties are congruent with the pattern in terms of both name and type.
