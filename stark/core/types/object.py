@@ -13,9 +13,9 @@ ParseResult = namedtuple('ParseResult', ['obj', 'substring'])
 class ParseError(Exception):
     pass
 
-class Object(ABC):
+class Object[T](ABC):
 
-    value: Any
+    value: T
 
     @classproperty
     def pattern(cls) -> Pattern:
@@ -38,7 +38,7 @@ class Object(ABC):
         Raises:
             ParseError: if parsing failed.
         '''
-        self.value = from_string
+        self.value = from_string # type: ignore # default behavior assuming the value is the whole string matched by the pattern
         return from_string
 
     @classmethod

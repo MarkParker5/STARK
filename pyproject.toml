@@ -5,15 +5,39 @@ description = "S.T.A.R.K - Speech and Text Algorithmic Recognition Kit. Modern f
 authors = ["MarkParker5 <mark@parker-programs.com>"]
 license = "CC BY-NC-SA 4.0"
 readme = "README.md"
-packages = [{include = "stark"}]
+packages = [{ include = "stark" }]
 homepage = "https://pypi.org/project/stark-engine/"
 repository = "https://github.com/MarkParker5/STARK"
 documentation = "https://stark.markparker.me"
-keywords = ["python", "open-source", "natural-language-processing", "framework", "cross-platform", "natural-language", "voice", "voice-commands", "python3", "voice-recognition", "speech-recognition", "speech-to-text", "community-project", "voice-assistant", "voice-interface", "NLP", "machine-learning", "AI", "text-analysis", "stark", "stark-place", "stark-engine", "mark parker"]
+keywords = [
+    "python",
+    "open-source",
+    "natural-language-processing",
+    "framework",
+    "cross-platform",
+    "natural-language",
+    "voice",
+    "voice-commands",
+    "python3",
+    "voice-recognition",
+    "speech-recognition",
+    "speech-to-text",
+    "community-project",
+    "voice-assistant",
+    "voice-interface",
+    "NLP",
+    "machine-learning",
+    "AI",
+    "text-analysis",
+    "stark",
+    "stark-place",
+    "stark-engine",
+    "mark parker",
+]
 
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = "^3.12"
 pydantic = "^1.10.4"
 asyncer = "^0.0.2"
 
@@ -32,7 +56,14 @@ gcloud = ["google-cloud-texttospeech", "sounddevice", "soundfile"]
 vosk = ["vosk", "sounddevice"]
 silero = ["torch", "numpy", "sounddevice"]
 sound = ["sounddevice", "soundfile"]
-all = ["google-cloud-texttospeech", "vosk", "torch", "numpy", "sounddevice", "soundfile"]
+all = [
+    "google-cloud-texttospeech",
+    "vosk",
+    "torch",
+    "numpy",
+    "sounddevice",
+    "soundfile",
+]
 docs = ["mkdocs-material", "mkdocs-git-revision-date-localized-plugin"]
 
 [tool.poetry.group.dev.dependencies]
@@ -50,13 +81,8 @@ build-backend = "poetry.core.masonry.api"
 [tool.pytest.ini_options]
 # asyncio_mode = "auto"
 trio_mode = "true"
-filterwarnings = [
-    "once"
-]
+filterwarnings = ["once"]
 
 [tool.mypy]
 ignore_missing_imports = true
-exclude = [
-    "stark/core/types/Time.*",
-    "stark/core/types/Number.*",
-]
+exclude = ["stark/core/types/Time.*", "stark/core/types/Number.*"]
