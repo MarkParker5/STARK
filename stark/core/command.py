@@ -34,15 +34,15 @@ class Command(Generic[CommandRunner]):
         update_wrapper(self, runner)
 
     def run(self, parameters_dict: dict[str, Any] | None = None, / , **kwparameters: dict[str, Any]) -> AwaitResponse:
-        # allow call both with and without dict unpacking 
+        # allow call both with and without dict unpacking
         # e.g. command.run(foo = bar, lorem = ipsum), command.run(**parameters) and command.run(parameters)
         # where parameters is dict {'foo': bar, 'lorem': ipsum}
-        
+
         parameters = parameters_dict or {}
         parameters.update(kwparameters)
-        
+
         runner: AsyncCommandRunner
-        
+
         if inspect.iscoroutinefunction(self._runner) or inspect.isasyncgen(self._runner):
              # async functions (coroutines) and async generators are remain as is
             runner = cast(AsyncCommandRunner, self._runner)
@@ -50,19 +50,21 @@ class Command(Generic[CommandRunner]):
             # sync functions are wrapped with asyncer.asyncify to make them async (coroutines)
             # async generators are not supported yet by asyncer.asyncify (https://github.com/tiangolo/asyncer/discussions/86)
             runner = asyncer.asyncify(cast(SyncCommandRunner, self._runner))
-            
+
         if any(p.kind == p.VAR_KEYWORD for p in inspect.signature(self._runner).parameters.values()):
             # if command runner accepts **kwargs, pass all parameters
             coroutine = runner(**parameters)
         else:
             # otherwise pass only parameters that are in command runner signature to prevent TypeError: got an unexpected keyword argument
             coroutine = runner(**{k: v for k, v in parameters.items() if k in self._runner.__code__.co_varnames})
-            
+
         @wraps(runner)
         async def coroutine_wrapper() -> ResponseOptions:
             try:
                 response = await coroutine
             except Exception as e:
+                print(e)
+                # TODO: better error handling, perhaps customizable middleware would be nice
                 response = Response(
                     text = f'Command {self} raised an exception: {e.__class__.__name__}',
                     voice = f'Command {self} raised an exception: {e.__class__.__name__}',
@@ -73,13 +75,13 @@ class Command(Generic[CommandRunner]):
                             'Consider using the ResponseHandler.respond() or async approach instead.'
                 warnings.warn(message, UserWarning)
             return response
-            
+
         return coroutine_wrapper()
-    
+
     def __call__(self, *args, **kwargs) -> AwaitResponse:
         # just syntactic sugar for command(...) instead of command.run(...)
         return self.run(*args, **kwargs)
-    
+
     def __repr__(self):
         return f'<Command {self.name}>'
 
@@ -98,25 +100,25 @@ class Response(BaseModel):
     needs_user_input: bool = False
     commands: list[Command] = []
     parameters: dict[str, Any] = {}
-    
+
     id: UUID = Field(default_factory=uuid4)
     time: datetime = Field(default_factory=datetime.now)
-    
+
     _repeat_last: Response | None = None # static instance
-    
+
     @classproperty
     def repeat_last(cls) -> Response:
         if not Response._repeat_last:
             Response._repeat_last = Response()
             return Response._repeat_last
         return Response._repeat_last
-    
+
     class Config:
         arbitrary_types_allowed = True
-    
+
     def __eq__(self, other):
         return self.id == other.id
-        
+
 class ResponseHandler(Protocol):
     def respond(self, response: Response): pass
     def unrespond(self, response: Response): pass
