@@ -19,6 +19,10 @@ class Object[T](ABC):
     def pattern(cls) -> Pattern:
         return Pattern('**')
 
+    @classproperty
+    def greedy(cls) -> bool:
+        return True
+
     def __init__(self, value: Any):
         '''Just init with wrapped value.'''
         self.value = value

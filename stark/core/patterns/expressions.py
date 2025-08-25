@@ -19,3 +19,5 @@ dictionary = {
     # single star*
     fr'([^{specials}]|^)\*': fr'\1[{alphanumerics}]*', # allows variable word form (different prefixes, postfixes, suffixes, etc) must "touch" the word (before, after, or in the middle)
 }
+
+# TODO: greedy (in object patterns) and non-greedy (place fillers) stars

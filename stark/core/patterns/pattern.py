@@ -4,12 +4,10 @@ import re
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Generator, Type, TypeAlias
 
-from asyncer import SoonValue, create_task_group
-
 from .expressions import dictionary
 
 if TYPE_CHECKING:
-    from ..types import Object, ParseResult
+    from ..types import Object
     ObjectType: TypeAlias = Type[Object]
 
 
@@ -41,7 +39,7 @@ class Pattern:
     async def match(self, string: str, objects_cache: dict[str, Object] | None = None) -> list[MatchResult]:
 
         if objects_cache is None:
-            objects_cache = {}
+            objects_cache = {} # TODO: improve cache structure
 
         matches: list[MatchResult] = []
 
@@ -53,59 +51,73 @@ class Pattern:
             # start and end in string, not in match.group(0)
             match_start = match.start()
             match_end = match.end()
+            command_str = string[match_start:match_end]
             match_str_groups = match.groupdict()
 
-            # parse parameters
+            # run sorted serial objects parsing
 
-            parameters: dict[str, Object] = {}
-            substrings: dict[str, str] = {}
-            futures: list[tuple[str, SoonValue[ParseResult]]] = []
+            parsed_parameters: dict[str, tuple[str, Object]] = {} # name: (substr, Object)
 
-            # run concurrent objects parsing
-            try:
-                async with create_task_group() as group:
-                    for name, object_type in self.parameters.items():
-                        if not match_str_groups.get(name):
-                            continue
+            found_parameters = sorted(
+                (name for name in match_str_groups.keys() if name in self.parameters), # just in case; startup check should cover most cases and enforce them via regex
+                key=lambda name: (
+                    int(self.parameters[name].greedy), # greedy parsed after non-greedy claimed substrings
+                    match.start(name) # cut string left to right
+                )
+            )
 
-                        parameter_str = match_str_groups[name].strip()
+            print('Gonna parse', list(enumerate(found_parameters)))
 
-                        for parsed_substr, parsed_obj in objects_cache.items():
-                            if parsed_substr in parameter_str:
-                                parameters[name] = parsed_obj.copy()
-                                parameter_str = parsed_substr
-                                substrings[name] = parsed_substr
-                                break
-                        else:
-                            async def parse(from_string: str, parameters: dict[str, str]):
-                                parse_result = await object_type.parse(from_string = from_string, parameters = parameters)
-                                objects_cache[parse_result.substring] = parse_result.obj
-                                return parse_result
-                            futures.append((name, group.soonify(parse)(parameter_str, match_str_groups)))
-            except ParseError as e:
-                print(f"Pattern.match ParseError: {e}")
-                continue
+            while found_parameters:
+                name = found_parameters.pop(0)
+                raw_param_substr = match_str_groups[name].strip()
+                print(f'Parsing {name} from {raw_param_substr}')
 
-            # read futures
-            for name, future in futures:
-                parse_result = future.value
-                parameters[name] = parse_result.obj
-                substrings[name] = parse_result.substring
+                # TODO: double-check optional parameter
 
-            # save parameters
-            for name in parameters.keys():
-                # TODO: check whether it does handle string trimming in did_parse and not only the regex
-                parameter_str = substrings[name]
-                parameter_start = match_str_groups[name].find(parameter_str)
-                parameter_end = parameter_start + len(parameter_str)
+                for cached_parsed_substr, cached_parsed_obj in objects_cache.items():
+                    # try to get object from cache
+                    if cached_parsed_substr in raw_param_substr:
+                        parsed_parameters[name] = (cached_parsed_substr, cached_parsed_obj.copy())
+                        break
+                else: # No cache, parse the object
+                    object_type = self.parameters[name]
+
+                    try:
+                        parse_result = await object_type.parse(
+                            from_string = raw_param_substr,
+                            parameters = match_str_groups, # TODO: rename to raw_parameters
+                        )
+                        objects_cache[parse_result.substring] = parse_result.obj
+                        parsed_parameters[name] = (parse_result.substring, parse_result.obj)
+                    except ParseError as e:
+                        print(f"Pattern.match ParseError: {e}")
+                        continue
+
+                # recapture next raw parameters after stripping the parsed parameter
+
+                parsed = {name: substr for name, (substr, _) in parsed_parameters.items()}
+                updated_matches = list(re.finditer(self._compile(prefill=parsed), command_str))
+                print('Recapturing parameters', self._compile(prefill=parsed), command_str)
+                assert updated_matches, "Unexpected Error: No matches found after recapturing parameters" # TODO: handle
+                match_str_groups = updated_matches[0].groupdict()
+
+            # validate parsed parameters
+            # TODO: handle optional parameters
+            assert set(self.parameters) <= set(parsed_parameters.keys()), f"Unexpected Error: Missing parameters {set(self.parameters) - set(parsed_parameters.keys())}"
+
+            # strip full command
+
+            for name, (parameter_substr, _) in parsed_parameters.items():
+                parameter_start = match_str_groups[name].find(parameter_substr)
+                parameter_end = parameter_start + len(parameter_substr)
 
                 # adjust start, end and substring after parsing parameters
                 if match.start(name) == match.start() and parameter_start != 0:
                     match_start = match.start(name) + parameter_start
-                if match.end(name) == match.end() and parameter_end != len(parameter_str):
+                if match.end(name) == match.end() and parameter_end != len(parameter_substr):
                     match_end = match.start(name) + parameter_start + parameter_end
 
-            # strip original string
             substring = string[match_start:match_end].strip()
             start = match_start + string[match_start:match_end].find(substring)
             end = start + len(substring)
@@ -114,7 +126,7 @@ class Pattern:
                 substring = substring,
                 start = start,
                 end = end,
-                parameters = parameters
+                parameters = {name: obj for name, (_, obj) in parsed_parameters.items()}
             ))
 
         # filter overlapping matches
@@ -152,7 +164,8 @@ class Pattern:
 
             yield arg_name, arg_type
 
-    def _compile(self) -> str: # transform Pattern to classic regex with named groups
+    def _compile(self, prefill: dict[str, str] = None) -> str: # transform Pattern to classic regex with named groups
+        prefill = prefill or {}
 
         pattern: str = self._origin
 
@@ -166,7 +179,10 @@ class Pattern:
         for name, object_type in self.parameters.items():
 
             arg_declaration = f'\\${name}\\:{object_type.__name__}'
-            arg_pattern = object_type.pattern.compiled.replace('\\', r'\\')
+            if name in prefill:
+                arg_pattern = re.escape(prefill[name])
+            else:
+                arg_pattern = object_type.pattern.compiled.replace('\\', r'\\')
             pattern = re.sub(arg_declaration, f'(?P<{name}>{arg_pattern})', pattern)
 
         return pattern
