@@ -1,10 +1,13 @@
 from __future__ import annotations
-from typing import Type, Generator, TypeAlias, TYPE_CHECKING
-from dataclasses import dataclass
+
 import re
-from asyncer import create_task_group, SoonValue
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Generator, Type, TypeAlias
+
+from asyncer import SoonValue, create_task_group
 
 from .expressions import dictionary
+
 if TYPE_CHECKING:
     from ..types import Object, ParseResult
     ObjectType: TypeAlias = Type[Object]
@@ -16,6 +19,9 @@ class MatchResult:
     start: int
     end: int
     parameters: dict[str, Object]
+
+class ParseError(Exception):
+    pass
 
 class Pattern:
 
@@ -56,25 +62,29 @@ class Pattern:
             futures: list[tuple[str, SoonValue[ParseResult]]] = []
 
             # run concurrent objects parsing
-            async with create_task_group() as group:
-                for name, object_type in self.parameters.items():
-                    if not match_str_groups.get(name):
-                        continue
+            try:
+                async with create_task_group() as group:
+                    for name, object_type in self.parameters.items():
+                        if not match_str_groups.get(name):
+                            continue
 
-                    parameter_str = match_str_groups[name].strip()
+                        parameter_str = match_str_groups[name].strip()
 
-                    for parsed_substr, parsed_obj in objects_cache.items():
-                        if parsed_substr in parameter_str:
-                            parameters[name] = parsed_obj.copy()
-                            parameter_str = parsed_substr
-                            substrings[name] = parsed_substr
-                            break
-                    else:
-                        async def parse(from_string: str, parameters: dict[str, str]):
-                            parse_result = await object_type.parse(from_string = from_string, parameters = parameters)
-                            objects_cache[parse_result.substring] = parse_result.obj
-                            return parse_result
-                        futures.append((name, group.soonify(parse)(parameter_str, match_str_groups)))
+                        for parsed_substr, parsed_obj in objects_cache.items():
+                            if parsed_substr in parameter_str:
+                                parameters[name] = parsed_obj.copy()
+                                parameter_str = parsed_substr
+                                substrings[name] = parsed_substr
+                                break
+                        else:
+                            async def parse(from_string: str, parameters: dict[str, str]):
+                                parse_result = await object_type.parse(from_string = from_string, parameters = parameters)
+                                objects_cache[parse_result.substring] = parse_result.obj
+                                return parse_result
+                            futures.append((name, group.soonify(parse)(parameter_str, match_str_groups)))
+            except ParseError as e:
+                print(f"Pattern.match ParseError: {e}")
+                continue
 
             # read futures
             for name, future in futures:
@@ -84,6 +94,7 @@ class Pattern:
 
             # save parameters
             for name in parameters.keys():
+                # TODO: check whether it does handle string trimming in did_parse and not only the regex
                 parameter_str = substrings[name]
                 parameter_start = match_str_groups[name].find(parameter_str)
                 parameter_end = parameter_start + len(parameter_str)

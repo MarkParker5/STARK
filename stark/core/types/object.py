@@ -1,17 +1,15 @@
 from __future__ import annotations
-from typing import Any
-from collections import namedtuple
-from abc import ABC
+
 import copy
+from abc import ABC
+from collections import namedtuple
+from typing import Any
 
 from stark.general.classproperty import classproperty
+
 from .. import Pattern
 
-
 ParseResult = namedtuple('ParseResult', ['obj', 'substring'])
-
-class ParseError(Exception):
-    pass
 
 class Object[T](ABC):
 

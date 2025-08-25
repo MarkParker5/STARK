@@ -1,10 +1,11 @@
 import re
-import pytest
-from stark.core import Pattern
-from stark.core.types import Object, Word, String
-from stark.core.patterns import expressions
-from stark.general.classproperty import classproperty
 
+import pytest
+
+from stark.core import Pattern
+from stark.core.patterns import expressions
+from stark.core.types import Object, String, Word
+from stark.general.classproperty import classproperty
 
 word = fr'[{expressions.alphanumerics}]*'
 words = fr'[{expressions.alphanumerics}\s]*'
