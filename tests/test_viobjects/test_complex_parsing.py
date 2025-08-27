@@ -90,11 +90,12 @@ Pattern.add_parameter_type(Greedy)
 
 @pytest.mark.parametrize('string', ['foo bar', 'hey foo bar two']) #, 'hey foo one bar two']) TODO: add support for enum of param
 async def test_complex_parsing__wildcard_params(string):
+    print('Testing:', string)
     pattern = Pattern('$f:Foo $b:Bar')
     matches = await pattern.match(string)
     expected = {'f': 'foo', 'b': 'bar'}
     assert matches
-    assert {name: obj.value for name, obj in matches[0].parameters.items()} == expected
+    assert {name: obj.value if obj else None for name, obj in matches[0].parameters.items()} == expected
 
 @pytest.mark.parametrize(
     "input_string,expected",
@@ -107,8 +108,8 @@ async def test_complex_parsing__wildcard_params(string):
     ]
 )
 async def test_complex_parsing__optional_wildcard(input_string: str, expected: dict[str, str | None]) -> None:
-    pattern = Pattern('$f:Foo?$b:Bar?$z:Baz?')
-    print('Data:', input_string, expected)
+    print('Expected:', input_string, expected)
+    pattern = Pattern('$f:Foo? ?$b:Bar? ?$z:Baz?') # TODO: better solution for optional space
     matches = await pattern.match(input_string)
     assert matches
     assert {name: obj.value if obj else None for name, obj in matches[0].parameters.items()} == expected
@@ -121,6 +122,7 @@ async def test_complex_parsing__optional_wildcard(input_string: str, expected: d
     ]
 )
 async def test_complex_parsing__greedy_and_optional_wildcard(input_string: str, expected: dict[str, str | None]) -> None:
+    print('Expected:', input_string, expected)
     matches = await Pattern('$g:Greedy $f:Foo? $b:Bar?').match(input_string)
     assert matches
-    assert {name: obj.value for name, obj in matches[0].parameters.items()} == expected
+    assert {name: obj.value if obj else None for name, obj in matches[0].parameters.items()} == expected

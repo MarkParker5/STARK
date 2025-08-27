@@ -28,6 +28,12 @@ class PatternParameter(NamedTuple):
     type: ObjectType
     optional: bool
 
+class ParameterMatch(NamedTuple):
+    name: str
+    regex_substr: str  # not sure this is needed anymore
+    parsed_obj: Object | None
+    parsed_substr: str
+
 class Pattern:
 
     parameters: dict[str, PatternParameter]
@@ -51,46 +57,98 @@ class Pattern:
         matches: list[MatchResult] = []
 
         for match in sorted(re.finditer(self.compiled, string), key = lambda match: match.start()):
+            # TODO: repeat the same re-regex logic for commands as did for parameters
 
             if match.start() == match.end():
                 continue # skip empty
 
             # start and end in string, not in match.group(0)
+            # TODO: consider moving it inside the loop
             match_start = match.start()
             match_end = match.end()
             command_str = string[match_start:match_end]
             match_str_groups = match.groupdict()
 
-            parsed_parameters: dict[str, tuple[str, Object] | None] = {} # name: (substr, Object), TODO: named tuple
+            # parsed_parameters: dict[str, ParameterMatch | None] = {}
+            parsed_parameters: dict[str, ParameterMatch] = {}
 
-            found_parameters = sorted(
-                (name for name in match_str_groups.keys() if name in self.parameters and match.start(name) != -1), # just in case; startup check should cover most cases and enforce them via regex
-                key=lambda name: (
-                    int(self.parameters[name].type.greedy), # greedy parsed after non-greedy claimed substrings
-                    match.start(name) # parse left to right
+            while True: # TODO: review condition, move to do_while if needed
+
+                # rerun regex to recapture parameters after previous parameter took it's substring
+
+                # prefill parsed values with exact substrings
+                # prefill = {name: parameter.parsed_substr for name, parameter in parsed_parameters.items() if parameter} # give empty matches a second chance
+                # prefill = {name: parameter.parsed_substr if parameter else '' for name, parameter in parsed_parameters.items()} # empty matches
+                prefill = {name: parameter.parsed_substr for name, parameter in parsed_parameters.items()}
+
+                # re-run regex only in the current command_str
+                new_matches = list(re.finditer(self._compile(prefill=prefill), command_str))
+
+                print(f'\nRecapturing parameters {command_str=} {prefill=} {self._compile(prefill=prefill)=}')
+                if not new_matches:
+                    break # everything's parsed
+                # assert new_matches, "Unexpected Error: No matches found after recapturing parameters" # TODO: handle
+                new_match = new_matches[0]
+
+                print('Match:', new_match.groupdict())
+                for k, v in new_match.groupdict().items():
+                    print(f'{k}: {v}',
+                        k in self.parameters,
+                        k not in prefill,
+                        new_match.start(k) != -1, new_match.start(k),
+                        bool(v.strip() if v else ''), v,
+                        sep='\t'
+                    )
+
+                match_str_groups = dict(filter(
+                    # x: (0: name, 1: substr); TODO: named tuple
+                    lambda x: \
+                        # handle only own parameter names
+                        x[0] in self.parameters \
+                        # skip prefilled names
+                        and x[0] not in prefill \
+                        # skip not found names
+                        and new_match.start(x[0]) != -1 \
+                        # skip whitespace-only values
+                        and x[1].strip(),
+                    new_match.groupdict().items()
+                ))
+
+                print('Found parameters:', [(new_match.start(name), name, match_str_groups[name]) for name in sorted(
+                    match_str_groups.keys(),
+                    key=lambda n: (
+                        int(self.parameters[n].type.greedy),
+                        new_match.start(n)
+                    )
+                )])
+
+                if not match_str_groups:
+                    # everything's parsed
+                    break
+                    # TODO: handle infinite loop with ParseError
+
+                # parse next parameter
+
+                name = min(
+                    match_str_groups.keys(),
+                    key=lambda name: (
+                        int(self.parameters[name].type.greedy), # parse greedy the last so they don't absorb neighbours
+                        new_match.start(name) # parse left to right
+                    )
                 )
-            ) # TODO: populate after re-regex
-
-            print('Gonna parse', [(i, name, match_str_groups[name], match.start(name)) for i, name in dict(enumerate(found_parameters)).items()])
-
-            while found_parameters:
-                name = found_parameters.pop(0)
-                raw_param_substr = match_str_groups[name]
-
-                if not raw_param_substr:
-                    print(f'{name} is empty')
-                    continue
-
-                raw_param_substr = raw_param_substr.strip()
+                raw_param_substr = match_str_groups[name].strip()
 
                 print(f'Parsing {name} from {raw_param_substr}')
 
-                # TODO: double-check optional parameter
-
+                # try to get object from cache
                 for cached_parsed_substr, cached_parsed_obj in objects_cache.items():
-                    # try to get object from cache
                     if cached_parsed_substr in raw_param_substr:
-                        parsed_parameters[name] = (cached_parsed_substr, cached_parsed_obj.copy())
+                        parsed_parameters[name] = ParameterMatch(
+                            name=name,
+                            regex_substr=cached_parsed_substr,
+                            parsed_obj=cached_parsed_obj.copy(),
+                            parsed_substr=raw_param_substr,
+                        )
                         break
                 else: # No cache, parse the object
                     object_type = self.parameters[name].type
@@ -101,42 +159,47 @@ class Pattern:
                             parameters = match_str_groups, # TODO: rename to raw_parameters
                         )
                         objects_cache[parse_result.substring] = parse_result.obj
-                        parsed_parameters[name] = (parse_result.substring, parse_result.obj)
+                        parsed_parameters[name] = ParameterMatch(
+                            name=name,
+                            regex_substr=raw_param_substr,
+                            parsed_obj=parse_result.obj,
+                            parsed_substr=parse_result.substring,
+                        )
                     except ParseError as e:
                         print(f"Pattern.match ParseError: {e}")
+                        parsed_parameters[name] = ParameterMatch( # explicitly set match result with None obj so it won't stuck in infitire retry loop
+                            name=name,
+                            regex_substr=raw_param_substr,
+                            parsed_obj=None,
+                            parsed_substr='',
+                        )
                         continue
-
-                # recapture next raw parameters after stripping the parsed parameter
-
-                prefill = {name: substr for name, (substr, _) in parsed_parameters.items()} # TODO: handle None
-                updated_matches = list(re.finditer(self._compile(prefill=prefill), command_str))
-                print('Recapturing parameters', self._compile(prefill=prefill), command_str)
-                assert updated_matches, "Unexpected Error: No matches found after recapturing parameters" # TODO: handle
-                match_str_groups = updated_matches[0].groupdict()
-                # TODO: update found_parameters in case empty match became not empty; also might be useful to handle the opposite: some parameter raw substr became empty
-                # TODO: remove duplicating and put in the start of the do_while loop
 
             # Validate parsed parameters
 
             # Check all required parameters are present
             assert set(name for name, param in self.parameters.items() if not param.optional) <= set(parsed_parameters.keys()), f"Unexpected Error: Missing parameters {set(self.parameters) - set(parsed_parameters.keys())}"
+
             # Fill None to missed optionals
-            parsed_parameters |= {k: None for k in self.parameters if k not in parsed_parameters}
+            all_parameters = {**parsed_parameters, **{k: None for k in self.parameters if k not in parsed_parameters}}
 
-            # Strip full command
+            # Strip full command TODO: use the last (all filled) regex info instead
 
-            for name, parameter in parsed_parameters.items():
+            for name, parameter in all_parameters.items():
                 if parameter is None: continue
-                parameter_substr, _ = parameter
-                parameter_start = match_str_groups[name].find(parameter_substr)
-                parameter_end = parameter_start + len(parameter_substr)
 
-                # adjust start, end and substring after parsing parameters
-                if match.start(name) == match.start() and parameter_start != 0:
-                    match_start = match.start(name) + parameter_start
-                if match.end(name) == match.end() and parameter_end != len(parameter_substr):
-                    match_end = match.start(name) + parameter_start + parameter_end
+                parameter_adjusted_start = parameter.regex_substr.find(parameter.parsed_substr)
+                parameter_adjusted_end = parameter_adjusted_start + len(parameter.parsed_substr)
 
+                # adjust start
+                if match.start(name) == match.start():# and parameter_adjusted_start != 0:
+                    match_start = match.start(name) + parameter_adjusted_start # NOTE: match.start might not work after re-regex
+
+                # adjust end
+                if match.end(name) == match.end():# and parameter_adjusted_end != len(parameter.parsed_substr):
+                    match_end = match.start(name) + parameter_adjusted_start + parameter_adjusted_end
+
+            # adjust substring
             substring = string[match_start:match_end].strip()
             start = match_start + string[match_start:match_end].find(substring)
             end = start + len(substring)
@@ -145,7 +208,7 @@ class Pattern:
                 substring = substring,
                 start = start,
                 end = end,
-                parameters = {name: (parameter[1] if parameter else None) for name, parameter in parsed_parameters.items()}
+                parameters = {name: (parameter.parsed_obj if parameter else None) for name, parameter in all_parameters.items()}
             ))
 
         # filter overlapping matches
