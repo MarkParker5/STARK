@@ -4,6 +4,8 @@ import re
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Generator, Type, TypeAlias
 
+from typing_extensions import NamedTuple
+
 from .expressions import dictionary
 
 if TYPE_CHECKING:
@@ -16,14 +18,19 @@ class MatchResult:
     substring: str
     start: int
     end: int
-    parameters: dict[str, Object]
+    parameters: dict[str, Object | None]
 
 class ParseError(Exception):
     pass
 
+class PatternParameter(NamedTuple):
+    name: str
+    type: ObjectType
+    optional: bool
+
 class Pattern:
 
-    parameters: dict[str, ObjectType]
+    parameters: dict[str, PatternParameter]
     compiled: str
 
     _origin: str
@@ -54,23 +61,28 @@ class Pattern:
             command_str = string[match_start:match_end]
             match_str_groups = match.groupdict()
 
-            # run sorted serial objects parsing
-
-            parsed_parameters: dict[str, tuple[str, Object]] = {} # name: (substr, Object)
+            parsed_parameters: dict[str, tuple[str, Object] | None] = {} # name: (substr, Object), TODO: named tuple
 
             found_parameters = sorted(
-                (name for name in match_str_groups.keys() if name in self.parameters), # just in case; startup check should cover most cases and enforce them via regex
+                (name for name in match_str_groups.keys() if name in self.parameters and match.start(name) != -1), # just in case; startup check should cover most cases and enforce them via regex
                 key=lambda name: (
-                    int(self.parameters[name].greedy), # greedy parsed after non-greedy claimed substrings
-                    match.start(name) # cut string left to right
+                    int(self.parameters[name].type.greedy), # greedy parsed after non-greedy claimed substrings
+                    match.start(name) # parse left to right
                 )
-            )
+            ) # TODO: populate after re-regex
 
-            print('Gonna parse', list(enumerate(found_parameters)))
+            print('Gonna parse', [(i, name, match_str_groups[name], match.start(name)) for i, name in dict(enumerate(found_parameters)).items()])
 
             while found_parameters:
                 name = found_parameters.pop(0)
-                raw_param_substr = match_str_groups[name].strip()
+                raw_param_substr = match_str_groups[name]
+
+                if not raw_param_substr:
+                    print(f'{name} is empty')
+                    continue
+
+                raw_param_substr = raw_param_substr.strip()
+
                 print(f'Parsing {name} from {raw_param_substr}')
 
                 # TODO: double-check optional parameter
@@ -81,7 +93,7 @@ class Pattern:
                         parsed_parameters[name] = (cached_parsed_substr, cached_parsed_obj.copy())
                         break
                 else: # No cache, parse the object
-                    object_type = self.parameters[name]
+                    object_type = self.parameters[name].type
 
                     try:
                         parse_result = await object_type.parse(
@@ -96,19 +108,26 @@ class Pattern:
 
                 # recapture next raw parameters after stripping the parsed parameter
 
-                parsed = {name: substr for name, (substr, _) in parsed_parameters.items()}
-                updated_matches = list(re.finditer(self._compile(prefill=parsed), command_str))
-                print('Recapturing parameters', self._compile(prefill=parsed), command_str)
+                prefill = {name: substr for name, (substr, _) in parsed_parameters.items()} # TODO: handle None
+                updated_matches = list(re.finditer(self._compile(prefill=prefill), command_str))
+                print('Recapturing parameters', self._compile(prefill=prefill), command_str)
                 assert updated_matches, "Unexpected Error: No matches found after recapturing parameters" # TODO: handle
                 match_str_groups = updated_matches[0].groupdict()
+                # TODO: update found_parameters in case empty match became not empty; also might be useful to handle the opposite: some parameter raw substr became empty
+                # TODO: remove duplicating and put in the start of the do_while loop
 
-            # validate parsed parameters
-            # TODO: handle optional parameters
-            assert set(self.parameters) <= set(parsed_parameters.keys()), f"Unexpected Error: Missing parameters {set(self.parameters) - set(parsed_parameters.keys())}"
+            # Validate parsed parameters
 
-            # strip full command
+            # Check all required parameters are present
+            assert set(name for name, param in self.parameters.items() if not param.optional) <= set(parsed_parameters.keys()), f"Unexpected Error: Missing parameters {set(self.parameters) - set(parsed_parameters.keys())}"
+            # Fill None to missed optionals
+            parsed_parameters |= {k: None for k in self.parameters if k not in parsed_parameters}
 
-            for name, (parameter_substr, _) in parsed_parameters.items():
+            # Strip full command
+
+            for name, parameter in parsed_parameters.items():
+                if parameter is None: continue
+                parameter_substr, _ = parameter
                 parameter_start = match_str_groups[name].find(parameter_substr)
                 parameter_end = parameter_start + len(parameter_substr)
 
@@ -126,7 +145,7 @@ class Pattern:
                 substring = substring,
                 start = start,
                 end = end,
-                parameters = {name: obj for name, (_, obj) in parsed_parameters.items()}
+                parameters = {name: (parameter[1] if parameter else None) for name, parameter in parsed_parameters.items()}
             ))
 
         # filter overlapping matches
@@ -140,7 +159,8 @@ class Pattern:
     @classmethod
     def add_parameter_type(cls, object_type: ObjectType):
         error_msg = f'Can`t add parameter type "{object_type.__name__}": pattern parameters do not match properties annotated in class'
-        assert object_type.pattern.parameters.items() <= object_type.__annotations__.items(), error_msg
+        # TODO: update schema and validation; handle optional parameters; handle short form where type is defined in object
+        # assert object_type.pattern.parameters.items() <= object_type.__annotations__.items(), error_msg
         exists_type = cls._parameter_types.get(object_type.__name__)
         assert exists_type in {object_type, None}, f'Can`t add parameter type: {object_type.__name__} already exists'
         cls._parameter_types[object_type.__name__] = object_type
@@ -151,20 +171,21 @@ class Pattern:
         # types = '|'.join(Pattern._parameter_types.keys())
         # return re.compile(r'\$(?P<name>[A-z][A-z0-9]*)\:(?P<type>(?:' + types + r'))')
         # do not use types list because it prevents validation of unknown types
-        return re.compile(r'\$(?P<name>[A-z][A-z0-9]*)\:(?P<type>[A-z][A-z0-9]*)')
+        return re.compile(r'\$(?P<name>[A-z][A-z0-9]*)\:(?P<type>[A-z][A-z0-9]*)(?P<optional>\?)?')
 
-    def _get_parameters(self) -> Generator[tuple[str, ObjectType], None, None]:
+    def _get_parameters(self) -> Generator[tuple[str, PatternParameter], None, None]:
         for match in re.finditer(self._parameter_regex, self._origin):
             arg_name = match.group('name')
             arg_type_name = match.group('type')
+            arg_optional = bool(match.group('optional'))
             arg_type: ObjectType | None = Pattern._parameter_types.get(arg_type_name)
 
             if not arg_type:
                 raise NameError(f'Unknown type: "{arg_type_name}" for parameter: "{arg_name}" in pattern: "{self._origin}"')
 
-            yield arg_name, arg_type
+            yield arg_name, PatternParameter(arg_name, arg_type, arg_optional)
 
-    def _compile(self, prefill: dict[str, str] = None) -> str: # transform Pattern to classic regex with named groups
+    def _compile(self, prefill: dict[str, str] | None = None) -> str: # transform Pattern to classic regex with named groups
         prefill = prefill or {}
 
         pattern: str = self._origin
@@ -176,14 +197,14 @@ class Pattern:
 
         #   find and transform parameters like $name:Type
 
-        for name, object_type in self.parameters.items():
+        for parameter in self.parameters.values():
 
-            arg_declaration = f'\\${name}\\:{object_type.__name__}'
-            if name in prefill:
-                arg_pattern = re.escape(prefill[name])
+            arg_declaration = f'\\${parameter.name}\\:{parameter.type.__name__}'
+            if parameter.name in prefill:
+                arg_pattern = re.escape(prefill[parameter.name])
             else:
-                arg_pattern = object_type.pattern.compiled.replace('\\', r'\\')
-            pattern = re.sub(arg_declaration, f'(?P<{name}>{arg_pattern})', pattern)
+                arg_pattern = parameter.type.pattern.compiled.replace('\\', r'\\')
+            pattern = re.sub(arg_declaration, f'(?P<{parameter.name}>{arg_pattern})', pattern)
 
         return pattern
 

@@ -107,15 +107,17 @@ async def test_complex_parsing__wildcard_params(string):
     ]
 )
 async def test_complex_parsing__optional_wildcard(input_string: str, expected: dict[str, str | None]) -> None:
-    matches = await Pattern('$f:Foo? $b:Bar? $z:Baz?').match(input_string)
+    pattern = Pattern('$f:Foo?$b:Bar?$z:Baz?')
+    print('Data:', input_string, expected)
+    matches = await pattern.match(input_string)
     assert matches
-    assert {name: obj.value for name, obj in matches[0].parameters.items()} == expected
+    assert {name: obj.value if obj else None for name, obj in matches[0].parameters.items()} == expected
 
 @pytest.mark.parametrize(
     "input_string,expected",
     [
         ("one two three", {"g": "one two three", "f": None, "b": None}),
-        ("one two foo bar", {"g": "one two foo bar", "f": "foo", "b": "bar"}),
+        ("one two foo bar", {"g": "one two", "f": "foo", "b": "bar"}),
     ]
 )
 async def test_complex_parsing__greedy_and_optional_wildcard(input_string: str, expected: dict[str, str | None]) -> None:
