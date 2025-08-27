@@ -142,14 +142,17 @@ class Pattern:
 
                 # try to get object from cache
                 for cached_parsed_substr, cached_parsed_obj in objects_cache.items():
-                    if cached_parsed_substr in raw_param_substr:
-                        parsed_parameters[name] = ParameterMatch(
-                            name=name,
-                            regex_substr=cached_parsed_substr,
-                            parsed_obj=cached_parsed_obj.copy(),
-                            parsed_substr=raw_param_substr,
-                        )
-                        break
+                    continue
+                    # TODO: review cache structure and search; current is broken
+                    # if cached_parsed_substr in raw_param_substr:
+                    #     print(f'Using cached object for {name}')
+                    #     parsed_parameters[name] = ParameterMatch(
+                    #         name=name,
+                    #         regex_substr=raw_param_substr,
+                    #         parsed_obj=cached_parsed_obj.copy(),
+                    #         parsed_substr=cached_parsed_substr,
+                    #     )
+                    #     break
                 else: # No cache, parse the object
                     object_type = self.parameters[name].type
 
@@ -165,6 +168,7 @@ class Pattern:
                             parsed_obj=parse_result.obj,
                             parsed_substr=parse_result.substring,
                         )
+                        print(f"Pattern.match: {name=} {raw_param_substr=} {parse_result.substring=}")
                     except ParseError as e:
                         print(f"Pattern.match ParseError: {e}")
                         parsed_parameters[name] = ParameterMatch( # explicitly set match result with None obj so it won't stuck in infitire retry loop
@@ -182,6 +186,8 @@ class Pattern:
 
             # Fill None to missed optionals
             all_parameters = {**parsed_parameters, **{k: None for k in self.parameters if k not in parsed_parameters}}
+            print('Parsed parameters:')
+            from pprint import pprint ; pprint(all_parameters)
 
             # Strip full command TODO: use the last (all filled) regex info instead
 
@@ -267,6 +273,10 @@ class Pattern:
                 arg_pattern = re.escape(prefill[parameter.name])
             else:
                 arg_pattern = parameter.type.pattern.compiled.replace('\\', r'\\')
+
+            if parameter.type.greedy and arg_pattern[-1] in {'*', '+', '}', '?'}:
+                arg_pattern += '?' # compensate greedy did_parse with non-greedy regex TODO: review
+
             pattern = re.sub(arg_declaration, f'(?P<{parameter.name}>{arg_pattern})', pattern)
 
         return pattern

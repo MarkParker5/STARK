@@ -21,6 +21,10 @@ class Object[T](ABC):
 
     @classproperty
     def greedy(cls) -> bool:
+        '''
+        Indicates `did_parse` returns real minimal substring and doesn't take any extra characters.
+        Makes this object be parsed before greedy objects.
+        '''
         return True
 
     def __init__(self, value: Any):

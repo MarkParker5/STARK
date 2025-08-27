@@ -35,6 +35,10 @@ async def test_complex_parsing():
 class Foo(Object):
 
     @classproperty
+    def greedy(cls) -> bool:
+        return False
+
+    @classproperty
     def pattern(cls):
         return Pattern('**')
 
@@ -46,6 +50,10 @@ class Foo(Object):
         return 'foo'
 
 class Bar(Object):
+
+    @classproperty
+    def greedy(cls) -> bool:
+        return False
 
     @classproperty
     def pattern(cls):
@@ -62,6 +70,10 @@ class Bar(Object):
 class Baz(Object):
 
     @classproperty
+    def greedy(cls) -> bool:
+        return False
+
+    @classproperty
     def pattern(cls):
         return Pattern('**')
 
@@ -73,6 +85,10 @@ class Baz(Object):
         return 'baz'
 
 class Greedy(Object):
+
+    @classproperty
+    def greedy(cls) -> bool:
+        return True
 
     @classproperty
     def pattern(cls):
@@ -123,6 +139,17 @@ async def test_complex_parsing__optional_wildcard(input_string: str, expected: d
 )
 async def test_complex_parsing__greedy_and_optional_wildcard(input_string: str, expected: dict[str, str | None]) -> None:
     print('Expected:', input_string, expected)
-    matches = await Pattern('$g:Greedy $f:Foo? $b:Bar?').match(input_string)
+    matches = await Pattern('$g:Greedy ?$f:Foo? ?$b:Bar?$').match(input_string)
     assert matches
     assert {name: obj.value if obj else None for name, obj in matches[0].parameters.items()} == expected
+
+    # TODO: fix match={'g': 'one', 'f': 'two', 'b': 'three'} => did_parse => {'g': 'one', 'f': None, 'b': None}
+    # should be fixed by correct `greedy` property
+    # UPD: `greedy` doesn't affect regex capturing; might be fixed by using '**?' instead of '*', though ? after the type must have the same affect
+    # fixed by making space between params optional in the pattern, though another case is failing now:
+    # TODO: fix `one two foo bar` {'g': 'one two', 'f': 'foo', 'b': 'bar'} gives {'g': 'one two foo bar', 'b': None, 'f': None}
+    # so Greedy is to greedy. Perhaps `greedy` doesn't affect regex capturing is still an issue.
+    # UPD: adding `?` to make greedy object's regex non-greedy fixed the second case but again broke the first one, now it's
+    # {'b': None, 'f': None, 'g': 'o'} instead of {'b': None, 'f': None, 'g': 'one two three'}
+    # UPD2: Solution candidate: add `$` ending anchor to force non-greedy folk to stretch till the end
+    # It worked! TODO: consider adding $ to the end of each pattern? or better dynamically to the end of the pattern while matching a command substring, so it doesn't mess with multiple commands in a single string
