@@ -169,7 +169,7 @@ class Pattern:
                     try:
                         parse_result = await object_type.parse(
                             from_string = raw_param_substr,
-                            parameters = match_str_groups, # TODO: rename to raw_parameters
+                            parameters = match_str_groups, # TODO: rename to raw_parameters? TODO: Pass all captured parameters to handle nested sub-params
                         )
                         objects_cache[parse_result.substring] = parse_result.obj
                         parsed_parameters[name] = ParameterMatch(
@@ -192,8 +192,9 @@ class Pattern:
             # Validate parsed parameters
 
             # Check all required parameters are present
-            if not set(name for name, param in self.parameters.items() if not param.optional) <= set(parsed_parameters.keys()):
-                raise ParseError(f"Did not find parameters: {set(self.parameters) - set(parsed_parameters.keys())}")
+            # if not set(name for name, param in self.parameters.items() if not param.optional) <= set(parsed_parameters.keys()):
+            #     raise ParseError(f"Did not find parameters: {set(self.parameters) - set(parsed_parameters.keys())}")
+            # TODO: move this check to the caller to properly handle parameters inside optional group
 
             # Fill None to missed optionals
             all_parameters = {**parsed_parameters, **{k: None for k in self.parameters if k not in parsed_parameters}}

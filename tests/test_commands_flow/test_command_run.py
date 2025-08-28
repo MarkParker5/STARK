@@ -1,11 +1,13 @@
 import anyio
-from stark.core.types import Word
+
 from stark.core import Response
+from stark.core.types import Word
 
 
 async def test_command_flow_optional_parameter(commands_context_flow, autojump_clock):
     async with commands_context_flow() as (manager, context, context_delegate):
 
+        # @manager.new('lorem ?hello ?$var:Word? dolor')
         @manager.new('lorem( hello $var:Word)? dolor')
         async def foo(var: Word | None = None):
             return Response(text='Lorem!' + (var.value if var else ''))

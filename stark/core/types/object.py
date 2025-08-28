@@ -61,12 +61,15 @@ class Object[T](ABC):
         obj = cls(None)
         parameters = parameters or {}
 
-        for name, object_type in cls.pattern.parameters.items():
+        for parameter in cls.pattern.parameters.values():
+            name = parameter.name
+            object_type = parameter.type
+            print('did parse object sub-params:', obj, cls.pattern, cls.pattern.parameters.keys(), parameters)
             if not parameters.get(name):
                 continue
             value = parameters.pop(name)
             # TODO: check whether all pattern parameters must be assigned as object attributes
-            setattr(obj, name, (await object_type.parse(from_string = value, parameters = parameters)).obj)
+            setattr(obj, name, (await object_type.parse(from_string = value, parameters = parameters)).obj) # TODO: check whether it should use the Pattern.match method; consider object-pattern-parser refactoring where pattern is just a data structure, object might be pattern's subclass, and parser has DI and handles all the logic
 
         substring = await obj.did_parse(from_string)
         assert substring in from_string, ValueError(f'Parsed substring must be a part of the original string. There is no {substring} in {from_string}.')
