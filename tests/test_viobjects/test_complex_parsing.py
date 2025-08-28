@@ -139,7 +139,7 @@ async def test_complex_parsing__optional_wildcard(input_string: str, expected: d
 )
 async def test_complex_parsing__greedy_and_optional_wildcard(input_string: str, expected: dict[str, str | None]) -> None:
     print('Expected:', input_string, expected)
-    matches = await Pattern('$g:Greedy ?$f:Foo? ?$b:Bar?$').match(input_string)
+    matches = await Pattern('$g:Greedy ?$f:Foo? ?$b:Bar?$').match(input_string) # TODO: should work without trailing anchor now (added under the hood)
     assert matches
     assert {name: obj.value if obj else None for name, obj in matches[0].parameters.items()} == expected
 

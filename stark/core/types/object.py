@@ -25,7 +25,7 @@ class Object[T](ABC):
         Indicates `did_parse` returns real minimal substring and doesn't take any extra characters.
         Makes this object be parsed before greedy objects.
         '''
-        return True
+        return False # TODO: review default behavior
 
     def __init__(self, value: Any):
         '''Just init with wrapped value.'''

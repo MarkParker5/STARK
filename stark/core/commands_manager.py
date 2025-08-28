@@ -1,12 +1,14 @@
 from __future__ import annotations
-from dataclasses import dataclass
-import inspect
-from types import UnionType
-from asyncer import create_task_group, SoonValue
 
-from .patterns import Pattern, MatchResult
+import inspect
+from dataclasses import dataclass
+from types import UnionType
+
+from asyncer import SoonValue, create_task_group
+
+from .command import AsyncResponseHandler, Command, CommandRunner, ResponseHandler
+from .patterns import MatchResult, Pattern
 from .types import Object
-from .command import Command, CommandRunner, ResponseHandler, AsyncResponseHandler
 
 
 @dataclass
@@ -98,8 +100,8 @@ class CommandsManager:
 
             # check that runner has all parameters from pattern
 
-            error_msg = f'Command {self.name}.{runner.__name__} must have all parameters from pattern: {pattern.parameters=} {runner.__annotations__=}'
-            assert pattern.parameters.items() <= annotations.items(), error_msg
+            error_msg = f'Command {self.name}.{runner.__name__} must have all parameters from pattern; ' # TODO: show difference
+            assert {(p.name, p.type) for p in pattern.parameters.values()} <= annotations.items(), error_msg
 
             # additional checks for DI
 

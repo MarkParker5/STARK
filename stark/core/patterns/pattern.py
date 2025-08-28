@@ -56,7 +56,14 @@ class Pattern:
 
         matches: list[MatchResult] = []
 
-        for match in sorted(re.finditer(self.compiled, string), key = lambda match: match.start()):
+        print(f"\nStarting looking for \"{self.compiled}\" in \"{string}\"")
+
+        # forces non-greedy regex of greedy objects to stretch till the end, but has fallback tail capturing mechanism
+        # trailing_anchor = r'(.*?)$'  # TODO: triple check this
+        # trailing_anchor = r'$'  # TODO: triple check this and whether tail capturing group is necessary
+        trailing_anchor = r''  # TODO: triple check this and whether tail capturing group is necessary
+
+        for match in sorted(re.finditer(self.compiled+trailing_anchor, string), key = lambda match: match.start()):
             # TODO: repeat the same re-regex logic for commands as did for parameters
 
             if match.start() == match.end():
@@ -72,6 +79,8 @@ class Pattern:
             # parsed_parameters: dict[str, ParameterMatch | None] = {}
             parsed_parameters: dict[str, ParameterMatch] = {}
 
+            print(f'\nCaptured candidate "{command_str}"')
+
             while True: # TODO: review condition, move to do_while if needed
 
                 # rerun regex to recapture parameters after previous parameter took it's substring
@@ -82,9 +91,10 @@ class Pattern:
                 prefill = {name: parameter.parsed_substr for name, parameter in parsed_parameters.items()}
 
                 # re-run regex only in the current command_str
-                new_matches = list(re.finditer(self._compile(prefill=prefill), command_str))
+                compiled = self._compile(prefill=prefill)+trailing_anchor
+                new_matches = list(re.finditer(compiled, command_str))
 
-                print(f'\nRecapturing parameters {command_str=} {prefill=} {self._compile(prefill=prefill)=}')
+                print(f'\nRecapturing parameters {command_str=} {prefill=} {compiled=}')
                 if not new_matches:
                     break # everything's parsed
                 # assert new_matches, "Unexpected Error: No matches found after recapturing parameters" # TODO: handle
@@ -182,7 +192,8 @@ class Pattern:
             # Validate parsed parameters
 
             # Check all required parameters are present
-            assert set(name for name, param in self.parameters.items() if not param.optional) <= set(parsed_parameters.keys()), f"Unexpected Error: Missing parameters {set(self.parameters) - set(parsed_parameters.keys())}"
+            if not set(name for name, param in self.parameters.items() if not param.optional) <= set(parsed_parameters.keys()):
+                raise ParseError(f"Did not find parameters: {set(self.parameters) - set(parsed_parameters.keys())}")
 
             # Fill None to missed optionals
             all_parameters = {**parsed_parameters, **{k: None for k in self.parameters if k not in parsed_parameters}}
