@@ -68,16 +68,15 @@ class Pattern:
         trailing_anchor = r''
 
         for match in sorted(re.finditer(self.compiled+trailing_anchor, string), key = lambda match: match.start()):
-            # TODO: repeat the same re-regex logic for commands as did for parameters
 
             if match.start() == match.end():
                 continue # skip empty
 
             # start and end in string, not in match.group(0)
             # TODO: consider moving it inside the loop
-            match_start = match.start()
-            match_end = match.end()
-            command_str = string[match_start:match_end]
+            # match_start = match.start()
+            # match_end = match.end()
+            command_str = string[match.start():match.end()].strip()
             match_str_groups = match.groupdict()
 
             # parsed_parameters: dict[str, ParameterMatch | None] = {}
@@ -100,9 +99,12 @@ class Pattern:
 
                 print(f'\nRecapturing parameters {command_str=} {prefill=} {compiled=}')
                 if not new_matches:
-                    break # everything's parsed
+                    break # everything's parsed (probably not successfully)
 
                 new_match = new_matches[0]
+                # match_start = match.start()
+                # match_end = match.end()
+                command_str = string[match.start():match.end()].strip()
 
                 print('Match:', new_match.groupdict())
                 for k, v in new_match.groupdict().items():
@@ -137,8 +139,7 @@ class Pattern:
                 )])
 
                 if not match_str_groups:
-                    # everything's parsed
-                    break
+                    break # everything's parsed (probably successfully)
 
                 # parse next parameter
 
@@ -180,7 +181,8 @@ class Pattern:
                         )
                     except ParseError as e:
                         print(f"Pattern.match ParseError: {e}")
-                        parsed_parameters[name] = ParameterMatch( # explicitly set match result with None obj so it won't stuck in infitire retry loop
+                        # explicitly set match result with None obj so it won't stuck in an infinite retry loop
+                        parsed_parameters[name] = ParameterMatch(
                             name=name,
                             regex_substr=raw_param_substr,
                             parsed_obj=None,
@@ -204,39 +206,24 @@ class Pattern:
             #     raise ParseError(f"Did not find parameters: {set(self.parameters) - set(parsed_parameters.keys())}")
 
             # Fill None to missed optionals
+
             all_parameters = {**parsed_parameters, **{k: None for k in self.parameters if k not in parsed_parameters}}
             print('Parsed parameters:')
             from pprint import pprint ; pprint(all_parameters)
 
-            # Strip full command TODO: use the last (all filled) regex info instead
+            # Add match
 
-            for name, parameter in all_parameters.items():
-                if parameter is None: continue
-
-                parameter_adjusted_start = parameter.regex_substr.find(parameter.parsed_substr)
-                parameter_adjusted_end = parameter_adjusted_start + len(parameter.parsed_substr)
-
-                # adjust start
-                if match.start(name) == match.start():# and parameter_adjusted_start != 0:
-                    match_start = match.start(name) + parameter_adjusted_start # NOTE: match.start might not work after re-regex
-
-                # adjust end
-                if match.end(name) == match.end():# and parameter_adjusted_end != len(parameter.parsed_substr):
-                    match_end = match.start(name) + parameter_adjusted_start + parameter_adjusted_end
-
-            # adjust substring
-            substring = string[match_start:match_end].strip()
-            start = match_start + string[match_start:match_end].find(substring)
-            end = start + len(substring)
+            start = match.start()
+            end = match.start() + len(command_str)
 
             matches.append(MatchResult(
-                substring = substring,
+                substring = command_str,
                 start = start,
                 end = end,
                 parameters = {name: (parameter.parsed_obj if parameter else None) for name, parameter in all_parameters.items()}
             ))
 
-        # filter overlapping matches
+        # Filter overlapping matches
 
         for prev, current in zip(matches.copy(), matches[1:]): # copy to prevent affecting iteration by removing items; slice makes copy automatically
             if prev.start == current.start or prev.end > current.start: # if overlap
