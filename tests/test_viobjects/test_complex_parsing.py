@@ -104,7 +104,7 @@ Pattern.add_parameter_type(Bar)
 Pattern.add_parameter_type(Baz)
 Pattern.add_parameter_type(Greedy)
 
-@pytest.mark.parametrize('string', ['foo bar', 'hey foo bar two']) #, 'hey foo one bar two']) TODO: add support for enum of param
+@pytest.mark.parametrize('string', ['foo bar', 'hey foo bar two']) #, 'hey foo one bar two']) TODO: add support for just enum of param w/o exact pattern structure
 async def test_complex_parsing__wildcard_params(string):
     print('Testing:', string)
     pattern = Pattern('$f:Foo $b:Bar')
@@ -139,17 +139,6 @@ async def test_complex_parsing__optional_wildcard(input_string: str, expected: d
 )
 async def test_complex_parsing__greedy_and_optional_wildcard(input_string: str, expected: dict[str, str | None]) -> None:
     print('Expected:', input_string, expected)
-    matches = await Pattern('$g:Greedy ?$f:Foo? ?$b:Bar?$').match(input_string) # TODO: should work without trailing anchor now (added under the hood)
+    matches = await Pattern('$g:Greedy ?$f:Foo? ?$b:Bar?$').match(input_string)
     assert matches
     assert {name: obj.value if obj else None for name, obj in matches[0].parameters.items()} == expected
-
-    # TODO: fix match={'g': 'one', 'f': 'two', 'b': 'three'} => did_parse => {'g': 'one', 'f': None, 'b': None}
-    # should be fixed by correct `greedy` property
-    # UPD: `greedy` doesn't affect regex capturing; might be fixed by using '**?' instead of '*', though ? after the type must have the same affect
-    # fixed by making space between params optional in the pattern, though another case is failing now:
-    # TODO: fix `one two foo bar` {'g': 'one two', 'f': 'foo', 'b': 'bar'} gives {'g': 'one two foo bar', 'b': None, 'f': None}
-    # so Greedy is to greedy. Perhaps `greedy` doesn't affect regex capturing is still an issue.
-    # UPD: adding `?` to make greedy object's regex non-greedy fixed the second case but again broke the first one, now it's
-    # {'b': None, 'f': None, 'g': 'o'} instead of {'b': None, 'f': None, 'g': 'one two three'}
-    # UPD2: Solution candidate: add `$` ending anchor to force non-greedy folk to stretch till the end
-    # It worked! TODO: consider adding $ to the end of each pattern? or better dynamically to the end of the pattern while matching a command substring, so it doesn't mess with multiple commands in a single string

@@ -1,19 +1,29 @@
 from __future__ import annotations
-from typing import cast, Callable, Awaitable, Any, Protocol, AsyncGenerator, Generator, Optional, TypeVar, Generic
-from functools import wraps, update_wrapper
-import warnings
-from uuid import UUID, uuid4
-from enum import auto, Enum
-from datetime import datetime
-import json
-import inspect
 
-from pydantic import BaseModel, Field
+import inspect
+import warnings
+from datetime import datetime
+from enum import Enum, auto
+from functools import update_wrapper, wraps
+from typing import (
+    Any,
+    AsyncGenerator,
+    Awaitable,
+    Callable,
+    Generator,
+    Generic,
+    Optional,
+    Protocol,
+    TypeVar,
+    cast,
+)
+from uuid import UUID, uuid4
+
 import asyncer
+from pydantic import BaseModel, Field
 
 from ..general.classproperty import classproperty
 from .patterns import Pattern
-
 
 ResponseOptions = Optional['Response'] | Generator[Optional['Response'], None, None] | AsyncGenerator[Optional['Response'], None]
 AwaitResponse = Awaitable[ResponseOptions]
@@ -64,7 +74,6 @@ class Command(Generic[CommandRunner]):
                 response = await coroutine
             except Exception as e:
                 print(e)
-                # TODO: better error handling, perhaps customizable middleware would be nice
                 response = Response(
                     text = f'Command {self} raised an exception: {e.__class__.__name__}',
                     voice = f'Command {self} raised an exception: {e.__class__.__name__}',

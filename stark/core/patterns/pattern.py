@@ -34,6 +34,9 @@ class ParameterMatch(NamedTuple):
     parsed_obj: Object | None
     parsed_substr: str
 
+def any_of(*args: str) -> str:
+    return '(' + '|'.join(args) + ')'
+
 class Pattern:
 
     parameters: dict[str, PatternParameter]
@@ -59,9 +62,10 @@ class Pattern:
         print(f"\nStarting looking for \"{self.compiled}\" in \"{string}\"")
 
         # forces non-greedy regex of greedy objects to stretch till the end, but has fallback tail capturing mechanism
-        # trailing_anchor = r'(.*?)$'  # TODO: triple check this
-        # trailing_anchor = r'$'  # TODO: triple check this and whether tail capturing group is necessary
-        trailing_anchor = r''  # TODO: triple check this and whether tail capturing group is necessary
+        # TODO: triple check this and whether tail capturing group is necessary
+        # trailing_anchor = r'(.*?)$'
+        # trailing_anchor = r'$'
+        trailing_anchor = r''
 
         for match in sorted(re.finditer(self.compiled+trailing_anchor, string), key = lambda match: match.start()):
             # TODO: repeat the same re-regex logic for commands as did for parameters
@@ -81,7 +85,7 @@ class Pattern:
 
             print(f'\nCaptured candidate "{command_str}"')
 
-            while True: # TODO: review condition, move to do_while if needed
+            while True:
 
                 # rerun regex to recapture parameters after previous parameter took it's substring
 
@@ -97,7 +101,7 @@ class Pattern:
                 print(f'\nRecapturing parameters {command_str=} {prefill=} {compiled=}')
                 if not new_matches:
                     break # everything's parsed
-                # assert new_matches, "Unexpected Error: No matches found after recapturing parameters" # TODO: handle
+
                 new_match = new_matches[0]
 
                 print('Match:', new_match.groupdict())
@@ -135,7 +139,6 @@ class Pattern:
                 if not match_str_groups:
                     # everything's parsed
                     break
-                    # TODO: handle infinite loop with ParseError
 
                 # parse next parameter
 
@@ -199,7 +202,6 @@ class Pattern:
             # Check all required parameters are present
             # if not set(name for name, param in self.parameters.items() if not param.optional) <= set(parsed_parameters.keys()):
             #     raise ParseError(f"Did not find parameters: {set(self.parameters) - set(parsed_parameters.keys())}")
-            # TODO: move this check to the caller to properly handle parameters inside optional group
 
             # Fill None to missed optionals
             all_parameters = {**parsed_parameters, **{k: None for k in self.parameters if k not in parsed_parameters}}
