@@ -167,18 +167,14 @@ class Pattern:
                     object_type = self.parameters[name].type
 
                     try:
+                        object_matches = await object_type.pattern.match(raw_param_substr, objects_cache)
+                        if not object_matches:
+                            raise ParseError(f"Failed to match object {object_type} from {raw_param_substr}")
+                        object_pattern_match = object_matches[0]
                         parse_result = await object_type.parse(
-                            from_string = raw_param_substr,
-                            parameters = match_str_groups, # TODO: rename to raw_parameters? TODO: Pass all captured parameters to handle nested sub-params
+                            from_string=object_pattern_match.substring,
+                            parsed_parameters=object_pattern_match.parameters
                         )
-                        objects_cache[parse_result.substring] = parse_result.obj
-                        parsed_parameters[name] = ParameterMatch(
-                            name=name,
-                            regex_substr=raw_param_substr,
-                            parsed_obj=parse_result.obj,
-                            parsed_substr=parse_result.substring,
-                        )
-                        print(f"Pattern.match: {name=} {raw_param_substr=} {parse_result.substring=}")
                     except ParseError as e:
                         print(f"Pattern.match ParseError: {e}")
                         parsed_parameters[name] = ParameterMatch( # explicitly set match result with None obj so it won't stuck in infitire retry loop
@@ -188,6 +184,15 @@ class Pattern:
                             parsed_substr='',
                         )
                         continue
+
+                    objects_cache[parse_result.substring] = parse_result.obj
+                    parsed_parameters[name] = ParameterMatch(
+                        name=name,
+                        regex_substr=raw_param_substr,
+                        parsed_obj=parse_result.obj,
+                        parsed_substr=parse_result.substring,
+                    )
+                    print(f"Pattern.match: {name=} {raw_param_substr=} {parse_result.substring=}")
 
             # Validate parsed parameters
 

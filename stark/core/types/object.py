@@ -48,7 +48,7 @@ class Object[T](ABC):
         return from_string
 
     @classmethod
-    async def parse(cls, from_string: str, parameters: dict[str, str] | None = None) -> ParseResult:
+    async def parse(cls, from_string: str, parsed_parameters: dict[str, Object | None] | None = None) -> ParseResult:
         '''
         For internal use only.
         You will very rarely, if ever, need to override or even call this method.
@@ -59,19 +59,15 @@ class Object[T](ABC):
         '''
 
         obj = cls(None)
-        parameters = parameters or {}
+        parsed_parameters = parsed_parameters or {}
+        assert parsed_parameters.keys() <= {p.name for p in cls.pattern.parameters.values() if not p.optional}
 
-        for parameter in cls.pattern.parameters.values():
-            name = parameter.name
-            object_type = parameter.type
-            print('did parse object sub-params:', obj, cls.pattern, cls.pattern.parameters.keys(), parameters)
-            if not parameters.get(name):
-                continue
-            value = parameters.pop(name)
-            # TODO: check whether all pattern parameters must be assigned as object attributes
-            setattr(obj, name, (await object_type.parse(from_string = value, parameters = parameters)).obj) # TODO: check whether it should use the Pattern.match method; consider object-pattern-parser refactoring where pattern is just a data structure, object might be pattern's subclass, and parser has DI and handles all the logic
+        for name in cls.pattern.parameters:
+            value = parsed_parameters[name]
+            setattr(obj, name, value)
 
         substring = await obj.did_parse(from_string)
+        assert substring.strip(), ValueError('Parsed substring must not be empty.')
         assert substring in from_string, ValueError(f'Parsed substring must be a part of the original string. There is no {substring} in {from_string}.')
         assert obj.value is not None, ValueError(f'Parsed object {obj} must have a `value` property set in did_parse method. It is not set in {type(obj)}.')
 
@@ -84,7 +80,7 @@ class Object[T](ABC):
         return f'{self.value:{spec}}'
 
     def __repr__(self):
-        strValue = f'"{str(self.value)}"' if type(self.value) == str else str(self.value)
+        strValue = f'"{str(self.value)}"' if type(self.value) is str else str(self.value)
         return f'<{type(self).__name__} value: {strValue}>'
 
     def __eq__(self, other: object) -> bool:
