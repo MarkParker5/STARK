@@ -6,8 +6,8 @@ The flexibility of the Python programming language allows Stark to be hosted on 
 
 Both macOS and Linux are Unix-based systems that typically come with Python pre-installed. However:
 
-- Ensure that your Python version is updated to at least 3.10. If it isn't, consider updating it.
-  
+- Ensure that your Python version is updated to at least 3.12. If it isn't, consider updating it.
+
 - If you wish to run Stark on boot and keep it running in the background, you can utilize `systemd` services to automate this process.
 
 ## Windows
@@ -39,7 +39,7 @@ To set up Stark on a Raspberry Pi:
 1. Ensure you have a Raspberry Pi with an appropriate operating system installed (e.g., Raspberry Pi OS).
 2. Connect a microphone to the Raspberry Pi. If you aim for high voice recognition accuracy, consider using a high-sensitive omnidirectional microphone.
 3. Connect a speaker or, as in the shared example, a TV soundbar to the Raspberry Pi for output.
-4. Install Python (ensure version 3.10 or later) and other necessary packages for Stark.
+4. Install Python (ensure version 3.12 or later) and other necessary packages for Stark.
 5. If you wish to run Stark on boot and keep it running in the background, you can utilize `systemd` services to automate this process.
 
 ## Server-Based Hosting

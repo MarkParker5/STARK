@@ -4,7 +4,7 @@ This guide will walk you through the installation of the STARK framework and its
 
 ## Prerequisites
 
-Ensure you have Python 3.10 or newer installed. You can verify this with:
+Ensure you have Python 3.12 or newer installed. You can verify this with:
 ```bash
 python --version
 ```
