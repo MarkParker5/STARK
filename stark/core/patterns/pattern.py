@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import logging
+
+logger = logging.getLogger(__name__)
 import re
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Generator, Type, TypeAlias
@@ -59,7 +62,7 @@ class Pattern:
 
         matches: list[MatchResult] = []
 
-        print(f"\nStarting looking for \"{self.compiled}\" in \"{string}\"")
+        logger.debug(f"Starting looking for \"{self.compiled}\" in \"{string}\"")
 
         # forces non-greedy regex of greedy objects to stretch till the end, but has fallback tail capturing mechanism
         # TODO: triple check this and whether tail capturing group is necessary
@@ -82,7 +85,7 @@ class Pattern:
             # parsed_parameters: dict[str, ParameterMatch | None] = {}
             parsed_parameters: dict[str, ParameterMatch] = {}
 
-            print(f'\nCaptured candidate "{command_str}"')
+            logger.debug(f'Captured candidate "{command_str}"')
 
             while True:
 
@@ -97,7 +100,7 @@ class Pattern:
                 compiled = self._compile(prefill=prefill)+trailing_anchor
                 new_matches = list(re.finditer(compiled, command_str))
 
-                print(f'\nRecapturing parameters {command_str=} {prefill=} {compiled=}')
+                logger.debug(f'Recapturing parameters command_str={command_str} prefill={prefill} compiled={compiled}')
                 if not new_matches:
                     break # everything's parsed (probably not successfully)
 
@@ -106,15 +109,9 @@ class Pattern:
                 # match_end = match.end()
                 command_str = string[match.start():match.end()].strip()
 
-                print('Match:', new_match.groupdict())
+                logger.debug(f'Match: {new_match.groupdict()}')
                 for k, v in new_match.groupdict().items():
-                    print(f'{k}: {v}',
-                        k in self.parameters,
-                        k not in prefill,
-                        new_match.start(k) != -1, new_match.start(k),
-                        bool(v.strip() if v else ''), v,
-                        sep='\t'
-                    )
+                    logger.debug(f'{k}: {v}\t{k in self.parameters}\t{k not in prefill}\t{new_match.start(k) != -1}\t{new_match.start(k)}\t{bool(v.strip() if v else "")}\t{v}')
 
                 match_str_groups = dict(filter(
                     # x: (0: name, 1: substr); TODO: named tuple
@@ -130,13 +127,7 @@ class Pattern:
                     new_match.groupdict().items()
                 ))
 
-                print('Found parameters:', [(new_match.start(name), name, match_str_groups[name]) for name in sorted(
-                    match_str_groups.keys(),
-                    key=lambda n: (
-                        int(self.parameters[n].type.greedy),
-                        new_match.start(n)
-                    )
-                )])
+                logger.debug(f'Found parameters: {[(new_match.start(name), name, match_str_groups[name]) for name in sorted(match_str_groups.keys(), key=lambda n: (int(self.parameters[n].type.greedy), new_match.start(n)))]}')
 
                 if not match_str_groups:
                     break # everything's parsed (probably successfully)
@@ -152,14 +143,14 @@ class Pattern:
                 )
                 raw_param_substr = match_str_groups[name].strip()
 
-                print(f'Parsing {name} from {raw_param_substr}')
+                logger.debug(f'Parsing {name} from {raw_param_substr}')
 
                 # try to get object from cache
                 for cached_parsed_substr, cached_parsed_obj in objects_cache.items():
                     continue
                     # TODO: review cache structure and search; current is broken
                     # if cached_parsed_substr in raw_param_substr:
-                    #     print(f'Using cached object for {name}')
+                    #     logging.debug(f'Using cached object for {name}')
                     #     parsed_parameters[name] = ParameterMatch(
                     #         name=name,
                     #         regex_substr=raw_param_substr,
@@ -180,7 +171,7 @@ class Pattern:
                             parsed_parameters=object_pattern_match.parameters
                         )
                     except ParseError as e:
-                        print(f"Pattern.match ParseError: {e}")
+                        logger.error(f"Pattern.match ParseError: {e}")
                         # explicitly set match result with None obj so it won't stuck in an infinite retry loop
                         parsed_parameters[name] = ParameterMatch(
                             name=name,
@@ -197,7 +188,7 @@ class Pattern:
                         parsed_obj=parse_result.obj,
                         parsed_substr=parse_result.substring,
                     )
-                    print(f"Pattern.match: {name=} {raw_param_substr=} {parse_result.substring=}")
+                    logger.debug(f"Pattern.match: name={name} raw_param_substr={raw_param_substr} parse_result.substring={parse_result.substring}")
 
             # Validate parsed parameters
 
@@ -208,8 +199,7 @@ class Pattern:
             # Fill None to missed optionals
 
             all_parameters = {**parsed_parameters, **{k: None for k in self.parameters if k not in parsed_parameters}}
-            print('Parsed parameters:')
-            from pprint import pprint ; pprint(all_parameters)
+            logger.debug(f'Parsed parameters: {all_parameters}')
 
             # Add match
 

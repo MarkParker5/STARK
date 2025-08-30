@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import inspect
+import logging
 import warnings
 from datetime import datetime
 from enum import Enum, auto
@@ -18,6 +19,8 @@ from typing import (
     cast,
 )
 from uuid import UUID, uuid4
+
+logger = logging.getLogger(__name__)
 
 import asyncer
 from pydantic import BaseModel, Field
@@ -73,7 +76,7 @@ class Command(Generic[CommandRunner]):
             try:
                 response = await coroutine
             except Exception as e:
-                print(e)
+                logger.error(e)
                 response = Response(
                     text = f'Command {self} raised an exception: {e.__class__.__name__}',
                     voice = f'Command {self} raised an exception: {e.__class__.__name__}',

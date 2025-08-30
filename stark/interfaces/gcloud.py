@@ -1,9 +1,13 @@
 import os
-from google.cloud import texttospeech
+import asyncer
 import sounddevice
 import soundfile
-import asyncer
+from google.cloud import texttospeech
+
 from .protocols import SpeechSynthesizer, SpeechSynthesizerResult
+
+import logging
+logger = logging.getLogger(__name__)
 
 class Speech(SpeechSynthesizerResult):
 
@@ -17,13 +21,13 @@ class Speech(SpeechSynthesizerResult):
             sounddevice.play(*soundfile.read(self.path, dtype='float32'))
             sounddevice.wait()
         except Exception as e:
-            print('\n[Error] Can`t play audio file\n', e)
+            logger.error('\n[Error] Can`t play audio file\n%s', e)
 
     def stop(self):
         pass
 
 class GCloudSpeechSynthesizer(SpeechSynthesizer):
-    
+
     def __init__(self, voice_name: str, language_code: str, json_key_path: str):
         os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = json_key_path
         self._client       = texttospeech.TextToSpeechClient()
@@ -48,15 +52,15 @@ class GCloudSpeechSynthesizer(SpeechSynthesizer):
         try:
             synthesize_speech_async = asyncer.asyncify(self._client.synthesize_speech)
             response = await synthesize_speech_async(input = synthesis_input, voice = self._voice, audio_config = self._audio_config)
-            if not os.path.exists(folder): 
+            if not os.path.exists(folder):
                 os.makedirs(folder)
             with open(path, 'wb') as out:
                 out.write(response.audio_content)
         except Exception as e:
-            print("\n[ERROR] TTS Error: google cloud tts response error. Check Cloud Platform Console\n", e)
+            logger.error("\n[ERROR] TTS Error: google cloud tts response error. Check Cloud Platform Console\n%s", e)
 
         return Speech(text, self._name, path)
-    
+
     @staticmethod
     def _transliterate(name):
         dict = {'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'e',
@@ -67,11 +71,10 @@ class GCloudSpeechSynthesizer(SpeechSynthesizer):
         allowed = 'abcdefghijklmnopqrstuvxyz'
         name = name.lower()
         for i, letter in enumerate(name):
-            if letter in allowed: 
-                continue;
+            if letter in allowed:
+                continue
             elif letter in dict.keys():
                 name = name.replace(letter, dict[letter])
             else:
                 name = name.replace(letter, '')
         return name
-

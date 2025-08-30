@@ -1,5 +1,9 @@
+import logging
 import time
+
 import anyio
+
+logger = logging.getLogger(__name__)
 
 
 class BlockageDetector:
@@ -18,7 +22,7 @@ class BlockageDetector:
             await anyio.sleep(self._threshold / 4)
 
     def handle_blockage(self):
-        print(f'[RuntimeWarning] Main thread was blocked for more than {self._threshold}s!')
+        logger.warning(f'Main thread was blocked for more than {self._threshold}s!')
 
     def stop(self):
         self._running = False
