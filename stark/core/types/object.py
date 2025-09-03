@@ -2,14 +2,12 @@ from __future__ import annotations
 
 import copy
 from abc import ABC
-from collections import namedtuple
 from typing import Any
 
 from stark.general.classproperty import classproperty
 
 from .. import Pattern
 
-ParseResult = namedtuple('ParseResult', ['obj', 'substring'])
 
 class Object[T](ABC):
 
@@ -38,40 +36,15 @@ class Object[T](ABC):
 
         Override this method for more complex parsing from string.
 
+        If you need even more complex setup, for example, a long living object with DI, use define an ObjectParser subclass and pass it's instance to Pattern.add_parameter_type along with the Object's class. If both `did_parse` are defined, the ObjectParser's  will be called first.
+
         Returns:
             Minimal substring that is required to parse value.
 
         Raises:
             ParseError: if parsing failed.
         '''
-        self.value = from_string # type: ignore # default behavior assuming the value is the whole string matched by the pattern
         return from_string
-
-    @classmethod
-    async def parse(cls, from_string: str, parsed_parameters: dict[str, Object | None] | None = None) -> ParseResult:
-        '''
-        For internal use only.
-        You will very rarely, if ever, need to override or even call this method.
-        Override `def did_parse(self, from_string: str) -> str` if you need complex parsing.
-
-        Raises:
-            ParseError: if parsing failed.
-        '''
-
-        obj = cls(None)
-        parsed_parameters = parsed_parameters or {}
-        assert parsed_parameters.keys() <= {p.name for p in cls.pattern.parameters.values() if not p.optional}
-
-        for name in cls.pattern.parameters:
-            value = parsed_parameters[name]
-            setattr(obj, name, value)
-
-        substring = await obj.did_parse(from_string)
-        assert substring.strip(), ValueError('Parsed substring must not be empty.')
-        assert substring in from_string, ValueError(f'Parsed substring must be a part of the original string. There is no {substring} in {from_string}.')
-        assert obj.value is not None, ValueError(f'Parsed object {obj} must have a `value` property set in did_parse method. It is not set in {type(obj)}.')
-
-        return ParseResult(obj, substring)
 
     def copy(self) -> Object:
         return copy.copy(self)
