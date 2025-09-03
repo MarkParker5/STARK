@@ -104,41 +104,34 @@ Pattern.add_parameter_type(Bar)
 Pattern.add_parameter_type(Baz)
 Pattern.add_parameter_type(Greedy)
 
-@pytest.mark.parametrize('string', ['foo bar', 'hey foo bar two']) #, 'hey foo one bar two']) TODO: add support for just enum of param w/o exact pattern structure
-async def test_complex_parsing__wildcard_params(string):
-    print('Testing:', string)
-    pattern = Pattern('$f:Foo $b:Bar')
-    matches = await pattern.match(string)
-    expected = {'f': 'foo', 'b': 'bar'}
-    assert matches
-    assert {name: obj.value if obj else None for name, obj in matches[0].parameters.items()} == expected
-
 @pytest.mark.parametrize(
-    "input_string,expected",
+    "pattern_string,input_string,expected_params",
     [
-        ("foo", {"f": "foo", "b": None, "z": None}),
-        ("foo bar", {"f": "foo", "b": "bar", "z": None}),
-        ("foo bar baz", {"f": "foo", "b": "bar", "z": "baz"}),
-        ("bar baz", {"f": None, "b": "bar", "z": "baz"}),
-        ("foo baz", {"f": "foo", "b": None, "z": "baz"}),
+        # wildcard regex params
+        ('$f:Foo $b:Bar', 'foo bar', {'f': 'foo', 'b': 'bar'}),
+        ('$f:Foo $b:Bar', 'hey foo bar two', {'f': 'foo', 'b': 'bar'}),
+        #, 'hey foo one bar two' TODO: add support for just enum of param w/o exact pattern structure
+        # optional params with wildcard regex
+        ('$f:Foo? ?$b:Bar? ?$z:Baz?', 'foo', {"f": "foo", "b": None, "z": None}),
+        ('$f:Foo? ?$b:Bar? ?$z:Baz?', 'foo bar', {"f": "foo", "b": "bar", "z": None}),
+        ('$f:Foo? ?$b:Bar? ?$z:Baz?', 'foo bar baz', {"f": "foo", "b": "bar", "z": "baz"}),
+        ('$f:Foo? ?$b:Bar? ?$z:Baz?', 'bar baz', {"f": None, "b": "bar", "z": "baz"}),
+        ('$f:Foo? ?$b:Bar? ?$z:Baz?', 'foo baz', {"f": "foo", "b": None, "z": "baz"}),
+        # greedy and trailing anchor
+        ('command1 $g:Greedy end', 'command1 a few words of greedy end', {"g": "a few words of greedy"}),
+        ('command1 $g:Greedy', 'command1 a few words of greedy', {"g": "a few words of greedy"}),
+        # greedy with other params
+        ('command1 $g:Greedy $f:Foo', 'command1 a few words of greedy foo', {"g": "a few words of greedy", "f": "foo"}),
+        ('command1 $g:Greedy $ag:Greedy', 'command1 a few words of greedy another greedy words', {"g": "a", "ag": "few words of greedy another greedy words"}), # TODO: review
+        # greedy with optional params, note optional spaces
+        ('$g:Greedy ?$f:Foo? ?$b:Bar?$', 'one two three', {"g": "one two three", "f": None, "b": None}),
+        ('$g:Greedy ?$f:Foo? ?$b:Bar?$', 'one two foo bar', {"g": "one two", "f": "foo", "b": "bar"}),
     ]
 )
-async def test_complex_parsing__optional_wildcard(input_string: str, expected: dict[str, str | None]) -> None:
-    print('Expected:', input_string, expected)
-    pattern = Pattern('$f:Foo? ?$b:Bar? ?$z:Baz?') # TODO: better solution for optional space
+async def test_complex_parsing__parametrized(pattern_string: str, input_string: str, expected_params: dict[str, str | None]) -> None:
+    pattern = Pattern(pattern_string)
     matches = await pattern.match(input_string)
+    print(f'Pattern: {pattern_string} "{pattern.compiled}", Input: {input_string}, Expected Params: {expected_params}')
     assert matches
-    assert {name: obj.value if obj else None for name, obj in matches[0].parameters.items()} == expected
-
-@pytest.mark.parametrize(
-    "input_string,expected",
-    [
-        ("one two three", {"g": "one two three", "f": None, "b": None}),
-        ("one two foo bar", {"g": "one two", "f": "foo", "b": "bar"}),
-    ]
-)
-async def test_complex_parsing__greedy_and_optional_wildcard(input_string: str, expected: dict[str, str | None]) -> None:
-    print('Expected:', input_string, expected)
-    matches = await Pattern('$g:Greedy ?$f:Foo? ?$b:Bar?$').match(input_string)
-    assert matches
-    assert {name: obj.value if obj else None for name, obj in matches[0].parameters.items()} == expected
+    print(f'Match: {matches[0].substring}, Got Params: {matches[0].parameters}')
+    assert {name: obj.value if obj else None for name, obj in matches[0].parameters.items()} == expected_params

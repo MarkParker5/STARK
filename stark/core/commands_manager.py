@@ -100,8 +100,12 @@ class CommandsManager:
 
             # check that runner has all parameters from pattern
 
-            error_msg = f'Command {self.name}.{runner.__name__} must have all parameters from pattern; ' # TODO: show difference
-            assert {(p.name, p.type) for p in pattern.parameters.values()} <= annotations.items(), error_msg
+            error_msg = f'Command {self.name}.{runner.__name__} must have all parameters from pattern;'
+            pattern_params = list((p.name, p.type) for p in pattern.parameters.values())
+            difference = pattern_params - annotations.items()
+            # TODO: handle unregistered parameter type as a separate error
+            assert not difference, error_msg + f' pattern got {pattern_params}, function got {list(annotations.items())}, difference: {difference}'
+            # assert {(p.name, p.type) for p in pattern.parameters.values()} <= annotations.items(), error_msg
 
             # additional checks for DI
 

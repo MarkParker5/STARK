@@ -150,7 +150,7 @@ class VoskSpeechRecognizer(SpeechRecognizer):
             try:
                 result = KaldiMBR.parse_raw(raw_json)
                 text = result.text
-                # print('\nConfidence:', result.confidence)
+                # print('\nConfidence:', result.confidence) # TODO: log or  os.getenv("STARK_VOICE_CLI", "0") == "1"
             except ValidationError:
                 try:
                     result = KaldiResult.parse_raw(raw_json)
@@ -162,7 +162,7 @@ class VoskSpeechRecognizer(SpeechRecognizer):
             if text:
                 # if result.spk:
                 #     speaker, similarity = self._get_speaker(result.spk)
-                #     print(f'\nSpeaker: {speaker} ({similarity * 100:.2f}%)\n')
+                #     print(f'\nSpeaker: {speaker} ({similarity * 100:.2f}%)\n') # TODO: log or  os.getenv("STARK_VOICE_CLI", "0") == "1"
 
                 self.last_result = text
                 await delegate.speech_recognizer_did_receive_final_result(text)
@@ -197,7 +197,7 @@ class VoskSpeechRecognizer(SpeechRecognizer):
         if not best_similarity or best_similarity < self._speaker_trashold:
             matched_speaker_id = len(self._stored_speakers)
             self._stored_speakers[matched_speaker_id] = vector
-            # print(f'New speaker: {matched_speaker_id}, similarity: {best_similarity * 100:.2f}%')
+            # print(f'New speaker: {matched_speaker_id}, similarity: {best_similarity * 100:.2f}%') # TODO: log or  os.getenv("STARK_VOICE_CLI", "0") == "1"
             best_similarity = 1
 
         return cast(int, matched_speaker_id), best_similarity

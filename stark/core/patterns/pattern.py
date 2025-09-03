@@ -64,25 +64,13 @@ class Pattern:
 
         logger.debug(f"Starting looking for \"{self.compiled}\" in \"{string}\"")
 
-        # forces non-greedy regex of greedy objects to stretch till the end, but has fallback tail capturing mechanism
-        # TODO: triple check this and whether tail capturing group is necessary
-        # trailing_anchor = r'(.*?)$'
-        # trailing_anchor = r'$'
-        trailing_anchor = r''
-
-        for match in sorted(re.finditer(self.compiled+trailing_anchor, string), key = lambda match: match.start()):
-
+        for match in sorted(re.finditer(self.compiled, string), key = lambda match: match.start()):
             if match.start() == match.end():
                 continue # skip empty
 
-            # start and end in string, not in match.group(0)
-            # TODO: consider moving it inside the loop
-            # match_start = match.start()
-            # match_end = match.end()
             command_str = string[match.start():match.end()].strip()
             match_str_groups = match.groupdict()
 
-            # parsed_parameters: dict[str, ParameterMatch | None] = {}
             parsed_parameters: dict[str, ParameterMatch] = {}
 
             logger.debug(f'Captured candidate "{command_str}"')
@@ -97,7 +85,7 @@ class Pattern:
                 prefill = {name: parameter.parsed_substr for name, parameter in parsed_parameters.items()}
 
                 # re-run regex only in the current command_str
-                compiled = self._compile(prefill=prefill)+trailing_anchor
+                compiled = self._compile(prefill=prefill)
                 new_matches = list(re.finditer(compiled, command_str))
 
                 logger.debug(f'Recapturing parameters command_str={command_str} prefill={prefill} compiled={compiled}')
@@ -264,14 +252,19 @@ class Pattern:
 
         for parameter in self.parameters.values():
 
-            arg_declaration = f'\\${parameter.name}\\:{parameter.type.__name__}'
+            arg_declaration = f'\\${parameter.name}\\:{parameter.type.__name__}' # NOTE: special chars escaped for regex
             if parameter.name in prefill:
                 arg_pattern = re.escape(prefill[parameter.name])
             else:
                 arg_pattern = parameter.type.pattern.compiled.replace('\\', r'\\')
 
             if parameter.type.greedy and arg_pattern[-1] in {'*', '+', '}', '?'}:
-                arg_pattern += '?' # compensate greedy did_parse with non-greedy regex TODO: review
+                # compensate greedy did_parse with non-greedy regex, so it won't consume next params during initial regex
+                arg_pattern += '?'
+                if pattern.endswith(f'${parameter.name}:{parameter.type.__name__}'): # NOTE: regex chars are NOT escaped
+                    # compensate the last non_greedy regex to allow consuming till the end of the string
+                    # middle greedy params are limited/stretched by neighbor params
+                    arg_pattern += '$'
 
             pattern = re.sub(arg_declaration, f'(?P<{parameter.name}>{arg_pattern})', pattern)
 
