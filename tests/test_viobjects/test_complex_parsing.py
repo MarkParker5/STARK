@@ -33,6 +33,29 @@ async def test_complex_parsing():
     assert match.substring == 'lorem ipsum'
     assert (await Lorem.pattern.match(string))[0].substring == 'lorem ipsum'
 
+async def test_did_parse_call_order():
+    call_order = []
+
+    class CustomParser(ObjectParser):
+        async def did_parse(self, obj, from_string):
+            call_order.append("parser")
+            assert from_string == 'foobar'
+            return from_string[:-3]
+
+    class CustomObject(Object):
+        @classproperty
+        def pattern(cls):
+            return Pattern('**')
+
+        async def did_parse(self, from_string):
+            call_order.append("object")
+            assert from_string == 'foo'
+            return from_string[:-1]
+
+    result = await parse_object(CustomObject, CustomParser(), "foobar")
+    assert call_order == ["parser", "object"]
+    assert result.substring == "fo"
+
 class Foo(Object):
 
     @classproperty
