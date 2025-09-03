@@ -1,4 +1,4 @@
-from .object import Object, ParseResult
+from .object import Object
 from .string import String
 from .word import Word
 # from .Number import Number

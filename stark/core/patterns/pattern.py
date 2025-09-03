@@ -23,29 +23,8 @@ class MatchResult:
     end: int
     parameters: dict[str, Object | None]
 
-class ParseResult(NamedTuple):
-    obj: Object
-    substring: str
+from .parsing import ObjectParser, ParseError, _parse_object
 
-class ParseError(Exception):
-    pass
-
-class ObjectParser:
-
-    async def did_parse(self, obj: Object, from_string: str) -> str:
-        '''
-        This method is called after parsing from string and setting parameters found in pattern.
-        You will very rarely, if ever, need to call this method directly.
-
-        Override this method for more complex parsing from string.
-
-        Returns:
-            Minimal substring that is required to parse value.
-
-        Raises:
-            ParseError: if parsing failed.
-        '''
-        return from_string
 
 class PatternParameter(NamedTuple): # TODO: dataclass?
     name: str
@@ -154,7 +133,7 @@ class Pattern:
                     new_match.groupdict().items()
                 ))
 
-                logger.debug(f'Found parameters: {[(new_match.start(name), name, match_str_groups[name]) for name in sorted(match_str_groups.keys(), key=lambda n: (int(self._parameter_types[self.parameters[parameter_name].type_name].type.greedy), new_match.start(n)))]}')
+                logger.debug(f'Found parameters: {[(new_match.start(name), name, match_str_groups[name]) for name in sorted(match_str_groups.keys(), key=lambda n: (int(Pattern._parameter_types[self.parameters[parameter_name].type_name].type.greedy), new_match.start(n)))]}')
 
                 if not match_str_groups:
                     break # everything's parsed (probably successfully)
@@ -164,11 +143,11 @@ class Pattern:
                 parameter_name = min(
                     match_str_groups.keys(),
                     key=lambda name: (
-                        int(self._parameter_types[self.parameters[parameter_name].type_name].type.greedy), # parse greedy the last so they don't absorb neighbours
+                        int(Pattern._parameter_types[self.parameters[parameter_name].type_name].type.greedy), # parse greedy the last so they don't absorb neighbours
                         new_match.start(name) # parse left to right
                     )
                 )
-                parameter_reg_type = self._parameter_types[self.parameters[parameter_name].type_name]
+                parameter_reg_type = Pattern._parameter_types[self.parameters[parameter_name].type_name]
                 parameter_type = parameter_reg_type.type
                 raw_param_substr = match_str_groups[parameter_name].strip()
 
@@ -193,7 +172,7 @@ class Pattern:
                         if not object_matches:
                             raise ParseError(f"Failed to match object {parameter_type} from {raw_param_substr}")
                         object_pattern_match = object_matches[0]
-                        parse_result = await self._parse_object(
+                        parse_result = await _parse_object(
                             parameter_reg_type.type,
                             parameter_reg_type.parser,
                             from_string=object_pattern_match.substring,
@@ -250,27 +229,6 @@ class Pattern:
 
         return sorted(matches, key = lambda m: len(m.substring), reverse = True)
 
-    # parsing
-
-    async def _parse_object(self, object_type: type[Object], parser: ObjectParser, from_string: str, parsed_parameters: dict[str, Object | None] | None = None) -> ParseResult:
-
-        obj = object_type(from_string) # temp/default value, may be overridden by did_parse
-        parsed_parameters = parsed_parameters or {}
-        assert parsed_parameters.keys() <= {p.name for p in object_type.pattern.parameters.values() if not p.optional}
-
-        for name in object_type.pattern.parameters:
-            value = parsed_parameters[name]
-            setattr(obj, name, value)
-
-        substring = await parser.did_parse(obj, from_string)
-        substring = await obj.did_parse(substring)
-
-        assert substring.strip(), ValueError(f'Parsed substring must not be empty. Object: {obj}, Parser: {parser}')
-        assert substring in from_string, ValueError(f'Parsed substring must be a part of the original string. There is no {substring} in {from_string}. Object: {obj}, Parser: {parser}')
-        assert obj.value is not None, ValueError(f'Parsed object {obj} must have a `value` property set in did_parse method. Object: {obj}, Parser: {parser}')
-
-        return ParseResult(obj, substring)
-
     # processing pattern
 
     def _get_pattern_parameter_annotation_regex(self) -> re.Pattern:
@@ -305,7 +263,7 @@ class Pattern:
         #   find and transform parameters like $name:Type
 
         for parameter in self.parameters.values():
-            parameter_type = self._parameter_types[parameter.type_name].type
+            parameter_type = Pattern._parameter_types[parameter.type_name].type
 
             arg_declaration = f'\\${parameter.name}\\:{parameter_type.__name__}' # NOTE: special chars escaped for regex
             if parameter.name in prefill:
