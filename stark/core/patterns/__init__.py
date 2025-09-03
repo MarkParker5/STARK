@@ -1,2 +1,3 @@
 from . import expressions
-from .pattern import MatchResult, ParseError, Pattern
+from .parsing import ParseError
+from .pattern import MatchResult, Pattern
