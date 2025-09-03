@@ -2,6 +2,7 @@
 import pytest
 
 from stark.core import Pattern
+from stark.core.patterns.parsing import ObjectParser, parse_object
 from stark.core.patterns.pattern import ParseError
 from stark.core.types import Object
 from stark.general.classproperty import classproperty
@@ -21,11 +22,11 @@ class Lorem(Object):
 
 async def test_complex_parsing_failed():
     with pytest.raises(ParseError):
-        await Lorem.parse('some lor ipsum')
+        await parse_object(Lorem, ObjectParser(), 'some lor ipsum')
 
 async def test_complex_parsing():
     string = 'some lorem ipsum'
-    match = await Lorem.parse(string)
+    match = await parse_object(Lorem, ObjectParser(), string)
     assert match
     assert match.obj
     assert match.obj.value == 'lorem'

@@ -23,7 +23,7 @@ class MatchResult:
     end: int
     parameters: dict[str, Object | None]
 
-from .parsing import ObjectParser, ParseError, _parse_object
+from .parsing import ObjectParser, ParseError, parse_object
 
 
 class PatternParameter(NamedTuple): # TODO: dataclass?
@@ -65,9 +65,9 @@ class Pattern:
         error_msg = f'Can`t add parameter type "{object_type.__name__}": pattern parameters do not match properties annotated in class'
         # TODO: update schema and validation; handle optional parameters; handle short form where type is defined in object
         # assert object_type.pattern.parameters.items() <= object_type.__annotations__.items(), error_msg
-        exists_type = cls._parameter_types.get(object_type.__name__)
+        exists_type = Pattern._parameter_types.get(object_type.__name__)
         assert exists_type is None or exists_type.type == object_type, f'Can`t add parameter type: {object_type.__name__} already exists'
-        cls._parameter_types[object_type.__name__] = RegisteredParameterType(
+        Pattern._parameter_types[object_type.__name__] = RegisteredParameterType(
             name=object_type.__name__,
             type=object_type,
             parser=parser or ObjectParser()
@@ -133,7 +133,7 @@ class Pattern:
                     new_match.groupdict().items()
                 ))
 
-                logger.debug(f'Found parameters: {[(new_match.start(name), name, match_str_groups[name]) for name in sorted(match_str_groups.keys(), key=lambda n: (int(Pattern._parameter_types[self.parameters[parameter_name].type_name].type.greedy), new_match.start(n)))]}')
+                logger.debug(f'Found parameters: {[(new_match.start(name), name, match_str_groups[name]) for name in sorted(match_str_groups.keys(), key=lambda name: (int(Pattern._parameter_types[self.parameters[name].type_name].type.greedy), new_match.start(name)))]}')
 
                 if not match_str_groups:
                     break # everything's parsed (probably successfully)
@@ -143,7 +143,7 @@ class Pattern:
                 parameter_name = min(
                     match_str_groups.keys(),
                     key=lambda name: (
-                        int(Pattern._parameter_types[self.parameters[parameter_name].type_name].type.greedy), # parse greedy the last so they don't absorb neighbours
+                        int(Pattern._parameter_types[self.parameters[name].type_name].type.greedy), # parse greedy the last so they don't absorb neighbours
                         new_match.start(name) # parse left to right
                     )
                 )
@@ -172,7 +172,7 @@ class Pattern:
                         if not object_matches:
                             raise ParseError(f"Failed to match object {parameter_type} from {raw_param_substr}")
                         object_pattern_match = object_matches[0]
-                        parse_result = await _parse_object(
+                        parse_result = await parse_object(
                             parameter_reg_type.type,
                             parameter_reg_type.parser,
                             from_string=object_pattern_match.substring,
