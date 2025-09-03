@@ -20,7 +20,7 @@ class ExtraParameterInPattern(Object):
 
 async def test_typed_parameters():
     p = Pattern('lorem $name:Word dolor')
-    assert p.parameters['name'].type == Word
+    assert Pattern._parameter_types[p.parameters['name'].type_name].type == Word
     assert p.compiled == fr'lorem (?P<name>{word}) dolor'
 
     m = await p.match('lorem ipsum dolor')
@@ -30,7 +30,7 @@ async def test_typed_parameters():
     assert not await p.match('lorem ipsum foo dolor')
 
     p = Pattern('lorem $name:String dolor')
-    assert p.parameters['name'].type == String
+    assert Pattern._parameter_types[p.parameters['name'].type_name].type == String
     m = await p.match('lorem ipsum foo bar dolor')
     assert m
     assert m[0].substring == 'lorem ipsum foo bar dolor'
@@ -49,7 +49,7 @@ def test_extra_parameter_in_pattern():
 async def test_middle_optional_parameter():
     p = Pattern('lorem $name:Word? dolor')
     print(p.compiled)
-    assert p.parameters['name'].type == Word
+    assert Pattern._parameter_types[p.parameters['name'].type_name].type == Word
 
     assert await p.match('lorem  dolor')
     # assert await p.match('lorem dolor')
@@ -60,7 +60,7 @@ async def test_middle_optional_parameter():
 
 async def test_trailing_optional_parameter():
     p = Pattern('lorem $name:Word?')
-    assert p.parameters['name'].type == Word
+    assert Pattern._parameter_types[p.parameters['name'].type_name].type == Word
 
     assert await p.match('lorem ')
     # assert await p.match('lorem')
@@ -71,7 +71,7 @@ async def test_trailing_optional_parameter():
 async def test_optional_group():
     p = Pattern('lorem( ipsum $name:Word)? dolor')
     # assert p.parameters == {('name', Word, True)}
-    assert p.parameters['name'].type == Word
+    assert Pattern._parameter_types[p.parameters['name'].type_name].type == Word
 
     assert await p.match('lorem dolor')
 

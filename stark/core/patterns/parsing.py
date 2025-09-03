@@ -32,7 +32,7 @@ class ObjectParser:
         '''
         return from_string
 
-async def _parse_object(
+async def parse_object(
     object_type: type[Object],
     parser: ObjectParser,
     from_string: str,
