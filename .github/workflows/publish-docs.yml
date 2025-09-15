@@ -21,6 +21,7 @@ jobs:
           path: .cache
           restore-keys: |
             mkdocs-material-
+      - run: sudo apt-get update && sudo apt-get install -y libjpeg-dev zlib1g-dev # fix Pillow PEP 517 error during installation
       - run: pip install poetry
       - run: poetry install --extras docs
       - run: poetry run mkdocs gh-deploy --force
