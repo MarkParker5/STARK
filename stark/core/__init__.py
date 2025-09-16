@@ -1,21 +1,18 @@
-from .patterns import Pattern, expressions
+from .patterns import Pattern, rules
 from . import types
 from .command import (
+    AsyncResponseHandler,
     Command,
     Response,
-    ResponseStatus,
     ResponseHandler,
-    AsyncResponseHandler
-)
-from .commands_manager import (
-    CommandsManager
+    ResponseStatus,
 )
 from .commands_context import (
     CommandsContext,
+    CommandsContextDelegate,
     CommandsContextLayer,
-    CommandsContextDelegate
 )
-
+from .commands_manager import CommandsManager
 
 Pattern.add_parameter_type(types.String)
 Pattern.add_parameter_type(types.Word)

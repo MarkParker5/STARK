@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Generator, Type, TypeAlias
 
 from typing_extensions import NamedTuple
 
-from .expressions import dictionary
+from .rules import rules_list
 
 if TYPE_CHECKING:
     from ..types import Object
@@ -41,9 +41,6 @@ class ParameterMatch(NamedTuple):
     regex_substr: str  # not sure this is needed anymore
     parsed_obj: Object | None
     parsed_substr: str
-
-def any_of(*args: str) -> str:
-    return '(' + '|'.join(args) + ')'
 
 class Pattern:
 
@@ -257,8 +254,13 @@ class Pattern:
 
         #   transform core expressions to regex
 
-        for pattern_re, regex in dictionary.items():
-            pattern = re.sub(pattern_re, regex, pattern)
+        for rule in rules_list:
+            if rule.func:
+                pattern = re.sub(rule.pattern, rule.func, pattern)
+            elif rule.replace:
+                pattern = re.sub(rule.pattern, rule.replace, pattern)
+            else:
+                raise RuntimeError(f'Invalid rule: {rule}')
 
         #   find and transform parameters like $name:Type
 

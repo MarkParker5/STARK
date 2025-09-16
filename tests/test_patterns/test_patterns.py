@@ -1,9 +1,9 @@
 from stark.core import Pattern
-from stark.core.patterns import expressions
+from stark.core.patterns import rules
 
-word = fr'[{expressions.alphanumerics}]*'
-words = fr'[{expressions.alphanumerics}\s]+'
-words_optional = fr'[{expressions.alphanumerics}\s]*'
+word = fr'[{rules.alphanumerics}]*'
+words = fr'[{rules.alphanumerics}\s]+'
+words_optional = fr'[{rules.alphanumerics}\s]*'
 
 async def test_leading_star():
     p = Pattern('*text')
