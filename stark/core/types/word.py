@@ -1,4 +1,5 @@
-from .object import Object, Pattern, classproperty
+from .. import Pattern, rules
+from .object import Object, classproperty
 
 
 class Word(Object):
@@ -7,4 +8,5 @@ class Word(Object):
 
     @classproperty
     def pattern(cls) -> Pattern:
-        return Pattern('*')
+        return Pattern(f'[{rules.alphanumerics}]+')
+        # return Pattern('*')

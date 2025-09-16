@@ -16,8 +16,13 @@ class Rule:
 
 alphanumerics = r'A-zА-яЁё0-9'
 parameters = r'$:'
-specials = r'\(\)\[\]\{\}'
+specials = r'\(\)\[\]\{\}\.'
 any = alphanumerics + parameters + specials
+
+# tags
+
+ALL_UNORDERED = 'slots'
+ONE_OR_MORE_UNORDERED = 'slotsone'
 
 rules_list = [
     # NOTE: order matters
@@ -42,8 +47,20 @@ rules_list = [
     # allows variable word form (different prefixes, postfixes, suffixes, etc) must "touch" the word (before, after, or in the middle)
     Rule(fr'([^{specials}]|^)\*', fr'\1[{alphanumerics}]*'),
 
-    # unordered slots
-    Rule(r'<allun>(.*?)</allun>', func=lambda m: '(?:' + ''.join(f'(?=.*{x})' for x in m.group(1).split('|')) + '.*)'),
+    # unordered slots (all required)
+    Rule(fr'<{ALL_UNORDERED}>(.*?)</{ALL_UNORDERED}>', func=lambda m: '(?:' + ''.join(rf'(?=.*\b{x}\b)' for x in m.group(1).split('|')) + '.*)'),
+
+    # unordered slots (at least one required)
+    Rule(fr'<{ONE_OR_MORE_UNORDERED}>(.*?)</{ONE_OR_MORE_UNORDERED}>', func=lambda m: '(?:' + ''.join(rf'(?=.*\b{x}\b)?' for x in m.group(1).split('|')) + '.*)'),
+    # Rule(
+    #     fr'<{ONE_OR_MORE_UNORDERED}>(.*?)</{ONE_OR_MORE_UNORDERED}>',
+    #     func=lambda m: (
+    #         '(?:'
+    #         + '(?:' + '|'.join(rf'(?=.*\b{x}\b)' for x in m.group(1).split('|')) + ')' # least one
+    #         + ''.join(rf'(?:(?=.*\b{x}\b))?' for x in m.group(1).split('|')) # other optional
+    #         + '.*)'
+    #     )
+    # ), redefinition of group name
 
     # make sure all tags are handled
     Rule(r'<[^>]+>', func=lambda m: UnhandledTagError.throw(m.group(0)))
@@ -58,7 +75,7 @@ def one_or_more_from(*args: str) -> str:
     return '{' + '|'.join(args) + '}'
 
 def all_unordered(*args: str) -> str:
-    return'<allun>' + '|'.join(args) + '</allun>'
+    return f'<{ALL_UNORDERED}>' + '|'.join(args) + f'</{ALL_UNORDERED}>'
 
 def one_or_more_unordered(*args: str) -> str:
-    return '<onemoreun>' + '|'.join(args) + '</onemoreun>'
+    return f'<{ONE_OR_MORE_UNORDERED}>' + '|'.join(args) + f'</{ONE_OR_MORE_UNORDERED}>'

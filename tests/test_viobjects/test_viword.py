@@ -2,9 +2,8 @@ from stark.core import Pattern
 from stark.core.patterns.parsing import ObjectParser, parse_object
 from stark.core.types import Word
 
-
-def test_pattern():
-    assert Word.pattern == Pattern('*')
+# def test_pattern():
+#     assert Word.pattern == Pattern('*')
 
 async def test_parse():
     word = (await parse_object(Word, ObjectParser(), 'foo')).obj

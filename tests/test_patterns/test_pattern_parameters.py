@@ -7,7 +7,7 @@ from stark.core.patterns import rules
 from stark.core.types import Object, String, Word
 from stark.general.classproperty import classproperty
 
-word = fr'[{rules.alphanumerics}]*'
+word = fr'[{rules.alphanumerics}]+'
 words = fr'[{rules.alphanumerics}\s]*'
 
 class ExtraParameterInPattern(Object):
