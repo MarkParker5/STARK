@@ -78,3 +78,21 @@ async def test_optional_group():
     m2 = await p.match('lorem ipsum variable dolor')
     assert m2
     assert m2[0].parameters['name'] == Word('variable')
+
+
+class TwoWords(Object):
+    word1: Word
+    word2: Word
+
+    @classproperty
+    def pattern(cls) -> Pattern:
+        return Pattern('$word1:Word $word2:Word')
+
+Pattern.add_parameter_type(TwoWords)
+
+async def test_parameter_type_duplicate():
+    # test fix for re.error: redefinition of group name
+    p = Pattern('hello $name:TwoWords and $name2:TwoWords')
+    assert Pattern._parameter_types[p.parameters['name'].type_name].type == TwoWords
+    m = await p.match('hello John Galt and Alice Smith')
+    assert m

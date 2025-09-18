@@ -52,15 +52,6 @@ rules_list = [
 
     # unordered slots (at least one required)
     Rule(fr'<{ONE_OR_MORE_UNORDERED}>(.*?)</{ONE_OR_MORE_UNORDERED}>', func=lambda m: '(?:' + ''.join(rf'(?=.*\b{x}\b)?' for x in m.group(1).split('|')) + '.*)'),
-    # Rule(
-    #     fr'<{ONE_OR_MORE_UNORDERED}>(.*?)</{ONE_OR_MORE_UNORDERED}>',
-    #     func=lambda m: (
-    #         '(?:'
-    #         + '(?:' + '|'.join(rf'(?=.*\b{x}\b)' for x in m.group(1).split('|')) + ')' # least one
-    #         + ''.join(rf'(?:(?=.*\b{x}\b))?' for x in m.group(1).split('|')) # other optional
-    #         + '.*)'
-    #     )
-    # ), redefinition of group name
 
     # make sure all tags are handled
     Rule(r'<[^>]+>', func=lambda m: UnhandledTagError.throw(m.group(0)))

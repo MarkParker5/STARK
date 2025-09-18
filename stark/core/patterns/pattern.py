@@ -11,7 +11,6 @@ from .rules import rules_list
 if TYPE_CHECKING:
     from ..types import Object
     ObjectType: TypeAlias = Type[Object]
-
 import logging
 
 logger = logging.getLogger(__name__)
@@ -26,8 +25,10 @@ class MatchResult:
 from .parsing import ObjectParser, ParseError, parse_object
 
 
-class PatternParameter(NamedTuple): # TODO: dataclass?
+@dataclass
+class PatternParameter: # TODO: dataclass?
     name: str
+    group_name: str # includes tree prefix
     type_name: str
     optional: bool
 
@@ -55,7 +56,8 @@ class Pattern:
         self._origin = origin
         self._parameter_regex = self._get_pattern_parameter_annotation_regex()
         self.parameters = dict(self._get_parameters_annotation_from_pattern())
-        self.compiled = self._compile()
+        self.compiled = self.compile() # TODO: remove or redo
+        self._update_group_name_to_param()
 
     @classmethod
     def add_parameter_type(cls, object_type: ObjectType, parser: ObjectParser | None = None):
@@ -77,9 +79,11 @@ class Pattern:
 
         matches: list[MatchResult] = []
 
-        logger.debug(f"Starting looking for \"{self.compiled}\" in \"{string}\"")
+        compiled = self.compiled # self.compile()
 
-        for match in sorted(re.finditer(self.compiled, string), key = lambda match: match.start()):
+        logger.debug(f"Starting looking for \"{compiled}\" in \"{string}\"")
+
+        for match in sorted(re.finditer(compiled, string), key = lambda match: match.start()):
             if match.start() == match.end():
                 continue # skip empty
 
@@ -100,7 +104,7 @@ class Pattern:
                 prefill = {name: parameter.parsed_substr for name, parameter in parsed_parameters.items()}
 
                 # re-run regex only in the current command_str
-                compiled = self._compile(prefill=prefill)
+                compiled = self.compile(prefill=prefill)
                 new_matches = list(re.finditer(compiled, command_str))
 
                 logger.debug(f'Recapturing parameters command_str={command_str} prefill={prefill} compiled={compiled}')
@@ -113,14 +117,15 @@ class Pattern:
                 command_str = string[match.start():match.end()].strip()
 
                 logger.debug(f'Match: {new_match.groupdict()}')
-                for k, v in new_match.groupdict().items():
-                    logger.debug(f'{k}: {v}\t{k in self.parameters}\t{k not in prefill}\t{new_match.start(k) != -1}\t{new_match.start(k)}\t{bool(v.strip() if v else "")}\t{v}')
+                for group_name, v in new_match.groupdict().items():
+                    param = self.group_name_to_param.get(group_name)
+                    logger.debug(f'{group_name}: {v}\t{param is not None}\t{group_name not in prefill}\t{new_match.start(group_name) != -1}\t{new_match.start(group_name)}\t{bool(v.strip() if v else "")}\t{v}')
 
                 match_str_groups = dict(filter(
                     # x: (0: name, 1: substr); TODO: named tuple
                     lambda x: \
-                        # handle only own parameter names
-                        x[0] in self.parameters \
+                        # handle only own parameter group_names
+                        x[0] in self.group_name_to_param \
                         # skip prefilled names
                         and x[0] not in prefill \
                         # skip not found names
@@ -130,7 +135,7 @@ class Pattern:
                     new_match.groupdict().items()
                 ))
 
-                logger.debug(f'Found parameters: {[(new_match.start(name), name, match_str_groups[name]) for name in sorted(match_str_groups.keys(), key=lambda name: (int(Pattern._parameter_types[self.parameters[name].type_name].type.greedy), new_match.start(name)))]}')
+                logger.debug(f'Found parameters: {[(new_match.start(name), name, match_str_groups[name]) for name in sorted(match_str_groups.keys(), key=lambda name: (int(Pattern._parameter_types[self.group_name_to_param[name].type_name].type.greedy), new_match.start(name)))]}')
 
                 if not match_str_groups:
                     break # everything's parsed (probably successfully)
@@ -144,7 +149,8 @@ class Pattern:
                         new_match.start(name) # parse left to right
                     )
                 )
-                parameter_reg_type = Pattern._parameter_types[self.parameters[parameter_name].type_name]
+                param = self.group_name_to_param[parameter_name]
+                parameter_reg_type = Pattern._parameter_types[param.type_name]
                 parameter_type = parameter_reg_type.type
                 raw_param_substr = match_str_groups[parameter_name].strip()
 
@@ -178,8 +184,8 @@ class Pattern:
                     except ParseError as e:
                         logger.error(f"Pattern.match ParseError: {e}")
                         # explicitly set match result with None obj so it won't stuck in an infinite retry loop
-                        parsed_parameters[parameter_name] = ParameterMatch(
-                            name=parameter_name,
+                        parsed_parameters[param.name] = ParameterMatch(
+                            name=param.name,
                             regex_substr=raw_param_substr,
                             parsed_obj=None,
                             parsed_substr='',
@@ -187,13 +193,13 @@ class Pattern:
                         continue
 
                     objects_cache[parse_result.substring] = parse_result.obj
-                    parsed_parameters[parameter_name] = ParameterMatch(
-                        name=parameter_name,
+                    parsed_parameters[param.name] = ParameterMatch(
+                        name=param.name,
                         regex_substr=raw_param_substr,
                         parsed_obj=parse_result.obj,
                         parsed_substr=parse_result.substring,
                     )
-                    logger.debug(f"Pattern.match: name={parameter_name} raw_param_substr={raw_param_substr} parse_result.substring={parse_result.substring}")
+                    logger.debug(f"Pattern.match: name={param.name} raw_param_substr={raw_param_substr} parse_result.substring={parse_result.substring}")
 
             # Validate parsed parameters
 
@@ -203,7 +209,7 @@ class Pattern:
 
             # Fill None to missed optionals
 
-            all_parameters = {**parsed_parameters, **{k: None for k in self.parameters if k not in parsed_parameters}}
+            all_parameters = {**parsed_parameters, **{param.name: None for param in self.parameters.values() if param.name not in parsed_parameters}}
             logger.debug(f'Parsed parameters: {all_parameters}')
 
             # Add match
@@ -226,28 +232,7 @@ class Pattern:
 
         return sorted(matches, key = lambda m: len(m.substring), reverse = True)
 
-    # processing pattern
-
-    def _get_pattern_parameter_annotation_regex(self) -> re.Pattern:
-        # types = '|'.join(Pattern._parameter_types.keys())
-        # return re.compile(r'\$(?P<name>[A-z][A-z0-9]*)\:(?P<type>(?:' + types + r'))')
-        # do not use types list because it prevents validation of unknown types
-        return re.compile(r'\$(?P<name>[A-z][A-z0-9]*)\:(?P<type>[A-z][A-z0-9]*)(?P<optional>\?)?')
-
-    def _get_parameters_annotation_from_pattern(self) -> Generator[tuple[str, PatternParameter], None, None]:
-        for match in re.finditer(self._parameter_regex, self._origin):
-            arg_name = match.group('name')
-            arg_type_name = match.group('type')
-            arg_optional = bool(match.group('optional'))
-
-            reg_type: RegisteredParameterType | None = Pattern._parameter_types.get(arg_type_name)
-
-            if not reg_type:
-                raise NameError(f'Unknown type: "{arg_type_name}" for parameter: "{arg_name}" in pattern: "{self._origin}"')
-
-            yield arg_name, PatternParameter(arg_name, arg_type_name, arg_optional)
-
-    def _compile(self, prefill: dict[str, str] | None = None) -> str: # transform Pattern to classic regex with named groups
+    def compile(self, group_prefix: str = '', prefill: dict[str, str] | None = None) -> str: # transform Pattern to classic regex with named groups
         prefill = prefill or {}
 
         pattern: str = self._origin
@@ -271,7 +256,8 @@ class Pattern:
             if parameter.name in prefill:
                 arg_pattern = re.escape(prefill[parameter.name])
             else: # replace pattern annotation with compiled regex
-                arg_pattern = parameter_type.pattern.compiled.replace('\\', r'\\')
+                parameter.group_name = ((group_prefix + '_') if group_prefix else '') + parameter.name
+                arg_pattern = parameter_type.pattern.compile(group_prefix=parameter.group_name).replace('\\', r'\\')
 
                 if parameter_type.greedy and arg_pattern[-1] in {'*', '+', '}', '?'}:
                     # compensate greedy did_parse with non-greedy regex, so it won't consume next params during initial regex
@@ -281,9 +267,33 @@ class Pattern:
                         # middle greedy params are limited/stretched by neighbor params
                         arg_pattern += '$'
 
-            pattern = re.sub(arg_declaration, f'(?P<{parameter.name}>{arg_pattern})', pattern)
+            pattern = re.sub(arg_declaration, f'(?P<{parameter.group_name}>{arg_pattern})', pattern)
 
         return pattern
+
+    # processing pattern
+
+    def _get_pattern_parameter_annotation_regex(self) -> re.Pattern:
+        # types = '|'.join(Pattern._parameter_types.keys())
+        # return re.compile(r'\$(?P<name>[A-z][A-z0-9]*)\:(?P<type>(?:' + types + r'))')
+        # do not use types list because it prevents validation of unknown types
+        return re.compile(r'\$(?P<name>[A-z][A-z0-9]*)\:(?P<type>[A-z][A-z0-9]*)(?P<optional>\?)?')
+
+    def _get_parameters_annotation_from_pattern(self) -> Generator[tuple[str, PatternParameter], None, None]:
+        for match in re.finditer(self._parameter_regex, self._origin):
+            arg_name = match.group('name')
+            arg_type_name = match.group('type')
+            arg_optional = bool(match.group('optional'))
+
+            reg_type: RegisteredParameterType | None = Pattern._parameter_types.get(arg_type_name)
+
+            if not reg_type:
+                raise NameError(f'Unknown type: "{arg_type_name}" for parameter: "{arg_name}" in pattern: "{self._origin}"')
+
+            yield arg_name, PatternParameter(arg_name, arg_name, arg_type_name, arg_optional)
+
+    def _update_group_name_to_param(self):
+        self.group_name_to_param = {param.group_name: param for param in self.parameters.values()}
 
     # dunder methods
 

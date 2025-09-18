@@ -3,6 +3,7 @@ import itertools
 import pytest
 
 from stark.core import Pattern
+from stark.core.patterns.parsing import ParseError
 from stark.core.patterns.rules import all_unordered, one_or_more_unordered
 from stark.core.types import Object, Word
 from stark.general.classproperty import classproperty
@@ -54,6 +55,27 @@ def permutations(pattern_str, words: str | list[str], match: bool, expected_toke
         words = words.split(' ')
     return [(pattern_str, " ".join(p), match, expected_tokens) for p in itertools.permutations(words)]
 
+class StarObject(Object):
+    value: str
+
+    @classproperty
+    def pattern(cls) -> Pattern:
+        # ** means greedy match for multiple words
+        return Pattern('**')
+
+    async def did_parse(self, from_string: str) -> str:
+        assert len(from_string.split(' ')) >= 2, ParseError(f"Expected at least two words, got '{from_string}'")
+        self.value = " ".join(from_string.split(' ')[:2]) # param extraction imitation
+        return self.value
+
+class GreedyObject(StarObject):
+    @classproperty
+    def greedy(cls) -> bool:
+        return True
+
+Pattern.add_parameter_type(StarObject)
+Pattern.add_parameter_type(GreedyObject)
+
 @pytest.mark.parametrize(
     'pattern_str,input_str,is_match,expected_tokens',
     [
@@ -75,9 +97,12 @@ def permutations(pattern_str, words: str | list[str], match: bool, expected_toke
         *permutations(f'{one_or_more_unordered('$h:Hours','$m:Minutes', '$s:Seconds')}', ['12 h', '30 m', '45 s'], True, {'h': '12', 'm': '30', 's': '45'}),
         *permutations(f'{one_or_more_unordered('$h:Hours','$m:Minutes', '$s:Seconds')}', ['12 h', '30 m'], True, {'h': '12', 'm': '30'}),
         *permutations(f'{one_or_more_unordered('$h:Hours','$m:Minutes', '$s:Seconds')}', ['12 h'], True, {'h': '12'}),
+
+        # --- Check unordered doesn't affect wildcard and greedy ---
+        (f"{all_unordered('$a:StarObject $b:StarObject $c:StarObject')}","one foo two bar three baz", True, {'a': 'one foo', 'b': 'two', 'c': 'bar three baz'}),
+        (f"{all_unordered('$a:GreedyObject $b:GreedyObject $c:GreedyObject')}","one foo two bar three baz", True, {'a': 'one foo', 'b': 'two', 'c': 'bar three baz'}),
     ]
 )
-@pytest.mark.asyncio
 async def test_unordered_patterns(pattern_str, input_str, is_match, expected_tokens):
     print(f'Pattern: "{pattern_str}", Input: "{input_str}", Expected Params: {expected_tokens}')
     p = Pattern(f"{pattern_str}")
