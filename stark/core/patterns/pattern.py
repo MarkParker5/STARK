@@ -20,13 +20,13 @@ class MatchResult:
     substring: str
     start: int
     end: int
-    parameters: dict[str, Object | None]
+    parameters: dict[str, Object | None] # TODO: use ParameterMatch
 
 from .parsing import ObjectParser, ParseError, parse_object
 
 
 @dataclass
-class PatternParameter: # TODO: dataclass?
+class PatternParameter:
     name: str
     group_name: str # includes tree prefix
     type_name: str
@@ -42,6 +42,7 @@ class ParameterMatch(NamedTuple):
     regex_substr: str  # not sure this is needed anymore
     parsed_obj: Object | None
     parsed_substr: str
+    # TODO: add and use start and/end span to resolve duplication
 
 class Pattern:
 
@@ -73,133 +74,20 @@ class Pattern:
         )
 
     async def match(self, string: str, objects_cache: dict[str, Object] | None = None) -> list[MatchResult]:
-
         if objects_cache is None:
             objects_cache = {} # TODO: improve cache structure
 
-        matches: list[MatchResult] = []
-
         compiled = self.compiled # self.compile()
-
         logger.debug(f"Starting looking for \"{compiled}\" in \"{string}\"")
 
-        for match in sorted(re.finditer(compiled, string), key = lambda match: match.start()):
+        matches = []
+        initial_matches = self._find_initial_matches(compiled, string)
+        for match in initial_matches:
             if match.start() == match.end():
                 continue # skip empty
 
             command_str = string[match.start():match.end()].strip()
-            match_str_groups = match.groupdict()
-
-            parsed_parameters: dict[str, ParameterMatch] = {}
-
-            logger.debug(f'Captured candidate "{command_str}"')
-
-            while True:
-
-                # rerun regex to recapture parameters after previous parameter took it's substring
-
-                # prefill parsed values with exact substrings
-                # prefill = {name: parameter.parsed_substr for name, parameter in parsed_parameters.items() if parameter} # give empty matches a second chance
-                # prefill = {name: parameter.parsed_substr if parameter else '' for name, parameter in parsed_parameters.items()} # empty matches
-                prefill = {name: parameter.parsed_substr for name, parameter in parsed_parameters.items()}
-
-                # re-run regex only in the current command_str
-                compiled = self.compile(prefill=prefill)
-                new_matches = list(re.finditer(compiled, command_str))
-
-                logger.debug(f'Recapturing parameters command_str={command_str} prefill={prefill} compiled={compiled}')
-                if not new_matches:
-                    break # everything's parsed (probably not successfully)
-
-                new_match = new_matches[0]
-                # match_start = match.start()
-                # match_end = match.end()
-                command_str = string[match.start():match.end()].strip()
-
-                logger.debug(f'Match: {new_match.groupdict()}')
-                for group_name, v in new_match.groupdict().items():
-                    param = self.group_name_to_param.get(group_name)
-                    logger.debug(f'{group_name}: {v}\t{param is not None}\t{group_name not in prefill}\t{new_match.start(group_name) != -1}\t{new_match.start(group_name)}\t{bool(v.strip() if v else "")}\t{v}')
-
-                match_str_groups = dict(filter(
-                    # x: (0: name, 1: substr); TODO: named tuple
-                    lambda x: \
-                        # handle only own parameter group_names
-                        x[0] in self.group_name_to_param \
-                        # skip prefilled names
-                        and x[0] not in prefill \
-                        # skip not found names
-                        and new_match.start(x[0]) != -1 \
-                        # skip whitespace-only values
-                        and x[1].strip(),
-                    new_match.groupdict().items()
-                ))
-
-                logger.debug(f'Found parameters: {[(new_match.start(name), name, match_str_groups[name]) for name in sorted(match_str_groups.keys(), key=lambda name: (int(Pattern._parameter_types[self.group_name_to_param[name].type_name].type.greedy), new_match.start(name)))]}')
-
-                if not match_str_groups:
-                    break # everything's parsed (probably successfully)
-
-                # parse next parameter
-
-                parameter_name = min(
-                    match_str_groups.keys(),
-                    key=lambda name: (
-                        int(Pattern._parameter_types[self.parameters[name].type_name].type.greedy), # parse greedy the last so they don't absorb neighbours
-                        new_match.start(name) # parse left to right
-                    )
-                )
-                param = self.group_name_to_param[parameter_name]
-                parameter_reg_type = Pattern._parameter_types[param.type_name]
-                parameter_type = parameter_reg_type.type
-                raw_param_substr = match_str_groups[parameter_name].strip()
-
-                logger.debug(f'Parsing {parameter_name} from {raw_param_substr}')
-
-                # try to get object from cache
-                for cached_parsed_substr, cached_parsed_obj in objects_cache.items():
-                    continue
-                    # TODO: review cache structure and search; current is broken
-                    # if cached_parsed_substr in raw_param_substr:
-                    #     logging.debug(f'Using cached object for {name}')
-                    #     parsed_parameters[name] = ParameterMatch(
-                    #         name=name,
-                    #         regex_substr=raw_param_substr,
-                    #         parsed_obj=cached_parsed_obj.copy(),
-                    #         parsed_substr=cached_parsed_substr,
-                    #     )
-                    #     break
-                else: # No cache, parse the object
-                    try:
-                        object_matches = await parameter_type.pattern.match(raw_param_substr, objects_cache)
-                        if not object_matches:
-                            raise ParseError(f"Failed to match object {parameter_type} from {raw_param_substr}")
-                        object_pattern_match = object_matches[0]
-                        parse_result = await parse_object(
-                            parameter_reg_type.type,
-                            parameter_reg_type.parser,
-                            from_string=object_pattern_match.substring,
-                            parsed_parameters=object_pattern_match.parameters
-                        )
-                    except ParseError as e:
-                        logger.error(f"Pattern.match ParseError: {e}")
-                        # explicitly set match result with None obj so it won't stuck in an infinite retry loop
-                        parsed_parameters[param.name] = ParameterMatch(
-                            name=param.name,
-                            regex_substr=raw_param_substr,
-                            parsed_obj=None,
-                            parsed_substr='',
-                        )
-                        continue
-
-                    objects_cache[parse_result.substring] = parse_result.obj
-                    parsed_parameters[param.name] = ParameterMatch(
-                        name=param.name,
-                        regex_substr=raw_param_substr,
-                        parsed_obj=parse_result.obj,
-                        parsed_substr=parse_result.substring,
-                    )
-                    logger.debug(f"Pattern.match: name={param.name} raw_param_substr={raw_param_substr} parse_result.substring={parse_result.substring}")
+            parsed_parameters = await self._parse_parameters_for_match(command_str, match, string, objects_cache)
 
             # Validate parsed parameters
 
@@ -224,13 +112,133 @@ class Pattern:
                 parameters = {name: (parameter.parsed_obj if parameter else None) for name, parameter in all_parameters.items()}
             ))
 
-        # Filter overlapping matches
-
-        for prev, current in zip(matches.copy(), matches[1:]): # copy to prevent affecting iteration by removing items; slice makes copy automatically
-            if prev.start == current.start or prev.end > current.start: # if overlap
-                matches.remove(min(prev, current, key = lambda m: len(m.substring))) # remove shorter
-
+        matches = self._filter_overlapping_matches(matches)
         return sorted(matches, key = lambda m: len(m.substring), reverse = True)
+
+    def _find_initial_matches(self, compiled: str, string: str) -> list[re.Match]:
+        return sorted(re.finditer(compiled, string), key = lambda match: match.start())
+
+    async def _parse_parameters_for_match(self, command_str: str, match: re.Match, string: str, objects_cache: dict[str, Object]) -> dict[str, ParameterMatch]:
+        parsed_parameters: dict[str, ParameterMatch] = {}
+
+        logger.debug(f'Captured candidate "{command_str}"')
+
+        while True:
+
+            # rerun regex to recapture parameters after previous parameter took it's substring
+
+            # prefill parsed values with exact substrings
+            # prefill = {name: parameter.parsed_substr for name, parameter in parsed_parameters.items() if parameter} # give empty matches a second chance
+            # prefill = {name: parameter.parsed_substr if parameter else '' for name, parameter in parsed_parameters.items()} # empty matches
+            prefill = {name: parameter.parsed_substr for name, parameter in parsed_parameters.items()}
+
+            # re-run regex only in the current command_str
+            compiled = self.compile(prefill=prefill)
+            new_matches = list(re.finditer(compiled, command_str))
+
+            logger.debug(f'Recapturing parameters command_str={command_str} prefill={prefill} compiled={compiled}')
+            if not new_matches:
+                break # everything's parsed (probably not successfully)
+
+            new_match = new_matches[0]
+            # match_start = match.start()
+            # match_end = match.end()
+            command_str = string[match.start():match.end()].strip()
+
+            logger.debug(f'Match: {new_match.groupdict()}')
+            # iterate only over own parameter group_names
+            for group_name, param in self.group_name_to_param.items():
+                v = new_match.group(group_name)
+                logger.debug(f'{group_name}: {v}\t{param is not None}\t{group_name not in prefill}\t{new_match.start(group_name) != -1}\t{new_match.start(group_name)}\t{bool(v.strip() if v else "")}\t{v}')
+
+            match_str_groups = {
+                name: new_match.group(name)
+                for name in self.group_name_to_param
+                # skip prefilled names
+                if name not in prefill
+                # skip not found names
+                and new_match.start(name) != -1
+                # skip whitespace-only values
+                and new_match.group(name) and new_match.group(name).strip()
+            }
+
+            logger.debug(f'Found parameters: {[(new_match.start(name), name, match_str_groups[name]) for name in sorted(match_str_groups.keys(), key=lambda name: (int(Pattern._parameter_types[self.group_name_to_param[name].type_name].type.greedy), new_match.start(name)))]}')
+
+            if not match_str_groups:
+                break # everything's parsed (probably successfully)
+
+            # parse next parameter
+
+            parameter_name = min(
+                match_str_groups.keys(),
+                key=lambda name: (
+                    int(Pattern._parameter_types[self.parameters[name].type_name].type.greedy), # parse greedy the last so they don't absorb neighbours
+                    new_match.start(name) # parse left to right
+                )
+            )
+            parameter_match = await self._parse_single_parameter(parameter_name, match_str_groups[parameter_name].strip(), parsed_parameters, objects_cache)
+            if parameter_match is not None:
+                parsed_parameters[parameter_name] = parameter_match
+
+        return parsed_parameters
+
+    async def _parse_single_parameter(self, parameter_name: str, raw_param_substr: str, parsed_parameters: dict[str, ParameterMatch], objects_cache: dict[str, Object]) -> ParameterMatch | None:
+        param = self.group_name_to_param[parameter_name]
+        parameter_reg_type = Pattern._parameter_types[param.type_name]
+        parameter_type = parameter_reg_type.type
+
+        logger.debug(f'Parsing {parameter_name} from {raw_param_substr}')
+
+        # try to get object from cache
+        for cached_parsed_substr, cached_parsed_obj in objects_cache.items():
+            continue
+            # TODO: review cache structure and search; current is broken
+            # if cached_parsed_substr in raw_param_substr:
+            #     logging.debug(f'Using cached object for {name}')
+            #     parsed_parameters[name] = ParameterMatch(
+            #         name=name,
+            #         regex_substr=raw_param_substr,
+            #         parsed_obj=cached_parsed_obj.copy(),
+            #         parsed_substr=cached_parsed_substr,
+            #     )
+            #     break
+        else: # No cache, parse the object
+            try:
+                object_matches = await parameter_type.pattern.match(raw_param_substr, objects_cache)
+                if not object_matches:
+                    raise ParseError(f"Failed to match object {parameter_type} from {raw_param_substr}")
+                object_pattern_match = object_matches[0]
+                parse_result = await parse_object(
+                    parameter_reg_type.type,
+                    parameter_reg_type.parser,
+                    from_string=object_pattern_match.substring,
+                    parsed_parameters=object_pattern_match.parameters
+                )
+            except ParseError as e:
+                logger.error(f"Pattern.match ParseError: {e}")
+                # explicitly set match result with None obj so it won't stuck in an infinite retry loop
+                return ParameterMatch(
+                    name=param.name,
+                    regex_substr=raw_param_substr,
+                    parsed_obj=None,
+                    parsed_substr='',
+                )
+
+            objects_cache[parse_result.substring] = parse_result.obj
+            return ParameterMatch(
+                name=param.name,
+                regex_substr=raw_param_substr,
+                parsed_obj=parse_result.obj,
+                parsed_substr=parse_result.substring,
+            )
+        return None
+
+    def _filter_overlapping_matches(self, matches: list[MatchResult]) -> list[MatchResult]:
+        filtered = matches.copy()
+        for prev, current in zip(filtered.copy(), filtered[1:]): # copy to prevent affecting iteration by removing items; slice makes copy automatically
+            if prev.start == current.start or prev.end > current.start: # if overlap
+                filtered.remove(min(prev, current, key = lambda m: len(m.substring))) # remove shorter
+        return filtered
 
     def compile(self, group_prefix: str = '', prefill: dict[str, str] | None = None) -> str: # transform Pattern to classic regex with named groups
         prefill = prefill or {}

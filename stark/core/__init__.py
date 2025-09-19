@@ -1,4 +1,4 @@
-from .patterns import Pattern, rules
+from .patterns import Pattern, PatternParameter, rules
 from . import types
 from .command import (
     AsyncResponseHandler,
