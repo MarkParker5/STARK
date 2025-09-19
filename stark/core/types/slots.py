@@ -1,6 +1,6 @@
 import logging
 from abc import ABC
-from typing import Union, get_args, get_origin
+from typing import get_args
 
 from stark.core.patterns.parsing import ParseError, parse_object
 from stark.core.patterns.pattern import ParameterMatch
@@ -31,9 +31,6 @@ class Slots(Object, ABC):
 
     value: str
 
-    at_least_one: bool = True
-    all_required: bool = True
-
     # @classproperty
     # def pattern(cls) -> Pattern:
     #     return SlotsPattern({
@@ -58,16 +55,14 @@ class Slots(Object, ABC):
 
         slots = {
             key: PatternParameter(
-                name=key,
-                group_name=key,
-                type_name=(
+                name = key,
+                group_name = key,
+                type_name = (
                     get_args(type_)[0].__name__
-                    if get_origin(type_) is Union and type(None) in get_args(type_)
+                    if type(None) in get_args(type_)
                     else type_.__name__
                 ),
-                optional=(
-                    get_origin(type_) is Union and type(None) in get_args(type_)
-                )
+                optional = type(None) in get_args(type_)
             )
             for key, type_ in type(self).__annotations__.items()
             if key not in {'value', 'at_least_one', 'all_required'}
@@ -98,7 +93,7 @@ class Slots(Object, ABC):
                     parsed_substr=parse_result.substring,
                 )
             except ParseError as e:
-                logger.error(f"Pattern.match ParseError: {e}")
+                logger.debug(f"Slot parameter match ParseError: {e}")
                 if param.optional:
                     parameter_match = ParameterMatch(
                         name=param.name,
@@ -109,20 +104,14 @@ class Slots(Object, ABC):
                 else:
                     raise
 
-            if parameter_match is not None:
-                parsed_parameters[param.name] = parameter_match
+            parsed_parameters[param.name] = parameter_match
+            if parameter_match.parsed_substr:
                 start_index = min(start_index, from_string.index(parameter_match.parsed_substr))
                 end_index = max(end_index, from_string.index(parameter_match.parsed_substr) + len(parameter_match.parsed_substr))
                 string = string.replace(parameter_match.parsed_substr, '')
 
-        parsed_keys = set(parsed_parameters.keys())
-        all_keys = set(slots.keys())
-
-        if self.at_least_one:
-            assert len(parsed_parameters) >= 1, "At least one parameter must be matched"
-
-        if self.all_required:
-            assert parsed_keys == all_keys, "All required parameters must be matched"
+        if len(list(p for p in parsed_parameters.values() if p.parsed_obj is not None)) < 1:
+            raise ParseError(f"{type(self)} At least one parameter must be matched, can't find any of {slots.keys()} in '{from_string}'")
 
         for name, value in parsed_parameters.items():
             setattr(self, name, value.parsed_obj)

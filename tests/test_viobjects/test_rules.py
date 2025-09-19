@@ -1,6 +1,9 @@
 import itertools
+import uuid
+from typing import Union
 
 import pytest
+from typing_extensions import Optional
 
 from stark.core import Pattern
 from stark.core.patterns.parsing import ParseError
@@ -137,8 +140,30 @@ class GreedySlots(Slots):
     b: GreedyObject
     c: GreedyObject
 
+class OOWord(Word):
+    @classproperty
+    def pattern(cls) -> Pattern:
+        return Pattern(r'**')
+
+    async def did_parse(self, from_string: str) -> str:
+        # param extraction imitation
+        words = [w.strip() for w in from_string.split(' ') if w.strip() and 'oo' in w]
+        if not words:
+            raise ParseError(f"Expected a word with 'oo', got '{from_string}'")
+        self.value = words[0]
+        return self.value
+
+class OOWordSimple(Word):
+    async def did_parse(self, from_string: str) -> str:
+        if "oo" not in from_string:
+            raise ParseError("OOWord must contain 'oo'")
+        self.value = from_string
+        return from_string
+
 Pattern.add_parameter_type(StarSlots)
 Pattern.add_parameter_type(GreedySlots)
+Pattern.add_parameter_type(OOWord)
+Pattern.add_parameter_type(OOWordSimple)
 
 @pytest.mark.parametrize('pattern_str, input_str, is_match, match_str, expected_tokens', [
         ("$slots:StarSlots","one foo two bar three baz", True, 'one foo two bar three baz', {'a': 'one foo', 'b': 'two bar', 'c': 'three baz'}),
@@ -166,4 +191,204 @@ async def test_slots(pattern_str, input_str, is_match, match_str, expected_token
     assert matches[0].parameters['slots'].value == match_str
     assert matches[0].substring == match_str
 
-    # TODO: check at_least_one and all_required rules for slots
+@pytest.mark.parametrize(
+    "cls_name, slots_dict, input_str, expected_values, expected_error",
+    [
+        # All required, one missing - fail
+        (
+            "AllRequiredSlots",
+            {"a": OOWord, "b": OOWord, "c": OOWord},
+            "foo oops no",
+            None,
+            ParseError,
+        ),
+        # All required, all present - all parsed
+        (
+            "AllRequiredSlots2",
+            {"a": OOWord, "b": OOWord, "c": OOWord},
+            "foo boo woo",
+            {"a": "foo", "b": "boo", "c": "woo"},
+            None,
+        ),
+        # All optional, all present - all parsed
+        (
+            "AllOptionalSlots",
+            {
+                "a": Union[OOWord, None],
+                "b": Union[OOWord, None],
+                "c": Union[OOWord, None],
+                "d": Union[OOWord, None],
+            },
+            "moon loop boom good",
+            {"a": "moon", "b": "loop", "c": "boom", "d": "good"},
+            None,
+        ),
+        # All optional, half missing - parsed correctly
+        (
+            "AllOptionalSlots2",
+            {
+                "a": Optional[OOWord],
+                "b": Optional[OOWord],
+                "c": Optional[OOWord],
+                "d": Optional[OOWord],
+            },
+            "noon good",
+            {"a": "noon", "b": "good"},
+            None,
+        ),
+        # All optional, none matches - failed (at least one parameter must be matched)
+        (
+            "AllOptionalSlots3",
+            {
+                "a": OOWord | None,
+                "b": OOWord | None,
+            },
+            "bar baz",
+            None,
+            ParseError,
+        ),
+        # Half optional - only required present - parsed correctly
+        (
+            "HalfOptionalSlots",
+            {
+                "a": OOWord,
+                "b": OOWord,
+                "c": Optional[OOWord],
+                "d": Optional[OOWord],
+            },
+            "well choose nice goose",
+            {"a": "choose", "b": "goose"},
+            None,
+        ),
+        # Half optional - all present - parsed correctly
+        (
+            "HalfOptionalSlots2",
+            {
+                "a": OOWord,
+                "b": OOWord,
+                "c": Optional[OOWord],
+                "d": Optional[OOWord],
+            },
+            "wood book cook hook",
+            {"a": "wood", "b": "book", "c": "cook", "d": "hook"},
+            None,
+        ),
+        # Half optional - all present but one required missing - failed
+        (
+            "HalfOptionalSlots3",
+            {
+                "a": OOWord,
+                "b": OOWord,
+                "c": Optional[OOWord],
+                "d": Optional[OOWord],
+            },
+            "look lorem ipsum dolor",
+            None,
+            ParseError,
+        ),
+
+        # --- Extra words - wildcard ---
+
+        # All required, all present, extra words - all parsed correctly
+        (
+            "AllRequiredSlots21",
+            {"a": OOWord, "b": OOWord, "c": OOWord},
+            "uno foo dos boo tres woo cuatro",
+            {"a": "foo", "b": "boo", "c": "woo"},
+            None,
+        ),
+        # All optional, all present, extra words - all parsed correctly
+        (
+            "AllOptionalSlots21",
+            {
+                "a": Union[OOWord, None],
+                "b": Union[OOWord, None],
+                "c": Union[OOWord, None],
+                "d": Union[OOWord, None],
+            },
+            "one moon two loop three boom four good five",
+            {"a": "moon", "b": "loop", "c": "boom", "d": "good"},
+            None,
+        ),
+        # All optional, half missing - parsed correctly
+        (
+            "AllOptionalSlots22",
+            {
+                "a": Optional[OOWord],
+                "b": Optional[OOWord],
+                "c": Optional[OOWord],
+                "d": Optional[OOWord],
+            },
+            "hello noon how good",
+            {"a": "noon", "b": "good"},
+            None,
+        ),
+
+        # --- Extra words - by pattern ---
+
+        # All required, all present, extra words - all parsed correctly
+        (
+            "AllRequiredSlots21",
+            {"a": OOWordSimple, "b": OOWordSimple, "c": OOWordSimple},
+            "uno foo dos boo tres woo cuatro",
+            {"a": "foo", "b": "boo", "c": "woo"},
+            None,
+        ),
+        # All optional, all present, extra words - all parsed correctly
+        (
+            "AllOptionalSlots21",
+            {
+                "a": Union[OOWordSimple, None],
+                "b": Union[OOWordSimple, None],
+                "c": Union[OOWordSimple, None],
+                "d": Union[OOWordSimple, None],
+            },
+            "one moon two loop three boom four good five",
+            {"a": "moon", "b": "loop", "c": "boom", "d": "good"},
+            None,
+        ),
+        # All optional, half missing - parsed correctly
+        (
+            "AllOptionalSlots22",
+            {
+                "a": Optional[OOWordSimple],
+                "b": Optional[OOWordSimple],
+                "c": Optional[OOWordSimple],
+                "d": Optional[OOWordSimple],
+            },
+            "hello noon how good",
+            {"a": "noon", "b": "good"},
+            None,
+        ),
+    ],
+)
+@pytest.mark.asyncio
+async def test_slots_required_optional_cases(cls_name, slots_dict, input_str, expected_values, expected_error):
+
+    print(f'{cls_name=} {input_str=} {expected_error=} {expected_values=} {slots_dict=}')
+
+    # Generate a unique class name for each test run to avoid registry conflicts
+    unique_cls_name = f"{cls_name}_{uuid.uuid4().hex[:8]}"
+    # Ensure __annotations__ is set for dynamic slots class
+    class_dict = dict(slots_dict)
+    class_dict["__annotations__"] = {k: v for k, v in slots_dict.items()}
+    slots_cls = type(unique_cls_name, (Slots,), class_dict)
+
+    # Register the slots class as a parameter type for Pattern
+    Pattern.add_parameter_type(slots_cls)
+
+    pattern = Pattern(f"$slots:{slots_cls.__name__}")
+
+    if expected_error is not None:
+        with pytest.raises(expected_error):
+            print('Match', await pattern.match(input_str))
+        return
+
+    matches = await pattern.match(input_str)
+
+    assert matches, f"Expected a match but got none for input '{input_str}'"
+
+    slots_obj = matches[0].parameters["slots"]
+    got = {k: getattr(slots_obj, k).value for k in expected_values if getattr(slots_obj, k) is not None}
+    for k, v in expected_values.items():
+        assert got.get(k) == v

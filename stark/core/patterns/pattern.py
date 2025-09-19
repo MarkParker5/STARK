@@ -78,7 +78,7 @@ class Pattern:
             objects_cache = {} # TODO: improve cache structure
 
         compiled = self.compiled # self.compile()
-        logger.debug(f"Starting looking for \"{compiled}\" in \"{string}\"")
+        logger.debug(f"Starting looking for \"{self._origin}\" \"{compiled=}\" in \"{string}\"")
 
         matches = []
         initial_matches = self._find_initial_matches(compiled, string)
@@ -95,12 +95,13 @@ class Pattern:
             # Validate parsed parameters
 
             # Check all required parameters are present
-            # if not set(name for name, param in self.parameters.items() if not param.optional) <= set(parsed_parameters.keys()):
-            #     raise ParseError(f"Did not find parameters: {set(self.parameters) - set(parsed_parameters.keys())}")
+            if not set(name for name, param in self.parameters.items() if not param.optional) <= set(k for k, v in parsed_parameters.items() if v.parsed_obj is not None):
+                raise ParseError(f"Did not find parameters: {set(self.parameters.keys()) - set(k for k, v in parsed_parameters.items() if v.parsed_obj is not None)}")
 
-            # Fill None to missed optionals
-
-            all_parameters = {**parsed_parameters, **{param.name: None for param in self.parameters.values() if param.name not in parsed_parameters}}
+            all_parameters = {
+                **{k:v for k,v in parsed_parameters.items() if v.parsed_obj is not None}, # filter parsed values
+                **{param.name: None for param in self.parameters.values() if param.name not in parsed_parameters} # fill none for missed optionals
+            }
             logger.debug(f'Parsed parameters: {all_parameters}')
 
             # Add match
@@ -123,7 +124,7 @@ class Pattern:
     def _find_initial_matches(self, compiled: str, string: str) -> list[re.Match]:
         return sorted(re.finditer(compiled, string), key = lambda match: match.start())
 
-    async def _parse_parameters_for_match(self, string: str, objects_cache: dict[str, Object]) -> dict[str, ParameterMatch]:
+    async def _parse_parameters_for_match(self, string: str, objects_cache: dict[str, Object]) -> tuple[re.Match, dict[str, ParameterMatch]]:
         parsed_parameters: dict[str, ParameterMatch] = {}
 
         logger.debug(f'Captured candidate "{string}"')
@@ -143,13 +144,13 @@ class Pattern:
             compiled = self.compile(prefill=prefill)
             new_matches = list(re.finditer(compiled, string))
 
-            logger.debug(f'Recapturing parameters string={string} prefill={prefill} compiled={compiled}')
+            logger.debug(f'Re capturing parameters string={string} prefill={prefill} compiled={compiled}')
             if not new_matches:
                 break # everything's parsed (probably not successfully)
 
             new_match = new_matches[0]
 
-            logger.debug(f'Match: {new_match.groupdict()}')
+            logger.debug(f'Re Match: {new_match.groupdict()}')
             # iterate only over own parameter group_names
             for group_name, param in self.group_name_to_param.items():
                 v = new_match.group(group_name)
@@ -166,7 +167,7 @@ class Pattern:
                 and new_match.group(name) and new_match.group(name).strip()
             }
 
-            logger.debug(f'Found parameters: {[(new_match.start(name), name, match_str_groups[name]) for name in sorted(match_str_groups.keys(), key=lambda name: (int(Pattern._parameter_types[self.group_name_to_param[name].type_name].type.greedy), new_match.start(name)))]}')
+            logger.debug(f'Found re groups: {[(new_match.start(name), name, match_str_groups[name]) for name in sorted(match_str_groups.keys(), key=lambda name: (int(Pattern._parameter_types[self.group_name_to_param[name].type_name].type.greedy), new_match.start(name)))]}')
 
             if not match_str_groups:
                 break # everything's parsed (probably successfully)
@@ -191,7 +192,7 @@ class Pattern:
         parameter_reg_type = Pattern._parameter_types[param.type_name]
         parameter_type = parameter_reg_type.type
 
-        logger.debug(f'Parsing {parameter_name} from {raw_param_substr}')
+        logger.debug(f'Parsing parameter "{parameter_name}" from "{raw_param_substr}"')
 
         # try to get object from cache
         for cached_parsed_substr, cached_parsed_obj in objects_cache.items():
@@ -219,7 +220,7 @@ class Pattern:
                     parsed_parameters=object_pattern_match.parameters
                 )
             except ParseError as e:
-                logger.error(f"Pattern.match ParseError: {e}")
+                logger.debug(f"Pattern.match ParseError: {e}")
                 # explicitly set match result with None obj so it won't stuck in an infinite retry loop
                 return ParameterMatch(
                     name=param.name,
