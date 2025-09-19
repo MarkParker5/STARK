@@ -94,13 +94,13 @@ class Pattern:
 
             # Validate parsed parameters
 
-            # Check all required parameters are present
-            if not set(name for name, param in self.parameters.items() if not param.optional) <= set(k for k, v in parsed_parameters.items() if v.parsed_obj is not None):
-                raise ParseError(f"Did not find parameters: {set(self.parameters.keys()) - set(k for k, v in parsed_parameters.items() if v.parsed_obj is not None)}")
+            # Check all required parameters are present TODO: properly mark optional ones
+            # if not set(name for name, param in self.parameters.items() if not param.optional) <= set(k for k, v in parsed_parameters.items() if v.parsed_obj is not None):
+            #     raise ParseError(f"Did not find parameters: {set(self.parameters.keys()) - set(k for k, v in parsed_parameters.items() if v.parsed_obj is not None)}")
 
             all_parameters = {
-                **{k:v for k,v in parsed_parameters.items() if v.parsed_obj is not None}, # filter parsed values
-                **{param.name: None for param in self.parameters.values() if param.name not in parsed_parameters} # fill none for missed optionals
+                **{param.name: None for param in self.parameters.values()}, # all with optional
+                **{k:v for k,v in parsed_parameters.items() if v.parsed_obj is not None}, # set parsed values
             }
             logger.debug(f'Parsed parameters: {all_parameters}')
 
@@ -144,17 +144,22 @@ class Pattern:
             compiled = self.compile(prefill=prefill)
             new_matches = list(re.finditer(compiled, string))
 
-            logger.debug(f'Re capturing parameters string={string} prefill={prefill} compiled={compiled}')
+            logger.debug(f'Re capturing parameters string="{string}" prefill={prefill} compiled="{compiled}"')
+
             if not new_matches:
                 break # everything's parsed (probably not successfully)
 
             new_match = new_matches[0]
 
             logger.debug(f'Re Match: {new_match.groupdict()}')
-            # iterate only over own parameter group_names
+
+            # Log
+
             for group_name, param in self.group_name_to_param.items():
                 v = new_match.group(group_name)
                 logger.debug(f'{group_name}: {v}\t{param is not None}\t{group_name not in prefill}\t{new_match.start(group_name) != -1}\t{new_match.start(group_name)}\t{bool(v.strip() if v else "")}\t{v}')
+
+            # Filter remaining regex matched params to parse next
 
             match_str_groups = {
                 name: new_match.group(name)
@@ -167,12 +172,14 @@ class Pattern:
                 and new_match.group(name) and new_match.group(name).strip()
             }
 
+            # Log
+
             logger.debug(f'Found re groups: {[(new_match.start(name), name, match_str_groups[name]) for name in sorted(match_str_groups.keys(), key=lambda name: (int(Pattern._parameter_types[self.group_name_to_param[name].type_name].type.greedy), new_match.start(name)))]}')
 
             if not match_str_groups:
                 break # everything's parsed (probably successfully)
 
-            # parse next parameter
+            # Parse next parameter
 
             parameter_name = min(
                 match_str_groups.keys(),

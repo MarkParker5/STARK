@@ -10,47 +10,11 @@ from .object import Object
 
 logger = logging.getLogger(__name__)
 
-# class SlotsPattern(Pattern):
-
-#     def __init__(self, parameters: dict[str, PatternParameter]):
-#         super().__init__('**')
-#         self.parameters = parameters
-#         self._update_group_name_to_param()
-#         self.compiled = self.compile() # update group names of the parameters
-
-#     async def _parse_parameters_for_match(self, command_str: str, match: re.Match, string: str, objects_cache: dict[str, Object]) -> dict[str, ParameterMatch]:
-#         parsed_parameters: dict[str, ParameterMatch] = {}
-
-#         while True:
-#             # self._parse_single_parameter()
-#             ...
-
-#         return parsed_parameters
-
 class Slots(Object, ABC):
 
     value: str
 
-    # @classproperty
-    # def pattern(cls) -> Pattern:
-    #     return SlotsPattern({
-    #         key: PatternParameter(
-    #             name=key,
-    #             group_name=key,
-    #             type_name=(
-    #                 get_args(type_)[0].__name__
-    #                 if get_origin(type_) is Union and type(None) in get_args(type_)
-    #                 else type_.__name__
-    #             ),
-    #             optional=(
-    #                 get_origin(type_) is Union and type(None) in get_args(type_)
-    #             )
-    #         )
-    #         for key, type_ in cls.__annotations__.items()
-    #         if key != 'value'
-    #     })
-
-    async def did_parse(self, from_string: str) -> str:
+    async def did_parse(self, from_string: str) -> str: # TODO: consider to override def parse instead (if present) to keep did_parse free?
         parsed_parameters: dict[str, ParameterMatch] = {}
 
         slots = {
@@ -75,26 +39,29 @@ class Slots(Object, ABC):
         for param in slots.values():
             parameter_reg_type = Pattern._parameter_types[param.type_name]
             parameter_type = parameter_reg_type.type
-            try:
-                object_matches = await parameter_type.pattern.match(string)
-                if not object_matches:
-                    raise ParseError(f"Failed to match object {parameter_type} from {string}")
-                object_pattern_match = object_matches[0]
-                parse_result = await parse_object(
-                    parameter_reg_type.type,
-                    parameter_reg_type.parser,
-                    from_string=object_pattern_match.substring,
-                    parsed_parameters=object_pattern_match.parameters
-                )
-                parameter_match = ParameterMatch(
-                    name=param.name,
-                    regex_substr=string,
-                    parsed_obj=parse_result.obj,
-                    parsed_substr=parse_result.substring,
-                )
-            except ParseError as e:
-                logger.debug(f"Slot parameter match ParseError: {e}")
+            object_matches = await parameter_type.pattern.match(string)
+            for object_pattern_match in object_matches:
+                try:
+                    parse_result = await parse_object(
+                        parameter_reg_type.type,
+                        parameter_reg_type.parser,
+                        from_string=object_pattern_match.substring,
+                        parsed_parameters=object_pattern_match.parameters
+                    )
+                    parameter_match = ParameterMatch(
+                        name=param.name,
+                        regex_substr=string,
+                        parsed_obj=parse_result.obj,
+                        parsed_substr=parse_result.substring,
+                    )
+                    break
+                except ParseError as e:
+                    # partial backtracking
+                    # If the "best" assignment of words to slots requires skipping a candidate for slot 1 in favor of a better overall fit for all slots, this approach won't find it. (Full backtracking over all slot assignments would be needed for that.)
+                    logger.debug(f"Slot parameter match ParseError: {e}; trying next match...")
+            else:
                 if param.optional:
+                    logger.debug(f"Failed to match optional slot parameter {param.name} from {string}")
                     parameter_match = ParameterMatch(
                         name=param.name,
                         regex_substr=string,
@@ -102,7 +69,9 @@ class Slots(Object, ABC):
                         parsed_substr='',
                     )
                 else:
-                    raise
+                    msg = f"Failed to match required slot parameter {parameter_type} from {string}"
+                    logger.debug(msg)
+                    raise ParseError(msg)
 
             parsed_parameters[param.name] = parameter_match
             if parameter_match.parsed_substr:

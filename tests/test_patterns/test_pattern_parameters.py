@@ -4,6 +4,7 @@ import pytest
 
 from stark.core import Pattern
 from stark.core.patterns import rules
+from stark.core.patterns.parsing import ParseError
 from stark.core.types import Object, String, Word
 from stark.general.classproperty import classproperty
 
@@ -96,3 +97,26 @@ async def test_parameter_type_duplicate():
     assert Pattern._parameter_types[p.parameters['name'].type_name].type == TwoWords
     m = await p.match('hello John Galt and Alice Smith')
     assert m
+
+class OOWordSimple2(Word):
+    async def did_parse(self, from_string: str) -> str:
+        if "oo" not in from_string:
+            raise ParseError("OOWord must contain 'oo'")
+        self.value = from_string
+        return from_string
+
+Pattern.add_parameter_type(OOWordSimple2)
+
+@pytest.mark.parametrize(
+    "pattern_str, input_str, expected_params",
+    [
+        ("$name:OOWordSimple2 ?* $name2:OOWordSimple2", "Joohn Janoo", {"name": "Joohn", "name2": "Janoo"}),
+        ("$name:OOWordSimple2 ?* $name2:OOWordSimple2", "Joohn and Janoo", {"name": "Joohn", "name2": "Janoo"}),
+        ("$name:OOWordSimple2 ?** $name2:OOWordSimple2", "Joohn and famous Janoo", {"name": "Joohn", "name2": "Janoo"}),
+    ],
+)
+async def test_extra_simple_patterns_extra_words(pattern_str, input_str, expected_params):
+    p = Pattern(pattern_str)
+    m = await p.match(input_str)
+    assert m
+    assert {k: v.value for k, v in m[0].parameters.items()} == expected_params
