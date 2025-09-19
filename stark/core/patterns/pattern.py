@@ -83,11 +83,14 @@ class Pattern:
         matches = []
         initial_matches = self._find_initial_matches(compiled, string)
         for match in initial_matches:
-            if match.start() == match.end():
+            if match.start() == -1 or match.start() == match.end():
                 continue # skip empty
 
-            command_str = string[match.start():match.end()].strip()
-            parsed_parameters = await self._parse_parameters_for_match(command_str, match, string, objects_cache)
+            new_match = None
+            command_substr = string[match.start():match.end()]
+            new_match, parsed_parameters = await self._parse_parameters_for_match(command_substr, objects_cache)
+            assert new_match is not None, "new_match should not be None"
+            new_match = new_match or match
 
             # Validate parsed parameters
 
@@ -102,8 +105,9 @@ class Pattern:
 
             # Add match
 
-            start = match.start()
-            end = match.start() + len(command_str)
+            start = match.start() + new_match.start()
+            end = match.start() + new_match.end()
+            command_str = string[start:end].strip()
 
             matches.append(MatchResult(
                 substring = command_str,
@@ -111,6 +115,7 @@ class Pattern:
                 end = end,
                 parameters = {name: (parameter.parsed_obj if parameter else None) for name, parameter in all_parameters.items()}
             ))
+            logger.debug(f'Match result: {matches[-1]}')
 
         matches = self._filter_overlapping_matches(matches)
         return sorted(matches, key = lambda m: len(m.substring), reverse = True)
@@ -118,10 +123,12 @@ class Pattern:
     def _find_initial_matches(self, compiled: str, string: str) -> list[re.Match]:
         return sorted(re.finditer(compiled, string), key = lambda match: match.start())
 
-    async def _parse_parameters_for_match(self, command_str: str, match: re.Match, string: str, objects_cache: dict[str, Object]) -> dict[str, ParameterMatch]:
+    async def _parse_parameters_for_match(self, string: str, objects_cache: dict[str, Object]) -> dict[str, ParameterMatch]:
         parsed_parameters: dict[str, ParameterMatch] = {}
 
-        logger.debug(f'Captured candidate "{command_str}"')
+        logger.debug(f'Captured candidate "{string}"')
+
+        new_match = None
 
         while True:
 
@@ -134,16 +141,13 @@ class Pattern:
 
             # re-run regex only in the current command_str
             compiled = self.compile(prefill=prefill)
-            new_matches = list(re.finditer(compiled, command_str))
+            new_matches = list(re.finditer(compiled, string))
 
-            logger.debug(f'Recapturing parameters command_str={command_str} prefill={prefill} compiled={compiled}')
+            logger.debug(f'Recapturing parameters string={string} prefill={prefill} compiled={compiled}')
             if not new_matches:
                 break # everything's parsed (probably not successfully)
 
             new_match = new_matches[0]
-            # match_start = match.start()
-            # match_end = match.end()
-            command_str = string[match.start():match.end()].strip()
 
             logger.debug(f'Match: {new_match.groupdict()}')
             # iterate only over own parameter group_names
@@ -180,7 +184,7 @@ class Pattern:
             if parameter_match is not None:
                 parsed_parameters[parameter_name] = parameter_match
 
-        return parsed_parameters
+        return new_match, parsed_parameters
 
     async def _parse_single_parameter(self, parameter_name: str, raw_param_substr: str, parsed_parameters: dict[str, ParameterMatch], objects_cache: dict[str, Object]) -> ParameterMatch | None:
         param = self.group_name_to_param[parameter_name]

@@ -66,10 +66,11 @@ async def test_single_star():
 
     p = Pattern('*')
     assert p.compiled == fr'{word}'
-    assert (await p.match('bbb teaaeaaaxt some cccc'))[0].substring == 'teaaeaaaxt'
+    # assert (await p.match('bbb teaaeaaaxt some cccc'))[0].substring == 'bbb' # takes the first word
+    assert (await p.match('bbb teaaeaaaxt some cccc'))[0].substring == 'teaaeaaaxt' # takes the largest word, TODO: review behavior
     assert not await p.match('')
     assert not await p.match(' ')
-    assert len(await p.match('a b c d')) == 4
+    assert len(await p.match('a b c d')) == 4, await p.match('a b c d')
 
 async def test_double_star():
     p = Pattern('**')

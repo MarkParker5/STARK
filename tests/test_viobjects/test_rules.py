@@ -163,4 +163,7 @@ async def test_slots(pattern_str, input_str, is_match, match_str, expected_token
 
     got_values = {key: getattr(matches[0].parameters['slots'], key).value for key in expected_tokens.keys()}
     assert got_values == expected_tokens
-    # assert matches[0].parameters['slots'].substring == match_str
+    assert matches[0].parameters['slots'].value == match_str
+    assert matches[0].substring == match_str
+
+    # TODO: check at_least_one and all_required rules for slots

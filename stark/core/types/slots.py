@@ -127,6 +127,5 @@ class Slots(Object, ABC):
         for name, value in parsed_parameters.items():
             setattr(self, name, value.parsed_obj)
 
-        from_string = from_string[start_index:end_index]
-
+        self.value = from_string = from_string[start_index:end_index]
         return from_string
