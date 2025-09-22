@@ -47,10 +47,10 @@ rules_list = [
     # allows variable word form (different prefixes, postfixes, suffixes, etc) must "touch" the word (before, after, or in the middle)
     Rule(fr'([^{specials}]|^)\*', fr'\1[{alphanumerics}]*'),
 
-    # unordered slots (all required)
+    # (beta) unordered slots - all required; doesn't work well with multiword wildcards
     Rule(fr'<{ALL_UNORDERED}>(.*?)</{ALL_UNORDERED}>', func=lambda m: '(?:' + ''.join(rf'(?=.*\b{x}\b)' for x in m.group(1).split('|')) + '.*)'),
 
-    # unordered slots (at least one required)
+    # (beta) unordered slots - at least one required; doesn't work well with multiword wildcards
     Rule(fr'<{ONE_OR_MORE_UNORDERED}>(.*?)</{ONE_OR_MORE_UNORDERED}>', func=lambda m: '(?:' + ''.join(rf'(?=.*\b{x}\b)?' for x in m.group(1).split('|')) + '.*)'),
 
     # make sure all tags are handled
@@ -70,3 +70,17 @@ def all_unordered(*args: str) -> str:
 
 def one_or_more_unordered(*args: str) -> str:
     return f'<{ONE_OR_MORE_UNORDERED}>' + '|'.join(args) + f'</{ONE_OR_MORE_UNORDERED}>'
+
+# Multiple capturing groups and lookahead draft, might be helpful for better unordered slots impl
+# >>> import regex
+# >>> p = '(?=one|two)(?:(?<o>one[abcd]*?)|(?<t>two[fghj]*?))+$'
+# >>> s = 'oneabtwofjoneaonebonectwotwotwotwotwojjjjjoneaaaa'
+# >>> regex.search(p, s).capturesdict()
+# {
+# 'o': ['oneab', 'onea', 'oneb', 'onec', 'oneaaaa'],
+# 't': ['twofj', 'two', 'two', 'two', 'two', 'twojjjjj']
+# }
+# >>> p2 = '(?=(?<o>one[abcd]*?)|(?<t>two[fghj]*?))(?:(?<o>one[abcd]*?)|(?<t>two[fghj]*?))+$'
+# >>> s2 = 'oneaatwojj'
+# >>> regex.search(p2, s2).capturesdict()
+# {'o': ['one', 'oneaa'], 't': ['twojj']}
