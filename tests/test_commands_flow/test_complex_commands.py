@@ -11,17 +11,17 @@ async def test_command_flow_optional_parameter(commands_context_flow, autojump_c
 
         class Category(Object):
             @classproperty
-            def pattern(self) -> Pattern:
+            def pattern(cls) -> Pattern:
                 return Pattern('c*')
 
         class Device(Object):
             @classproperty
-            def pattern(self) -> Pattern:
+            def pattern(cls) -> Pattern:
                 return Pattern('d*')
 
         class Room(Object):
             @classproperty
-            def pattern(self) -> Pattern:
+            def pattern(cls) -> Pattern:
                 return Pattern('r*')
 
         Pattern.add_parameter_type(Category)

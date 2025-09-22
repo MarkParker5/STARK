@@ -38,7 +38,7 @@ keywords = [
 
 [tool.poetry.dependencies]
 python = "^3.12"
-pydantic = "^1.10.4"
+pydantic = "^2.0.0"
 asyncer = "^0.0.2"
 
 # Optional dependencies

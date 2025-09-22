@@ -126,7 +126,7 @@ class Pattern:
     def _find_initial_matches(self, compiled: str, string: str) -> list[re.Match]:
         return sorted(re.finditer(compiled, string), key = lambda match: match.start())
 
-    async def _parse_parameters_for_match(self, string: str, objects_cache: dict[str, Object]) -> tuple[re.Match, dict[str, ParameterMatch]]:
+    async def _parse_parameters_for_match(self, string: str, objects_cache: dict[str, Object]) -> tuple[re.Match | None, dict[str, ParameterMatch]]:
         parsed_parameters: dict[str, ParameterMatch] = {}
 
         logger.debug(f'Captured candidate "{string}"')

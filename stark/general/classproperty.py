@@ -1,6 +1,7 @@
 # from typing import Callable
 
 
+# works with pyright/mypy, doesn't work with pydantic
 # class classproperty[GetterReturnType]:
 #     def __init__(self, func: Callable[..., GetterReturnType]):
 #         if isinstance(func, (classmethod, staticmethod)):
@@ -14,11 +15,11 @@
 #             klass = type(obj)
 #         return self.fget.__get__(obj, klass)()
 
-from typing import Any, Callable
 
+# works with pydantic, doesn't pass pyright/mypy
 
-def classproperty[T](fget: Callable[[type[Any]], T]) -> T:
+def classproperty[T](fget):
     class _ClassProperty(property):
-        def __get__(self, cls: type[Any], owner: type[Any]) -> T: # type: ignore
+        def __get__(self, cls, owner): # type: ignore
             return classmethod(fget).__get__(None, owner)()
-    return _ClassProperty(fget) # type: ignore
+    return _ClassProperty(fget)
