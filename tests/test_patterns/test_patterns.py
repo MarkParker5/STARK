@@ -1,3 +1,5 @@
+import pytest
+
 from stark.core import Pattern
 from stark.core.patterns import rules
 
@@ -111,6 +113,14 @@ async def test_one_of():
     assert (await p.match('bbb Some foo here cccc'))[0].substring == 'Some foo here'
     assert (await p.match('bbb Some bar here cccc'))[0].substring == 'Some bar here'
     assert not await p.match('Some foo')
+
+@pytest.mark.skip(reason="Not implemented as a not important feature")
+async def test_one_of_with_spaces():
+    p = Pattern('Hello ( foo | bar | baz ) world')
+    print(p.compiled)
+    assert await p.match('Hello foo world')
+    assert await p.match('Hello bar world')
+    assert await p.match('Hello baz world')
 
 async def test_optional_one_of():
     p = Pattern('(foo|bar)?')

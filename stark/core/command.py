@@ -20,6 +20,8 @@ from typing import (
 )
 from uuid import UUID, uuid4
 
+from typing_extensions import get_args
+
 logger = logging.getLogger(__name__)
 
 import asyncer
@@ -53,6 +55,11 @@ class Command(Generic[CommandRunner]):
 
         parameters = parameters_dict or {}
         parameters.update(kwparameters)
+
+        # auto fill optionals
+        for param_name, param_type in self._runner.__annotations__.items():
+            if param_name not in parameters and type(None) in get_args(param_type):
+                parameters[param_name] = None
 
         runner: AsyncCommandRunner
 

@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from types import UnionType
 
 from asyncer import SoonValue, create_task_group
+from typing_extensions import get_args
 
 from .command import AsyncResponseHandler, Command, CommandRunner, ResponseHandler
 from .patterns import MatchResult, Pattern
@@ -101,13 +102,19 @@ class CommandsManager:
             # check that runner has all parameters from pattern
 
             error_msg = f'Command {self.name}.{runner.__name__} must have all parameters from pattern;'
-            pattern_params = list(
-                (p.name, Pattern._parameter_types[p.type_name].type)
+            pattern_params = set(
+                (p.name, Pattern._parameter_types[p.type_name].type.__name__)
                 for p in pattern.parameters.values()
             )
-            difference = pattern_params - annotations.items()
+            command_params = set(
+                (k, get_args(v)[0].__name__
+                    if type(None) in get_args(v)
+                    else v.__name__)
+                for k, v in annotations.items()
+            )
+            difference = pattern_params - command_params
             # TODO: handle unregistered parameter type as a separate error
-            assert not difference, error_msg + f' pattern got {pattern_params}, function got {list(annotations.items())}, difference: {difference}'
+            assert not difference, error_msg + f'\n\tPattern got {dict(pattern_params)},\n\tFunction got {dict(command_params)},\n\tDifference: {dict(difference)}'
             # assert {(p.name, p.type) for p in pattern.parameters.values()} <= annotations.items(), error_msg
 
             # additional checks for DI

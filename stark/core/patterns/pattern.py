@@ -62,6 +62,8 @@ class Pattern:
 
     @classmethod
     def add_parameter_type(cls, object_type: ObjectType, parser: ObjectParser | None = None):
+        from ..types import Object
+        assert issubclass(object_type, Object), f'Can`t add parameter type "{object_type.__name__}": it is not a subclass of Object'
         error_msg = f'Can`t add parameter type "{object_type.__name__}": pattern parameters do not match properties annotated in class'
         # TODO: update schema and validation; handle optional parameters; handle short form where type is defined in object
         # assert object_type.pattern.parameters.items() <= object_type.__annotations__.items(), error_msg

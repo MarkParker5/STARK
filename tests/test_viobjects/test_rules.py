@@ -362,7 +362,6 @@ async def test_slots(pattern_str, input_str, is_match, match_str, expected_token
         ),
     ],
 )
-@pytest.mark.asyncio
 async def test_slots_required_optional_cases(cls_name, slots_dict, input_str, expected_values, expected_error):
 
     print(f'{cls_name=} {input_str=} {expected_error=} {expected_values=} {slots_dict=}')
