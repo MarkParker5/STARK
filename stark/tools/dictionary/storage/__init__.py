@@ -1,0 +1,2 @@
+from .storage_memory import DictionaryStorageMemory
+from .storage_sqlite import DictionaryStorageSQLite
