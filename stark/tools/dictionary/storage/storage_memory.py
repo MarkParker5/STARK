@@ -10,15 +10,15 @@ class DictionaryStorageMemory(DictionaryStorageProtocol):
 
     def write_one(self, item: DictionaryItem):
         self._items[item.name] = item
-        self._phonetic_to_names.setdefault(item.starkphone, set()).add(item.name)
+        self._phonetic_to_names.setdefault(item.simplephone, set()).add(item.name)
 
-    def search_equal_starkphone(self, starkphone: str) -> list[DictionaryItem]:
-        return [self._items[name] for name in self._phonetic_to_names.get(starkphone, set())]
+    def search_equal_simple_phonetic(self, simplephone: str) -> list[DictionaryItem]:
+        return [self._items[name] for name in self._phonetic_to_names.get(simplephone, set())]
 
-    def search_contains_starkphone(self, starkphone: str) -> list[DictionaryItem]:
+    def search_contains_simple_phonetic(self, simplephone: str) -> list[DictionaryItem]:
         result: list[DictionaryItem] = []
         for key, names in self._phonetic_to_names.items():
-            if starkphone in key:
+            if key in simplephone:
                 result.extend(self._items[name] for name in names)
         return result
 

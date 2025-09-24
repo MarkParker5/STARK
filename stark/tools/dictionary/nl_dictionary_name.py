@@ -17,5 +17,5 @@ class NLDictionaryName(Object):
     async def did_parse(self, from_string: str):
         if not (matches := self.dictionary.lookup(from_string)):
             raise ParseError(f"Could not find '{from_string}' in dictionary")
-        self.value = matches  # TODO: options to resolve collisions e.g. best ipa-levenshtein distance
+        self.value = matches
         return from_string
