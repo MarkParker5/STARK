@@ -1,10 +1,11 @@
-from typing import Any, Protocol
+from dataclasses import dataclass
+from typing import Any, NamedTuple, Protocol
 
 type Metadata = dict[str, Any]
-type Span = tuple[int, int]
 
-from dataclasses import dataclass
-
+class Span(NamedTuple):
+    start: int
+    end: int
 
 @dataclass
 class DictionaryItem:
@@ -13,10 +14,10 @@ class DictionaryItem:
     simple_phonetic: str
     metadata: Metadata
 
-# @dataclass
-# class LookupResult:
-#     indices: tuple[int, int]
-#     item: 'DictionaryItem'
+@dataclass
+class LookupResult:
+    indices: Span
+    item: list[DictionaryItem]
 
 class DictionaryStorageProtocol(Protocol):
     def write_one(self, item: 'DictionaryItem') -> None: ...

@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import sqlite3
 
-from .models import DictionaryItem, DictionaryStorageProtocol
+from ..models import DictionaryItem, DictionaryStorageProtocol
 
 
 class DictionaryStorageSQLite(DictionaryStorageProtocol):

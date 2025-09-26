@@ -1,15 +1,16 @@
-import string
 from itertools import groupby
 from typing import Generator
 
+from stark.tools.dictionary.models import Span
 
-def split_indices(s: str, sep:str=string.whitespace) -> Generator[tuple[int, int], None, None]:
+
+def split_indices(s: str, sep: str = ' ') -> Generator[Span, None, None]:
     assert len(sep) == 1, "Separator must be a single character"
     p = 0
-    for k, g in groupby(s, lambda x:x==sep):
+    for k, g in groupby(s, lambda x: x == sep):
         q = p + sum(1 for _ in g)
         if not k:
-            yield p, q
+            yield Span(p, q)
         p = q
 
 def find_substring_in_words_map(substr: str, words: list[str]) -> list[list[int]]:

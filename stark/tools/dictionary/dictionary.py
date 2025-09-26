@@ -1,14 +1,26 @@
+from dataclasses import dataclass
 from itertools import groupby
-from typing import Any, Dict, Iterable, Optional
+from typing import Iterable, Optional
 
 from stark.tools.levenshtein import levenshtein_similarity
 from stark.tools.phonetic.ipa import phonetic
 from stark.tools.phonetic.simplephone import simplephone
 from stark.tools.strtools import find_substring_in_words_map, split_indices
 
-from .models import DictionaryItem, DictionaryStorageProtocol, Metadata
+from .models import (
+    DictionaryItem,
+    DictionaryStorageProtocol,
+    LookupResult,
+    Metadata,
+    Span,
+)
 
-# TODO: dataclasses instead of tuples
+
+@dataclass(frozen=True)
+class NameEntry:
+    language_code: str
+    name: str
+    metadata: Optional[Metadata] = None
 
 class Dictionary:
     """
@@ -17,7 +29,6 @@ class Dictionary:
 
     def __init__(self, storage: DictionaryStorageProtocol):
         self.storage = storage
-        self._data: Dict[str, Dict[str, Any]] = {}  # id -> {simplephone, origin, metadata}
 
     # ----------------------
     # Write methods
@@ -37,13 +48,13 @@ class Dictionary:
         )
         self.storage.write_one(item)
 
-    def write_all(self, names: list[tuple[str, str, Optional[Metadata]]]):
+    def write_all(self, names: list[NameEntry]):
         """
         Add multiple entries in batch. Replaces existing entries.
         """
         self.clear()
-        for language_code, name, metadata in names:
-            self.write_one(language_code, name, metadata)
+        for entry in names:
+            self.write_one(entry.language_code, entry.name, entry.metadata)
 
     def clear(self) -> None:
         """
@@ -66,7 +77,7 @@ class Dictionary:
         # TODO: find a way to also return indices
         return matches
 
-    def sentence_search(self, sentence: str, language_code: str) -> list[DictionaryItem]:
+    def sentence_search(self, sentence: str, language_code: str) -> list[LookupResult]:
 
         # 1. build map like this: [
         # ...
@@ -83,16 +94,22 @@ class Dictionary:
         # ((4,11), 'bar baz', 'BRBZ')
         # ((17,24), 'ber buz', 'BRBZ')
 
+        @dataclass(frozen=True)
+        class WordTrack:
+            span: Span
+            text: str
+            simple_phonetic: str
+
         words_track_list = [
-            (
-                indices,
-                sentence[slice(*indices)],
-                simplephone(phonetic(sentence[slice(*indices)], language_code)) or ''
+            WordTrack(
+                span=Span(*indices),
+                text=sentence[slice(*indices)],
+                simple_phonetic=simplephone(phonetic(sentence[slice(*indices)], language_code)) or ''
             )
             for indices in split_indices(sentence)
         ]
 
-        simple_sentence = ''.join(word for _, word, _ in words_track_list)
+        simple_sentence = ''.join(w.text for w in words_track_list)
 
         all_matches = self.storage.search_contains_simple_phonetic(simple_sentence)
         grouped_matches = groupby(all_matches, key=lambda x: x.simple_phonetic)
@@ -100,19 +117,22 @@ class Dictionary:
         if not all_matches:
             return []
 
-        backtacked_matches = []
+        backtacked_matches: list[LookupResult] = []
         # for each matched simple code from the dictionary
         for simple_name, dictionary_matches in grouped_matches:
             # simple_name - simple code of a multiword name from dictionary
 
             # for each occurrence of the simple code in the sentence
-            for words_indices in find_substring_in_words_map(simple_name, [w[2] for w in words_track_list]):
-                # combine indices per word into one multiword indices tuple
-                subsentence_str = ' '.join(words_track_list[i][1] for i in words_indices)
-                # subsentence_simple = ''.join(words_track_list[i][2] for i in words_indices)
-                subsentence_indices = (words_track_list[words_indices[0]][0], words_track_list[words_indices[-1]][0])
+            for words_indices in find_substring_in_words_map(simple_name, [w.simple_phonetic for w in words_track_list]):
+                # combine spans per word into one multiword span
+                subsentence_str = ' '.join(words_track_list[i].text for i in words_indices)
+                span_start = words_track_list[words_indices[0]].span.start
+                span_end = words_track_list[words_indices[-1]].span.end
 
-                backtacked_matches.append((subsentence_indices, self._sort_matches(language_code, subsentence_str, dictionary_matches)))
+                backtacked_matches.append(LookupResult(
+                    Span(span_start, span_end),
+                    self._sort_matches(language_code, subsentence_str, dictionary_matches)
+                ))
 
         return backtacked_matches
 
