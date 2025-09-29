@@ -1,6 +1,7 @@
 
 import pytest
 
+from stark.tools.levenshtein import levenshtein_match
 from stark.tools.phonetic.ipa import phonetic
 from stark.tools.phonetic.simplephone import simplephone
 
@@ -63,9 +64,10 @@ def test_phonetic_equivalence(original_str: str, similar_str: str):
 
     print(f"phonetic({orig!r}, {lang1!r}) = {phonetic_orig!r} -> simplephone = {simple_orig!r}")
     print(f"phonetic({sim!r}, {lang2!r}) = {phonetic_sim!r} -> simplephone = {simple_sim!r}")
-    
+
     def compare_simples(s1, s2):
-        return 
+        # return s1 == s2
+        return levenshtein_match(s1, s2, 0.85)
 
     matches = {
         f'{phonetic_orig} -> {simple_orig} != {simple_sim} <- {phonetic_sim}': compare_simples(simple_orig, simple_sim),
