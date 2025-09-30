@@ -5,24 +5,24 @@ from stark.tools.levenshtein import SIMPLEPHONE_PROXIMITY_GRAPH
 
 
 @pytest.mark.parametrize(
-    "a,b,expected",
+    "a,b,expected", # length, distance
     [
         ("", "", (0, 0)),
-        ("a", "", (1, 0)),
-        ("", "a", (1, 0)),
-        ("a", "a", (0, 1)),
+        ("a", "", (0, 1)),
+        ("", "a", (0, 1)),
+        ("a", "a", (1, 0)),
         ("a", "b", (1, 1)),
-        ("ab", "ab", (0, 2)),
+        ("ab", "ab", (2, 0)),
         ("ab", "ba", (2, 2)),
-        ("abc", "yabcx", (2, 5)),
-        ("yabcx", "abc", (2, 3)),
-        ("sitting", "kitten", (3, 6)),
-        ("kitten", "sitting", (3, 7)),
-        ("flaw", "lawn", (2, 4)),
-        ("elephant", "relevant", (3, 8)),
-        ("relevant", "elephant", (3, 8)),
-        ("saturday", "sunday", (3, 6)),
-        ("sunday", "saturday", (3, 8)),
+        ("abc", "yabcx", (5, 2)),
+        ("yabcx", "abc", (3, 2)),
+        ("sitting", "kitten", (6, 3)),
+        ("kitten", "sitting", (7, 3)),
+        ("flaw", "lawn", (4, 2)),
+        ("elephant", "relevant", (8, 3)),
+        ("relevant", "elephant", (8, 3)),
+        ("saturday", "sunday", (6, 3)),
+        ("sunday", "saturday", (8, 3)),
     ]
 )
 def test_levenshtein_distance_basic(a: str, b: str, expected: tuple[int, int]) -> None:
@@ -31,9 +31,9 @@ def test_levenshtein_distance_basic(a: str, b: str, expected: tuple[int, int]) -
 @pytest.mark.parametrize(
     "a,b,proximity_graph,expected",
     [
-        ("ab", "ba", SIMPLEPHONE_PROXIMITY_GRAPH, (1.25, 2)),
-        ("a", "w", SIMPLEPHONE_PROXIMITY_GRAPH, (0.25, 1)),
-        ("w", "f", SIMPLEPHONE_PROXIMITY_GRAPH, (0.5, 1)),
+        ("ab", "ba", SIMPLEPHONE_PROXIMITY_GRAPH, (2, 1.25)),
+        ("a", "w", SIMPLEPHONE_PROXIMITY_GRAPH, (1, 0.25)),
+        ("w", "f", SIMPLEPHONE_PROXIMITY_GRAPH, (1, 0.5)),
     ]
 )
 def test_levenshtein_distance__proximity(a: str, b: str, proximity_graph, expected: tuple[float, int]) -> None:
@@ -42,30 +42,36 @@ def test_levenshtein_distance__proximity(a: str, b: str, proximity_graph, expect
 @pytest.mark.parametrize(
     "a,b,expected",
     [
-        ("lnknpk", "ln kn pk", (0, 6)),
-        ("lnknpk", "ln kn pk", (0, 6)),
-        ("ln kn pk", "lnknpk", (0, 8)),
-        ("lnk npk", "lnknpk", (0, 7))
+        ("lnknpk", "ln kn pk", (6, 0)),
+        ("lnknpk", "ln kn pk", (6, 0)),
+        ("ln kn pk", "lnknpk", (8, 0)),
+        ("lnk npk", "lnknpk", (7, 0)),
     ]
 )
 def test_levenshtein_distance__skip_spaces(a: str, b: str, expected: tuple[int, int]) -> None:
-    assert levenshtein.levenshtein_distance(a, b, skip_spaces=True) == expected
+    assert levenshtein.levenshtein_distance(a, b, proximity_graph={
+        ' ': {'-': 0}, # space removed from s1
+        '-': {' ': 0} # space inserted in s1
+    }) == expected
 
 @pytest.mark.parametrize(
     "a,b,expected",
     [
         # full match catched early
-        ("lnknpk", "ln kn pk", (0, 8)),
-        ("lnknpk", "ln kn pk", (0, 8)),
-        ("lnk npk", "lnknpk", (0, 6)),
-        ("ln kn pk", "lnknpk", (0, 6)),
+        ("lnknpk", "ln kn pk", (8, 0)),
+        ("lnknpk", "ln kn pk", (8, 0)),
+        ("lnk npk", "lnknpk", (6, 0)),
+        ("ln kn pk", "lnknpk", (6, 0)),
         # DP table case
-        ("lnknpk", "l n k n p k sit amet", (0, 11)),
-        ("l n k n p k", "lnknpk sit amet", (0, 6)),
+        ("lnknpk", "l n k n p k sit amet", (11, 0)),
+        ("l n k n p k", "lnknpk sit amet", (6, 0)),
     ]
 )
 def test_levenshtein_distance__skip_spaces__square(a: str, b: str, expected: tuple[int, int]) -> None:
-    assert levenshtein.levenshtein_distance(a, b, skip_spaces=True, square=True, proximity_graph={' ': {'': 0}, '': {' ': 0}}) == expected
+    assert levenshtein.levenshtein_distance(a, b, narrow=True, proximity_graph={
+        ' ': {'-': 0}, # space removed from s1
+        '-': {' ': 0} # space inserted in s1
+    }) == expected
 
 # TODO: def test_levenshtein_distance__square
 # TODO: def test_levenshtein_distance__max_distance
@@ -112,5 +118,8 @@ def test_levenshtein_distance__skip_spaces__square(a: str, b: str, expected: tup
     ]
 )
 def test_levenshtein_substrings_search_cases(query, string, min_similarity, expected):
-    result = list(levenshtein.levenshtein_substrings_search(query, string, min_similarity, skip_spaces=True))
+    result = list(levenshtein.levenshtein_substrings_search(query, string, min_similarity, proximity_graph={
+                ' ': {'-': 0}, # space removed from s1
+                '-': {' ': 0} # space inserted in s1
+            }))
     assert result == expected
