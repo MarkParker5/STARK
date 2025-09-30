@@ -65,7 +65,7 @@ def test_levenshtein_distance__skip_spaces(a: str, b: str, expected: tuple[int, 
     ]
 )
 def test_levenshtein_distance__skip_spaces__square(a: str, b: str, expected: tuple[int, int]) -> None:
-    assert levenshtein.levenshtein_distance(a, b, skip_spaces=True, square=True) == expected
+    assert levenshtein.levenshtein_distance(a, b, skip_spaces=True, square=True, proximity_graph={' ': {'': 0}, '': {' ': 0}}) == expected
 
 # TODO: def test_levenshtein_distance__square
 # TODO: def test_levenshtein_distance__max_distance
