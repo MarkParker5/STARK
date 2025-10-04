@@ -1,12 +1,49 @@
 import logging
-from enum import Enum, auto
+from dataclasses import dataclass, field
 
-from typing_extensions import NamedTuple
+from typing_extensions import Iterable, NamedTuple
 
 logger = logging.getLogger(__name__)
-from typing import Generator
 
 import numpy as np
+
+# # Shortcut full match
+
+# if s1 == s2:
+#     return (0, len(s2))
+
+# if skip_spaces and s1.replace(' ', '') == s2.replace(' ', ''):
+#     return (0, len(s2))
+
+# # Handle empty string cases
+
+# if not s1 or (skip_spaces and s1.replace(' ', '') == ''):
+#     return (len(s2), 0)
+# if not s2 or (skip_spaces and s2.replace(' ', '') == ''):
+#     return (len(s2), 0)
+
+def fordward_fill(arr: Iterable[float], backward: bool = False) -> Iterable[float]:
+    arr = list(arr)
+    enumerated = enumerate(arr)
+    if not backward: # if first
+        enumerated = list(enumerated)[::-1] # fill from end to start
+    last_value = 0
+    for i, val in enumerated:
+        if val == 0:
+            arr[i] = last_value
+        else:
+            last_value = val
+    return arr
+
+def extremums(arr: list[float], last: bool = False, minima=True) -> Iterable[int]:
+    # first derivative sign - track growth
+    diff_sign = np.sign(np.diff(arr))
+    # remove plateaus by forward-filling zeros with the last non-zero value to highlight extremes
+    diff_sign = fordward_fill(diff_sign, last)
+    # plot_chart(diff_sign, s2, 'Diff filled')
+    # second derivative - detect changes in growth direction - concavity
+    diff2 = np.diff(diff_sign)
+    return np.argwhere(diff2 > 0 if minima else diff2 < 0).flatten() # return indices of up/down concave extremes
 
 '''
 Directional proximity between characters, used for calculating the cost of substitution, insertion, and deletion.
@@ -42,30 +79,17 @@ class Span(NamedTuple):
     def __repr__(self) -> str:
         return f'({self.start}, {self.end})'
 
-# # Shortcut full match
+@dataclass
+class LevenshteinParams:
+    s1: str
+    s2: str
+    max_distance: float | None = None
+    proximity_graph: ProximityGraph = field(default_factory=dict)
+    ignore_prefix: bool = False
+    ignore_suffix: bool = False
+    narrow: bool = False
 
-# if s1 == s2:
-#     return (0, len(s2))
-
-# if skip_spaces and s1.replace(' ', '') == s2.replace(' ', ''):
-#     return (0, len(s2))
-
-# # Handle empty string cases
-
-# if not s1 or (skip_spaces and s1.replace(' ', '') == ''):
-#     return (len(s2), 0)
-# if not s2 or (skip_spaces and s2.replace(' ', '') == ''):
-#     return (len(s2), 0)
-
-def levenshtein_matrix(
-    s1: str,
-    s2: str,
-    max_distance: float | None = None,
-    narrow: bool = True,
-    proximity_graph: ProximityGraph = {},
-    ignore_prefix: bool = False,
-    ignore_suffix: bool = False,
-) -> np.ndarray:
+def levenshtein_matrix(params: LevenshteinParams) -> np.ndarray:
     '''
     Calculates the Levenshtein distance between two strings s1 and s2.
     Max distance stops the calculations early if the distance exceeds the max_distance for better performance.
@@ -75,19 +99,17 @@ def levenshtein_matrix(
     If ignore_prefix is True, there is no penalty for prefix mismatches in s1 (like substring matching).
     If ignore_suffix is True, there is no penalty for suffix mismatches in s1 (like substring matching).
     '''
-    narrow = False # TODO: review implementation, produces wrong results
 
-    abs_max_distance = min(len(s1), len(s2)) if narrow else max(len(s1), len(s2))
-    max_distance = max_distance if max_distance is not None else abs_max_distance
-
-    # Start the main part
-
-    s1_len = len(s1)
-    s2_len = len(s2)
+    p = params
+    p.narrow = False # TODO: review implementation, produces wrong results
+    s1_len = len(p.s1)
+    s2_len = len(p.s2)
+    abs_max_distance = min(s1_len, s2_len) if p.narrow else max(s1_len, s2_len)
+    max_distance = p.max_distance if p.max_distance is not None else abs_max_distance
 
     matrix = np.full((s1_len + 1, s2_len + 1), 1e6, dtype=float)
     matrix[:, 0] = np.arange(s1_len + 1)
-    matrix[0, :] = 0 if ignore_prefix else np.arange(s2_len + 1)
+    matrix[0, :] = 0 if p.ignore_prefix else np.arange(s2_len + 1)
     best_column = 0
 
     # start substring distance evalution (filling matrix rows)
@@ -112,8 +134,8 @@ def levenshtein_matrix(
                 ins_cost = proximity_graph.get('-', {}).get(char2, 1.0)
                 sub_cost = proximity_graph.get(char1, {}).get(char2, 1.0)
 
-                # If ignore_suffix is True and we're at the last row, insertion cost is 0 (no penalty for suffix in long string)
-                ins_cost = 0 if ignore_suffix and row_i == s1_len else ins_cost
+                # the last row represents suffix
+                ins_cost = 0 if p.ignore_suffix and row_i == s1_len else ins_cost
 
                 cell_value = min( # save min full cost for this step
                     matrix[row_i - 1, cell_i] + del_cost,    # deletion
@@ -124,8 +146,7 @@ def levenshtein_matrix(
             matrix[row_i, cell_i] = cell_value = min(cell_value, 1e6)
             # logger.debug(f"Cell ({row_i}={char1}, {cell_i}={char2}) value: {cell_value}")
 
-            # cut off corners if optimisation param is set
-            if narrow:
+            if p.narrow: # cut off corners if optimisation param is set
                 # remove bottom left corner
                 if cell_value < matrix[row_i, cell_i-1]:
                     # fill next row from the column to the left of the current column by skipping leftmost cells
@@ -146,136 +167,52 @@ def levenshtein_matrix(
             return matrix
 
     # return fully filled dp
-    logger.debug(f"Returning matrix of size {matrix.shape} for {s1=} {s2=}")
+    logger.debug(f"Returning matrix of size {matrix.shape} for {p.s1=} {p.s2=}")
     return matrix
 
-class LevenshteinDistanceMode(Enum):
-    LONG = auto()
-    SHORT = auto()
-    SUBSTRING = auto()
+def levenshtein_distance(params: LevenshteinParams) -> float:
+    ...
 
-def levenshtein_distance(
-    s1: str,
-    s2: str,
-    max_distance: float | None = None,
-    narrow: bool = False,
-    mode: LevenshteinDistanceMode = LevenshteinDistanceMode.LONG,
-    proximity_graph: ProximityGraph = {}
-) -> tuple[Span, float]:
-    '''
-    Returns the length of a substr in the longer string (s2 if equal) for the best levenshtein match with the shorter string, and the best distance for that length.
-    Modes:
-        - LONG: matches two strings / full distance, max is the len of the longer string
-        - SHORT: matches shorter string inside the longer one / best distance to make the shorter string match the longer string substring of the same length (square matrix), better for default edit operation cost
-        - SUBSTRING: returns the best matched common substring between the longer and the shorter strings - better with custom float or 0 edit operation costs
-    '''
-    s1, s2 = (s1, s2) if len(s1) <= len(s2) else (s2, s1) # make sure s2 is longer than s1
-    matrix = levenshtein_matrix(s1, s2, max_distance, narrow, proximity_graph)
-    best_start = 0
+def levenshtein_similarity(params: LevenshteinParams) -> float:
+    ...
 
-    match mode:
-        case LevenshteinDistanceMode.LONG:
-            best_end = len(s2) # match of both full-length  s1 and s2
-            best_distance = float(matrix[-1, best_end])
-        case LevenshteinDistanceMode.SHORT:
-            best_end = len(s1) # full length of s1, and partial s2? Should look for min instead? Check short vs substring
-            best_distance = float(matrix[-1, best_end])
-        case LevenshteinDistanceMode.SUBSTRING:
-            best_end = int(np.argmin(matrix[-1, :])) # min in the last row - the best common span between full s1 and partial s2 (cuts the trailing part)
-            best_distance_for_end = float(matrix[-1, best_end])
-            logger.debug(f'{best_end=} {best_distance_for_end=}')
+def levenshtein_match(params: LevenshteinParams) -> float:
+    ...
 
-            # now cut the leading part
-            reverse_matrix = levenshtein_matrix(
-                s1[::-1],
-                s2[best_end-1::-1], # same as s2[:best_end][::-1]
-                max_distance,
-                narrow,
-                proximity_graph
-            )
-            best_start = int(np.argmin(reverse_matrix[-1, ::-1])) # :-1 to unreverse the matrix and get a correct index
-            reverse_full_distance = float(reverse_matrix[-1, -1])
-            reverse_best_distance = float(reverse_matrix[-1, -(best_start + 1)]) # +1 is just to make negative index work
-            reverse_preserved_distance = reverse_full_distance - reverse_best_distance
-            best_distance = best_distance_for_end - reverse_preserved_distance
-            logger.debug(f"{reverse_full_distance=} {reverse_best_distance=} {reverse_preserved_distance=}")
-            logger.debug(f'{s2=} {s2[best_end-1::-1]=}')
-            logger.debug(f"{best_start=} {best_end=} -> {s2[best_start:best_end]}")
-    logger.debug(f"Best span with mode {mode}: {best_start, best_end}; Distance: {best_distance}")
-    if best_start >= best_end:
-        logger.debug("Negative span, returning full mismatch")
-        return Span.zero, len(s2)
-    return Span(best_start, best_end), float(best_distance)
+def levenshtein_substring_distance(params: LevenshteinParams) -> Iterable[tuple[Span, float]]:
+    '''Returns the length of a substr in the longer string (s2 if equal) for the best levenshtein match with the shorter string, and the best distance for that length.'''
+    p = params
+    p.s1, p.s2 = (p.s1, p.s2) if len(p.s1) <= len(p.s2) else (p.s2, p.s1) # make sure s2 is longer than s1
+    matrix = levenshtein_matrix(p)
 
-def levenshtein_similarity(
-    s1: str,
-    s2: str,
-    min_similarity: float = 0,
-    narrow: bool = False,
-    mode: LevenshteinDistanceMode = LevenshteinDistanceMode.LONG,
-    proximity_graph: ProximityGraph = {}
-) -> tuple[Span, float]:
+    p.s1 = p.s1[::-1]
+    p.s2 = p.s2[::-1]
+    r_matrix = levenshtein_matrix(p)
+    r_matrix = np.roll(r_matrix[::-1, ::-1], shift=1, axis=1) # recover s1 direction
+
+    starts = extremums(r_matrix[0, :], last=True, minima=True)
+    ends = extremums(matrix[-1, :], last=True, minima=True)
+    distances = matrix[-1, ends]
+    spans = map(Span, zip(starts, ends))
+
+    return zip(spans, distances)
+
+def levenshtein_similarity(params: LevenshteinParams, min_similarity: float = 0) -> list[tuple[Span, float]]:
     '''
     Computes the similarity between two strings using the Levenshtein distance. Output: 0...1 where 1 indicates perfect similarity and 0 indicates perfect mismatch. The length of s1 is used to calculate the maximum possible distance. Returns the best length of s2 to maximally match s1, and the similarity score.
     '''
+    p = params
     tolerance = 1 - min_similarity
-    max_total_distance = max(len(s1), len(s2)) if mode == LevenshteinDistanceMode.LONG else min(len(s1), len(s2))
+    max_total_distance = min(len(p.s1), len(p.s2)) if p.ignore_prefix and p.ignore_suffix else max(len(p.s1), len(p.s2))
     max_allowed_distance = round(max_total_distance * tolerance)
-    span, distance = levenshtein_distance(s1, s2, max_allowed_distance, narrow, mode=mode, proximity_graph=proximity_graph)
-    similarity = 1 - distance / span.length if span else 0.0
-    logger.debug(f"Similarity: {similarity:.2f}")
-    return span, similarity
+    p.max_distance = max_allowed_distance
+    return [(span, (1 - distance / span.length if span else 0.0)) for span, distance in levenshtein_distance(p)]
 
-def levenshtein_match(
-    s1: str,
-    s2: str,
-    min_similarity: float,
-    narrow: bool = False,
-    mode: LevenshteinDistanceMode = LevenshteinDistanceMode.LONG,
-    proximity_graph: ProximityGraph = {}
-) -> tuple[Span, bool]:
+def levenshtein_search_substring(params: LevenshteinParams, min_similarity: float = 0) -> list[tuple[Span, float]]:
     '''
     Checks if two strings are similar enough based on the Levenshtein distance. Returns the best length of s2 to maximally match s1, and whether it's a match. Length value is only meaningful when the match is true.
     '''
-    span, similarity = levenshtein_similarity(s1, s2, min_similarity, narrow, mode=mode, proximity_graph=proximity_graph)
-    logger.debug(f"Match: {similarity >= min_similarity} ({similarity=:.2f} {min_similarity=})")
-    return span, similarity >= min_similarity
-
-def levenshtein_substrings_search(
-    query: str,
-    string: str,
-    min_similarity: float,
-    mode=LevenshteinDistanceMode.LONG,
-    proximity_graph: ProximityGraph = {}
-) -> Generator[Span, None, None]:
-    '''
-    Searches substrings similar to `query` in `string`. Weighted by similarity, optimized with early exists, spaces are skipped. min_similarity=0.9 means not less than 90% of strings matches.
-    '''
-
-    if not query or not string:
-        return
-
-    query = query.replace(' ', '')
-    string = string.strip()
-
-    # iterate over each candidate substring of `string` (sliding window)
-    # TODO: iterate words instead of chars?
-    i = -1
-    while i < len(string)-1:
-        i += 1
-        if string[i] == ' ':
-            # string with leading space and without are the same, so we can skip it
-            continue
-
-        span, is_match = levenshtein_match(query, string[i:], min_similarity, mode=mode, proximity_graph=proximity_graph)
-        if is_match:
-            assert span
-            yield Span(i+span.start, i + span.end)
-            i += max(0, span.end) # skip matched substring;
-            # TODO: review cases of overlapping improving or degrading results
-            # TODO: cutting the left part of the string can give better results
-            # TODO: right part isn't cutting well too
-        break
+    return [(span, similarity) for span, similarity in levenshtein_similarity(params, min_similarity) if similarity >= min_similarity]
 
 if __name__ == '__main__':
 
@@ -283,59 +220,70 @@ if __name__ == '__main__':
     logger.setLevel(logging.DEBUG)
 
     # s1 = 'abcl n k n p k'
-    # s2 = 'abclnknpk sit amet'
-    # s1 = 'abcl n p n k zzz'
-    # s1 = 'abcl n p n k'
-    # s2 = 'abclnknpk sit amet'
-    # s1 = 'Facebookeeee'
-    # s2 = 'google'
-    # s1 = 'google'
-    # s2 = 'Facebookeeee'
-    # s1 = 'flaw'
-    # s2 = 'lawn'
-    # s1 = 'sunday'
-    # s2 = 'saturday'
-    # s1 = 'elephant'
-    # s2 = 'relevant'
-    # s1 = 'sitting'[::-1]
-    # s2 = 'kitten'[::-1]
-    # s1 = 'sunday'
-    # s2 = 'saturday'
-    # s1 = 'sunday'[::-1]
-    # s2 = 'saturday'[::-1]
-    # s1 = 'abc'
-    # s2 = 'abcyz'
-    # s2 = 'xabcyz'
-    # s1 = 'cat'
-    # s2 = 'cat sat'
-    # s2 = 'the cat sat'
-    s1 = 'def'
-    s2 = 'abcdefghj'
-    # s1 = 'abcdefghj'
-    # s2 = 'def'
+        # s2 = 'abclnknpk sit amet'
+        # s1 = 'abcl n p n k zzz'
+        # s1 = 'abcl n p n k'
+        # s2 = 'abclnknpk sit amet'
+        # s1 = 'Facebookeeee'
+        # s2 = 'google'
+        # s1 = 'google'
+        # s2 = 'Facebookeeee'
+        # s1 = 'flaw'
+        # s2 = 'lawn'
+        # s1 = 'sunday'
+        # s2 = 'saturday'
+        # s1 = 'elephant'
+        # s2 = 'relevant'
+        # s1 = 'sitting'[::-1]
+        # s2 = 'kitten'[::-1]
+        # s1 = 'sunday'
+        # s2 = 'saturday'
+        # s1 = 'sunday'[::-1]
+        # s2 = 'saturday'[::-1]
+        # s1 = 'abc'
+        # s2 = 'abcyz'
+        # s2 = 'xabcyz'
+        # s1 = 'cat'
+        # s2 = 'cat sat'
+        # s2 = 'the cat sat'
+        # s1 = 'def'
+        # s2 = 'abcdefghj'
+        # s1 = 'abcdefghj'
+        # s2 = 'def'
+        # s1 = 'c a t'
+        # s2 = 'abc cat def c at ghj c a t klm'
+        # s2 = 'abc cad def bat ghj s a d klm waxt nop'
+
+    s1 = 'hey ho'
+    s2 = 'abc he yyo def keyh o ghj heyho klm'
+
     narrow=False
     proximity_graph={
         ' ': {'-': 0.0}, # space removed from s1
         '-': {' ': 0} # space inserted in s1
     }
     ignore_prefix = True # does great job
-    ignore_suffix = True # looks like over removing distance
+    ignore_suffix = False # looks like over removing distance
 
     dp = levenshtein_matrix(
-        s1=s1,
-        s2=s2,
-        narrow=narrow,
-        proximity_graph=proximity_graph,
-        ignore_prefix=ignore_prefix,
-        ignore_suffix=ignore_suffix
+        LevenshteinParams(
+            s1=s1,
+            s2=s2,
+            narrow=narrow,
+            proximity_graph=proximity_graph,
+            ignore_prefix=ignore_prefix,
+            ignore_suffix=ignore_suffix
+        )
     )
     rdp = levenshtein_matrix(
-        s1=s1[::-1],
-        s2=s2[::-1],
-        narrow=narrow,
-        proximity_graph=proximity_graph,
-        ignore_prefix=ignore_prefix,
-        ignore_suffix=ignore_suffix
+        LevenshteinParams(
+            s1=s1[::-1],
+            s2=s2[::-1],
+            narrow=narrow,
+            proximity_graph=proximity_graph,
+            ignore_prefix=ignore_prefix,
+            ignore_suffix=ignore_suffix
+        )
     )
 
     # print(dp.shape)
@@ -344,9 +292,10 @@ if __name__ == '__main__':
     # Plot:
 
     import matplotlib.pyplot as plt
-    import numpy as np
 
-    def plot(dp, s1, s2):
+    def plot(dp, s1, s2, s1_list = None, s2_list = None):
+        s1_list = s1_list or ['s1'] + list(s1)
+        s2_list = s2_list or ['s2'] + list(s2)
         def auto_figsize(arr: np.ndarray, cell_w: float = 0.6, cell_h: float = 0.6) -> tuple[float, float]:
             return arr.shape[1] * cell_w, arr.shape[0] * cell_h
 
@@ -359,11 +308,50 @@ if __name__ == '__main__':
                 ax.text(j, i, f'{val:.1f}', va='center', ha='center', color='white', fontsize=8, fontweight=weight)
         ax.set_xticks(range(len(s2)+1))
         ax.set_yticks(range(len(s1)+1))
-        ax.set_xticklabels(['s2']+list(s2))
-        ax.set_yticklabels(['s1']+list(s1))
+        ax.set_xticklabels(s2_list)
+        ax.set_yticklabels(s1_list)
         plt.colorbar(cax, ax=ax)
         plt.tight_layout()
 
-    plot(rdp, s1[::-1], s2[::-1])
+    def plot_chart(values: np.ndarray, s2, title: str):
+        fig, ax = plt.subplots(figsize=(len(s2) * 0.6, 2.5))
+        bars = ax.bar(range(len(values)), values, color=plt.cm.viridis(values / (values.max() or 1)))
+        for i, val in enumerate(values):
+            weight = 'bold' if val == 0 else 'normal'
+            ax.text(i, val, f'{val:.1f}', ha='center', va='bottom',
+                    color='white', fontsize=8, fontweight=weight)
+        ax.set_xticks(range(len(s2)))
+        ax.set_xticklabels(list(s2))
+        ax.set_title(title)
+        plt.tight_layout()
+
+    rdp = rdp[::-1, ::-1]
+    rdp = np.roll(rdp, shift=1, axis=1)
+    # sums = np.array([np.add.reduce(dp + rdp),])
+    # mins = np.array([np.minimum.reduce(dp + rdp),])
+    # sums = np.add.reduce(dp + rdp)
+    # mins = np.minimum.reduce(dp + rdp)
     plot(dp, s1, s2)
+    plot(rdp, s1, s2)
+
+    # plot(dp + rdp, s1, s2)
+    # plot_chart(sums, s2, 'Column sums')
+    # plot_chart(mins, s2, 'Column mins')
+
+    # plot_chart(rdp[0, :], s2, 'Start distances')
+    # plot_chart(dp[-1, :], s2, 'End distances')
+
+    starts = extremums(rdp[0, :], last=True, minima=True)
+    ends = extremums(dp[-1, :], last=True, minima=True)
+    distances = dp[-1, ends]
+    distances2 = rdp[0, starts] # should be the same
+    print(f'{distances}')
+    print(f'{distances2}')
+
+    # print(f'{starts=}\n{ends=}')
+    spans = list(zip(starts, ends))
+    # print(f'{spans=}')
+    for span in spans:
+        print(span, s2[slice(*span)])
+
     plt.show()  # <- show both at once

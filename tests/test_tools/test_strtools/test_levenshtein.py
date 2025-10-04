@@ -109,6 +109,7 @@ def test_levenshtein_distance__skip_spaces(a: str, b: str, exp_span: tuple[int, 
         ("l n k n p k", "lnknpk sit amet", (0, 6), 0),
         ("cat sat", "cat", (0, 3), 0),
         ("the cat sat", "cat", (4, 7), 0),
+        ("abc cat def cat ghj cat klm", "cat", (4, 7), 0),
         # ("cat", "the cat sat", (4, 7), 0),
     ]
 )
