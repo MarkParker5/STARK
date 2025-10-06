@@ -7,6 +7,8 @@ logger = logging.getLogger(__name__)
 
 import numpy as np
 
+# --- Notes ---
+
 # # Shortcut full match
 
 # if s1 == s2:
@@ -22,6 +24,8 @@ import numpy as np
 # if not s2 or (skip_spaces and s2.replace(' ', '') == ''):
 #     return (len(s2), 0)
 
+# --- Calculus ---
+
 def fordward_fill(arr: Iterable[float], backward: bool = False) -> Iterable[float]:
     arr = list(arr)
     enumerated = enumerate(arr)
@@ -35,30 +39,19 @@ def fordward_fill(arr: Iterable[float], backward: bool = False) -> Iterable[floa
             last_value = val
     return arr
 
-def extremums(arr: list[float], last: bool = False, minima=True) -> Iterable[int]:
+def extremums(arr: list[float], last: bool = False, minima=True) -> np.ndarray[int]:
     # first derivative sign - track growth
     diff_sign = np.sign(np.diff(arr))
     # remove plateaus by forward-filling zeros with the last non-zero value to highlight extremes
     diff_sign = fordward_fill(diff_sign, last)
+    # add trailing bound to catch continuous growth case
+    diff_sign = np.append(diff_sign, 1e6 if minima else -1e6)
     # plot_chart(diff_sign, s2, 'Diff filled')
     # second derivative - detect changes in growth direction - concavity
     diff2 = np.diff(diff_sign)
     return np.argwhere(diff2 > 0 if minima else diff2 < 0).flatten() # return indices of up/down concave extremes
 
-'''
-Directional proximity between characters, used for calculating the cost of substitution, insertion, and deletion.
-'''
-PROX_MED = 0.5
-PROX_LOW = 0.25
-type ProximityGraph = dict[str, dict[str, float]]
-SIMPLEPHONE_PROXIMITY_GRAPH: ProximityGraph = {
-    'w': {'f': PROX_MED, 'a': PROX_LOW, 'y': PROX_LOW},
-    'y': {'a': PROX_LOW, 'w': PROX_LOW},
-    'a': {'y': PROX_LOW, 'w': PROX_LOW, '-': PROX_LOW}, # '-' for deletion
-    'f': {'w': PROX_MED},
-    ' ': {'-': 0},
-    '-': {'a': PROX_LOW, ' ': 0}, # insertion
-}
+# --- Models ---
 
 class Span(NamedTuple):
     start: int
@@ -79,6 +72,11 @@ class Span(NamedTuple):
     def __repr__(self) -> str:
         return f'({self.start}, {self.end})'
 
+type ProximityGraph = dict[str, dict[str, float]]
+'''
+Directional proximity between characters, used for calculating the cost of substitution, insertion, and deletion.
+'''
+
 @dataclass
 class LevenshteinParams:
     s1: str
@@ -88,6 +86,21 @@ class LevenshteinParams:
     ignore_prefix: bool = False
     ignore_suffix: bool = False
     narrow: bool = False
+
+# --- Constants ---
+
+PROX_MED = 0.5
+PROX_LOW = 0.25
+SIMPLEPHONE_PROXIMITY_GRAPH: ProximityGraph = {
+    'w': {'f': PROX_MED, 'a': PROX_LOW, 'y': PROX_LOW},
+    'y': {'a': PROX_LOW, 'w': PROX_LOW},
+    'a': {'y': PROX_LOW, 'w': PROX_LOW, '-': PROX_LOW}, # '-' for deletion
+    'f': {'w': PROX_MED},
+    ' ': {'-': 0},
+    '-': {'a': PROX_LOW, ' ': 0}, # insertion
+}
+
+# --- Levenshtein Implementation ---
 
 def levenshtein_matrix(params: LevenshteinParams) -> np.ndarray:
     '''
@@ -115,13 +128,18 @@ def levenshtein_matrix(params: LevenshteinParams) -> np.ndarray:
     # start substring distance evalution (filling matrix rows)
     for row_i in range(1, s1_len + 1):
 
-        char1 = s1[row_i - 1]
+        char1 = p.s1[row_i - 1]
 
         # column loop (filling row cells)
-        start_column = max(1, best_column-1)
+        if p.narrow:
+            # remove bottom left corner
+            # fill next row from the column to the left of the current column by skipping leftmost cells
+            start_column = max(1, best_column-1)
+        else:
+            start_column = 1
         for cell_i in range(start_column, s2_len + 1):
 
-            char2 = s2[cell_i - 1]
+            char2 = p.s2[cell_i - 1]
 
             if char1 == char2 and matrix[row_i - 1, cell_i - 1] != 1e6: # check for 1e6 in narrow mode
                 # full match, no cost added
@@ -130,9 +148,9 @@ def levenshtein_matrix(params: LevenshteinParams) -> np.ndarray:
             else: # different characters, calculate additional cost
 
                 # get costs for char edits from the proximity graph
-                del_cost = proximity_graph.get(char1, {}).get('-', 1.0)
-                ins_cost = proximity_graph.get('-', {}).get(char2, 1.0)
-                sub_cost = proximity_graph.get(char1, {}).get(char2, 1.0)
+                del_cost = p.proximity_graph.get(char1, {}).get('-', 1.0)
+                ins_cost = p.proximity_graph.get('-', {}).get(char2, 1.0)
+                sub_cost = p.proximity_graph.get(char1, {}).get(char2, 1.0)
 
                 # the last row represents suffix
                 ins_cost = 0 if p.ignore_suffix and row_i == s1_len else ins_cost
@@ -146,40 +164,54 @@ def levenshtein_matrix(params: LevenshteinParams) -> np.ndarray:
             matrix[row_i, cell_i] = cell_value = min(cell_value, 1e6)
             # logger.debug(f"Cell ({row_i}={char1}, {cell_i}={char2}) value: {cell_value}")
 
-            if p.narrow: # cut off corners if optimisation param is set
-                # remove bottom left corner
-                if cell_value < matrix[row_i, cell_i-1]:
-                    # fill next row from the column to the left of the current column by skipping leftmost cells
-                    best_column = cell_i
+            if cell_value < matrix[row_i, cell_i-1]:
+                best_column = cell_i
+                # logger.debug(f"Best column upd: {best_column=} due to {cell_value=} < {matrix[row_i, cell_i-1]}")
+                # logger.debug(np.array2string(matrix, formatter={'float_kind': lambda x: 'x' if np.isclose(x, 1e6) else f"{x:.2f}"}))
 
-                # remove top right corner
+            if p.narrow: # remove top right corner
                 if (
                     cell_value > matrix[row_i, cell_i-1] # derivative sign is positive -> the prev was the best
                     and row_i != s1_len # don't skip the last row to set the right bottom (-1;-1) cell which represents the full distance
                 ):
                     # end this row if the path is already too far
-                    logger.debug('Skipping row')
+                    logger.debug(f'Skipping row: {matrix[row_i, cell_i]} > {matrix[row_i, cell_i-1]}')
                     break
 
         # early stop by max distance limit
         if matrix[row_i, best_column] > max_distance: # the best is worse than limit
-            logger.debug('Distance limit')
+            logger.debug(np.array2string(matrix, formatter={'float_kind': lambda x: 'x' if np.isclose(x, 1e6) else f"{x:.2f}"}))
+            logger.debug(f'Distance limit: {row_i, best_column}={matrix[row_i, best_column]} > {max_distance=}')
             return matrix
 
     # return fully filled dp
     logger.debug(f"Returning matrix of size {matrix.shape} for {p.s1=} {p.s2=}")
     return matrix
 
+# --- Single Levenshtein wrappers ---
+
 def levenshtein_distance(params: LevenshteinParams) -> float:
-    ...
+    matrix = levenshtein_matrix(params)
+    distance = float(matrix[-1, -1])
+    logger.debug(f"Distance: {distance:.2f}")
+    return distance
 
-def levenshtein_similarity(params: LevenshteinParams) -> float:
-    ...
+def levenshtein_similarity(params: LevenshteinParams, min_similarity: float = 0) -> float:
+    abs_max_distance = max(len(params.s1), len(params.s2))
+    distance_limit = abs_max_distance * (1 - min_similarity)
+    params.max_distance = distance_limit
+    distance = levenshtein_distance(params)
+    similarity = 1 - distance / abs_max_distance
+    logger.debug(f"Similarity: {similarity:.2f} as 1 - {distance:.2f}/{abs_max_distance}")
+    return similarity
 
-def levenshtein_match(params: LevenshteinParams) -> float:
-    ...
+def levenshtein_match(params: LevenshteinParams, min_similarity: float = 0) -> bool:
+    similarity = levenshtein_similarity(params, min_similarity)
+    return similarity >= min_similarity
 
-def levenshtein_substring_distance(params: LevenshteinParams) -> Iterable[tuple[Span, float]]:
+# --- Iterable Levenshtein wrappers ---
+
+def levenshtein_distance_substring(params: LevenshteinParams) -> Iterable[tuple[Span, float]]:
     '''Returns the length of a substr in the longer string (s2 if equal) for the best levenshtein match with the shorter string, and the best distance for that length.'''
     p = params
     p.s1, p.s2 = (p.s1, p.s2) if len(p.s1) <= len(p.s2) else (p.s2, p.s1) # make sure s2 is longer than s1
@@ -191,13 +223,19 @@ def levenshtein_substring_distance(params: LevenshteinParams) -> Iterable[tuple[
     r_matrix = np.roll(r_matrix[::-1, ::-1], shift=1, axis=1) # recover s1 direction
 
     starts = extremums(r_matrix[0, :], last=True, minima=True)
-    ends = extremums(matrix[-1, :], last=True, minima=True)
+    ends = extremums(matrix[-1, :], last=True, minima=True) + 1
     distances = matrix[-1, ends]
-    spans = map(Span, zip(starts, ends))
+    logger.debug(f"raw starts: {starts=}, ends: {ends=}, distances: {distances=}")
+    result = [
+        (Span(int(start), int(end)), float(distance))
+        for start, end, distance
+        in zip(starts, ends, distances)
+        if start < end
+    ]
+    logger.debug(f"Span distances: {result=}")
+    return result
 
-    return zip(spans, distances)
-
-def levenshtein_similarity(params: LevenshteinParams, min_similarity: float = 0) -> list[tuple[Span, float]]:
+def levenshtein_similarity_substring(params: LevenshteinParams, min_similarity: float = 0) -> list[tuple[Span, float]]:
     '''
     Computes the similarity between two strings using the Levenshtein distance. Output: 0...1 where 1 indicates perfect similarity and 0 indicates perfect mismatch. The length of s1 is used to calculate the maximum possible distance. Returns the best length of s2 to maximally match s1, and the similarity score.
     '''
@@ -206,13 +244,17 @@ def levenshtein_similarity(params: LevenshteinParams, min_similarity: float = 0)
     max_total_distance = min(len(p.s1), len(p.s2)) if p.ignore_prefix and p.ignore_suffix else max(len(p.s1), len(p.s2))
     max_allowed_distance = round(max_total_distance * tolerance)
     p.max_distance = max_allowed_distance
-    return [(span, (1 - distance / span.length if span else 0.0)) for span, distance in levenshtein_distance(p)]
+    similarities = [(span, (1 - distance / span.length if span else 0.0)) for span, distance in levenshtein_distance_substring(p)]
+    logger.debug(f"Similarities: {similarities}")
+    return similarities
 
 def levenshtein_search_substring(params: LevenshteinParams, min_similarity: float = 0) -> list[tuple[Span, float]]:
     '''
     Checks if two strings are similar enough based on the Levenshtein distance. Returns the best length of s2 to maximally match s1, and whether it's a match. Length value is only meaningful when the match is true.
     '''
-    return [(span, similarity) for span, similarity in levenshtein_similarity(params, min_similarity) if similarity >= min_similarity]
+    matches = [(span, similarity) for span, similarity in levenshtein_similarity_substring(params, min_similarity) if similarity >= min_similarity]
+    logger.debug(f"Matches: {matches}")
+    return matches
 
 if __name__ == '__main__':
 
@@ -220,42 +262,48 @@ if __name__ == '__main__':
     logger.setLevel(logging.DEBUG)
 
     # s1 = 'abcl n k n p k'
-        # s2 = 'abclnknpk sit amet'
-        # s1 = 'abcl n p n k zzz'
-        # s1 = 'abcl n p n k'
-        # s2 = 'abclnknpk sit amet'
-        # s1 = 'Facebookeeee'
-        # s2 = 'google'
-        # s1 = 'google'
-        # s2 = 'Facebookeeee'
-        # s1 = 'flaw'
-        # s2 = 'lawn'
-        # s1 = 'sunday'
-        # s2 = 'saturday'
-        # s1 = 'elephant'
-        # s2 = 'relevant'
-        # s1 = 'sitting'[::-1]
-        # s2 = 'kitten'[::-1]
-        # s1 = 'sunday'
-        # s2 = 'saturday'
-        # s1 = 'sunday'[::-1]
-        # s2 = 'saturday'[::-1]
-        # s1 = 'abc'
-        # s2 = 'abcyz'
-        # s2 = 'xabcyz'
-        # s1 = 'cat'
-        # s2 = 'cat sat'
-        # s2 = 'the cat sat'
-        # s1 = 'def'
-        # s2 = 'abcdefghj'
-        # s1 = 'abcdefghj'
-        # s2 = 'def'
-        # s1 = 'c a t'
-        # s2 = 'abc cat def c at ghj c a t klm'
-        # s2 = 'abc cad def bat ghj s a d klm waxt nop'
+    # s2 = 'abclnknpk sit amet'
+    # s1 = 'abc'
+    # s2 = 'xxxabcxxx'
+    # s1 = 'abcl n p n k zzz'
+    # s1 = 'abcl n p n k'
+    # s2 = 'abclnknpk sit amet'
+    # s1 = 'Facebookeeee'
+    # s2 = 'google'
+    # s1 = 'google'
+    # s2 = 'Facebookeeee'
+    # s1 = 'lawn'
+    # s2 = 'flaw'
+    # s1 = 'flaw'
+    # s2 = 'lawn'
+    s1 = 'sunday'
+    s2 = 'saturday'
+    # s1 = 'elephant'
+    # s2 = 'relevant'
+    # s1 = 'sitting'
+    # s2 = 'kitten'
+    # s1 = 'sitting'[::-1]
+    # s2 = 'kitten'[::-1]
+    # s1 = 'sunday'
+    # s2 = 'saturday'
+    # s1 = 'sunday'[::-1]
+    # s2 = 'saturday'[::-1]
+    # s1 = 'abc'
+    # s2 = 'abcyz'
+    # s2 = 'xabcyz'
+    # s1 = 'cat'
+    # s2 = 'cat sat'
+    # s2 = 'the cat sat'
+    # s1 = 'def'
+    # s2 = 'abcdefghj'
+    # s1 = 'abcdefghj'
+    # s2 = 'def'
+    # s1 = 'c a t'
+    # s2 = 'abc cat def c at ghj c a t klm'
+    # s2 = 'abc cad def bat ghj s a d klm waxt nop'
 
-    s1 = 'hey ho'
-    s2 = 'abc he yyo def keyh o ghj heyho klm'
+    # s1 = 'hey ho'
+    # s2 = 'abc he yyo def keyh o ghj heyho klm'
 
     narrow=False
     proximity_graph={
@@ -341,17 +389,27 @@ if __name__ == '__main__':
     # plot_chart(rdp[0, :], s2, 'Start distances')
     # plot_chart(dp[-1, :], s2, 'End distances')
 
-    starts = extremums(rdp[0, :], last=True, minima=True)
-    ends = extremums(dp[-1, :], last=True, minima=True)
-    distances = dp[-1, ends]
-    distances2 = rdp[0, starts] # should be the same
-    print(f'{distances}')
-    print(f'{distances2}')
+    # starts = extremums(rdp[0, :], last=True, minima=True)
+    # ends = extremums(dp[-1, :], last=True, minima=True)
+    # distances = list(map(float, dp[-1, ends]))
+    # distances2 = list(map(float, rdp[0, starts])) # should be the same
+    # print(f'{distances=}')
+    # print(f'{distances2=}')
 
-    # print(f'{starts=}\n{ends=}')
-    spans = list(zip(starts, ends))
+    # # print(f'{starts=}\n{ends=}')
+    # spans = [(int(a), int(b + 1)) for a, b in list(zip(starts, ends))]
     # print(f'{spans=}')
-    for span in spans:
-        print(span, s2[slice(*span)])
+
+    matches = levenshtein_distance_substring(LevenshteinParams(
+        s1=s1,
+        s2=s2,
+        narrow=narrow,
+        proximity_graph=proximity_graph,
+        ignore_prefix=ignore_prefix,
+        ignore_suffix=ignore_suffix
+    ))
+
+    for span, distance in matches:
+        print(span, s2[slice(*span)], distance)
 
     plt.show()  # <- show both at once

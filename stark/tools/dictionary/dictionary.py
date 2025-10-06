@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from itertools import groupby
 from typing import Iterable, Optional
 
-from stark.tools.levenshtein import levenshtein_similarity
+from stark.tools.levenshtein import levenshtein_similarity_substring
 from stark.tools.phonetic.ipa import phonetic
 from stark.tools.phonetic.simplephone import simplephone
 from stark.tools.strtools import find_substring_in_words_map, split_indices
@@ -138,7 +138,7 @@ class Dictionary:
 
     def _sort_matches(self, language_code: str, name_candidate: str, matches: Iterable[DictionaryItem]) -> list[DictionaryItem]:
         # sort by levenshtein distance of strings' latin representations
-        return sorted(matches, key=lambda match: levenshtein_similarity(phonetic(name_candidate, language_code), match.phonetic))
+        return sorted(matches, key=lambda match: levenshtein_similarity_substring(phonetic(name_candidate, language_code), match.phonetic))
 
     # ----------------------
     # Optional / Advanced
