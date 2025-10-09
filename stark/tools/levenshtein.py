@@ -45,11 +45,39 @@ def extremums(arr: list[float], last: bool = False, minima=True) -> np.ndarray[i
     # remove plateaus by forward-filling zeros with the last non-zero value to highlight extremes
     diff_sign = fordward_fill(diff_sign, last)
     # add trailing bound to catch continuous growth case
-    diff_sign = np.append(diff_sign, 1e6 if minima else -1e6)
+    diff_sign = np.append(diff_sign, 1 if minima else -1)
     # plot_chart(diff_sign, s2, 'Diff filled')
     # second derivative - detect changes in growth direction - concavity
     diff2 = np.diff(diff_sign)
     return np.argwhere(diff2 > 0 if minima else diff2 < 0).flatten() # return indices of up/down concave extremes
+
+def pathtrack_start_column(matrix: np.ndarray, rows: int, columns: int, end_column: int = -1) -> int:
+    r = rows
+    c = end_column if end_column != -1 else columns
+
+    # pathtrack to the first row
+    logger.debug('starting pathtrack')
+    while r > 0:
+        logger.debug(f"track r={r}, c={c}; v={matrix[r][c]}")
+        deletion = matrix[r-1][c]
+        substitution = matrix[r-1][c-1]
+        insertion = matrix[r][c-1]
+        minimal = min(deletion, substitution, insertion)
+
+        if minimal == substitution:
+            r -= 1
+            c -= 1
+        elif minimal == insertion:
+            c -= 1
+        elif minimal == deletion:
+            r -= 1
+
+    # # continue going left until we reach the end or the local min
+    # while c > 0 and matrix[r][c] <= matrix[r][min(c+1, columns)]:
+    #     print(f"slide r={r}, c={c}; v={matrix[r][c]}")
+    #     c -= 1
+
+    return c
 
 # --- Models ---
 
@@ -72,6 +100,10 @@ class Span(NamedTuple):
     def __repr__(self) -> str:
         return f'({self.start}, {self.end})'
 
+    @property
+    def slice(self) -> slice:
+        return slice(self.start, self.end)
+
 type ProximityGraph = dict[str, dict[str, float]]
 '''
 Directional proximity between characters, used for calculating the cost of substitution, insertion, and deletion.
@@ -86,6 +118,7 @@ class LevenshteinParams:
     ignore_prefix: bool = False
     ignore_suffix: bool = False
     narrow: bool = False
+    early_return: bool = True
 
 # --- Constants ---
 
@@ -179,7 +212,7 @@ def levenshtein_matrix(params: LevenshteinParams) -> np.ndarray:
                     break
 
         # early stop by max distance limit
-        if matrix[row_i, best_column] > max_distance: # the best is worse than limit
+        if p.early_return and matrix[row_i, best_column] > max_distance: # the best is worse than limit
             logger.debug(np.array2string(matrix, formatter={'float_kind': lambda x: 'x' if np.isclose(x, 1e6) else f"{x:.2f}"}))
             logger.debug(f'Distance limit: {row_i, best_column}={matrix[row_i, best_column]} > {max_distance=}')
             return matrix
@@ -216,24 +249,22 @@ def levenshtein_distance_substring(params: LevenshteinParams) -> Iterable[tuple[
     p = params
     p.s1, p.s2 = (p.s1, p.s2) if len(p.s1) <= len(p.s2) else (p.s2, p.s1) # make sure s2 is longer than s1
     matrix = levenshtein_matrix(p)
-
-    p.s1 = p.s1[::-1]
-    p.s2 = p.s2[::-1]
-    r_matrix = levenshtein_matrix(p)
-    r_matrix = np.roll(r_matrix[::-1, ::-1], shift=1, axis=1) # recover s1 direction
-
-    starts = extremums(r_matrix[0, :], last=True, minima=True)
     ends = extremums(matrix[-1, :], last=True, minima=True) + 1
-    distances = matrix[-1, ends]
-    logger.debug(f"raw starts: {starts=}, ends: {ends=}, distances: {distances=}")
-    result = [
-        (Span(int(start), int(end)), float(distance))
-        for start, end, distance
-        in zip(starts, ends, distances)
-        if start < end
-    ]
-    logger.debug(f"Span distances: {result=}")
-    return result
+
+    result: list[tuple[Span, float]] = []
+    last_start = 1e6
+    for end in sorted(reversed(ends), key=lambda c: matrix[-1, c]):
+        if end > last_start:
+            continue
+        start = pathtrack_start_column(matrix, len(p.s1), len(p.s2), end_column=end)
+        if start==end:
+            continue
+        distance = matrix[-1, end]
+        result.append((Span(int(start), int(end)), float(distance)))
+        last_start = start
+
+    logger.debug(f"Span distances: {[(span, distance, p.s2[span.slice]) for span, distance in result]}")
+    return sorted(result, key=lambda x: x[0].start)
 
 def levenshtein_similarity_substring(params: LevenshteinParams, min_similarity: float = 0) -> list[tuple[Span, float]]:
     '''
@@ -245,7 +276,7 @@ def levenshtein_similarity_substring(params: LevenshteinParams, min_similarity: 
     max_allowed_distance = round(max_total_distance * tolerance)
     p.max_distance = max_allowed_distance
     similarities = [(span, (1 - distance / span.length if span else 0.0)) for span, distance in levenshtein_distance_substring(p)]
-    logger.debug(f"Similarities: {similarities}")
+    logger.debug(f"Similarities: {[(span, score, p.s2[span.slice]) for span, score in similarities]}")
     return similarities
 
 def levenshtein_search_substring(params: LevenshteinParams, min_similarity: float = 0) -> list[tuple[Span, float]]:
@@ -264,7 +295,7 @@ if __name__ == '__main__':
     # s1 = 'abcl n k n p k'
     # s2 = 'abclnknpk sit amet'
     # s1 = 'abc'
-    # s2 = 'xxxabcxxx'
+    # s2 = 'xxx abc xxx'
     # s1 = 'abcl n p n k zzz'
     # s1 = 'abcl n p n k'
     # s2 = 'abclnknpk sit amet'
@@ -276,8 +307,8 @@ if __name__ == '__main__':
     # s2 = 'flaw'
     # s1 = 'flaw'
     # s2 = 'lawn'
-    s1 = 'sunday'
-    s2 = 'saturday'
+    # s1 = 'sunday'
+    # s2 = 'saturday'
     # s1 = 'elephant'
     # s2 = 'relevant'
     # s1 = 'sitting'
@@ -291,9 +322,13 @@ if __name__ == '__main__':
     # s1 = 'abc'
     # s2 = 'abcyz'
     # s2 = 'xabcyz'
-    # s1 = 'cat'
-    # s2 = 'cat sat'
+    s1 = 'cat'
+    s2 = 'the bat and sat'
+    # s1 = 'google'
+    # s2 = 'the doogle and boogle'
+    # s2 = 'the bat sat'
     # s2 = 'the cat sat'
+    # s2 = 'cat sat'
     # s1 = 'def'
     # s2 = 'abcdefghj'
     # s1 = 'abcdefghj'
@@ -307,8 +342,8 @@ if __name__ == '__main__':
 
     narrow=False
     proximity_graph={
-        ' ': {'-': 0.0}, # space removed from s1
-        '-': {' ': 0} # space inserted in s1
+        ' ': {'-': 0.01}, # space removed from s1
+        '-': {' ': 0.01} # space inserted in s1
     }
     ignore_prefix = True # does great job
     ignore_suffix = False # looks like over removing distance
@@ -323,16 +358,16 @@ if __name__ == '__main__':
             ignore_suffix=ignore_suffix
         )
     )
-    rdp = levenshtein_matrix(
-        LevenshteinParams(
-            s1=s1[::-1],
-            s2=s2[::-1],
-            narrow=narrow,
-            proximity_graph=proximity_graph,
-            ignore_prefix=ignore_prefix,
-            ignore_suffix=ignore_suffix
-        )
-    )
+    # rdp = levenshtein_matrix(
+    #     LevenshteinParams(
+    #         s1=s1[::-1],
+    #         s2=s2[::-1],
+    #         narrow=narrow,
+    #         proximity_graph=proximity_graph,
+    #         ignore_prefix=ignore_prefix,
+    #         ignore_suffix=ignore_suffix
+    #     )
+    # )
 
     # print(dp.shape)
     # dp[-1, 7] = 99
@@ -344,16 +379,19 @@ if __name__ == '__main__':
     def plot(dp, s1, s2, s1_list = None, s2_list = None):
         s1_list = s1_list or ['s1'] + list(s1)
         s2_list = s2_list or ['s2'] + list(s2)
+
         def auto_figsize(arr: np.ndarray, cell_w: float = 0.6, cell_h: float = 0.6) -> tuple[float, float]:
             return arr.shape[1] * cell_w, arr.shape[0] * cell_h
 
         fig, ax = plt.subplots(figsize=auto_figsize(dp))
         masked = np.ma.masked_where(dp >= 1e6, dp)
         cax = ax.matshow(masked, cmap='viridis', alpha=0.7)
+
         for (i, j), val in np.ndenumerate(dp):
             if val < 1e6:
                 weight = 'bold' if val == 0 else 'normal'
-                ax.text(j, i, f'{val:.1f}', va='center', ha='center', color='white', fontsize=8, fontweight=weight)
+                ax.text(j, i, f'{val:.2f}', va='center', ha='center', color='white', fontsize=8, fontweight=weight)
+
         ax.set_xticks(range(len(s2)+1))
         ax.set_yticks(range(len(s1)+1))
         ax.set_xticklabels(s2_list)
@@ -366,21 +404,21 @@ if __name__ == '__main__':
         bars = ax.bar(range(len(values)), values, color=plt.cm.viridis(values / (values.max() or 1)))
         for i, val in enumerate(values):
             weight = 'bold' if val == 0 else 'normal'
-            ax.text(i, val, f'{val:.1f}', ha='center', va='bottom',
+            ax.text(i, val, f'{val:.2f}', ha='center', va='bottom',
                     color='white', fontsize=8, fontweight=weight)
         ax.set_xticks(range(len(s2)))
         ax.set_xticklabels(list(s2))
         ax.set_title(title)
         plt.tight_layout()
 
-    rdp = rdp[::-1, ::-1]
-    rdp = np.roll(rdp, shift=1, axis=1)
+    # rdp = rdp[::-1, ::-1]
+    # rdp = np.roll(rdp, shift=1, axis=1)
     # sums = np.array([np.add.reduce(dp + rdp),])
     # mins = np.array([np.minimum.reduce(dp + rdp),])
     # sums = np.add.reduce(dp + rdp)
     # mins = np.minimum.reduce(dp + rdp)
     plot(dp, s1, s2)
-    plot(rdp, s1, s2)
+    # plot(rdp, s1, s2)
 
     # plot(dp + rdp, s1, s2)
     # plot_chart(sums, s2, 'Column sums')
@@ -399,6 +437,31 @@ if __name__ == '__main__':
     # # print(f'{starts=}\n{ends=}')
     # spans = [(int(a), int(b + 1)) for a, b in list(zip(starts, ends))]
     # print(f'{spans=}')
+
+    # TODO:
+        # test with non-symetric multiword string
+        # Regroup test cases
+
+    # ends = extremums(dp[-1, :], last=True, minima=True) + 1
+    # print(f'{ends=}')
+    # starts = [pathtrack_start_column(dp, len(s1), len(s2), end_column=end) for end in ends]
+    # spans = [(int(a), int(b + 1)) for a, b in list(zip(starts, ends))]
+    # distances = [float(dp[-1, end]) for end in ends]
+    # spans = zip(map(int, starts), map(int, ends))
+    # matches = zip(spans, distances)
+
+    # matches = []
+    # last_start = 1e6
+    # for end in sorted(reversed(ends), key=lambda x: dp[-1, x]):
+    #     print(f'Processing end={end} with distance={dp[-1, end]}, start would be {pathtrack_start_column(dp, len(s1), len(s2), end_column=end)}')
+    #     if end > last_start: # skip overlapping
+    #         continue
+    #     start = pathtrack_start_column(dp, len(s1), len(s2), end_column=end)
+    #     if start==end: # skip empty
+    #         continue
+    #     distance = dp[-1, end]
+    #     matches.append(((int(start), int(end)), float(distance)))
+    #     last_start = start
 
     matches = levenshtein_distance_substring(LevenshteinParams(
         s1=s1,

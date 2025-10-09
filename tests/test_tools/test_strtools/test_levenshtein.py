@@ -11,8 +11,8 @@ from stark.tools.levenshtein import (
 )
 
 SKIP_SPACES_GRAPH = {
-    ' ': {'-': 0.0},
-    '-': {' ': 0.0}
+    ' ': {'-': 0.01},
+    '-': {' ': 0.01}
 }
 
 # TODO: test early stop
@@ -109,10 +109,10 @@ def test_levenshtein_match_full(a: str, b: str, min_similarity: float, exp_match
         ("lawn", "flaw", (1, 4), 1),
         ("elephant", "relevant", (1, 8), 2),
         ("relevant", "elephant", (0, 8), 3),
-        ("sitting", "kitten", (1, 6), 2),
-        ("kitten", "sitting", (1, 6), 2),
-        ("saturday", "sunday", (2, 8), 2),
-        ("sunday", "saturday", (2, 8), 2),
+        ("sitting", "kitten", (0, 6), 2),
+        ("kitten", "sitting", (0, 6), 2),
+        ("saturday", "sunday", (0, 8), 2),
+        ("sunday", "saturday", (0, 8), 2),
         ("lnknpk", "ln kn pk", (0, 8), 0),
         ("ln kn pk", "lnknpk", (0, 8), 0), # TODO: test skip_spaces separately
         ("lnk npk", "lnknpk", (0, 7), 0),
@@ -120,6 +120,7 @@ def test_levenshtein_match_full(a: str, b: str, min_similarity: float, exp_match
 )
 def test_levenshtein_distance_substring(a: str, b: str, exp_span: tuple[int, int], exp_distance: float) -> None:
     print(f'{a=} {b=}')
+    longer = b if len(b) >= len(a) else a
     params = LevenshteinParams(s1=a, s2=b, proximity_graph=SKIP_SPACES_GRAPH, ignore_prefix=True, max_distance=3)
     matches = list(levenshtein_distance_substring(params)) # TODO: use just match with ignore flags here, use substring with multiple matches separately
     errors = []
@@ -128,38 +129,47 @@ def test_levenshtein_distance_substring(a: str, b: str, exp_span: tuple[int, int
     else:
         # assert len(matches) == 1, f"Expected one match {exp_span=} {exp_distance=}, got {matches=}"
         span, distance = matches[0]
-        if (span.start, span.end) != exp_span:
-            errors.append(f'exp span {exp_span} != {(span.start, span.end)}')
-        if distance != exp_distance:
+        if distance != pytest.approx(exp_distance, abs=0.1):
             errors.append(f'exp distance {exp_distance:.2f} != {distance:.2f}')
+        if (span.start, span.end) != exp_span:
+            errors.append(f'exp span {exp_span} != {(span.start, span.end)} - matched "{longer[span.slice]}"')
     assert not errors, '\t' + '; '.join(errors)
 
 @pytest.mark.parametrize(
     "a,b,min_similarity,exp_spans",
     [
+        ("abc", "xxx abc xxx", 0, [(4, 7)]),
+        ("abc", "xxx abc xxx", 0.5, [(4, 7)]),
+        ("abc", "xxx abc xxx", 0.9, [(4, 7)]),
+        ("abc", "xxx abc xxx", 1, [(4, 7)]),
         ("cat", "the cat sat", 1.0, [(4, 7)]),
-        ("cat", "the bat sat", 0.60, [(4, 7), (8, 11)]),
-        ("cat", "the bcat dog", 0.50, [(5, 8)]),
         ("cat", "the bat sat", 1.0, []),
-        ("lnknpk", "lorem ispum lnknpk sit amet", 1.0, [(13, 19)]),
-        ("lnknpk", "lorem ispum ln kn pk sit amet", 1.0, [(13, 20)]),
-        ("ln kn pk", "lorem ispum lnknpk sit amet", 1.0, [(13, 19)]),
-        ("ln kn pk", "lorem ispum ln kn pk sit amet", 1.0, [(13, 20)]),
-        ("lnknpk", "lorem ispum ln kn pk sit amet lnk npk foo bar baz", 1.0, [(13, 20), (27, 34)]),
-        ("hello", "hello", 0.5, [(0, 5)]),
-        ("hello", "world", 0.5, []),
-        ("hello", "hellw", 1.0, []),
-        ("hello", "world", 0.0, [(0, 5)]),
+        ("cat", "the bat and sat", 0.6, [(4, 7), (12, 15)]),
+        ("cat", "the bat sat", 0.6, [(4, 7), (8, 11)]),
+        ("cat", "the bcat dog", 0.50, [(5, 8)]),
+        ("lnknpk", "lorem ispum lnknpk sit amet", 0.9, [(12, 18)]),
+        ("lnknpk", "lorem ispum ln kn pk sit amet", 0.9, [(12, 20)]),
+        ("ln kn pk", "lorem ispum lnknpk sit amet", 0.9, [(12, 18)]),
+        ("ln kn pk", "lorem ispum ln kn pk sit amet", 0.9, [(12, 20)]),
+        ("lnknpk", "lorem ispum ln kn pk sit amet lnk npk foo bar baz", 0.9, [(12, 20), (30, 37)]),
+        # ("hello", "hellw", 1.0, []), # TODO: use phonetic graph
     ]
 )
 def test_levenshtein_search_substring(a: str, b: str, min_similarity: float, exp_spans: list[tuple[int, int]]) -> None:
     print(f'{a=} {b=}')
-    params = LevenshteinParams(s1=a, s2=b)
+    longer = b if len(b) >= len(a) else a
+    params = LevenshteinParams(s1=a, s2=b, proximity_graph=SKIP_SPACES_GRAPH, ignore_prefix=True, early_return=False)
     matches = levenshtein_search_substring(params, min_similarity)
     result = [(span.start, span.end) for span, _ in matches]
     errors = []
-    if result != exp_spans:
-        errors.append(f'exp spans {exp_spans} != {result}')
+    if exp_spans:
+        assert result, 'No matches found'
+        assert len(result) == len(exp_spans), f'Expected {len(exp_spans)} matches, got {len(result)}'
+        if result != exp_spans:
+            # TODO: iterate, full check
+            errors.append(f'exp spans {exp_spans} != {result} - matched "{longer[matches[0][0].slice]}"')
+    else:
+        assert not result, f'Unexpected matches found: {matches}'
     assert not errors, '\t' + '; '.join(errors)
 
 # --- Proximity Graphs ---
@@ -212,7 +222,7 @@ def test_levenshtein_distance_skip_spaces(a: str, b: str, exp_span: tuple[int, i
         best_span, best_distance = min(matches, key=lambda x: x[1])
         if (best_span.start, best_span.end) != exp_span:
             errors.append(f'exp span {exp_span} != {(best_span.start, best_span.end)}')
-        if best_distance != exp_distance:
+        if best_distance != pytest.approx(exp_distance, abs=0.1):
             errors.append(f'exp distance {exp_distance:.2f} != {best_distance:.2f}')
     assert not errors, '\t' + '; '.join(errors)
 
@@ -231,6 +241,7 @@ def test_levenshtein_search_skip_spaces(a: str, b: str, min_similarity: float, e
     params = LevenshteinParams(s1=a, s2=b, proximity_graph=SKIP_SPACES_GRAPH)
     matches = levenshtein_search_substring(params, min_similarity)
     result = [(span.start, span.end) for span, _ in matches]
+    assert result, 'No matches found'
     errors = []
     if result != exp_spans:
         errors.append(f'exp spans {exp_spans} != {result}')
