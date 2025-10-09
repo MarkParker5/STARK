@@ -8,8 +8,6 @@ from stark.tools.dictionary.storage.storage_memory import DictionaryStorageMemor
 def dictionary() -> Dictionary:
     return Dictionary(storage=DictionaryStorageMemory())
 
-xfail_cross_script = pytest.mark.xfail(reason="Phonetic matching for cross-script/cross-language not supported by current implementation")
-
 @pytest.mark.parametrize(
     "lang,name,lookup,meta_key,meta_val",
     [
