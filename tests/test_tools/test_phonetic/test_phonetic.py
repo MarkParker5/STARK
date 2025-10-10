@@ -1,7 +1,10 @@
 
 import pytest
 
-from stark.tools.levenshtein import levenshtein_match
+from stark.tools.levenshtein import (
+    LevenshteinParams,
+    levenshtein_distance,
+)
 from stark.tools.phonetic.ipa import phonetic
 from stark.tools.phonetic.simplephone import simplephone
 
@@ -16,15 +19,16 @@ from stark.tools.phonetic.simplephone import simplephone
         ("en:hello", "ru:хеллоу"),
         ("en:hi", "ru:хай"),
         ("en:hey", "ru:хай"),
-        # ("de:Nürnberg", "en:Nuremberg"), fails, too different
+        # ("de:Nürnberg", "en:Nuremberg"), # fails, too different - need to register both options for such cases
+        ("en:telegram", "ru:телеграм"),
         ("de:Nürnberg", "en:Nurnberg"),
         ("de:Nürnberg", "ru:Нюрнберг"),
-        ("ua:Київ", "ru:Киев"),
-        ("ua:Київ", "en:Kyiv"),
+        ("uk:Київ", "ru:Киев"),
+        ("uk:Київ", "en:Kyiv"),
         ("en:Czechia", "ru:Чехия"),
-        ("en:telegram", "ru:телеграм"),
         ("en:led zeppelin", "ru:ледзеплин"),
         ("en:imagine dragons", "ru:имя джин драгонс"),
+        ("en:imagine dragons", "ru:имя джин дракон"),
         ("en:linkin park", "ru:линкольн парк"),
         ("en:white", "ru:вайт"),
         ("en:white", "ru:уайт"),
@@ -66,8 +70,9 @@ def test_phonetic_equivalence(original_str: str, similar_str: str):
     print(f"phonetic({sim!r}, {lang2!r}) = {phonetic_sim!r} -> simplephone = {simple_sim!r}")
 
     def compare_simples(s1, s2):
-        # return s1 == s2
-        return levenshtein_match(s1, s2, 0.85)
+        abs_distance = levenshtein_distance(LevenshteinParams(s1, s2, max_distance=1))
+        rel_difference = abs_distance / max(len(s1), len(s2))
+        return abs_distance < 1 or rel_difference < 0.85
 
     matches = {
         f'{phonetic_orig} -> {simple_orig} != {simple_sim} <- {phonetic_sim}': compare_simples(simple_orig, simple_sim),

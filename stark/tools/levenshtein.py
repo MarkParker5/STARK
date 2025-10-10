@@ -212,7 +212,7 @@ def levenshtein_matrix(params: LevenshteinParams) -> np.ndarray:
 
         # early stop by max distance limit
         if p.early_return and matrix[row_i, best_column] > max_distance: # the best is worse than limit
-            logger.debug(np.array2string(matrix, formatter={'float_kind': lambda x: 'x' if np.isclose(x, 1e6) else f"{x:.2f}"}))
+            # logger.debug(np.array2string(matrix, formatter={'float_kind': lambda x: 'x' if np.isclose(x, 1e6) else f"{x:.2f}"}))
             logger.debug(f'Distance limit: {row_i, best_column}={matrix[row_i, best_column]} > {max_distance=}')
             return matrix
 

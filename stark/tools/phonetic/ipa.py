@@ -252,7 +252,9 @@ def ipa2lat__dict(ipa_string: str) -> str:
 
 #     return _epitran_obj(language_code).transliterate(string)
 
-# if __name__ == '__main__':
+if __name__ == '__main__':
+    print('Київ', to_ipa('Київ', 'ua'))
+    print('Київ', to_ipa('Київ', 'uk'))
 #     test_cases = [
 #         'Привет Иван как у тебя делая',
 #         'любимые занятия надо делать часто',
