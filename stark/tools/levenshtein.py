@@ -7,23 +7,6 @@ logger = logging.getLogger(__name__)
 
 import numpy as np
 
-# --- Notes ---
-
-# # Shortcut full match
-
-# if s1 == s2:
-#     return (0, len(s2))
-
-# if skip_spaces and s1.replace(' ', '') == s2.replace(' ', ''):
-#     return (0, len(s2))
-
-# # Handle empty string cases
-
-# if not s1 or (skip_spaces and s1.replace(' ', '') == ''):
-#     return (len(s2), 0)
-# if not s2 or (skip_spaces and s2.replace(' ', '') == ''):
-#     return (len(s2), 0)
-
 # --- Calculus ---
 
 def fordward_fill(arr: Iterable[float], backward: bool = False) -> Iterable[float]:
@@ -56,9 +39,9 @@ def pathtrack_start_column(matrix: np.ndarray, rows: int, columns: int, end_colu
     c = end_column if end_column != -1 else columns
 
     # pathtrack to the first row
-    logger.debug('starting pathtrack')
+    # logger.debug('starting pathtrack')
     while r > 0:
-        logger.debug(f"track r={r}, c={c}; v={matrix[r][c]}")
+        # logger.debug(f"track r={r}, c={c}; v={matrix[r][c]}")
         deletion = matrix[r-1][c]
         substitution = matrix[r-1][c-1]
         insertion = matrix[r][c-1]
@@ -119,11 +102,13 @@ class LevenshteinParams:
     ignore_suffix: bool = False
     narrow: bool = False
     early_return: bool = True
+    lower: bool = True
 
 # --- Constants ---
 
 PROX_MED = 0.5
 PROX_LOW = 0.25
+PROX_MIN = 0.01
 SIMPLEPHONE_PROXIMITY_GRAPH: ProximityGraph = {
     'w': {'f': PROX_MED, 'a': PROX_LOW, 'y': PROX_LOW},
     'y': {'a': PROX_LOW, 'w': PROX_LOW},
@@ -131,6 +116,10 @@ SIMPLEPHONE_PROXIMITY_GRAPH: ProximityGraph = {
     'f': {'w': PROX_MED},
     ' ': {'-': 0},
     '-': {'a': PROX_LOW, ' ': 0}, # insertion
+}
+SKIP_SPACES_GRAPH = {
+    ' ': {'-': PROX_MIN},
+    '-': {' ': PROX_MIN}
 }
 
 # --- Levenshtein Implementation ---
@@ -148,14 +137,19 @@ def levenshtein_matrix(params: LevenshteinParams) -> np.ndarray:
 
     p = params
     p.narrow = False # TODO: review implementation, produces wrong results
+    if p.lower:
+        p.s1 = p.s1.lower()
+        p.s2 = p.s2.lower()
     s1_len = len(p.s1)
     s2_len = len(p.s2)
     abs_max_distance = min(s1_len, s2_len) if p.narrow else max(s1_len, s2_len)
     max_distance = p.max_distance if p.max_distance is not None else abs_max_distance
 
     matrix = np.full((s1_len + 1, s2_len + 1), 1e6, dtype=float)
-    matrix[:, 0] = np.arange(s1_len + 1)
-    matrix[0, :] = 0 if p.ignore_prefix else np.arange(s2_len + 1)
+    s1_inserts = [0] + [p.proximity_graph.get('-', {}).get(char, 1.0) for char in p.s1]
+    s2_inserts = [0] + [p.proximity_graph.get('-', {}).get(char, 1.0) for char in p.s2]
+    matrix[:, 0] = np.cumsum(np.array(s1_inserts))
+    matrix[0, :] = 0 if p.ignore_prefix else np.cumsum(np.array(s2_inserts))
     best_column = 0
 
     # start substring distance evalution (filling matrix rows)
@@ -185,8 +179,13 @@ def levenshtein_matrix(params: LevenshteinParams) -> np.ndarray:
                 ins_cost = p.proximity_graph.get('-', {}).get(char2, 1.0)
                 sub_cost = p.proximity_graph.get(char1, {}).get(char2, 1.0)
 
+#                 logger.debug(f"({row_i}, {cell_i}) {char1}-{char2}:\
+# \t{del_cost=}={matrix[row_i - 1, cell_i] + del_cost},\
+# \t{ins_cost=}={matrix[row_i, cell_i - 1] + ins_cost},\
+# \t{sub_cost=}={matrix[row_i - 1, cell_i - 1] + sub_cost}; ")
+
                 # the last row represents suffix
-                ins_cost = 0 if p.ignore_suffix and row_i == s1_len else ins_cost
+                ins_cost = 0 if row_i == s1_len and p.ignore_suffix else ins_cost
 
                 cell_value = min( # save min full cost for this step
                     matrix[row_i - 1, cell_i] + del_cost,    # deletion
@@ -322,8 +321,8 @@ if __name__ == '__main__':
     # s1 = 'abc'
     # s2 = 'abcyz'
     # s2 = 'xabcyz'
-    s1 = 'cat'
-    s2 = 'the bat and sat'
+    # s1 = 'cat'
+    # s2 = 'the bat and sat'
     # s1 = 'google'
     # s2 = 'the doogle and boogle'
     # s2 = 'the bat sat'
@@ -336,17 +335,15 @@ if __name__ == '__main__':
     # s1 = 'c a t'
     # s2 = 'abc cat def c at ghj c a t klm'
     # s2 = 'abc cad def bat ghj s a d klm waxt nop'
-
     # s1 = 'hey ho'
     # s2 = 'abc he yyo def keyh o ghj heyho klm'
+    s1 = 'SPTFA'
+    s2 = 'ASPTAFA'
 
     narrow=False
-    proximity_graph={
-        ' ': {'-': 0.01}, # space removed from s1
-        '-': {' ': 0.01} # space inserted in s1
-    }
-    ignore_prefix = True # does great job
-    ignore_suffix = False # looks like over removing distance
+    proximity_graph=SIMPLEPHONE_PROXIMITY_GRAPH
+    ignore_prefix = False
+    ignore_suffix = False # looks like over removing distance info
 
     dp = levenshtein_matrix(
         LevenshteinParams(
@@ -437,10 +434,6 @@ if __name__ == '__main__':
     # # print(f'{starts=}\n{ends=}')
     # spans = [(int(a), int(b + 1)) for a, b in list(zip(starts, ends))]
     # print(f'{spans=}')
-
-    # TODO:
-        # test with non-symetric multiword string
-        # Regroup test cases
 
     # ends = extremums(dp[-1, :], last=True, minima=True) + 1
     # print(f'{ends=}')
