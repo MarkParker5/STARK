@@ -1,8 +1,13 @@
 from dataclasses import dataclass
-from itertools import groupby
+from enum import Enum, auto
+from itertools import chain, groupby
 from typing import Iterable, Optional
 
-from stark.tools.levenshtein import levenshtein_similarity_substring
+from stark.tools.levenshtein import (
+    levenshtein_match,
+    levenshtein_search_substring,
+    levenshtein_similarity,
+)
 from stark.tools.phonetic.ipa import phonetic
 from stark.tools.phonetic.simplephone import simplephone
 from stark.tools.strtools import find_substring_in_words_map, split_indices
@@ -21,6 +26,12 @@ class NameEntry:
     language_code: str
     name: str
     metadata: Optional[Metadata] = None
+
+class LookupMode(Enum):
+    EXACT = auto() # the fastest
+    CONTAINS = auto() # fast
+    FUZZY = auto() # slow
+    UNTIL_FIRST_MATCH = auto() # tries exact, substring, and fuzzy sequentially until first match
 
 class Dictionary:
     """
@@ -65,19 +76,65 @@ class Dictionary:
     # ----------------------
     # Lookup methods
     # ----------------------
-    def lookup(self, name_candidate: str, language_code: str, fast: bool = True) -> list[DictionaryItem]:
+    def lookup(self, name_candidate: str, language_code: str, mode: LookupMode = LookupMode.EXACT) -> Iterable[DictionaryItem]:
         """
-
+        Lookup dictionary items by name_candidate and language_code using LookupMode.
         """
         simple_phonetic = simplephone(phonetic(name_candidate, language_code)) or ''
-        matches = self.storage.search_equal_simple_phonetic(simple_phonetic)
-        if not fast and not matches:
-            matches = self.storage.search_contains_simple_phonetic(simple_phonetic)
-        self._sort_matches(language_code, name_candidate, matches)
-        # TODO: find a way to also return indices
-        return matches
 
-    def sentence_search(self, sentence: str, language_code: str) -> list[LookupResult]:
+        match mode:
+            case LookupMode.EXACT:
+
+                return self.storage.search_equal_simple_phonetic(simple_phonetic)
+
+            case LookupMode.CONTAINS:
+
+                return self.storage.search_contains_simple_phonetic(simple_phonetic)
+
+            case LookupMode.FUZZY:
+
+                return self.storage.iterate(
+                    lambda item: levenshtein_match(s1=simple_phonetic, s2=item.simple_phonetic, min_similarity=.75)
+                )
+
+            case LookupMode.UNTIL_FIRST_MATCH:
+                try:
+                    return [next(chain(
+                        self.lookup(name_candidate, language_code, LookupMode.EXACT),
+                        self.lookup(name_candidate, language_code, LookupMode.CONTAINS),
+                        self.lookup(name_candidate, language_code, LookupMode.FUZZY),
+                    ))]
+                except StopIteration:
+                    return []
+
+    def sentence_search(self, sentence: str, language_code: str, mode: LookupMode = LookupMode.EXACT) -> Iterable[LookupResult]:
+
+        match mode:
+
+            case LookupMode.EXACT | LookupMode.CONTAINS:
+
+                return self._sentence_search_per_word(sentence, language_code, mode)
+
+            case LookupMode.FUZZY:
+
+                simple_phonetic = simplephone(phonetic(sentence, language_code)) or ''
+
+                for item in self.storage.iterate():
+                    matches = levenshtein_search_substring(s1=simple_phonetic, s2=item.simple_phonetic, min_similarity=0.75)
+                    for span, _ in matches:
+                        yield LookupResult(span, item)
+
+            case LookupMode.UNTIL_FIRST_MATCH:
+                try:
+                    yield next(iter(chain(
+                        self.sentence_search(sentence, language_code, LookupMode.EXACT),
+                        self.sentence_search(sentence, language_code, LookupMode.CONTAINS),
+                        self.sentence_search(sentence, language_code, LookupMode.FUZZY)
+                    )))
+                except StopIteration:
+                    pass
+
+    def _sentence_search_per_word(self, sentence: str, language_code: str, mode: LookupMode = LookupMode.EXACT) -> Iterable[LookupResult]:
 
         # 1. build map like this: [
         # ...
@@ -91,54 +148,86 @@ class Dictionary:
         # 2.3. combine matches of words list items into one (4,11), 'bar baz' (space joined), 'BRBZ' (just joined)
 
         # note: strings like 'foo bar baz test ber buz foo' will contain the match twice, so the final result must be
-        # ((4,11), 'bar baz', 'BRBZ')
-        # ((17,24), 'ber buz', 'BRBZ')
 
-        @dataclass(frozen=True)
-        class WordTrack:
-            span: Span
-            text: str
-            simple_phonetic: str
+        words = sentence.split()
+        results: list[LookupResult] = []
 
-        words_track_list = [
-            WordTrack(
-                span=Span(*indices),
-                text=sentence[slice(*indices)],
-                simple_phonetic=simplephone(phonetic(sentence[slice(*indices)], language_code)) or ''
-            )
-            for indices in split_indices(sentence)
-        ]
+        for idx, word in enumerate(words):
+            simple_phonetic = simplephone(phonetic(word, language_code)) or ''
 
-        simple_sentence = ''.join(w.text for w in words_track_list)
+            match mode:
+                case LookupMode.EXACT:
+                    matches = self.storage.search_equal_simple_phonetic(simple_phonetic)
+                case LookupMode.CONTAINS:
+                    matches = self.storage.search_contains_simple_phonetic(simple_phonetic)
+                case _:
+                    raise ValueError(f'Unsupported mode for _sentence_search_per_word: {mode}')
 
-        all_matches = self.storage.search_contains_simple_phonetic(simple_sentence)
-        grouped_matches = groupby(all_matches, key=lambda x: x.simple_phonetic)
+            # if matches:
+            #     results.append(LookupResult(span=Span(idx, idx+1), item=matches))
 
-        if not all_matches:
-            return []
+            for match in matches:
+                results.append(LookupResult(span=Span(idx, idx+1), item=match))
 
-        backtacked_matches: list[LookupResult] = []
-        # for each matched simple code from the dictionary
-        for simple_name, dictionary_matches in grouped_matches:
-            # simple_name - simple code of a multiword name from dictionary
+        # return results
+            # ((4,11), 'bar baz', 'BRBZ')
+            # ((17,24), 'ber buz', 'BRBZ')
 
-            # for each occurrence of the simple code in the sentence
-            for words_indices in find_substring_in_words_map(simple_name, [w.simple_phonetic for w in words_track_list]):
-                # combine spans per word into one multiword span
-                subsentence_str = ' '.join(words_track_list[i].text for i in words_indices)
-                span_start = words_track_list[words_indices[0]].span.start
-                span_end = words_track_list[words_indices[-1]].span.end
+            @dataclass(frozen=True)
+            class WordTrack:
+                span: Span
+                text: str
+                simple_phonetic: str
 
-                backtacked_matches.append(LookupResult(
-                    Span(span_start, span_end),
-                    self._sort_matches(language_code, subsentence_str, dictionary_matches)
-                ))
+            words_track_list = [
+                WordTrack(
+                    span=Span(*indices),
+                    text=sentence[slice(*indices)],
+                    simple_phonetic=simplephone(phonetic(sentence[slice(*indices)], language_code)) or ''
+                )
+                for indices in split_indices(sentence)
+            ]
 
-        return backtacked_matches
+            simple_sentence = ''.join(w.text for w in words_track_list)
 
-    def _sort_matches(self, language_code: str, name_candidate: str, matches: Iterable[DictionaryItem]) -> list[DictionaryItem]:
+            all_matches = self.storage.search_contains_simple_phonetic(simple_sentence)
+            grouped_matches = groupby(all_matches, key=lambda x: x.simple_phonetic)
+
+            if not all_matches:
+                return []
+
+            backtacked_matches: list[LookupResult] = []
+            # for each matched simple code from the dictionary
+            for simple_name, dictionary_matches in grouped_matches:
+                # simple_name - simple code of a multiword name from dictionary
+
+                # for each occurrence of the simple code in the sentence
+                for words_indices in find_substring_in_words_map(simple_name, [w.simple_phonetic for w in words_track_list]):
+                    # combine spans per word into one multiword span
+                    subsentence_str = ' '.join(words_track_list[i].text for i in words_indices)
+                    span_start = words_track_list[words_indices[0]].span.start
+                    span_end = words_track_list[words_indices[-1]].span.end
+
+                    # backtacked_matches.append(LookupResult(
+                    #     Span(span_start, span_end),
+                    #     self._sorted_matches(language_code, subsentence_str, dictionary_matches)
+                    # ))
+
+                    for item in self._sorted_items(language_code, subsentence_str, dictionary_matches):
+                        yield LookupResult(
+                            Span(span_start, span_end),
+                            item
+                        )
+                        # backtacked_matches.append(LookupResult(
+                        #     Span(span_start, span_end),
+                        #     item
+                        # ))
+
+            # return backtacked_matches
+
+    def _sorted_items(self, language_code: str, name_candidate: str, matches: Iterable[DictionaryItem]) -> list[DictionaryItem]:
         # sort by levenshtein distance of strings' latin representations
-        return sorted(matches, key=lambda match: levenshtein_similarity_substring(phonetic(name_candidate, language_code), match.phonetic))
+        return sorted(matches, key=lambda match: levenshtein_similarity(s1=phonetic(name_candidate, language_code), s2=match.phonetic))
 
     # ----------------------
     # Optional / Advanced

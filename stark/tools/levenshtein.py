@@ -1,11 +1,14 @@
 import logging
 from dataclasses import dataclass, field
+from typing import TypedDict, Unpack
 
 from typing_extensions import Iterable, NamedTuple
 
 logger = logging.getLogger(__name__)
 
 import numpy as np
+
+# TODO: update docstrings
 
 # --- Calculus ---
 
@@ -103,6 +106,17 @@ class LevenshteinParams:
     narrow: bool = False
     early_return: bool = True
     lower: bool = True
+
+class LevenshteinParamsDict(TypedDict, total=False):
+    s1: str
+    s2: str
+    max_distance: float | None
+    proximity_graph: ProximityGraph
+    ignore_prefix: bool
+    ignore_suffix: bool
+    narrow: bool
+    early_return: bool
+    lower: bool
 
 # --- Constants ---
 
@@ -228,7 +242,8 @@ def levenshtein_distance(params: LevenshteinParams) -> float:
     logger.debug(f"Distance: {distance:.2f}")
     return distance
 
-def levenshtein_similarity(params: LevenshteinParams, min_similarity: float = 0) -> float:
+def levenshtein_similarity(min_similarity: float = 0, **kwargs: Unpack[LevenshteinParamsDict]) -> float:
+    params = LevenshteinParams(**kwargs)
     abs_max_distance = max(len(params.s1), len(params.s2))
     distance_limit = abs_max_distance * (1 - min_similarity)
     params.max_distance = distance_limit
@@ -237,8 +252,9 @@ def levenshtein_similarity(params: LevenshteinParams, min_similarity: float = 0)
     logger.debug(f"Similarity: {similarity:.2f} as 1 - {distance:.2f}/{abs_max_distance}")
     return similarity
 
-def levenshtein_match(params: LevenshteinParams, min_similarity: float = 0) -> bool:
-    similarity = levenshtein_similarity(params, min_similarity)
+def levenshtein_match(min_similarity: float = 0, **kwargs: Unpack[LevenshteinParamsDict]) -> bool:
+    # TODO: review `min_similarity` name
+    similarity = levenshtein_similarity(**kwargs, min_similarity=min_similarity)
     return similarity >= min_similarity
 
 # --- Iterable Levenshtein wrappers ---
@@ -265,11 +281,11 @@ def levenshtein_distance_substring(params: LevenshteinParams) -> Iterable[tuple[
     logger.debug(f"Span distances: {[(span, distance, p.s2[span.slice]) for span, distance in result]}")
     return sorted(result, key=lambda x: x[0].start)
 
-def levenshtein_similarity_substring(params: LevenshteinParams, min_similarity: float = 0) -> list[tuple[Span, float]]:
+def levenshtein_similarity_substring(min_similarity: float = 0,  **kwargs: Unpack[LevenshteinParamsDict]) -> list[tuple[Span, float]]:
     '''
     Computes the similarity between two strings using the Levenshtein distance. Output: 0...1 where 1 indicates perfect similarity and 0 indicates perfect mismatch. The length of s1 is used to calculate the maximum possible distance. Returns the best length of s2 to maximally match s1, and the similarity score.
     '''
-    p = params
+    p = LevenshteinParams(**kwargs)
     tolerance = 1 - min_similarity
     max_total_distance = min(len(p.s1), len(p.s2)) if p.ignore_prefix and p.ignore_suffix else max(len(p.s1), len(p.s2))
     max_allowed_distance = round(max_total_distance * tolerance)
@@ -278,10 +294,11 @@ def levenshtein_similarity_substring(params: LevenshteinParams, min_similarity: 
     logger.debug(f"Similarities: {[(span, score, p.s2[span.slice]) for span, score in similarities]}")
     return similarities
 
-def levenshtein_search_substring(params: LevenshteinParams, min_similarity: float = 0) -> list[tuple[Span, float]]:
+def levenshtein_search_substring(min_similarity: float = 0, **kwargs: Unpack[LevenshteinParamsDict]) -> list[tuple[Span, float]]:
     '''
     Checks if two strings are similar enough based on the Levenshtein distance. Returns the best length of s2 to maximally match s1, and whether it's a match. Length value is only meaningful when the match is true.
     '''
+    params = LevenshteinParams(**kwargs)
     matches = [(span, similarity) for span, similarity in levenshtein_similarity_substring(params, min_similarity) if similarity >= min_similarity]
     logger.debug(f"Matches: {matches}")
     return matches
