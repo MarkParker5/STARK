@@ -11,6 +11,7 @@ class DictionaryItem:
     name: str
     phonetic: str
     simple_phonetic: str
+    language_code: str
     metadata: Metadata
 
 @dataclass

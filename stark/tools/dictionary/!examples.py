@@ -42,3 +42,5 @@ def build_app(): # a single function to build all dictionaries
     NLExampleDictionaryName.dictionary.build() # fill the sqlite file once during the build stage, not at runtime
     SomeOtherDictionary.build()
     # etc
+
+# TODO: test build

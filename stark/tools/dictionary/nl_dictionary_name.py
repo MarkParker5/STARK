@@ -6,8 +6,9 @@ from .dictionary import Dictionary
 from .models import DictionaryItem
 
 
-class NLDictionaryName(Object):
-    value: list[DictionaryItem]
+class NLDictionaryName(Object[DictionaryItem]):
+    # value: list[DictionaryItem]
+    value: DictionaryItem
     dictionary: Dictionary
 
     @classproperty
@@ -15,9 +16,10 @@ class NLDictionaryName(Object):
         return Pattern('**')
 
     async def did_parse(self, from_string: str):
-        if not (matches := self.dictionary.lookup(from_string)):
+        lang = "en"
+        if not (matches := self.dictionary.sentence_search_sorted(from_string, lang)):
+        # if not (matches := self.dictionary.lookup_sorted(from_string, lang)):
             raise ParseError(f"Could not find '{from_string}' in dictionary")
-        self.value = matches
-        return from_string
-
-# TODO: test
+        match = matches[0]
+        self.value = match.item
+        return from_string[match.span.slice]

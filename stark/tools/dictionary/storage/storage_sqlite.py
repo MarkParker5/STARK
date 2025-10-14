@@ -16,6 +16,7 @@ class DictionaryStorageSQLite(DictionaryStorageProtocol):
                 name TEXT PRIMARY KEY,
                 phonetic TEXT,
                 simple_phonetic TEXT,
+                language_code TEXT,
                 metadata TEXT
             )
             """
@@ -30,17 +31,17 @@ class DictionaryStorageSQLite(DictionaryStorageProtocol):
     def write_one(self, item: DictionaryItem) -> None:
         _ = self._conn.execute(
             """
-            INSERT OR REPLACE INTO dictionary (name, phonetic, simple_phonetic, metadata)
-            VALUES (?, ?, ?, ?)
+            INSERT OR REPLACE INTO dictionary (name, phonetic, simple_phonetic, language_code, metadata)
+            VALUES (?, ?, ?, ?, ?)
             """,
-            (item.name, item.phonetic, item.simple_phonetic, json.dumps(item.metadata)),
+            (item.name, item.phonetic, item.simple_phonetic, item.language_code, json.dumps(item.metadata)),
         )
         self._conn.commit()
 
     def search_equal_simple_phonetic(self, simple_phonetic: str) -> list[DictionaryItem]:
         cur = self._conn.execute(
             """
-            SELECT name, phonetic, simple_phonetic, metadata FROM dictionary
+            SELECT name, phonetic, simple_phonetic, language_code, metadata FROM dictionary
             WHERE simple_phonetic = ?
             """,
             (simple_phonetic,),
@@ -51,7 +52,8 @@ class DictionaryStorageSQLite(DictionaryStorageProtocol):
                 name=row[0],
                 phonetic=row[1],
                 simple_phonetic=row[2],
-                metadata=json.loads(row[3]) if row[3] else {},
+                language_code=row[3],
+                metadata=json.loads(row[4]) if row[4] else {},
             )
             for row in rows
         ]
@@ -59,8 +61,8 @@ class DictionaryStorageSQLite(DictionaryStorageProtocol):
     def search_contains_simple_phonetic(self, simple_phonetic: str) -> list[DictionaryItem]:
         cur = self._conn.execute(
             """
-            SELECT name, phonetic, simple_phonetic, metadata FROM dictionary
-            WHERE simple_phonetic LIKE ?
+            SELECT name, phonetic, simple_phonetic, language_code, metadata FROM dictionary
+            WHERE ? LIKE '%' || simple_phonetic || '%'
             """,
             (f"%{simple_phonetic}%",),
         )
@@ -70,7 +72,8 @@ class DictionaryStorageSQLite(DictionaryStorageProtocol):
                 name=row[0],
                 phonetic=row[1],
                 simple_phonetic=row[2],
-                metadata=json.loads(row[3]) if row[3] else {},
+                language_code=row[3],
+                metadata=json.loads(row[4]) if row[4] else {},
             )
             for row in rows
         ]
@@ -81,7 +84,7 @@ class DictionaryStorageSQLite(DictionaryStorageProtocol):
         while True:
             cur = self._conn.execute(
                 """
-                SELECT name, phonetic, simple_phonetic, metadata FROM dictionary
+                SELECT name, phonetic, simple_phonetic, language_code, metadata FROM dictionary
                 LIMIT ? OFFSET ?
                 """,
                 (page_size, offset),
@@ -94,7 +97,8 @@ class DictionaryStorageSQLite(DictionaryStorageProtocol):
                     name=row[0],
                     phonetic=row[1],
                     simple_phonetic=row[2],
-                    metadata=json.loads(row[3]) if row[3] else {},
+                    language_code=row[3],
+                    metadata=json.loads(row[4]) if row[4] else {},
                 )
             offset += page_size
 

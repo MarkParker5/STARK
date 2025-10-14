@@ -2,12 +2,23 @@ import pytest
 
 from stark.tools.dictionary.dictionary import Dictionary, LookupMode, NameEntry
 from stark.tools.dictionary.models import Metadata
-from stark.tools.dictionary.storage.storage_memory import DictionaryStorageMemory
+from stark.tools.dictionary.storage.storage_memory import (
+    DictionaryStorageMemory,
+)
+from stark.tools.dictionary.storage.storage_sqlite import (
+    DictionaryStorageSQLite,
+)
 
 
-@pytest.fixture
-def dictionary() -> Dictionary:
-    return Dictionary(storage=DictionaryStorageMemory())
+@pytest.fixture(params=["memory", "sqlite"])
+def dictionary(request) -> Dictionary:
+    print(f'Dictionary storage: {request.param}')
+    if request.param == "memory":
+        return Dictionary(storage=DictionaryStorageMemory())
+    elif request.param == "sqlite":
+        # Use in-memory SQLite for tests
+        return Dictionary(storage=DictionaryStorageSQLite(":memory:"))
+    raise ValueError(request.param)
 
 def parse_lang(string: str) -> tuple[str, str]:
     lang = 'en'
@@ -19,11 +30,11 @@ def parse_lang(string: str) -> tuple[str, str]:
     "name,lookup,data",
     [
         # English, Cyrillic, and German city name, all should match and return coords
-        ("de:Nürnberg", "en:Nurnberg", {"coords": (49.45, 11.08)}),
-        ("de:Nürnberg", "ru:Нюрнберг", {"coords": (49.45, 11.08)}),
+        ("de:Nürnberg", "en:Nurnberg", {"coords": [49.45, 11.08]}),
+        ("de:Nürnberg", "ru:Нюрнберг", {"coords": [49.45, 11.08]}),
         # English hello/hallo, Cyrillic hello/hallo
-        ("en:hello", "de:hallo", {"coords": (49.45, 11.08)}),
-        ("ru:хеллоу", "de:hallo", {"coords": (49.45, 11.08)}),
+        ("en:hello", "de:hallo", {"coords": [49.45, 11.08]}),
+        ("ru:хеллоу", "de:hallo", {"coords": [49.45, 11.08]}),
     ]
 )
 def test_write_one_and_lookup(dictionary: Dictionary, name: str, lookup: str, data):
@@ -237,7 +248,7 @@ def test_lookup_modes(dictionary: Dictionary, entries: list[str], query: str, mo
     for entry in entries:
         lang, name = parse_lang(entry)
         dictionary.write_one(lang, name, {})
-    results = list(dictionary.lookup(query, "en", mode=mode))
+    results = list(dictionary.lookup_sorted(query, "en", mode=mode))
     assert [r.name for r in results] == expected_names
 
 @pytest.mark.parametrize(
@@ -320,8 +331,6 @@ def test_sentence_search_modes(dictionary: Dictionary, entries: list[str], sente
     for entry in entries:
         lang, name = parse_lang(entry)
         dictionary.write_one(lang, name, {})
-    results = list(dictionary.sentence_search(sentence, "en", mode=mode))
+    results = list(dictionary.sentence_search_sorted(sentence, "en", mode=mode))
     found_names = [r.item.name for r in results]
     assert sorted(found_names) == sorted(expected_names)
-
-# TODO: stress test both memory and sql
