@@ -74,6 +74,29 @@ class DictionaryStorageSQLite(DictionaryStorageProtocol):
             for row in rows
         ]
 
+    def iterate(self) -> Iterable[DictionaryItem]:
+        offset = 0
+        page_size = 100
+        while True:
+            cur = self._conn.execute(
+                """
+                SELECT name, latin, simplephone, metadata FROM dictionary
+                LIMIT ? OFFSET ?
+                """,
+                (page_size, offset),
+            )
+            rows = cur.fetchall()
+            if not rows:
+                break
+            for row in rows:
+                yield DictionaryItem(
+                    name=row[0],
+                    latin=row[1],
+                    simplephone=row[2],
+                    metadata=json.loads(row[3]) if row[3] else {},
+                )
+            offset += page_size
+
     def clear(self) -> None:
         self._conn.execute(
             """

@@ -1,7 +1,7 @@
 from itertools import groupby
 from typing import Generator
 
-from stark.tools.dictionary.models import Span
+from stark.tools.common.span import Span
 
 
 def split_indices(s: str, sep: str = ' ') -> Generator[Span, None, None]:

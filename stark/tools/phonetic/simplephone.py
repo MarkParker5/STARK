@@ -1,7 +1,7 @@
 import string
 
 
-def simplephone(text: str, glue: str = '', sep: str = string.whitespace) -> str | None:
+def simplephone(text: str, glue: str = ' ', sep: str = string.whitespace) -> str | None:
     '''
     Caverphone2 / Soundex / Kölner Phonetik inspired algorithm for phonetic encoding of words.
     No filling with "1", no length limit, skip spaces, return None for empty input.

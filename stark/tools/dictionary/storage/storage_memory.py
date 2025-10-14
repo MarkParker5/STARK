@@ -12,15 +12,17 @@ class DictionaryStorageMemory(DictionaryStorageProtocol):
         self._name_to_items[item.name] = item
         self.__simple_phonetic_to_names.setdefault(item.simple_phonetic, set()).add(item.name)
 
-    def search_equal_simple_phonetic(self, simple_phonetic: str) -> list[DictionaryItem]:
-        return [self._name_to_items[name] for name in self.__simple_phonetic_to_names.get(simple_phonetic, set())]
+    def search_equal_simple_phonetic(self, simple_phonetic: str) -> Iterator[DictionaryItem]:
+        for name in self.__simple_phonetic_to_names.get(simple_phonetic, set()):
+            yield self._name_to_items[name]
 
-    def search_contains_simple_phonetic(self, simple_phonetic: str) -> list[DictionaryItem]:
-        result: list[DictionaryItem] = []
+    def search_contains_simple_phonetic(self, simple_phonetic: str) -> Iterator[DictionaryItem]:
         for key, names in self.__simple_phonetic_to_names.items():
             if key in simple_phonetic:
-                result.extend(self._name_to_items[name] for name in names)
-        return result
+                yield from (self._name_to_items[name] for name in names)
+
+    def iterate(self) -> Iterable[DictionaryItem]:
+        yield from self._name_to_items.values()
 
     def clear(self) -> None:
         self._name_to_items.clear()

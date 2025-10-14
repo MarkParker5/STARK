@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Any, Iterable, Protocol
 
-from stark.tools.levenshtein import Span
+from stark.tools.common.span import Span
 
 type Metadata = dict[str, Any]
 

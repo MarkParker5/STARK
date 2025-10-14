@@ -3,7 +3,6 @@ import pytest
 from stark.tools.levenshtein import (
     SIMPLEPHONE_PROXIMITY_GRAPH,
     SKIP_SPACES_GRAPH,
-    LevenshteinParams,
     levenshtein_distance,
     levenshtein_match,
     levenshtein_search_substring,
@@ -44,8 +43,7 @@ from stark.tools.levenshtein import (
 )
 def test_levenshtein_distance_full(a: str, b: str, exp_distance: float) -> None:
     print(f'{a=} {b=}')
-    params = LevenshteinParams(s1=a, s2=b)
-    distance = levenshtein_distance(params)
+    distance = levenshtein_distance(s1=a, s2=b)
     errors = []
     if distance != exp_distance:
         errors.append(f'exp distance {exp_distance:.2f} != {distance:.2f}')
@@ -63,8 +61,7 @@ def test_levenshtein_distance_full(a: str, b: str, exp_distance: float) -> None:
 )
 def test_levenshtein_similarity_full(a: str, b: str, min_similarity: float, exp_similarity: float) -> None:
     print(f'{a=} {b=}')
-    params = LevenshteinParams(s1=a, s2=b)
-    similarity = levenshtein_similarity(params, min_similarity)
+    similarity = levenshtein_similarity(s1=a, s2=b, min_similarity=min_similarity)
     errors = []
     if not similarity == pytest.approx(exp_similarity, abs=1e-6):
         errors.append(f'exp similarity {exp_similarity:.2f} != {similarity:.2f}')
@@ -82,8 +79,7 @@ def test_levenshtein_similarity_full(a: str, b: str, min_similarity: float, exp_
 )
 def test_levenshtein_match_full(a: str, b: str, min_similarity: float, exp_match: bool) -> None:
     print(f'{a=} {b=}')
-    params = LevenshteinParams(s1=a, s2=b)
-    match = levenshtein_match(params, min_similarity)
+    match = levenshtein_match(s1=a, s2=b, min_similarity=min_similarity)
     errors = []
     if match != exp_match:
         errors.append(f'exp match {exp_match} != {match}')
@@ -109,8 +105,7 @@ def test_levenshtein_match_full(a: str, b: str, min_similarity: float, exp_match
 )
 def test_levenshtein_distance_proximity(a: str, b: str, exp_max_distance: float) -> None:
     print(f'{a=} {b=}')
-    params = LevenshteinParams(s1=a, s2=b, proximity_graph=SIMPLEPHONE_PROXIMITY_GRAPH)
-    distance = levenshtein_distance(params)
+    distance = levenshtein_distance(s1=a, s2=b, proximity_graph=SIMPLEPHONE_PROXIMITY_GRAPH)
     assert distance <= exp_max_distance, f'exp distance {exp_max_distance:.2f} < {distance:.2f}'
 
 @pytest.mark.parametrize(
@@ -126,8 +121,7 @@ def test_levenshtein_distance_proximity(a: str, b: str, exp_max_distance: float)
 )
 def test_levenshtein_distance_skip_spaces(a: str, b: str, exp_distance: float) -> None:
     print(f'{a=} {b=}')
-    params = LevenshteinParams(s1=a, s2=b, proximity_graph=SKIP_SPACES_GRAPH)
-    distance = levenshtein_distance(params)
+    distance = levenshtein_distance(s1=a, s2=b, proximity_graph=SKIP_SPACES_GRAPH)
     assert distance == pytest.approx(exp_distance, abs=0.1), f'exp distance {exp_distance:.2f} != {distance:.2f}'
 
 # --- Substring Distance/Similarity/Search ---
@@ -161,8 +155,9 @@ def test_levenshtein_search_substring(a: str, b: str, min_similarity: float, exp
     print(f'{a=} {b=}')
     longer = a if len(a) > len(b) else b
     shorter = a if len(a) <= len(b) else b
-    params = LevenshteinParams(s1=a, s2=b, proximity_graph=SKIP_SPACES_GRAPH, ignore_prefix=True, early_return=False)
-    matches = levenshtein_search_substring(params, min_similarity)
+    matches = levenshtein_search_substring(
+        s1=a, s2=b, proximity_graph=SKIP_SPACES_GRAPH, ignore_prefix=True, early_return=False, min_similarity=min_similarity
+    )
     result = [(span.start, span.end) for span, _ in matches]
     errors = []
     if not exp_spans:
@@ -173,7 +168,6 @@ def test_levenshtein_search_substring(a: str, b: str, min_similarity: float, exp
     for i in range(len(result)):
         if result[i] != exp_spans[i]:
             errors.append(f'exp spans {exp_spans} != {result} - matched "{longer[matches[0][0].slice]}"')
-        p = LevenshteinParams(shorter, longer[matches[0][0].slice], proximity_graph=SKIP_SPACES_GRAPH)
-        if levenshtein_distance(p) / len(shorter) > (1 - min_similarity):
+        if levenshtein_distance(s1=shorter, s2=longer[matches[0][0].slice], proximity_graph=SKIP_SPACES_GRAPH) / len(shorter) > (1 - min_similarity):
             errors.append(f'Unexpected substr: exp {shorter} != {longer[matches[0][0].slice]}')
     assert not errors, '\t' + '; '.join(errors)

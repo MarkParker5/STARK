@@ -1,12 +1,15 @@
+import logging
 from dataclasses import dataclass
 from enum import Enum, auto
-from itertools import chain, groupby
+from itertools import groupby
 from typing import Iterable, Optional
 
 from stark.tools.levenshtein import (
+    SIMPLEPHONE_PROXIMITY_GRAPH,
     levenshtein_match,
     levenshtein_search_substring,
     levenshtein_similarity,
+    levenshtein_similarity_substring,
 )
 from stark.tools.phonetic.ipa import phonetic
 from stark.tools.phonetic.simplephone import simplephone
@@ -20,6 +23,7 @@ from .models import (
     Span,
 )
 
+logger = logging.getLogger(__name__)
 
 @dataclass(frozen=True)
 class NameEntry:
@@ -31,7 +35,7 @@ class LookupMode(Enum):
     EXACT = auto() # the fastest
     CONTAINS = auto() # fast
     FUZZY = auto() # slow
-    UNTIL_FIRST_MATCH = auto() # tries exact, substring, and fuzzy sequentially until first match
+    UNTIL_MATCH = auto() # tries exact, substring, and fuzzy sequentially until result is not empty
 
 class Dictionary:
     """
@@ -58,6 +62,7 @@ class Dictionary:
             metadata=metadata or {}
         )
         self.storage.write_one(item)
+        logger.debug(f"Written entry '{name}' with phonetic '{phonetic_str}' and simple phonetic '{simple_phonetic}'")
 
     def write_all(self, names: list[NameEntry]):
         """
@@ -76,36 +81,70 @@ class Dictionary:
     # ----------------------
     # Lookup methods
     # ----------------------
-    def lookup(self, name_candidate: str, language_code: str, mode: LookupMode = LookupMode.EXACT) -> Iterable[DictionaryItem]:
+
+    def lookup_sorted(self, name_candidate: str, language_code: str, mode: LookupMode = LookupMode.UNTIL_MATCH) -> list[DictionaryItem]:
+        return sorted(
+            self.lookup(name_candidate, language_code, mode),
+            key=lambda item: levenshtein_similarity(
+                s1=item.name,
+                s2=name_candidate
+            ),
+            reverse=True
+        )
+
+    def lookup(self, name_candidate: str, language_code: str, mode: LookupMode = LookupMode.UNTIL_MATCH) -> Iterable[DictionaryItem]:
         """
         Lookup dictionary items by name_candidate and language_code using LookupMode.
         """
         simple_phonetic = simplephone(phonetic(name_candidate, language_code)) or ''
+        logger.debug(f"Looking up '{name_candidate}' with simple phonetic '{simple_phonetic}' under mode {mode}")
 
         match mode:
             case LookupMode.EXACT:
 
-                return self.storage.search_equal_simple_phonetic(simple_phonetic)
+                yield from self.storage.search_equal_simple_phonetic(simple_phonetic)
 
             case LookupMode.CONTAINS:
 
-                return self.storage.search_contains_simple_phonetic(simple_phonetic)
+                yield from self.storage.search_contains_simple_phonetic(simple_phonetic)
 
             case LookupMode.FUZZY:
 
-                return self.storage.iterate(
-                    lambda item: levenshtein_match(s1=simple_phonetic, s2=item.simple_phonetic, min_similarity=.75)
+                yield from filter(
+                    lambda item: levenshtein_match(
+                        s1=item.name,
+                        s2=name_candidate,
+                        min_similarity=0.8,
+                        proximity_graph=SIMPLEPHONE_PROXIMITY_GRAPH
+                    ),
+                    self.storage.iterate()
                 )
 
-            case LookupMode.UNTIL_FIRST_MATCH:
-                try:
-                    return [next(chain(
-                        self.lookup(name_candidate, language_code, LookupMode.EXACT),
-                        self.lookup(name_candidate, language_code, LookupMode.CONTAINS),
-                        self.lookup(name_candidate, language_code, LookupMode.FUZZY),
-                    ))]
-                except StopIteration:
-                    return []
+            case LookupMode.UNTIL_MATCH:
+                for gen in (
+                    self.lookup(name_candidate, language_code, LookupMode.EXACT),
+                    self.lookup(name_candidate, language_code, LookupMode.CONTAINS),
+                    self.lookup(name_candidate, language_code, LookupMode.FUZZY),
+                ):
+                    try:
+                        first: DictionaryItem = next(gen)
+                    except StopIteration:
+                        continue
+                    else:
+                        yield first
+                        yield from gen
+                        break
+
+    def sentence_search_sorted(self, sentence: str, language_code: str, mode: LookupMode = LookupMode.EXACT) -> list[LookupResult]:
+        return sorted(
+            self.sentence_search(sentence, language_code, mode),
+            key=lambda result: levenshtein_similarity_substring(
+                s1=result.item.name,
+                s2=sentence,
+                ignore_prefix=True,
+            )[1],
+            reverse=True
+        )
 
     def sentence_search(self, sentence: str, language_code: str, mode: LookupMode = LookupMode.EXACT) -> Iterable[LookupResult]:
 
@@ -120,19 +159,30 @@ class Dictionary:
                 simple_phonetic = simplephone(phonetic(sentence, language_code)) or ''
 
                 for item in self.storage.iterate():
-                    matches = levenshtein_search_substring(s1=simple_phonetic, s2=item.simple_phonetic, min_similarity=0.75)
+                    matches = levenshtein_search_substring(
+                        s1=simple_phonetic,
+                        s2=item.simple_phonetic,
+                        ignore_prefix=True,
+                        min_similarity=0.8,
+                        proximity_graph=SIMPLEPHONE_PROXIMITY_GRAPH
+                    )
                     for span, _ in matches:
                         yield LookupResult(span, item)
 
-            case LookupMode.UNTIL_FIRST_MATCH:
-                try:
-                    yield next(iter(chain(
-                        self.sentence_search(sentence, language_code, LookupMode.EXACT),
-                        self.sentence_search(sentence, language_code, LookupMode.CONTAINS),
-                        self.sentence_search(sentence, language_code, LookupMode.FUZZY)
-                    )))
-                except StopIteration:
-                    pass
+            case LookupMode.UNTIL_MATCH:
+                for gen in (
+                    self.sentence_search(sentence, language_code, LookupMode.EXACT),
+                    self.sentence_search(sentence, language_code, LookupMode.CONTAINS),
+                    self.sentence_search(sentence, language_code, LookupMode.FUZZY),
+                ):
+                    try:
+                        first: LookupResult = next(gen)
+                    except StopIteration:
+                        continue
+                    else:
+                        yield first
+                        yield from gen
+                        break
 
     def _sentence_search_per_word(self, sentence: str, language_code: str, mode: LookupMode = LookupMode.EXACT) -> Iterable[LookupResult]:
 
@@ -232,8 +282,8 @@ class Dictionary:
     # ----------------------
     # Optional / Advanced
     # ----------------------
-    async def build(self) -> None:
+    async def build(self):
         """
         Generate a static dictionary at build-time instead of runtime.
         """
-        pass
+        raise NotImplementedError("Dictionary.build() is not implemented")

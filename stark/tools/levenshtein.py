@@ -2,7 +2,7 @@ import logging
 from dataclasses import dataclass, field
 from typing import TypedDict, Unpack
 
-from typing_extensions import Iterable, NamedTuple
+from typing_extensions import Iterable
 
 logger = logging.getLogger(__name__)
 
@@ -67,28 +67,7 @@ def pathtrack_start_column(matrix: np.ndarray, rows: int, columns: int, end_colu
 
 # --- Models ---
 
-class Span(NamedTuple):
-    start: int
-    end: int
-
-    @property
-    def length(self) -> int:
-        return self.end - self.start
-
-    @classmethod
-    @property
-    def zero(cls) -> 'Span':
-        return cls(0, 0)
-
-    def __bool__(self) -> bool:
-        return self.start != self.end
-
-    def __repr__(self) -> str:
-        return f'({self.start}, {self.end})'
-
-    @property
-    def slice(self) -> slice:
-        return slice(self.start, self.end)
+from stark.tools.common.span import Span
 
 type ProximityGraph = dict[str, dict[str, float]]
 '''
@@ -166,6 +145,8 @@ def levenshtein_matrix(params: LevenshteinParams) -> np.ndarray:
     matrix[0, :] = 0 if p.ignore_prefix else np.cumsum(np.array(s2_inserts))
     best_column = 0
 
+    logger.debug(f"Building levenshtein matrix for '{p.s1=}' and '{p.s2=}'")
+
     # start substring distance evalution (filling matrix rows)
     for row_i in range(1, s1_len + 1):
 
@@ -231,12 +212,13 @@ def levenshtein_matrix(params: LevenshteinParams) -> np.ndarray:
             return matrix
 
     # return fully filled dp
-    logger.debug(f"Returning matrix of size {matrix.shape} for {p.s1=} {p.s2=}")
+    logger.debug(f"Returning matrix of size {matrix.shape}")
     return matrix
 
 # --- Single Levenshtein wrappers ---
 
-def levenshtein_distance(params: LevenshteinParams) -> float:
+def levenshtein_distance(**kwargs: Unpack[LevenshteinParamsDict]) -> float:
+    params = LevenshteinParams(**kwargs)
     matrix = levenshtein_matrix(params)
     distance = float(matrix[-1, -1])
     logger.debug(f"Distance: {distance:.2f}")
@@ -247,7 +229,7 @@ def levenshtein_similarity(min_similarity: float = 0, **kwargs: Unpack[Levenshte
     abs_max_distance = max(len(params.s1), len(params.s2))
     distance_limit = abs_max_distance * (1 - min_similarity)
     params.max_distance = distance_limit
-    distance = levenshtein_distance(params)
+    distance = levenshtein_distance(**params.__dict__)
     similarity = 1 - distance / abs_max_distance
     logger.debug(f"Similarity: {similarity:.2f} as 1 - {distance:.2f}/{abs_max_distance}")
     return similarity
@@ -259,9 +241,9 @@ def levenshtein_match(min_similarity: float = 0, **kwargs: Unpack[LevenshteinPar
 
 # --- Iterable Levenshtein wrappers ---
 
-def levenshtein_distance_substring(params: LevenshteinParams) -> Iterable[tuple[Span, float]]:
+def levenshtein_distance_substring(**kwargs: Unpack[LevenshteinParamsDict]) -> Iterable[tuple[Span, float]]:
     '''Returns the length of a substr in the longer string (s2 if equal) for the best levenshtein match with the shorter string, and the best distance for that length.'''
-    p = params
+    p = LevenshteinParams(**kwargs)
     p.s1, p.s2 = (p.s1, p.s2) if len(p.s1) <= len(p.s2) else (p.s2, p.s1) # make sure s2 is longer than s1
     matrix = levenshtein_matrix(p)
     ends = extremums(matrix[-1, :], last=True, minima=True) + 1
@@ -290,7 +272,7 @@ def levenshtein_similarity_substring(min_similarity: float = 0,  **kwargs: Unpac
     max_total_distance = min(len(p.s1), len(p.s2)) if p.ignore_prefix and p.ignore_suffix else max(len(p.s1), len(p.s2))
     max_allowed_distance = round(max_total_distance * tolerance)
     p.max_distance = max_allowed_distance
-    similarities = [(span, (1 - distance / span.length if span else 0.0)) for span, distance in levenshtein_distance_substring(p)]
+    similarities = [(span, (1 - distance / span.length if span else 0.0)) for span, distance in levenshtein_distance_substring(**p.__dict__)]
     logger.debug(f"Similarities: {[(span, score, p.s2[span.slice]) for span, score in similarities]}")
     return similarities
 
@@ -298,8 +280,7 @@ def levenshtein_search_substring(min_similarity: float = 0, **kwargs: Unpack[Lev
     '''
     Checks if two strings are similar enough based on the Levenshtein distance. Returns the best length of s2 to maximally match s1, and whether it's a match. Length value is only meaningful when the match is true.
     '''
-    params = LevenshteinParams(**kwargs)
-    matches = [(span, similarity) for span, similarity in levenshtein_similarity_substring(params, min_similarity) if similarity >= min_similarity]
+    matches = [(span, similarity) for span, similarity in levenshtein_similarity_substring(min_similarity=min_similarity, **kwargs) if similarity >= min_similarity]
     logger.debug(f"Matches: {matches}")
     return matches
 

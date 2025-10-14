@@ -2,7 +2,6 @@
 import pytest
 
 from stark.tools.levenshtein import (
-    LevenshteinParams,
     levenshtein_distance,
 )
 from stark.tools.phonetic.ipa import phonetic
@@ -70,7 +69,7 @@ def test_phonetic_equivalence(original_str: str, similar_str: str):
     print(f"phonetic({sim!r}, {lang2!r}) = {phonetic_sim!r} -> simplephone = {simple_sim!r}")
 
     def compare_simples(s1, s2):
-        abs_distance = levenshtein_distance(LevenshteinParams(s1, s2, max_distance=1))
+        abs_distance = levenshtein_distance(s1=s1, s2=s2, max_distance=1)
         rel_difference = abs_distance / max(len(s1), len(s2))
         return abs_distance < 1 or rel_difference < 0.85
 
