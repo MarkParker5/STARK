@@ -8,11 +8,19 @@ logger = logging.getLogger(__name__)
 
 import numpy as np
 
-# TODO: update docstrings
-
 # --- Calculus ---
 
 def fordward_fill(arr: Iterable[float], backward: bool = False) -> Iterable[float]:
+    """
+    Forward-fills zeros in an array with the last non-zero value.
+
+    Args:
+        arr: Iterable of floats to fill.
+        backward: If True, fill from start to end; otherwise, fill from end to start.
+
+    Returns:
+        Iterable[float]: The filled array.
+    """
     arr = list(arr)
     enumerated = enumerate(arr)
     if not backward: # if first
@@ -26,6 +34,17 @@ def fordward_fill(arr: Iterable[float], backward: bool = False) -> Iterable[floa
     return arr
 
 def extremums(arr: list[float], last: bool = False, minima=True) -> np.ndarray[int]:
+    """
+    Return indices of local minima or maxima in a 1D float array.
+
+    Args:
+        arr: Sequence of floats to analyze.
+        last: If True, fill plateaus backward; otherwise, forward.
+        minima: If True, find minima; if False, find maxima.
+
+    Returns:
+        Indices of local minima or maxima as a numpy array of ints.
+    """
     # first derivative sign - track growth
     diff_sign = np.sign(np.diff(arr))
     # remove plateaus by forward-filling zeros with the last non-zero value to highlight extremes
@@ -38,6 +57,19 @@ def extremums(arr: list[float], last: bool = False, minima=True) -> np.ndarray[i
     return np.argwhere(diff2 > 0 if minima else diff2 < 0).flatten() # return indices of up/down concave extremes
 
 def pathtrack_start_column(matrix: np.ndarray, rows: int, columns: int, end_column: int = -1) -> int:
+    """
+    Tracks the optimal path from the bottom of a Levenshtein matrix to the top row,
+    returning the column index where the path starts in the first row.
+
+    Args:
+        matrix (np.ndarray): The Levenshtein distance matrix.
+        rows (int): Number of rows in the matrix.
+        columns (int): Number of columns in the matrix.
+        end_column (int, optional): Column to start tracking from. Defaults to last column.
+
+    Returns:
+        int: The column index in the first row where the path starts.
+    """
     r = rows
     c = end_column if end_column != -1 else columns
 
@@ -87,6 +119,20 @@ class LevenshteinParams:
     lower: bool = True
 
 class LevenshteinParamsDict(TypedDict, total=False):
+    """
+    Typed dictionary for Levenshtein algorithm parameters.
+
+    Attributes:
+        s1: First string to compare.
+        s2: Second (larger) string to compare.
+        max_distance: Optional maximum allowed distance for early stopping.
+        proximity_graph: Mapping of character pairs to operation costs instead of default 1.
+        ignore_prefix: If True, ignore mismatches at the start of s1.
+        ignore_suffix: If True, ignore mismatches at the end of s1 (not recommended for substring matching).
+        narrow: If True, use substring/narrow matching mode. (currently not implemented)
+        early_return: If True, stop calculation early if max_distance exceeded.
+        lower: If True, compare strings in lowercase.
+    """
     s1: str
     s2: str
     max_distance: float | None
@@ -118,15 +164,15 @@ SKIP_SPACES_GRAPH = {
 # --- Levenshtein Implementation ---
 
 def levenshtein_matrix(params: LevenshteinParams) -> np.ndarray:
-    '''
-    Calculates the Levenshtein distance between two strings s1 and s2.
-    Max distance stops the calculations early if the distance exceeds the max_distance for better performance.
-    Narrow mode minimizes the number of operations, limits max distance to the smaller of the two strings; calculates "substring" match instead of full string match.
-    Proximity graph allows tweaking the cost of operations for any character (default cost is 1), for example, based on phonetic similarity, keyboard proximity, char aliases, costless whitespaces, etc.
-    s1 is rows, s2 is columns.
-    If ignore_prefix is True, there is no penalty for prefix mismatches in s1 (like substring matching).
-    If ignore_suffix is True, there is no penalty for suffix mismatches in s1 (like substring matching).
-    '''
+    """
+    Build the Levenshtein distance matrix for two strings.
+
+    Args:
+        params: LevenshteinParams object with all algorithm options.
+
+    Returns:
+        np.ndarray: The computed distance matrix.
+    """
 
     p = params
     p.narrow = False # TODO: review implementation, produces wrong results
@@ -218,31 +264,67 @@ def levenshtein_matrix(params: LevenshteinParams) -> np.ndarray:
 # --- Single Levenshtein wrappers ---
 
 def levenshtein_distance(**kwargs: Unpack[LevenshteinParamsDict]) -> float:
+    """
+    Compute the Levenshtein distance between two strings.
+
+    Args:
+        kwargs: Parameters for LevenshteinParams.
+
+    Returns:
+        float: The Levenshtein distance.
+    """
     params = LevenshteinParams(**kwargs)
     matrix = levenshtein_matrix(params)
     distance = float(matrix[-1, -1])
     logger.debug(f"Distance: {distance:.2f}")
     return distance
 
-def levenshtein_similarity(min_similarity: float = 0, **kwargs: Unpack[LevenshteinParamsDict]) -> float:
+def levenshtein_similarity(threshold: float = 0, **kwargs: Unpack[LevenshteinParamsDict]) -> float:
+    """
+    Compute similarity between two strings using Levenshtein distance.
+
+    Args:
+        threshold: Minimum similarity threshold.
+        kwargs: Parameters for LevenshteinParams.
+
+    Returns:
+        float: Similarity score in [0, 1].
+    """
     params = LevenshteinParams(**kwargs)
     abs_max_distance = max(len(params.s1), len(params.s2))
-    distance_limit = abs_max_distance * (1 - min_similarity)
+    distance_limit = abs_max_distance * (1 - threshold)
     params.max_distance = distance_limit
     distance = levenshtein_distance(**params.__dict__)
     similarity = 1 - distance / abs_max_distance
     logger.debug(f"Similarity: {similarity:.2f} as 1 - {distance:.2f}/{abs_max_distance}")
     return similarity
 
-def levenshtein_match(min_similarity: float = 0, **kwargs: Unpack[LevenshteinParamsDict]) -> bool:
-    # TODO: review `min_similarity` name
-    similarity = levenshtein_similarity(**kwargs, min_similarity=min_similarity)
-    return similarity >= min_similarity
+def levenshtein_match(threshold: float = 0, **kwargs: Unpack[LevenshteinParamsDict]) -> bool:
+    """
+    Check if two strings match above a similarity threshold.
+
+    Args:
+        threshold: Minimum similarity threshold.
+        kwargs: Parameters for LevenshteinParams.
+
+    Returns:
+        bool: True if similarity >= threshold, else False.
+    """
+    similarity = levenshtein_similarity(**kwargs, threshold=threshold)
+    return similarity >= threshold
 
 # --- Iterable Levenshtein wrappers ---
 
 def levenshtein_distance_substring(**kwargs: Unpack[LevenshteinParamsDict]) -> Iterable[tuple[Span, float]]:
-    '''Returns the length of a substr in the longer string (s2 if equal) for the best levenshtein match with the shorter string, and the best distance for that length.'''
+    """
+    Find best substring matches and distances for the shorter string in the longer string.
+
+    Args:
+        kwargs: Parameters for LevenshteinParams.
+
+    Returns:
+        Iterable[tuple[Span, float]]: List of (Span, distance) for best matches.
+    """
     p = LevenshteinParams(**kwargs)
     p.s1, p.s2 = (p.s1, p.s2) if len(p.s1) <= len(p.s2) else (p.s2, p.s1) # make sure s2 is longer than s1
     matrix = levenshtein_matrix(p)
@@ -263,12 +345,19 @@ def levenshtein_distance_substring(**kwargs: Unpack[LevenshteinParamsDict]) -> I
     logger.debug(f"Span distances: {[(span, distance, p.s2[span.slice]) for span, distance in result]}")
     return sorted(result, key=lambda x: x[0].start)
 
-def levenshtein_similarity_substring(min_similarity: float = 0,  **kwargs: Unpack[LevenshteinParamsDict]) -> list[tuple[Span, float]]:
-    '''
-    Computes the similarity between two strings using the Levenshtein distance. Output: 0...1 where 1 indicates perfect similarity and 0 indicates perfect mismatch. The length of s1 is used to calculate the maximum possible distance. Returns the best length of s2 to maximally match s1, and the similarity score.
-    '''
+def levenshtein_similarity_substring(threshold: float = 0,  **kwargs: Unpack[LevenshteinParamsDict]) -> list[tuple[Span, float]]:
+    """
+    Compute similarity scores for all best substring matches.
+
+    Args:
+        threshold: Minimum similarity threshold.
+        kwargs: Parameters for LevenshteinParams.
+
+    Returns:
+        list[tuple[Span, float]]: List of (Span, similarity) for best matches.
+    """
     p = LevenshteinParams(**kwargs)
-    tolerance = 1 - min_similarity
+    tolerance = 1 - threshold
     max_total_distance = min(len(p.s1), len(p.s2)) if p.ignore_prefix and p.ignore_suffix else max(len(p.s1), len(p.s2))
     max_allowed_distance = round(max_total_distance * tolerance)
     p.max_distance = max_allowed_distance
@@ -276,11 +365,18 @@ def levenshtein_similarity_substring(min_similarity: float = 0,  **kwargs: Unpac
     logger.debug(f"Similarities: {[(span, score, p.s2[span.slice]) for span, score in similarities]}")
     return similarities
 
-def levenshtein_search_substring(min_similarity: float = 0, **kwargs: Unpack[LevenshteinParamsDict]) -> list[tuple[Span, float]]:
-    '''
-    Checks if two strings are similar enough based on the Levenshtein distance. Returns the best length of s2 to maximally match s1, and whether it's a match. Length value is only meaningful when the match is true.
-    '''
-    matches = [(span, similarity) for span, similarity in levenshtein_similarity_substring(min_similarity=min_similarity, **kwargs) if similarity >= min_similarity]
+def levenshtein_search_substring(threshold: float = 0, **kwargs: Unpack[LevenshteinParamsDict]) -> list[tuple[Span, float]]:
+    """
+    Find substring matches above a similarity threshold.
+
+    Args:
+        threshold: Minimum similarity threshold.
+        kwargs: Parameters for LevenshteinParams.
+
+    Returns:
+        list[tuple[Span, float]]: List of (Span, similarity) for matches above threshold.
+    """
+    matches = [(span, similarity) for span, similarity in levenshtein_similarity_substring(threshold=threshold, **kwargs) if similarity >= threshold]
     logger.debug(f"Matches: {matches}")
     return matches
 
@@ -372,6 +468,16 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
 
     def plot(dp, s1, s2, s1_list = None, s2_list = None):
+        """
+        Plot the Levenshtein distance matrix using matplotlib.
+
+        Args:
+            dp: Distance matrix.
+            s1: First string.
+            s2: Second string.
+            s1_list: Optional custom row labels.
+            s2_list: Optional custom column labels.
+        """
         s1_list = s1_list or ['s1'] + list(s1)
         s2_list = s2_list or ['s2'] + list(s2)
 
@@ -395,6 +501,14 @@ if __name__ == '__main__':
         plt.tight_layout()
 
     def plot_chart(values: np.ndarray, s2, title: str):
+        """
+        Plot a bar chart for values using matplotlib.
+
+        Args:
+            values: Array of values to plot.
+            s2: String for x-axis labels.
+            title: Chart title.
+        """
         fig, ax = plt.subplots(figsize=(len(s2) * 0.6, 2.5))
         bars = ax.bar(range(len(values)), values, color=plt.cm.viridis(values / (values.max() or 1)))
         for i, val in enumerate(values):

@@ -50,7 +50,7 @@ def test_levenshtein_distance_full(a: str, b: str, exp_distance: float) -> None:
     assert not errors, '\t' + '; '.join(errors)
 
 @pytest.mark.parametrize(
-    "a,b,min_similarity,exp_similarity",
+    "a,b,threshold,exp_similarity",
     [
         ("abc", "abc", 0.0, 1.0),
         ("abc", "abx", 0.0, 2/3),
@@ -59,16 +59,16 @@ def test_levenshtein_distance_full(a: str, b: str, exp_distance: float) -> None:
         ("saturday", "sunday", 0.0, 5/8),
     ]
 )
-def test_levenshtein_similarity_full(a: str, b: str, min_similarity: float, exp_similarity: float) -> None:
+def test_levenshtein_similarity_full(a: str, b: str, threshold: float, exp_similarity: float) -> None:
     print(f'{a=} {b=}')
-    similarity = levenshtein_similarity(s1=a, s2=b, min_similarity=min_similarity)
+    similarity = levenshtein_similarity(s1=a, s2=b, threshold=threshold)
     errors = []
     if not similarity == pytest.approx(exp_similarity, abs=1e-6):
         errors.append(f'exp similarity {exp_similarity:.2f} != {similarity:.2f}')
     assert not errors, '\t' + '; '.join(errors)
 
 @pytest.mark.parametrize(
-    "a,b,min_similarity,exp_match",
+    "a,b,threshold,exp_match",
     [
         ("abc", "abc", 1.0, True),
         ("abc", "abx", 1.0, False),
@@ -77,9 +77,9 @@ def test_levenshtein_similarity_full(a: str, b: str, min_similarity: float, exp_
         ("kitten", "sitting", 0.7, False),
     ]
 )
-def test_levenshtein_match_full(a: str, b: str, min_similarity: float, exp_match: bool) -> None:
+def test_levenshtein_match_full(a: str, b: str, threshold: float, exp_match: bool) -> None:
     print(f'{a=} {b=}')
-    match = levenshtein_match(s1=a, s2=b, min_similarity=min_similarity)
+    match = levenshtein_match(s1=a, s2=b, threshold=threshold)
     errors = []
     if match != exp_match:
         errors.append(f'exp match {exp_match} != {match}')
@@ -127,7 +127,7 @@ def test_levenshtein_distance_skip_spaces(a: str, b: str, exp_distance: float) -
 # --- Substring Distance/Similarity/Search ---
 
 @pytest.mark.parametrize(
-    "a,b,min_similarity,exp_spans",
+    "a,b,threshold,exp_spans",
     [
         # basic edge cases for debug
         # checking similarity limit doesn't return too early
@@ -151,12 +151,12 @@ def test_levenshtein_distance_skip_spaces(a: str, b: str, exp_distance: float) -
         ("lnknpk", "lorem ispum ln kn pk sit amet lnk npk foo bar baz", 0.9, [(12, 20), (30, 37)]),
     ]
 )
-def test_levenshtein_search_substring(a: str, b: str, min_similarity: float, exp_spans: list[tuple[int, int]]) -> None:
+def test_levenshtein_search_substring(a: str, b: str, threshold: float, exp_spans: list[tuple[int, int]]) -> None:
     print(f'{a=} {b=}')
     longer = a if len(a) > len(b) else b
     shorter = a if len(a) <= len(b) else b
     matches = levenshtein_search_substring(
-        s1=a, s2=b, proximity_graph=SKIP_SPACES_GRAPH, ignore_prefix=True, early_return=False, min_similarity=min_similarity
+        s1=a, s2=b, proximity_graph=SKIP_SPACES_GRAPH, ignore_prefix=True, early_return=False, threshold=threshold
     )
     result = [(span.start, span.end) for span, _ in matches]
     errors = []
@@ -168,6 +168,6 @@ def test_levenshtein_search_substring(a: str, b: str, min_similarity: float, exp
     for i in range(len(result)):
         if result[i] != exp_spans[i]:
             errors.append(f'exp spans {exp_spans} != {result} - matched "{longer[matches[0][0].slice]}"')
-        if levenshtein_distance(s1=shorter, s2=longer[matches[0][0].slice], proximity_graph=SKIP_SPACES_GRAPH) / len(shorter) > (1 - min_similarity):
+        if levenshtein_distance(s1=shorter, s2=longer[matches[0][0].slice], proximity_graph=SKIP_SPACES_GRAPH) / len(shorter) > (1 - threshold):
             errors.append(f'Unexpected substr: exp {shorter} != {longer[matches[0][0].slice]}')
     assert not errors, '\t' + '; '.join(errors)

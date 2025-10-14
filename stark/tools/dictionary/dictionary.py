@@ -1,9 +1,10 @@
 import logging
+from collections.abc import Iterable
 from dataclasses import dataclass
 from enum import Enum, auto
 from itertools import groupby
-from typing import Iterable, Optional
 
+from stark.tools.common.span import Span
 from stark.tools.levenshtein import (
     SIMPLEPHONE_PROXIMITY_GRAPH,
     levenshtein_match,
@@ -20,7 +21,6 @@ from .models import (
     DictionaryStorageProtocol,
     LookupResult,
     Metadata,
-    Span,
 )
 
 logger = logging.getLogger(__name__)
@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 class NameEntry:
     language_code: str
     name: str
-    metadata: Optional[Metadata] = None
+    metadata: Metadata | None = None
 
 class LookupMode(Enum):
     EXACT = auto() # the fastest
@@ -42,13 +42,13 @@ class Dictionary:
     Phonetic-aware dictionary with metadata storage.
     """
 
-    def __init__(self, storage: DictionaryStorageProtocol):
-        self.storage = storage
+    def __init__(self, storage: DictionaryStorageProtocol) -> None:
+        self.storage: DictionaryStorageProtocol = storage
 
     # ----------------------
     # Write methods
     # ----------------------
-    def write_one(self, language_code: str, name: str, metadata: Optional[Metadata] = None):
+    def write_one(self, language_code: str, name: str, metadata: Metadata | None = None) -> None:
         """
         Add a single entry to the dictionary.
         Phonetic conversion happens internally (mandatory).
@@ -64,7 +64,7 @@ class Dictionary:
         self.storage.write_one(item)
         logger.debug(f"Written entry '{name}' with phonetic '{phonetic_str}' and simple phonetic '{simple_phonetic}'")
 
-    def write_all(self, names: list[NameEntry]):
+    def write_all(self, names: list[NameEntry]) -> None:
         """
         Add multiple entries in batch. Replaces existing entries.
         """
@@ -86,9 +86,20 @@ class Dictionary:
         return sorted(
             self.lookup(name_candidate, language_code, mode),
             key=lambda item: levenshtein_similarity(
-                s1=item.name,
-                s2=name_candidate
+                s1=item.phonetic,
+                s2=phonetic(name_candidate, language_code)
             ),
+            reverse=True
+        )
+
+    def sentence_search_sorted(self, sentence: str, language_code: str, mode: LookupMode = LookupMode.EXACT) -> list[LookupResult]:
+        return sorted(
+            self.sentence_search(sentence, language_code, mode),
+            key=lambda result: levenshtein_similarity_substring(
+                s1=result.item.phonetic,
+                s2=phonetic(sentence, language_code),
+                ignore_prefix=True,
+            )[1],
             reverse=True
         )
 
@@ -101,30 +112,24 @@ class Dictionary:
 
         match mode:
             case LookupMode.EXACT:
-
                 yield from self.storage.search_equal_simple_phonetic(simple_phonetic)
-
             case LookupMode.CONTAINS:
-
                 yield from self.storage.search_contains_simple_phonetic(simple_phonetic)
-
             case LookupMode.FUZZY:
-
                 yield from filter(
                     lambda item: levenshtein_match(
                         s1=item.name,
                         s2=name_candidate,
-                        min_similarity=0.8,
+                        threshold=0.8,
                         proximity_graph=SIMPLEPHONE_PROXIMITY_GRAPH
                     ),
                     self.storage.iterate()
                 )
-
             case LookupMode.UNTIL_MATCH:
                 for gen in (
-                    self.lookup(name_candidate, language_code, LookupMode.EXACT),
-                    self.lookup(name_candidate, language_code, LookupMode.CONTAINS),
-                    self.lookup(name_candidate, language_code, LookupMode.FUZZY),
+                    iter(self.lookup(name_candidate, language_code, LookupMode.EXACT)),
+                    iter(self.lookup(name_candidate, language_code, LookupMode.CONTAINS)),
+                    iter(self.lookup(name_candidate, language_code, LookupMode.FUZZY)),
                 ):
                     try:
                         first: DictionaryItem = next(gen)
@@ -135,45 +140,27 @@ class Dictionary:
                         yield from gen
                         break
 
-    def sentence_search_sorted(self, sentence: str, language_code: str, mode: LookupMode = LookupMode.EXACT) -> list[LookupResult]:
-        return sorted(
-            self.sentence_search(sentence, language_code, mode),
-            key=lambda result: levenshtein_similarity_substring(
-                s1=result.item.name,
-                s2=sentence,
-                ignore_prefix=True,
-            )[1],
-            reverse=True
-        )
-
     def sentence_search(self, sentence: str, language_code: str, mode: LookupMode = LookupMode.EXACT) -> Iterable[LookupResult]:
-
         match mode:
-
             case LookupMode.EXACT | LookupMode.CONTAINS:
-
-                return self._sentence_search_per_word(sentence, language_code, mode)
-
+                yield from self._sentence_search_per_word(sentence, language_code, mode)
             case LookupMode.FUZZY:
-
                 simple_phonetic = simplephone(phonetic(sentence, language_code)) or ''
-
                 for item in self.storage.iterate():
                     matches = levenshtein_search_substring(
                         s1=simple_phonetic,
                         s2=item.simple_phonetic,
                         ignore_prefix=True,
-                        min_similarity=0.8,
+                        threshold=0.8,
                         proximity_graph=SIMPLEPHONE_PROXIMITY_GRAPH
                     )
                     for span, _ in matches:
                         yield LookupResult(span, item)
-
             case LookupMode.UNTIL_MATCH:
                 for gen in (
-                    self.sentence_search(sentence, language_code, LookupMode.EXACT),
-                    self.sentence_search(sentence, language_code, LookupMode.CONTAINS),
-                    self.sentence_search(sentence, language_code, LookupMode.FUZZY),
+                    iter(self.sentence_search(sentence, language_code, LookupMode.EXACT)),
+                    iter(self.sentence_search(sentence, language_code, LookupMode.CONTAINS)),
+                    iter(self.sentence_search(sentence, language_code, LookupMode.FUZZY)),
                 ):
                     try:
                         first: LookupResult = next(gen)
@@ -195,9 +182,9 @@ class Dictionary:
         # 2. then use find_substring_in_words to:
         # 2.1. receive substr:str='BRBZ' and list list of BR, BZ, etc ~~words: list[tuple[indices, word, simplfied]]~~
         # 2.2 iterate over the list of simplified words, looking for single interceptions resulting in full match (containing) across neighboring words; return matched indexes
-        # 2.3. combine matches of words list items into one (4,11), 'bar baz' (space joined), 'BRBZ' (just joined)
+        # 2.3. combine matches of words list items into one (4,11), 'bar baz' (space join), 'BRBZ' (zerowidth join)
 
-        # note: strings like 'foo bar baz test ber buz foo' will contain the match twice, so the final result must be
+        # note: strings like 'foo bar baz test ber buz foo' will contain the match twice, so the final result must be corresponding
 
         words = sentence.split()
         results: list[LookupResult] = []
@@ -231,11 +218,11 @@ class Dictionary:
 
             words_track_list = [
                 WordTrack(
-                    span=Span(*indices),
-                    text=sentence[slice(*indices)],
-                    simple_phonetic=simplephone(phonetic(sentence[slice(*indices)], language_code)) or ''
+                    span=span,
+                    text=sentence[span.slice],
+                    simple_phonetic=simplephone(phonetic(sentence[span.slice], language_code)) or ''
                 )
-                for indices in split_indices(sentence)
+                for span in split_indices(sentence)
             ]
 
             simple_sentence = ''.join(w.text for w in words_track_list)
@@ -282,7 +269,7 @@ class Dictionary:
     # ----------------------
     # Optional / Advanced
     # ----------------------
-    async def build(self):
+    async def build(self) -> None:
         """
         Generate a static dictionary at build-time instead of runtime.
         """

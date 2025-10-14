@@ -19,3 +19,5 @@ class NLDictionaryName(Object):
             raise ParseError(f"Could not find '{from_string}' in dictionary")
         self.value = matches
         return from_string
+
+# TODO: test

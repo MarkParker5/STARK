@@ -231,7 +231,7 @@ def test_lookup(dictionary: Dictionary, entries: list[tuple[str, Metadata]], sen
         (["en:foo", "en:bar"], "baz", LookupMode.UNTIL_MATCH, []),
     ]
 )
-def test_lookup_modes_and_until_match(dictionary: Dictionary, entries: list[str], query: str, mode: LookupMode, expected_names: list[str]):
+def test_lookup_modes(dictionary: Dictionary, entries: list[str], query: str, mode: LookupMode, expected_names: list[str]):
     print(f"Testing '{query}' with mode {mode}")
     dictionary.clear()
     for entry in entries:
@@ -240,6 +240,88 @@ def test_lookup_modes_and_until_match(dictionary: Dictionary, entries: list[str]
     results = list(dictionary.lookup(query, "en", mode=mode))
     assert [r.name for r in results] == expected_names
 
-# TODO: test dictionary.sentence search with different modes
+@pytest.mark.parametrize(
+    "entries,sentence,mode,expected_names",
+    [
+        # EXACT (single-word): Only matches if entry is exactly a word in the sentence
+        (
+            ["en:dragons", "en:linkin", "en:zeppelin"],
+            "play dragons and linkin",
+            LookupMode.EXACT,
+            ["dragons", "linkin"],
+        ),
+        # EXACT (multi-word): Only matches if entry is exactly a word in the sentence
+        (
+            ["en:imagine dragons", "en:linkin park", "en:led zeppelin"],
+            "play imagine dragons and linkin park",
+            LookupMode.EXACT,
+            ["imagine dragons", "linkin park"],
+        ),
+        # CONTAINS (single-word): Matches if entry is fully present inside the sentence
+        (
+            ["en:dragons", "en:linkin", "en:zeppelin"],
+            "please play imagine dragons and then add linkin park to the queue",
+            LookupMode.CONTAINS,
+            ["dragons", "linkin"],
+        ),
+        # CONTAINS (multi-word): Matches if entry is fully present inside the sentence
+        (
+            ["en:imagine dragons", "en:linkin park", "en:led zeppelin"],
+            "please play imagine dragons and then add linkin park to the queue",
+            LookupMode.CONTAINS,
+            ["imagine dragons", "linkin park"],
+        ),
+        # FUZZY: Matches phonetically similar entries (typos, transliterations)
+        (
+            ["en:imagine dragons", "en:linkin park", "en:led zeppelin"],
+            "play имя джин драгонс и лин кин парк",
+            LookupMode.FUZZY,
+            ["imagine dragons", "linkin park"],
+        ),
+        # FUZZY: Typo tolerance
+        (
+            ["en:imagine dragons", "en:linkin park"],
+            "play imagine dragns and linkin prk",
+            LookupMode.FUZZY,
+            ["imagine dragons", "linkin park"],
+        ),
+        # UNTIL_MATCH: Should return EXACT if present
+        (
+            ["en:imagine dragons", "en:linkin park", "en:led zeppelin"],
+            "play imagine dragons and linkin park",
+            LookupMode.UNTIL_MATCH,
+            ["imagine dragons", "linkin park"],
+        ),
+        # UNTIL_MATCH: No EXACT, but CONTAINS present
+        (
+            ["en:imagine dragons", "en:linkin park"],
+            "please play imagine dragons and add linkin park",
+            LookupMode.UNTIL_MATCH,
+            ["imagine dragons", "linkin park"],
+        ),
+        # UNTIL_MATCH: No EXACT/CONTAINS, FUZZY present
+        (
+            ["en:imagine dragons", "en:linkin park"],
+            "play имя джин драгонс и лин кин парк",
+            LookupMode.UNTIL_MATCH,
+            ["imagine dragons", "linkin park"],
+        ),
+        # UNTIL_MATCH: No matches at all
+        (
+            ["en:imagine dragons", "en:linkin park"],
+            "play something else",
+            LookupMode.UNTIL_MATCH,
+            [],
+        ),
+    ]
+)
+def test_sentence_search_modes(dictionary: Dictionary, entries: list[str], sentence: str, mode: LookupMode, expected_names: list[str]):
+    dictionary.clear()
+    for entry in entries:
+        lang, name = parse_lang(entry)
+        dictionary.write_one(lang, name, {})
+    results = list(dictionary.sentence_search(sentence, "en", mode=mode))
+    found_names = [r.item.name for r in results]
+    assert sorted(found_names) == sorted(expected_names)
 
 # TODO: stress test both memory and sql
