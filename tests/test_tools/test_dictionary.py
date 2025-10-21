@@ -12,7 +12,7 @@ from stark.tools.dictionary.storage.storage_sqlite import (
 
 @pytest.fixture(params=["memory", "sqlite"])
 def dictionary(request) -> Dictionary:
-    print(f'Dictionary storage: {request.param}')
+    print(f"Dictionary storage: {request.param}")
     if request.param == "memory":
         return Dictionary(storage=DictionaryStorageMemory())
     elif request.param == "sqlite":
@@ -20,11 +20,13 @@ def dictionary(request) -> Dictionary:
         return Dictionary(storage=DictionaryStorageSQLite(":memory:"))
     raise ValueError(request.param)
 
+
 def parse_lang(string: str) -> tuple[str, str]:
-    lang = 'en'
-    if ':' in string:
-        lang, string = string.split(':', 1)
+    lang = "en"
+    if ":" in string:
+        lang, string = string.split(":", 1)
     return lang, string
+
 
 @pytest.mark.parametrize(
     "name,lookup,data",
@@ -35,10 +37,11 @@ def parse_lang(string: str) -> tuple[str, str]:
         # English hello/hallo, Cyrillic hello/hallo
         ("en:hello", "de:hallo", {"coords": [49.45, 11.08]}),
         ("ru:хеллоу", "de:hallo", {"coords": [49.45, 11.08]}),
-    ]
+    ],
 )
 def test_write_one_and_lookup(dictionary: Dictionary, name: str, lookup: str, data):
     from pprint import pprint
+
     pprint({"name": name, "lookup": lookup, "data": data})
     # Use meta_key/meta_val for flexible assertion
 
@@ -50,6 +53,7 @@ def test_write_one_and_lookup(dictionary: Dictionary, name: str, lookup: str, da
 
     assert matches
     assert matches[0].metadata == data
+
 
 def test_write_all_and_clear(dictionary: Dictionary):
     data = [
@@ -81,20 +85,22 @@ def test_sentence_search(dictionary: Dictionary, entries: list[tuple[str, Metada
     lang, sentence = parse_lang(sentence)
 
     results = list(dictionary.sentence_search(sentence, lang, mode=LookupMode.FUZZY))
-    assert results, f'{expected} not found'
+    assert results, f"{expected} not found"
 
-    found = [r.item.metadata['id'] for r in results]
-    print(f'{found=}')
+    found = [r.item.metadata["id"] for r in results]
+    print(f"{found=}")
     assert found == expected
 
+
 # test_write_and_lookup_multiple_languages merged into test_write_one_and_lookup
+
 
 @pytest.mark.parametrize(
     "query,expected",
     [
         ("nurberg", ["nurberg", "nurburg"]),
         ("nurburg", ["nurburg", "nurberg"]),
-    ]
+    ],
 )
 def test_sorting_of_matches(dictionary: Dictionary, query: str, expected: list[str]):
     lang, name = parse_lang("en:nurberg")
@@ -105,109 +111,115 @@ def test_sorting_of_matches(dictionary: Dictionary, query: str, expected: list[s
     matches = list(dictionary.lookup_sorted(query, "en", mode=LookupMode.FUZZY))
     assert [match.name for match in matches] == expected
 
+
 def test_clear_removes_all(dictionary: Dictionary):
     lang, name = parse_lang("en:foo")
     dictionary.write_one(lang, name, {})
     dictionary.clear()
     assert list(dictionary.lookup("foo", "en")) == []
 
+
 @pytest.mark.parametrize(
     "entries,sentence,expected",
     [
         # Basic suggestions (supported by current implementation)
         (
-            [('hello', {'id': 1}), ('world', {'id': 2})],
-            'en:hello world',
+            [("hello", {"id": 1}), ("world", {"id": 2})],
+            "en:hello world",
             [1, 2],
         ),
         (
-            [('hello', {'id': 1}), ('world', {'id': 2})],
-            'en:hilo wart',
+            [("hello", {"id": 1}), ("world", {"id": 2})],
+            "en:hilo wart",
             [1, 2],
         ),
-
         # Advanced multilingual fuzzy matching
         (
             [
-                ('spotify', {'id': 1}),
-                ('telegram', {'id': 2}),
-                ('instagram', {'id': 3}),
-                ('led zeppelin', {'id': 4}),
-                ('imagine dragons', {'id': 5}),
-                ('highway to hell', {'id': 6}),
-                ('linkin park', {'id': 7}),
+                ("spotify", {"id": 1}),
+                ("telegram", {"id": 2}),
+                ("instagram", {"id": 3}),
+                ("led zeppelin", {"id": 4}),
+                ("imagine dragons", {"id": 5}),
+                ("highway to hell", {"id": 6}),
+                ("linkin park", {"id": 7}),
             ],
-            'ru:телеграм',
+            "ru:телеграм",
             [2],
         ),
         (
             [
-                ('spotify', {'id': 1}),
-                ('telegram', {'id': 2}),
-                ('instagram', {'id': 3}),
-                ('led zeppelin', {'id': 4}),
-                ('imagine dragons', {'id': 5}),
-                ('highway to hell', {'id': 6}),
-                ('linkin park', {'id': 7}),
+                ("spotify", {"id": 1}),
+                ("telegram", {"id": 2}),
+                ("instagram", {"id": 3}),
+                ("led zeppelin", {"id": 4}),
+                ("imagine dragons", {"id": 5}),
+                ("highway to hell", {"id": 6}),
+                ("linkin park", {"id": 7}),
             ],
-            'ru:ледзеплин',
+            "ru:ледзеплин",
             [4],
         ),
         (
             [
-                ('spotify', {'id': 1}),
-                ('telegram', {'id': 2}),
-                ('instagram', {'id': 3}),
-                ('led zeppelin', {'id': 4}),
-                ('imagine dragons', {'id': 5}),
-                ('highway to hell', {'id': 6}),
-                ('linkin park', {'id': 7}),
+                ("spotify", {"id": 1}),
+                ("telegram", {"id": 2}),
+                ("instagram", {"id": 3}),
+                ("led zeppelin", {"id": 4}),
+                ("imagine dragons", {"id": 5}),
+                ("highway to hell", {"id": 6}),
+                ("linkin park", {"id": 7}),
             ],
-            'ru:имя джин драгонс',
+            "ru:имя джин драгонс",
             [5],
         ),
         (
             [
-                ('spotify', {'id': 1}),
-                ('telegram', {'id': 2}),
-                ('instagram', {'id': 3}),
-                ('led zeppelin', {'id': 4}),
-                ('imagine dragons', {'id': 5}),
-                ('highway to hell', {'id': 6}),
-                ('linkin park', {'id': 7}),
+                ("spotify", {"id": 1}),
+                ("telegram", {"id": 2}),
+                ("instagram", {"id": 3}),
+                ("led zeppelin", {"id": 4}),
+                ("imagine dragons", {"id": 5}),
+                ("highway to hell", {"id": 6}),
+                ("linkin park", {"id": 7}),
             ],
-            'ru:хайвей та хел',
+            "ru:хайвей та хел",
             [6],
         ),
         (
             [
-                ('spotify', {'id': 1}),
-                ('telegram', {'id': 2}),
-                ('instagram', {'id': 3}),
-                ('led zeppelin', {'id': 4}),
-                ('imagine dragons', {'id': 5}),
-                ('highway to hell', {'id': 6}),
-                ('linkin park', {'id': 7}),
+                ("spotify", {"id": 1}),
+                ("telegram", {"id": 2}),
+                ("instagram", {"id": 3}),
+                ("led zeppelin", {"id": 4}),
+                ("imagine dragons", {"id": 5}),
+                ("highway to hell", {"id": 6}),
+                ("linkin park", {"id": 7}),
             ],
-            'ru:линкольн парк',
+            "ru:линкольн парк",
             [7],
         ),
         (
             [
-                ('spotify', {'id': 1}),
-                ('telegram', {'id': 2}),
-                ('instagram', {'id': 3}),
-                ('led zeppelin', {'id': 4}),
-                ('imagine dragons', {'id': 5}),
-                ('highway to hell', {'id': 6}),
-                ('linkin park', {'id': 7}),
+                ("spotify", {"id": 1}),
+                ("telegram", {"id": 2}),
+                ("instagram", {"id": 3}),
+                ("led zeppelin", {"id": 4}),
+                ("imagine dragons", {"id": 5}),
+                ("highway to hell", {"id": 6}),
+                ("linkin park", {"id": 7}),
             ],
-            'ru:спу ти фай',
+            "ru:спу ти фай",
             [1],
         ),
-    ]
+    ],
 )
-def test_lookup(dictionary: Dictionary, entries: list[tuple[str, Metadata]], sentence: str, expected: list[int]):
+def test_lookup(
+    dictionary: Dictionary,
+    entries: list[tuple[str, Metadata]],
+    sentence: str,
+    expected: list[int],
+):
     # Load entries into dictionary
     for entry, data in entries:
         lang, name = parse_lang(entry)
@@ -217,11 +229,12 @@ def test_lookup(dictionary: Dictionary, entries: list[tuple[str, Metadata]], sen
 
     # Perform fuzzy search
     results = list(dictionary.sentence_search(sentence, lang, mode=LookupMode.FUZZY))
-    assert results, f'{expected} not found'
+    assert results, f"{expected} not found"
 
-    found = [r.item.metadata['id'] for r in results]
-    print(f'{found=}')
+    found = [r.item.metadata["id"] for r in results]
+    print(f"{found=}")
     assert found == expected
+
 
 @pytest.mark.parametrize(
     "entries,query,mode,expected_names",
@@ -240,9 +253,15 @@ def test_lookup(dictionary: Dictionary, entries: list[tuple[str, Metadata]], sen
         (["en:hello", "en:world"], "hellp", LookupMode.UNTIL_MATCH, ["hello"]),
         # UNTIL_MATCH: no matches
         (["en:foo", "en:bar"], "baz", LookupMode.UNTIL_MATCH, []),
-    ]
+    ],
 )
-def test_lookup_modes(dictionary: Dictionary, entries: list[str], query: str, mode: LookupMode, expected_names: list[str]):
+def test_lookup_modes(
+    dictionary: Dictionary,
+    entries: list[str],
+    query: str,
+    mode: LookupMode,
+    expected_names: list[str],
+):
     print(f"Testing '{query}' with mode {mode}")
     dictionary.clear()
     for entry in entries:
@@ -250,6 +269,7 @@ def test_lookup_modes(dictionary: Dictionary, entries: list[str], query: str, mo
         dictionary.write_one(lang, name, {})
     results = list(dictionary.lookup_sorted(query, "en", mode=mode))
     assert [r.name for r in results] == expected_names
+
 
 @pytest.mark.parametrize(
     "entries,sentence,mode,expected_names",
@@ -324,9 +344,15 @@ def test_lookup_modes(dictionary: Dictionary, entries: list[str], query: str, mo
             LookupMode.UNTIL_MATCH,
             [],
         ),
-    ]
+    ],
 )
-def test_sentence_search_modes(dictionary: Dictionary, entries: list[str], sentence: str, mode: LookupMode, expected_names: list[str]):
+def test_sentence_search_modes(
+    dictionary: Dictionary,
+    entries: list[str],
+    sentence: str,
+    mode: LookupMode,
+    expected_names: list[str],
+):
     dictionary.clear()
     for entry in entries:
         lang, name = parse_lang(entry)
