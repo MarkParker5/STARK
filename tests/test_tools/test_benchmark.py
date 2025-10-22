@@ -14,7 +14,7 @@ from faker import Faker
 
 
 # Benchmark
-# @pytest.mark.timeout(20.0)
+# @pytest.mark.timeout(30.0)
 @pytest.mark.benchmark(
     timer=time.monotonic,
     min_time=0.1,
@@ -24,6 +24,7 @@ from faker import Faker
 @pytest.mark.report_duration
 @pytest.mark.report_tracemalloc
 # Parametrize
+# @pytest.mark.parametrize("dict_size", [100, 1_000, 10_000])
 @pytest.mark.parametrize("dict_size", [100, 1_000, 10_000, 100_000])
 @pytest.mark.parametrize("success", [True, False])
 @pytest.mark.parametrize(

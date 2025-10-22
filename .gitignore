@@ -3,6 +3,13 @@ __pycache__
 *$py.class
 *.pyc
 
+# cython
+*.pyd
+*.c
+*.so
+build/
+dist/
+
 .idea
 *.pytest_cache
 .mypy_cache
@@ -18,4 +25,6 @@ site/
 .DS_Store
 test.py
 
+# benchmarks
 prof
+.benchmarks

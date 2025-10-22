@@ -1,18 +1,22 @@
 import string
 
 
-def simplephone(text: str, glue: str = ' ', sep: str = string.whitespace) -> str | None:
-    '''
+def simplephone(text: str, glue: str = " ", sep: str = string.whitespace) -> str | None:
+    """
     Caverphone2 / Soundex / Kölner Phonetik inspired algorithm for phonetic encoding of words.
     No filling with "1", no length limit, skip spaces, return None for empty input.
-    '''
-    return glue.join(simplephone_word(word) or '' for word in text.split()).strip(sep) or None
+    """
+    return (
+        glue.join(simplephone_word(word) or "" for word in text.split()).strip(sep)
+        or None
+    )
+
 
 def simplephone_word(word: str) -> str | None:
-    '''
+    """
     Caverphone2 / Soundex / Kölner Phonetik inspired algorithm for phonetic encoding of words.
     No filling with "1", no length limit, return None if word is empty.
-    '''
+    """
 
     alphabet = "abcdefghijklmnopqrstuvwxyz"
     vowels = "aeiou"
@@ -116,7 +120,7 @@ def simplephone_word(word: str) -> str | None:
     # while len(word) < 10:
     #     word += '1'
 
-    if word == 'A':
+    if word == "A":
         return None
 
     return word
