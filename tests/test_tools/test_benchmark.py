@@ -24,15 +24,14 @@ from faker import Faker
 @pytest.mark.report_duration
 @pytest.mark.report_tracemalloc
 # Parametrize
-# @pytest.mark.parametrize("dict_size", [100, 1_000, 10_000])
-@pytest.mark.parametrize("dict_size", [100, 1_000, 10_000, 100_000])
+@pytest.mark.parametrize("dict_size", [100, 1_000, 10_000, 100_000, 1_000_000])
 @pytest.mark.parametrize("success", [True, False])
 @pytest.mark.parametrize(
     "lookup_mode",
     # [LookupMode.FUZZY, LookupMode.UNTIL_MATCH],
     [LookupMode.EXACT, LookupMode.CONTAINS, LookupMode.FUZZY, LookupMode.UNTIL_MATCH],
 )
-@pytest.mark.parametrize("lookup_func", ["lookup"])  # , "sentence_search"])
+@pytest.mark.parametrize("lookup_func", ["lookup", "sentence_search"])
 @pytest.mark.parametrize("storage_type", ["sqlite"])  # , "memory"])
 # Other
 def test_benchmark__dictionary(
@@ -109,7 +108,9 @@ def test_benchmark__dictionary(
         name = get_random_entry()
         targets.append(name)
         if success:
-            dictionary.write_one(language_code="en", name=name, metadata={"idx": i})
+            dictionary.write_one(
+                language_code="en", name=name, metadata={"idx": f"x{i}"}
+            )
 
     # Prepare sentence
 

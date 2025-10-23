@@ -1,4 +1,4 @@
-# cython: boundscheck=False, cdivision=True, initializedcheck=False, profile=True
+# cython: boundscheck=False, cdivision=True, initializedcheck=False, language_level=3, wraparound=False
 import numpy as np
 cimport numpy as np
 from stark.tools.common.span import Span
@@ -66,17 +66,30 @@ cdef class LevenshteinParams:
     cdef double[:, :] prox
     cdef Py_ssize_t prox_shape0
     cdef Py_ssize_t prox_shape1
+    cdef public int last_r, last_c, s1_len, s2_len
 
-    def __init__(self, s1, s2, proximity_graph=None,
-                    max_distance=1e6, ignore_prefix=False,
-                    ignore_suffix=False, narrow=False,
-                    early_return=True, lower=True):
-        self.s1 = s1
-        self.s2 = s2
+    def __init__(self, s1, s2, proximity_graph=None, max_distance=1e6, ignore_prefix=False, ignore_suffix=False, narrow=False, early_return=True, lower=True):
+
+        # make sure s1 isn't longer than s2
+        s1, s2 = (s1, s2) if len(s1) <= len(s2) else (s2, s1)
+
+        self.narrow = False
+
+        if lower:
+            self.s1 = s1.lower()
+            self.s2 = s2.lower()
+        else:
+            self.s1 = s1
+            self.s2 = s2
+
+        self.last_r = self.s1_len = len(s1)
+        self.last_c = self.s2_len = len(s2)
+
         if proximity_graph is None:
             self.proximity_graph = {}
         else:
             self.proximity_graph = proximity_graph
+
         self.max_distance = max_distance
         self.ignore_prefix = ignore_prefix
         self.ignore_suffix = ignore_suffix
@@ -113,71 +126,72 @@ cdef class LevenshteinParams:
 cdef int none = ord('-')
 
 cpdef np.ndarray levenshtein_matrix(LevenshteinParams p):
-    p.narrow = False
-    if p.lower:
-        p.s1 = p.s1.lower()
-        p.s2 = p.s2.lower()
-
-    cdef int s1_len = len(p.s1)
-    cdef int s2_len = len(p.s2)
+    cdef int s1_len = p.s1_len
+    cdef int s2_len = p.s2_len
     cdef np.ndarray[np.int32_t, ndim=1] s1 = np.array([ord(c) for c in p.s1], dtype=np.int32)
     cdef np.ndarray[np.int32_t, ndim=1] s2 = np.array([ord(c) for c in p.s2], dtype=np.int32)
 
     cdef int abs_max_distance = min(s1_len, s2_len) if p.narrow else max(s1_len, s2_len)
     cdef double max_distance = p.max_distance if p.max_distance is not None else abs_max_distance
 
-    matrix = np.full((s1_len + 1, s2_len + 1), 1e6, dtype=float)
-    s1_inserts = [0.0] + [p.proximity(none, code) for code in s1]
-    s2_inserts = [0.0] + [p.proximity(none, code) for code in s2]
-    matrix[:, 0] = np.cumsum(np.array(s1_inserts))
-    matrix[0, :] = 0 if p.ignore_prefix else np.cumsum(np.array(s2_inserts))
+    matrix_np = np.full((s1_len + 1, s2_len + 1), 1e6, dtype=np.float64)
+    cdef double[:, :] matrix = matrix_np # use memoryview for faster access in the loop
+    cdef object proximity = p.proximity # save attribute lookup overhead
+
+    s1_inserts = [0.0] + [proximity(none, code) for code in s1]
+    s2_inserts = [0.0] + [proximity(none, code) for code in s2]
+    matrix_np[:, 0] = np.cumsum(np.array(s1_inserts))
+    matrix_np[0, :] = 0 if p.ignore_prefix else np.cumsum(np.array(s2_inserts))
     best_column = 0
 
     # logger.debug(f"Building levenshtein matrix for '{p.s1=}' and '{p.s2=}'")
 
     cdef int row_i, cell_i, start_column
     cdef double cell_value, del_cost, ins_cost, sub_cost
+
     for row_i in range(1, s1_len + 1):
         char1 = s1[row_i - 1]
-        start_column = max(1, best_column - 1) if p.narrow else 1
+        del_cost = proximity(char1, none)
+        start_column = 1
+        # start_column = max(1, best_column - 1) if p.narrow else 1
         for cell_i in range(start_column, s2_len + 1):
             char2 = s2[cell_i - 1]
             if char1 == char2 and matrix[row_i - 1, cell_i - 1] != 1e6:
                 cell_value = matrix[row_i - 1, cell_i - 1]
             else:
-                del_cost = p.proximity(char1, none)
-                ins_cost = p.proximity(none, char2)
-                sub_cost = p.proximity(char1, char2)
+                ins_cost = proximity(none, char2)
+                sub_cost = proximity(char1, char2)
                 if row_i == s1_len and p.ignore_suffix:
                     ins_cost = 0.0
                 cell_value = min(
+                    1e6, # so (1e6 + cost) does not create fake extremums
                     matrix[row_i - 1, cell_i] + del_cost,
                     matrix[row_i, cell_i - 1] + ins_cost,
                     matrix[row_i - 1, cell_i - 1] + sub_cost,
                 )
-            matrix[row_i, cell_i] = cell_value = min(cell_value, 1e6)
+            matrix[row_i, cell_i] = cell_value
             if cell_value < matrix[row_i, cell_i - 1]:
                 best_column = cell_i
-            if p.narrow:
-                if (
-                    cell_value > matrix[row_i, cell_i - 1]
-                    and row_i != s1_len
-                ):
-                    # logger.debug(...)
-                    break
+            # if p.narrow:
+            #     if (
+            #         cell_value > matrix[row_i, cell_i - 1]
+            #         and row_i != s1_len
+            #     ):
+            #         # logger.debug(...)
+            #         break
         if (
             p.early_return and matrix[row_i, best_column] > max_distance
         ):
             # logger.debug(...)
-            return matrix
+            return matrix_np
     # logger.debug(...)
-    return matrix
+    return matrix_np
 
 # Wrappers
 
 cpdef double levenshtein_distance(LevenshteinParams p):
     matrix = levenshtein_matrix(p)
-    return float(matrix[-1, -1])
+    return float(matrix[p.last_r, p.last_c])
 
 cpdef double levenshtein_similarity(double threshold, LevenshteinParams p):
     cdef int abs_max_distance = max(len(p.s1), len(p.s2))
@@ -190,23 +204,22 @@ cpdef bint levenshtein_match(double threshold, LevenshteinParams p):
 
 # Substring
 
-cdef double matrix_last_row_value(double[:, :] matrix, int c):
-    return matrix[-1, c]
+cdef double matrix_last_row_value(double[:, :] matrix, int c, int last_r):
+    return matrix[last_r, c]
 
 def tuple_start(result):
     return result[0].start
 
 cpdef list levenshtein_distance_substring(LevenshteinParams p):
-    p.s1, p.s2 = (p.s1, p.s2) if len(p.s1) <= len(p.s2) else (p.s2, p.s1)
     matrix = levenshtein_matrix(p)
-    ends = extremums(matrix[-1, :], 1, 1) + 1
+    ends = extremums(matrix[p.last_r, :], 1, 1) + 1
     ends = ends[::-1] # reverse
     result = []
     last_start = 1e6
 
-    # Use functools.partial to bind matrix
+    # Use functools.partial to bind matrix and last_r
     import functools
-    sortkey = functools.partial(matrix_last_row_value, matrix)
+    sortkey = functools.partial(matrix_last_row_value, matrix, last_r=p.last_r)
     ends = sorted(ends, key=sortkey)
 
     for end in ends:
@@ -215,7 +228,7 @@ cpdef list levenshtein_distance_substring(LevenshteinParams p):
         start = pathtrack_start_column(matrix, len(p.s1), len(p.s2), end_column=end)
         if start == end:
             continue
-        distance = matrix[-1, end]
+        distance = matrix[p.last_r, end]
         result.append((Span(int(start), int(end)), float(distance)))
         last_start = start
 
