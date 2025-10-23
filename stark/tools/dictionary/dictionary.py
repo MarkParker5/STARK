@@ -3,6 +3,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from enum import Enum, auto
 from itertools import groupby
+from typing import final
 
 from stark.tools.common.span import Span
 from stark.tools.levenshtein import (
@@ -47,7 +48,7 @@ class Dictionary:
     Phonetic-aware dictionary with metadata storage.
     """
 
-    def __init__(self, storage: DictionaryStorageProtocol) -> None:
+    def __init__(self, storage: DictionaryStorageProtocol):
         self.storage: DictionaryStorageProtocol = storage
 
     # ----------------------
@@ -55,7 +56,7 @@ class Dictionary:
     # ----------------------
     def write_one(
         self, language_code: str, name: str, metadata: Metadata | None = None
-    ) -> None:
+    ):  # TODO: overload to accept NameEntry
         """
         Add a single entry to the dictionary.
         Phonetic conversion happens internally (mandatory).
@@ -74,7 +75,7 @@ class Dictionary:
             f"Written entry '{name}' with phonetic '{phonetic_str}' and simple phonetic '{simple_phonetic}'"
         )
 
-    def write_all(self, names: list[NameEntry]) -> None:
+    def write_all(self, names: list[NameEntry]):
         """
         Add multiple entries in batch. Replaces existing entries.
         """
@@ -82,7 +83,7 @@ class Dictionary:
         for entry in names:
             self.write_one(entry.language_code, entry.name, entry.metadata)
 
-    def clear(self) -> None:
+    def clear(self):
         """
         Clear all entries from the dictionary.
         """
@@ -314,8 +315,16 @@ class Dictionary:
     # ----------------------
     # Optional / Advanced
     # ----------------------
-    async def build(self) -> None:
+    async def build(self):
         """
         Generate a static dictionary at build-time instead of runtime.
         """
         raise NotImplementedError("Dictionary.build() is not implemented")
+
+    @final
+    async def build_if_needed(self):
+        """
+        Calls build() if the storage is empty.
+        """
+        if self.storage.is_empty():
+            await self.build()

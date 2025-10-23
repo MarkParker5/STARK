@@ -1,4 +1,4 @@
-# cython: boundscheck=False, cdivision=True, initializedcheck=False
+# cython: boundscheck=False, cdivision=True, initializedcheck=False, profile=True
 import numpy as np
 cimport numpy as np
 from stark.tools.common.span import Span
@@ -96,14 +96,21 @@ cdef class LevenshteinParams:
             for c2, val in inner.items():
                 self.prox[i, ord(c2)] = val
 
-    cdef inline double proximity(self, char c1, char c2) except *:
-        cdef int i1 = ord(c1)
-        cdef int i2 = ord(c2)
-        if i1 < self.prox_shape0 and i2 < self.prox_shape1:
-            return self.prox[i1, i2]
+    cdef inline double proximity(self, int c1, int c2) except *:
+        if c1 < self.prox_shape0 and c2 < self.prox_shape1:
+            return self.prox[c1, c2]
         return 1.0
 
+    # cdef inline double proximity(self, char c1, char c2) except *:
+    #     cdef int i1 = ord(c1)
+    #     cdef int i2 = ord(c2)
+    #     if i1 < self.prox_shape0 and i2 < self.prox_shape1:
+    #         return self.prox[i1, i2]
+    #     return 1.0
+
 # --- Main Levenshtein functions ---
+
+cdef int none = ord('-')
 
 cpdef np.ndarray levenshtein_matrix(LevenshteinParams p):
     p.narrow = False
@@ -113,18 +120,15 @@ cpdef np.ndarray levenshtein_matrix(LevenshteinParams p):
 
     cdef int s1_len = len(p.s1)
     cdef int s2_len = len(p.s2)
-
-    cdef bytearray s1_bytes = bytearray(p.s1, 'utf-8')
-    cdef char[:] s1 = s1_bytes
-    cdef bytearray s2_bytes = bytearray(p.s2, 'utf-8')
-    cdef char[:] s2 = s2_bytes
+    cdef np.ndarray[np.int32_t, ndim=1] s1 = np.array([ord(c) for c in p.s1], dtype=np.int32)
+    cdef np.ndarray[np.int32_t, ndim=1] s2 = np.array([ord(c) for c in p.s2], dtype=np.int32)
 
     cdef int abs_max_distance = min(s1_len, s2_len) if p.narrow else max(s1_len, s2_len)
     cdef double max_distance = p.max_distance if p.max_distance is not None else abs_max_distance
 
     matrix = np.full((s1_len + 1, s2_len + 1), 1e6, dtype=float)
-    s1_inserts = [0.0] + [p.proximity('-', c) for c in s1]
-    s2_inserts = [0.0] + [p.proximity('-', c) for c in s2]
+    s1_inserts = [0.0] + [p.proximity(none, code) for code in s1]
+    s2_inserts = [0.0] + [p.proximity(none, code) for code in s2]
     matrix[:, 0] = np.cumsum(np.array(s1_inserts))
     matrix[0, :] = 0 if p.ignore_prefix else np.cumsum(np.array(s2_inserts))
     best_column = 0
@@ -141,8 +145,8 @@ cpdef np.ndarray levenshtein_matrix(LevenshteinParams p):
             if char1 == char2 and matrix[row_i - 1, cell_i - 1] != 1e6:
                 cell_value = matrix[row_i - 1, cell_i - 1]
             else:
-                del_cost = p.proximity(char1, '-')
-                ins_cost = p.proximity('-', char2)
+                del_cost = p.proximity(char1, none)
+                ins_cost = p.proximity(none, char2)
                 sub_cost = p.proximity(char1, char2)
                 if row_i == s1_len and p.ignore_suffix:
                     ins_cost = 0.0

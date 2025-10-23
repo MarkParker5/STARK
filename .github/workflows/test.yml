@@ -21,7 +21,7 @@ jobs:
           poetry install
 
       - name: Build Cython extensions
-        run: python setup.py build_ext --inplace
+        run: poetry run python setup.py build_ext --inplace
 
       - name: Run pytest
         run: |

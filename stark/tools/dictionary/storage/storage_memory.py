@@ -6,16 +6,21 @@ from ..models import DictionaryItem, DictionaryStorageProtocol
 
 
 class DictionaryStorageMemory(DictionaryStorageProtocol):
-    def __init__(self) -> None:
+    def __init__(self):
         self._name_to_items: dict[str, DictionaryItem] = {}
         self._simplephone_to_names: dict[str, set[str]] = {}
 
-    def write_one(self, item: DictionaryItem) -> None:
+    def write_one(self, item: DictionaryItem):
         self._name_to_items[item.name] = item
-        self._simplephone_to_names.setdefault(item.simple_phonetic, set()).add(item.name)
+        self._simplephone_to_names.setdefault(item.simple_phonetic, set()).add(
+            item.name
+        )
 
     def search_equal_simple_phonetic(self, simplephone: str) -> list[DictionaryItem]:
-        return [self._name_to_items[name] for name in self._simplephone_to_names.get(simplephone, set())]
+        return [
+            self._name_to_items[name]
+            for name in self._simplephone_to_names.get(simplephone, set())
+        ]
 
     def search_contains_simple_phonetic(self, simplephone: str) -> list[DictionaryItem]:
         result: list[DictionaryItem] = []
@@ -27,6 +32,9 @@ class DictionaryStorageMemory(DictionaryStorageProtocol):
     def iterate(self) -> Iterable[DictionaryItem]:
         return iter(self._name_to_items.values())
 
-    def clear(self) -> None:
+    def clear(self):
         self._name_to_items.clear()
         self._simplephone_to_names.clear()
+
+    def is_empty(self) -> bool:
+        return not self._name_to_items

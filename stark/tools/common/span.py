@@ -9,7 +9,7 @@ class Span:
     def zero(cls) -> Self:
         return cls(0, 0)
 
-    def __init__(self, start: int, end: int) -> None:
+    def __init__(self, start: int, end: int):
         self.start = start
         self.end = end
 

@@ -13,6 +13,7 @@ def simplephone(text: str, glue: str = " ", sep: str = string.whitespace) -> str
 
 
 def simplephone_word(word: str) -> str | None:
+    # TODO: consider compiling for performance boost
     """
     Caverphone2 / Soundex / Kölner Phonetik inspired algorithm for phonetic encoding of words.
     No filling with "1", no length limit, return None if word is empty.

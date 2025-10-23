@@ -42,7 +42,7 @@ from stark.tools.levenshtein import (
         ("lnk npk", "lnknpk", 1),
     ],
 )
-def test_levenshtein_distance_full(a: str, b: str, exp_distance: float) -> None:
+def test_levenshtein_distance_full(a: str, b: str, exp_distance: float):
     print(f"{a=} {b=}")
     distance = levenshtein_distance(s1=a, s2=b)
     errors = []
@@ -63,7 +63,7 @@ def test_levenshtein_distance_full(a: str, b: str, exp_distance: float) -> None:
 )
 def test_levenshtein_similarity_full(
     a: str, b: str, threshold: float, exp_similarity: float
-) -> None:
+):
     print(f"{a=} {b=}")
     similarity = levenshtein_similarity(s1=a, s2=b, threshold=threshold)
     errors = []
@@ -82,9 +82,7 @@ def test_levenshtein_similarity_full(
         ("kitten", "sitting", 0.7, False),
     ],
 )
-def test_levenshtein_match_full(
-    a: str, b: str, threshold: float, exp_match: bool
-) -> None:
+def test_levenshtein_match_full(a: str, b: str, threshold: float, exp_match: bool):
     print(f"{a=} {b=}")
     match = levenshtein_match(s1=a, s2=b, threshold=threshold)
     errors = []
@@ -112,9 +110,7 @@ def test_levenshtein_match_full(
         ("AMATSNTRKNS", "AMTSNTRKNS", 0.5),
     ],
 )
-def test_levenshtein_distance_proximity(
-    a: str, b: str, exp_max_distance: float
-) -> None:
+def test_levenshtein_distance_proximity(a: str, b: str, exp_max_distance: float):
     print(f"{a=} {b=}")
     distance = levenshtein_distance(
         s1=a, s2=b, proximity_graph=SIMPLEPHONE_PROXIMITY_GRAPH
@@ -135,7 +131,7 @@ def test_levenshtein_distance_proximity(
         ("l n k n p k", "lnknpk", 0),
     ],
 )
-def test_levenshtein_distance_skip_spaces(a: str, b: str, exp_distance: float) -> None:
+def test_levenshtein_distance_skip_spaces(a: str, b: str, exp_distance: float):
     print(f"{a=} {b=}")
     distance = levenshtein_distance(s1=a, s2=b, proximity_graph=SKIP_SPACES_GRAPH)
     assert distance == pytest.approx(exp_distance, abs=0.1), (
@@ -178,7 +174,7 @@ def test_levenshtein_distance_skip_spaces(a: str, b: str, exp_distance: float) -
 )
 def test_levenshtein_search_substring(
     a: str, b: str, threshold: float, exp_spans: list[tuple[int, int]]
-) -> None:
+):
     print(f"{a=} {b=}")
     longer = a if len(a) > len(b) else b
     shorter = a if len(a) <= len(b) else b

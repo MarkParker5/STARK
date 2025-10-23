@@ -56,7 +56,7 @@ app = typer.Typer()
 
 
 @app.command()
-def build() -> None:
+def build():
     """Build the project. See typer docs for better CLI with features like progress bars and logging."""
     print("Building...")
     NLExampleDictionaryName.dictionary.build()  # fill the sqlite file once during the build stage, not at runtime
@@ -66,7 +66,7 @@ def build() -> None:
 
 
 @app.command()
-def run() -> None:
+def run():
     """Run the project."""
     pass
 

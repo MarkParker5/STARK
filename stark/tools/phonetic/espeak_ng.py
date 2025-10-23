@@ -23,6 +23,8 @@ class EspeakNG:
     # Interface
 
     def set_lang(self, lang: str):
+        if lang == self.voice:
+            return  # early exit, lib_espeak.espeak_SetVoiceByName is a bit slow
         self.voice = lang
         res = self.lib_espeak.espeak_SetVoiceByName(self.voice.encode("utf-8"))
         if res != self.EE_OK:

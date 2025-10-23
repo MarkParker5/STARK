@@ -9,6 +9,7 @@ __pycache__
 *.so
 build/
 dist/
+data/
 
 .idea
 *.pytest_cache

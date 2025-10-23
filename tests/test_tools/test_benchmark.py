@@ -2,7 +2,7 @@ import time
 from pympler.asizeof import asizeof
 import pytest
 
-from stark.tools.dictionary.dictionary import Dictionary, LookupMode, NameEntry
+from stark.tools.dictionary.dictionary import Dictionary, LookupMode
 from stark.tools.dictionary.storage.storage_memory import (
     DictionaryStorageMemory,
 )
@@ -33,7 +33,7 @@ from faker import Faker
     [LookupMode.EXACT, LookupMode.CONTAINS, LookupMode.FUZZY, LookupMode.UNTIL_MATCH],
 )
 @pytest.mark.parametrize("lookup_func", ["lookup"])  # , "sentence_search"])
-@pytest.mark.parametrize("storage_type", ["memory"])  # , "sqlite"])
+@pytest.mark.parametrize("storage_type", ["sqlite"])  # , "memory"])
 # Other
 def test_benchmark__dictionary(
     # benchmark cases
@@ -48,10 +48,9 @@ def test_benchmark__dictionary(
     seed: int | None = None,
 ):
     # params that are not part of the parametrized cases and just randomly generated
-    ner_type = random.choice(["name", "place"])
+    ne_type = random.choice(["name", "place"])
     targets_amount = random.choice([1, 1, 1, 2, 3])
-    sentence_length = random.randint(5, 15)
-    print(f"{success=}, {ner_type=}, {targets_amount=}, {sentence_length=}")
+    print(f"{success=}, {ne_type=}, {targets_amount=}")
 
     fake = Faker("en")
 
@@ -59,38 +58,62 @@ def test_benchmark__dictionary(
         random.seed(seed)
         Faker.seed(seed)
 
-    # Generate unique names
-
-    names_set: set[str] = set()
-    while len(names_set) < dict_size:
-        if ner_type == "name":
-            names_set.add(fake.unique.name())
-        elif ner_type == "place":
-            names_set.add(
-                random.choice(
-                    [
-                        fake.street_name(),
-                        fake.city(),
-                        fake.state(),
-                        fake.country(),
-                        fake.location_on_land()[2],
-                    ]
-                )
+    def get_random_entry() -> str:
+        if ne_type == "name":
+            return fake.unique.name()
+        elif ne_type == "place":
+            return random.choice(
+                [
+                    fake.street_name(),
+                    fake.city(),
+                    fake.state(),
+                    fake.country(),
+                    fake.location_on_land()[2],
+                ]
             )
-    names: list[str] = list(names_set)
+        else:
+            raise ValueError(f"Invalid entity type: {ne_type}")
+
+    # Prepare the dictionary
+
+    if storage_type == "memory":
+        dictionary = Dictionary(DictionaryStorageMemory())
+    elif storage_type == "sqlite":
+        # dictionary = Dictionary(DictionaryStorageSQLite(":memory:"))
+        dictionary = Dictionary(
+            DictionaryStorageSQLite(
+                f"sqlite3://data/test_dictionary_{ne_type}_{dict_size}.sqlite3"
+            )
+        )
+    else:
+        raise ValueError(f"Invalid storage type: {storage_type}")
+
+    # Fill the dictionary if needed
+
+    if dictionary.storage.is_empty():
+        for i in range(dict_size):
+            dictionary.write_one(
+                language_code="en", name=get_random_entry(), metadata={"idx": i}
+            )
+
+    # Log RAM usage of the full dictionary after build
+
+    dictionary_ram = asizeof(dictionary) // 1024**2  # MB
+    print(f"RAM usage after loading {dict_size} entries: {dictionary_ram:.2f} MB")
+    assert dictionary_ram < 900, "RAM usage exceeded 900MB"
 
     # Select name(s) to search
 
-    targets: set[str] = set()
+    targets: list[str] = []
     for i in range(targets_amount):
+        name = get_random_entry()
+        targets.append(name)
         if success:
-            targets.add(names[i])
-        else:
-            targets.add(names.pop())
-    first_target = list(targets)[0]
+            dictionary.write_one(language_code="en", name=name, metadata={"idx": i})
 
     # Prepare sentence
 
+    sentence_length = random.randint(5, 15)
     sentence = fake.sentence(nb_words=sentence_length)
     words = sentence.split()
     for target in targets:
@@ -98,32 +121,11 @@ def test_benchmark__dictionary(
         words[index] += " " + target
     sentence = " ".join(words)
 
-    # Fill the dictionary
-
-    if storage_type == "memory":
-        dictionary = Dictionary(DictionaryStorageMemory())
-    elif storage_type == "sqlite":
-        dictionary = Dictionary(DictionaryStorageSQLite(":memory:"))
-    else:
-        raise ValueError(f"Invalid storage type: {storage_type}")
-
-    entries = [
-        NameEntry(language_code="en", name=n, metadata={"idx": i})
-        for i, n in enumerate(names)
-    ]
-    dictionary.write_all(entries)
-
-    # Log RAM usage after build
-
-    dictionary_ram = asizeof(dictionary) // 1024**2  # MB
-    print(f"RAM usage after loading {dict_size} entries: {dictionary_ram:.2f} MB")
-    assert dictionary_ram < 900, "RAM usage exceeded 900MB"
-
     # Run benchmarks
 
     def execute_lookup():
         if lookup_func == "lookup":
-            return list(dictionary.lookup(first_target, "en", mode=lookup_mode))
+            return list(dictionary.lookup(targets[0], "en", mode=lookup_mode))
         elif lookup_func == "sentence_search":
             return list(dictionary.sentence_search(sentence, "en", mode=lookup_mode))
         else:
