@@ -4,6 +4,7 @@ import sys
 import re
 import threading
 from typing import Optional, final
+import ctypes.util
 
 
 @final
@@ -208,12 +209,18 @@ class EspeakNG:
             raise RuntimeError("This example currently supports Linux/macOS")
 
     def _find_library_path(self) -> str:
-        candidates = []
+        # Try system library search first
+        libname = "espeak-ng"
+        found: str | None = ctypes.util.find_library(libname)
+        if found and os.path.exists(found):
+            return found
+
+        # Fallbacks
+        candidates: list[str] = []
         if sys.platform.startswith("linux"):
             candidates = [
-                "libespeak-ng.so",
-                "libespeak-ng.so.1",
                 "/usr/lib/libespeak-ng.so",
+                "/usr/lib64/libespeak-ng.so",
                 "/usr/lib/x86_64-linux-gnu/libespeak-ng.so",
                 "/usr/local/lib/libespeak-ng.so",
             ]
@@ -224,16 +231,16 @@ class EspeakNG:
             ]
         elif sys.platform.startswith("win"):
             candidates = [
-                "C:\\Program Files\\eSpeak NG\\libespeak-ng.dll",
-                "C:\\Program Files (x86)\\eSpeak NG\\libespeak-ng.dll",
+                r"C:\Program Files\eSpeak NG\libespeak-ng.dll",
+                r"C:\Program Files (x86)\eSpeak NG\libespeak-ng.dll",
             ]
+
         for path in candidates:
             if os.path.exists(path):
                 return path
 
         raise FileNotFoundError(
-            "Could not find libespeak-ng shared library. "
-            "Please install eSpeak NG or specify lib_path explicitly."
+            "libespeak-ng not found. Install eSpeak NG or set lib_path manually."
         )
 
 

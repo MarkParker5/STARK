@@ -1,5 +1,7 @@
 # Dictionary - Phonetic Lookup
 
+> NOTE: requires [libespeak-ng binary](https://github.com/espeak-ng/espeak-ng/blob/master/docs/guide.md#installation) installed in the system
+
 ## Overview
 
 ### Basic Lookup
