@@ -18,7 +18,7 @@ from faker import Faker
 @pytest.mark.benchmark(
     timer=time.monotonic,
     min_time=1,
-    # max_time=1.0,
+    max_time=1.0,
     min_rounds=10,
 )
 # Report
@@ -34,6 +34,7 @@ from faker import Faker
         100_000,
         1_000_000,
         10_000_000,
+        100_000_000,
     ],
 )
 @pytest.mark.parametrize(
@@ -53,9 +54,9 @@ from faker import Faker
     "lookup_func",
     [
         "lookup",
-        # "lookup_sorted",
+        "lookup_sorted",
         "sentence_search",
-        # "sentence_search_sorted",
+        "sentence_search_sorted",
     ],
 )
 @pytest.mark.parametrize("storage_type", ["sqlite"])  # , "memory"])

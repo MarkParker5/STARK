@@ -327,6 +327,7 @@ def test_lookup(
             LookupField.NAME,
             [],
         ),
+        (["en:foo", "en:foobar"], "foo", LookupMode.AUTO, None, ["foo"]),
         (
             ["en:hello", "en:world"],
             "hellp",

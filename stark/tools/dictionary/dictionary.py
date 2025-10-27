@@ -209,7 +209,7 @@ class Dictionary:
                     ]
                 )
                 for f, m in search_orders:
-                    if LookupMode.FUZZY and self.storage.get_count() > 10**3:
+                    if m == LookupMode.FUZZY and self.storage.get_count() > 10**3:
                         continue
                     gen = iter(self.lookup(name_candidate, language_code, m, f))
                     try:
@@ -244,7 +244,6 @@ class Dictionary:
                     )
                 elif field == LookupField.NAME:
                     items = self.storage.search_contains_name(sentence, language_code)
-                    print(f"{items=}")
                     for item in items:
                         start = 0
                         while True:  # find all occurrences
@@ -282,7 +281,7 @@ class Dictionary:
             case LookupMode.AUTO:
                 search_orders = (
                     [
-                        (LookupField.NAME, LookupMode.EXACT),
+                        # (LookupField.NAME, LookupMode.EXACT),
                         (LookupField.NAME, LookupMode.CONTAINS),
                         (LookupField.PHONETIC, LookupMode.EXACT),
                         (LookupField.PHONETIC, LookupMode.CONTAINS),
@@ -296,7 +295,7 @@ class Dictionary:
                     ]
                 )
                 for f, m in search_orders:
-                    if LookupMode.FUZZY and self.storage.get_count() > 10**3:
+                    if m == LookupMode.FUZZY and self.storage.get_count() > 10**3:
                         continue
                     gen = iter(self.sentence_search(sentence, language_code, m, f))
                     try:
