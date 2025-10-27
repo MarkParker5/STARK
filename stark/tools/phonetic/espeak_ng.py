@@ -261,10 +261,10 @@ _espeak_lock = threading.Lock()
 
 
 def text_to_ipa(text: str, lang: str, remove_stress: bool = True) -> str:
-    global espeak
-    if espeak is None:
-        espeak = EspeakNG()
     with _espeak_lock:
+        global espeak
+        if espeak is None:
+            espeak = EspeakNG()
         espeak.set_lang(lang)
         return espeak.text_to_ipa(text, remove_stress=remove_stress)
 
