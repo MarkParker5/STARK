@@ -178,8 +178,8 @@ def test_benchmark__dictionary(
 
     if success:
         assert result
-
-    # not asserting false success due to possible similar entries
+    else:
+        assert not result
 
 
 # @pytest.mark.benchmark

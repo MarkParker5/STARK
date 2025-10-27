@@ -240,11 +240,15 @@ class EspeakNG:
 """
 Underlying eSpeak NG library is global so there is no sense in multiple instances of EspeakNG. Using singleton approach instead.
 """
-espeak = EspeakNG()
+# lazy initialization to avoid raising an exception on import
+espeak: EspeakNG | None = None
 _espeak_lock = threading.Lock()
 
 
 def text_to_ipa(text: str, lang: str, remove_stress: bool = True) -> str:
+    global espeak
+    if espeak is None:
+        espeak = EspeakNG()
     with _espeak_lock:
         espeak.set_lang(lang)
         return espeak.text_to_ipa(text, remove_stress=remove_stress)

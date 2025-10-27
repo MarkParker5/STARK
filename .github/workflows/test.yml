@@ -19,6 +19,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install poetry
           poetry install
+          sudo apt-get update && sudo apt-get install -y espeak-ng
 
       - name: Build Cython extensions
         run: poetry run python setup.py build_ext --inplace
