@@ -29,3 +29,5 @@ test.py
 # benchmarks
 prof
 .benchmarks
+
+.coverage

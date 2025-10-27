@@ -235,10 +235,6 @@ class Dictionary:
             f"Sentence search '{sentence}' with lang '{language_code}', mode {mode}, field {field}"
         )
 
-        def _yield_results_from_items(items, span: Span):
-            for item in items:
-                yield LookupResult(span, item)
-
         match mode:
             case LookupMode.EXACT | LookupMode.CONTAINS:
                 field = field or LookupField.PHONETIC

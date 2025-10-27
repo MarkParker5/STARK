@@ -83,6 +83,8 @@ psutil = "^7.1.1"
 pytest-timeout = "^2.4.0"
 cython = "^3.1.5"
 setuptools = "^80.9.0"
+coverage = "^7.11.0"
+pytest-cov = "^7.0.0"
 
 [build-system]
 requires = ["poetry-core"]
