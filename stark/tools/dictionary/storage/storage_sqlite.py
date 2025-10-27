@@ -57,6 +57,47 @@ class DictionaryStorageSQLite(DictionaryStorageProtocol):
         )
         self._conn.commit()
 
+    def search_equal_name(self, name: str, language_code: str) -> list[DictionaryItem]:
+        cur = self._conn.execute(
+            """
+            SELECT name, phonetic, simple_phonetic, language_code, metadata
+            FROM dictionary
+            WHERE name = ?
+            """,
+            (name,),
+        )
+        return [
+            DictionaryItem(
+                name=row[0],
+                phonetic=row[1],
+                simple_phonetic=row[2],
+                language_code=row[3],
+                metadata=json.loads(row[4]),
+            )
+            for row in cur.fetchall()
+        ]
+
+    def search_contains_name(
+        self, name: str, language_code: str
+    ) -> list[DictionaryItem]:
+        cur = self._conn.execute(
+            """
+            SELECT name, phonetic, simple_phonetic, language_code, metadata FROM dictionary
+            WHERE ? LIKE '%' || name || '%'
+            """,
+            (name,),
+        )
+        return [
+            DictionaryItem(
+                name=row[0],
+                phonetic=row[1],
+                simple_phonetic=row[2],
+                language_code=row[3],
+                metadata=json.loads(row[4]),
+            )
+            for row in cur.fetchall()
+        ]
+
     def search_equal_simple_phonetic(
         self, simple_phonetic: str
     ) -> list[DictionaryItem]:

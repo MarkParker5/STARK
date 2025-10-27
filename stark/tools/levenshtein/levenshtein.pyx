@@ -142,7 +142,7 @@ cpdef np.ndarray levenshtein_matrix(LevenshteinParams p):
     s2_inserts = [0.0] + [proximity(none, code) for code in s2]
     matrix_np[:, 0] = np.cumsum(np.array(s1_inserts))
     matrix_np[0, :] = 0 if p.ignore_prefix else np.cumsum(np.array(s2_inserts))
-    best_column = 0
+    cdef int best_column = 0
 
     # logger.debug(f"Building levenshtein matrix for '{p.s1=}' and '{p.s2=}'")
 
@@ -153,6 +153,7 @@ cpdef np.ndarray levenshtein_matrix(LevenshteinParams p):
         char1 = s1[row_i - 1]
         del_cost = proximity(char1, none)
         start_column = 1
+        best_column = 0
         # start_column = max(1, best_column - 1) if p.narrow else 1
         for cell_i in range(start_column, s2_len + 1):
             char2 = s2[cell_i - 1]
@@ -170,8 +171,8 @@ cpdef np.ndarray levenshtein_matrix(LevenshteinParams p):
                     matrix[row_i - 1, cell_i - 1] + sub_cost,
                 )
             matrix[row_i, cell_i] = cell_value
-            if cell_value < matrix[row_i, cell_i - 1]:
-                best_column = cell_i
+            if cell_value < matrix[row_i, best_column]:
+                  best_column = cell_i
             # if p.narrow:
             #     if (
             #         cell_value > matrix[row_i, cell_i - 1]

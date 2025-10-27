@@ -38,18 +38,15 @@ from faker import Faker
 )
 @pytest.mark.parametrize(
     "success",
-    [
-        True,
-        # False
-    ],
+    [True, False],
 )
 @pytest.mark.parametrize(
     "lookup_mode",
     [
-        LookupMode.EXACT,
-        LookupMode.CONTAINS,
-        LookupMode.FUZZY,
-        # LookupMode.AUTO,
+        # LookupMode.EXACT,
+        # LookupMode.CONTAINS,
+        # LookupMode.FUZZY,
+        LookupMode.AUTO,
     ],
 )
 @pytest.mark.parametrize(

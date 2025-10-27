@@ -8,6 +8,7 @@ from typing import final
 from stark.tools.common.span import Span
 from stark.tools.levenshtein import (
     SIMPLEPHONE_PROXIMITY_GRAPH,
+    SKIP_SPACES_GRAPH,
     levenshtein_match,
     levenshtein_search_substring,
     levenshtein_similarity,
@@ -41,9 +42,9 @@ class LookupMode(Enum):
     AUTO = auto()  # choose the best mode based on the dictionary size
 
 
-# class LookupField(Enum): # TODO: consider implementing
-#     NAME = auto() # same lang only
-#     PHONETIC = auto()
+class LookupField(Enum):
+    NAME = auto()  # search by original name, same lang only
+    PHONETIC = auto()  # search by simplephone cross-lang
 
 
 class Dictionary:
@@ -101,18 +102,23 @@ class Dictionary:
         name_candidate: str,
         language_code: str,
         mode: LookupMode = LookupMode.AUTO,
+        field: LookupField = LookupField.PHONETIC,
     ) -> list[DictionaryItem]:
         return self._sorted_items(
             language_code,
             name_candidate,
-            self.lookup(name_candidate, language_code, mode),
+            self.lookup(name_candidate, language_code, mode, field),
         )
 
     def sentence_search_sorted(
-        self, sentence: str, language_code: str, mode: LookupMode = LookupMode.EXACT
+        self,
+        sentence: str,
+        language_code: str,
+        mode: LookupMode = LookupMode.EXACT,
+        field: LookupField = LookupField.PHONETIC,
     ) -> list[LookupResult]:
         return sorted(
-            self.sentence_search(sentence, language_code, mode),
+            self.sentence_search(sentence, language_code, mode, field),
             key=lambda r: levenshtein_similarity_substring(
                 s1=r.item.name
                 if r.item.language_code == language_code
@@ -130,35 +136,82 @@ class Dictionary:
         name_candidate: str,
         language_code: str,
         mode: LookupMode = LookupMode.AUTO,
+        field: LookupField | None = None,
     ) -> Iterable[DictionaryItem]:
         """
-        Lookup dictionary items by name_candidate and language_code using LookupMode.
+        Lookup dictionary items by name_candidate and language_code using LookupMode and LookupField.
         """
         simple_phonetic = simplephone(phonetic(name_candidate, language_code)) or ""
         logger.debug(
-            f"Looking up '{name_candidate}' with simple phonetic '{simple_phonetic}' under mode {mode}"
+            f"Looking up '{name_candidate}' with simple phonetic '{simple_phonetic}' under mode {mode}, field {field}"
         )
 
         match mode:
             case LookupMode.EXACT:
-                yield from self.storage.search_equal_simple_phonetic(simple_phonetic)
+                field = field or LookupField.PHONETIC
+                if field == LookupField.PHONETIC:
+                    yield from self.storage.search_equal_simple_phonetic(
+                        simple_phonetic
+                    )
+                elif field == LookupField.NAME:
+                    yield from self.storage.search_equal_name(
+                        name_candidate, language_code
+                    )
             case LookupMode.CONTAINS:
-                yield from self.storage.search_contains_simple_phonetic(simple_phonetic)
+                field = field or LookupField.PHONETIC
+                if field == LookupField.PHONETIC:
+                    yield from self.storage.search_contains_simple_phonetic(
+                        simple_phonetic
+                    )
+                elif field == LookupField.NAME:
+                    yield from self.storage.search_contains_name(
+                        name_candidate, language_code
+                    )
             case LookupMode.FUZZY:
-                yield from filter(
-                    lambda item: levenshtein_match(
-                        s1=item.name,
-                        s2=name_candidate,
-                        threshold=0.8,
-                        proximity_graph=SIMPLEPHONE_PROXIMITY_GRAPH,
-                    ),
-                    self.storage.iterate(),
-                )
+                field = field or LookupField.PHONETIC
+                if field == LookupField.PHONETIC:
+                    yield from filter(
+                        lambda item: levenshtein_match(
+                            s1=item.name,
+                            s2=name_candidate,
+                            threshold=0.8,
+                            proximity_graph=SIMPLEPHONE_PROXIMITY_GRAPH,
+                        ),
+                        self.storage.iterate(),
+                    )
+                elif field == LookupField.NAME:
+                    yield from (
+                        item
+                        for item in self.storage.search_contains_name(
+                            name_candidate, language_code
+                        )
+                        if levenshtein_match(
+                            s1=item.name,
+                            s2=name_candidate,
+                            threshold=0.8,
+                            proximity_graph=SIMPLEPHONE_PROXIMITY_GRAPH,
+                        )
+                    )
             case LookupMode.AUTO:
-                for mode in [LookupMode.EXACT, LookupMode.CONTAINS, LookupMode.FUZZY]:
-                    if self.storage.get_count() > 10**3 and mode == LookupMode.FUZZY:
+                search_orders = (
+                    [  # TODO: Consider inverting the order and filtering to min threshold to improve performance of both success and failure cases
+                        (LookupField.NAME, LookupMode.EXACT),
+                        (LookupField.NAME, LookupMode.CONTAINS),
+                        (LookupField.PHONETIC, LookupMode.EXACT),
+                        (LookupField.PHONETIC, LookupMode.CONTAINS),
+                        (LookupField.PHONETIC, LookupMode.FUZZY),
+                    ]
+                    if not field
+                    else [
+                        (field, LookupMode.EXACT),
+                        (field, LookupMode.CONTAINS),
+                        (field, LookupMode.FUZZY),
+                    ]
+                )
+                for f, m in search_orders:
+                    if LookupMode.FUZZY and self.storage.get_count() > 10**3:
                         continue
-                    gen = iter(self.lookup(name_candidate, language_code, mode))
+                    gen = iter(self.lookup(name_candidate, language_code, m, f))
                     try:
                         first: DictionaryItem = next(gen)
                     except StopIteration:
@@ -169,28 +222,87 @@ class Dictionary:
                         break
 
     def sentence_search(
-        self, sentence: str, language_code: str, mode: LookupMode = LookupMode.EXACT
+        self,
+        sentence: str,
+        language_code: str,
+        mode: LookupMode = LookupMode.AUTO,
+        field: LookupField | None = None,
     ) -> Iterable[LookupResult]:
+        """
+        Sentence search supporting LookupField and LookupMode, matching lookup logic.
+        """
+        logger.debug(
+            f"Sentence search '{sentence}' with lang '{language_code}', mode {mode}, field {field}"
+        )
+
+        def _yield_results_from_items(items, span: Span):
+            for item in items:
+                yield LookupResult(span, item)
+
         match mode:
             case LookupMode.EXACT | LookupMode.CONTAINS:
-                yield from self._sentence_search_per_word(sentence, language_code, mode)
-            case LookupMode.FUZZY:
-                simple_phonetic = simplephone(phonetic(sentence, language_code)) or ""
-                for item in self.storage.iterate():
-                    matches = levenshtein_search_substring(
-                        s1=simple_phonetic,
-                        s2=item.simple_phonetic,
-                        ignore_prefix=True,
-                        threshold=0.8,
-                        proximity_graph=SIMPLEPHONE_PROXIMITY_GRAPH,
+                field = field or LookupField.PHONETIC
+                if field == LookupField.PHONETIC:
+                    yield from self._sentence_search_per_word(
+                        sentence, language_code, mode
                     )
-                    for span, _ in matches:
-                        yield LookupResult(span, item)
+                elif field == LookupField.NAME:
+                    items = self.storage.search_contains_name(sentence, language_code)
+                    print(f"{items=}")
+                    for item in items:
+                        start = 0
+                        while True:  # find all occurrences
+                            idx = sentence.find(item.name, start)
+                            if idx == -1:
+                                break
+                            span = Span(idx, idx + len(item.name))
+                            yield LookupResult(span, item)
+                            start = idx + 1
+            case LookupMode.FUZZY:
+                field = field or LookupField.PHONETIC
+                if field == LookupField.PHONETIC:
+                    simple_phonetic = (
+                        simplephone(phonetic(sentence, language_code)) or ""
+                    )
+                    for item in self.storage.iterate():
+                        for span, _ in levenshtein_search_substring(
+                            s1=simple_phonetic,
+                            s2=item.simple_phonetic,
+                            ignore_prefix=True,
+                            threshold=0.8,
+                            proximity_graph=SIMPLEPHONE_PROXIMITY_GRAPH,
+                        ):
+                            yield LookupResult(span, item)
+                elif field == LookupField.NAME:
+                    for item in self.storage.iterate():
+                        for span, x in levenshtein_search_substring(
+                            s1=sentence,
+                            s2=item.name,
+                            ignore_prefix=True,
+                            threshold=0.8,
+                            proximity_graph=SKIP_SPACES_GRAPH,
+                        ):
+                            yield LookupResult(span, item)
             case LookupMode.AUTO:
-                for mode in [LookupMode.EXACT, LookupMode.CONTAINS, LookupMode.FUZZY]:
-                    if self.storage.get_count() > 10**3 and mode == LookupMode.FUZZY:
+                search_orders = (
+                    [
+                        (LookupField.NAME, LookupMode.EXACT),
+                        (LookupField.NAME, LookupMode.CONTAINS),
+                        (LookupField.PHONETIC, LookupMode.EXACT),
+                        (LookupField.PHONETIC, LookupMode.CONTAINS),
+                        (LookupField.PHONETIC, LookupMode.FUZZY),
+                    ]
+                    if not field
+                    else [
+                        (field, LookupMode.EXACT),
+                        (field, LookupMode.CONTAINS),
+                        (field, LookupMode.FUZZY),
+                    ]
+                )
+                for f, m in search_orders:
+                    if LookupMode.FUZZY and self.storage.get_count() > 10**3:
                         continue
-                    gen = iter(self.sentence_search(sentence, language_code, mode))
+                    gen = iter(self.sentence_search(sentence, language_code, m, f))
                     try:
                         first: LookupResult = next(gen)
                     except StopIteration:

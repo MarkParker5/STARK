@@ -1,6 +1,11 @@
 import pytest
 
-from stark.tools.dictionary.dictionary import Dictionary, LookupMode, NameEntry
+from stark.tools.dictionary.dictionary import (
+    Dictionary,
+    LookupField,
+    LookupMode,
+    NameEntry,
+)
 from stark.tools.dictionary.models import Metadata
 from stark.tools.dictionary.storage.storage_memory import (
     DictionaryStorageMemory,
@@ -258,22 +263,78 @@ def test_lookup(
 
 
 @pytest.mark.parametrize(
-    "entries,query,mode,expected_names",
+    "entries,query,mode,field,expected_names",
     [
-        # EXACT match only
-        (["en:foo", "en:bar"], "foo", LookupMode.EXACT, ["foo"]),
-        # CONTAINS match only
-        (["en:foobar", "en:bar"], "foobar", LookupMode.CONTAINS, ["foobar", "bar"]),
-        # FUZZY match only (typo)
-        (["en:hello", "en:world"], "hellp", LookupMode.FUZZY, ["hello"]),
-        # AUTO: EXACT wins
-        (["en:foo", "en:foobar"], "foo", LookupMode.AUTO, ["foo"]),
-        # AUTO: CONTAINS wins (no exact)
-        (["en:foo", "en:bar"], "fo ba", LookupMode.AUTO, ["foo", "bar"]),
-        # AUTO: FUZZY wins (no exact/contains)
-        (["en:hello", "en:world"], "hellp", LookupMode.AUTO, ["hello"]),
-        # AUTO: no matches
-        (["en:foo", "en:bar"], "baz", LookupMode.AUTO, []),
+        # PHONETIC (default) cases
+        (["en:foo", "en:bar"], "foo", LookupMode.EXACT, LookupField.PHONETIC, ["foo"]),
+        (
+            ["en:foobar", "en:bar"],
+            "foobar",
+            LookupMode.CONTAINS,
+            LookupField.PHONETIC,
+            ["foobar", "bar"],
+        ),
+        (
+            ["en:hello", "en:world"],
+            "hellp",
+            LookupMode.FUZZY,
+            LookupField.PHONETIC,
+            ["hello"],
+        ),
+        (
+            ["en:foo", "en:foobar"],
+            "foo",
+            LookupMode.AUTO,
+            LookupField.PHONETIC,
+            ["foo"],
+        ),
+        (
+            ["en:foo", "en:bar"],
+            "fo ba",
+            LookupMode.AUTO,
+            LookupField.PHONETIC,
+            ["foo", "bar"],
+        ),
+        (
+            ["en:hello", "en:world"],
+            "hellp",
+            LookupMode.AUTO,
+            LookupField.PHONETIC,
+            ["hello"],
+        ),
+        (["en:foo", "en:bar"], "baz", LookupMode.AUTO, LookupField.PHONETIC, []),
+        # NAME field cases (should behave the same for these examples)
+        (["en:foo", "en:bar"], "foo", LookupMode.EXACT, LookupField.NAME, ["foo"]),
+        (
+            ["en:foobar", "en:bar"],
+            "foobar",
+            LookupMode.CONTAINS,
+            LookupField.NAME,
+            ["foobar", "bar"],
+        ),
+        (
+            ["en:hello", "en:world"],
+            "hellp",
+            LookupMode.FUZZY,
+            LookupField.NAME,
+            [],
+        ),
+        (["en:foo", "en:foobar"], "foo", LookupMode.AUTO, LookupField.NAME, ["foo"]),
+        (
+            ["en:foo", "en:bar"],
+            "fo ba",
+            LookupMode.AUTO,
+            LookupField.NAME,
+            [],
+        ),
+        (
+            ["en:hello", "en:world"],
+            "hellp",
+            LookupMode.AUTO,
+            LookupField.NAME,
+            [],
+        ),
+        (["en:foo", "en:bar"], "baz", LookupMode.AUTO, LookupField.NAME, []),
     ],
 )
 def test_lookup_modes(
@@ -281,89 +342,141 @@ def test_lookup_modes(
     entries: list[str],
     query: str,
     mode: LookupMode,
+    field: LookupField,
     expected_names: list[str],
 ):
-    print(f"Testing '{query}' with mode {mode}")
+    print(f"Testing '{query}' with mode {mode} and field {field}")
     dictionary.clear()
     for entry in entries:
         lang, name = parse_lang(entry)
         dictionary.write_one(lang, name, {})
-    results = list(dictionary.lookup_sorted(query, "en", mode=mode))
+    results = list(dictionary.lookup_sorted(query, "en", mode=mode, field=field))
     assert [r.name for r in results] == expected_names
 
 
 @pytest.mark.parametrize(
-    "entries,sentence,mode,expected_names",
+    "entries,sentence,mode,expected_names,field",
     [
-        # EXACT (single-word): Only matches if entry is exactly a word in the sentence
+        # PHONETIC (default) cases
         (
             ["en:dragons", "en:linkin", "en:zeppelin"],
             "play dragons and linkin",
             LookupMode.EXACT,
             ["dragons", "linkin"],
+            LookupField.PHONETIC,
         ),
-        # EXACT (multi-word): Only matches if entry is exactly a word in the sentence
         (
             ["en:imagine dragons", "en:linkin park", "en:led zeppelin"],
             "play imagine dragons and linkin park",
             LookupMode.EXACT,
             ["imagine dragons", "linkin park"],
+            LookupField.PHONETIC,
         ),
-        # CONTAINS (single-word): Matches if entry is fully present inside the sentence
         (
             ["en:dragons", "en:linkin", "en:zeppelin"],
             "please play imagine dragons and then add linkin park to the queue",
             LookupMode.CONTAINS,
             ["dragons", "linkin"],
+            LookupField.PHONETIC,
         ),
-        # CONTAINS (multi-word): Matches if entry is fully present inside the sentence
         (
             ["en:imagine dragons", "en:linkin park", "en:led zeppelin"],
             "please play imagine dragons and then add linkin park to the queue",
             LookupMode.CONTAINS,
             ["imagine dragons", "linkin park"],
+            LookupField.PHONETIC,
         ),
-        # FUZZY: Matches phonetically similar entries (typos, transliterations)
         (
             ["en:imagine dragons", "en:linkin park", "en:led zeppelin"],
             "play имя джин драгонс и лин кин парк",
             LookupMode.FUZZY,
             ["imagine dragons", "linkin park"],
+            LookupField.PHONETIC,
         ),
-        # FUZZY: Typo tolerance
         (
             ["en:imagine dragons", "en:linkin park"],
             "play imagine dragns and linkin prk",
             LookupMode.FUZZY,
             ["imagine dragons", "linkin park"],
+            LookupField.PHONETIC,
         ),
-        # AUTO: Should return EXACT if present
         (
             ["en:imagine dragons", "en:linkin park", "en:led zeppelin"],
             "play imagine dragons and linkin park",
             LookupMode.AUTO,
             ["imagine dragons", "linkin park"],
+            LookupField.PHONETIC,
         ),
-        # AUTO: No EXACT, but CONTAINS present
         (
             ["en:imagine dragons", "en:linkin park"],
             "please play imagine dragons and add linkin park",
             LookupMode.AUTO,
             ["imagine dragons", "linkin park"],
+            LookupField.PHONETIC,
         ),
-        # AUTO: No EXACT/CONTAINS, FUZZY present
         (
             ["en:imagine dragons", "en:linkin park"],
             "play имя джин драгонс и лин кин парк",
             LookupMode.AUTO,
             ["imagine dragons", "linkin park"],
+            LookupField.PHONETIC,
         ),
-        # AUTO: No matches at all
         (
             ["en:imagine dragons", "en:linkin park"],
             "play something else",
             LookupMode.AUTO,
             [],
+            LookupField.PHONETIC,
+        ),
+        # NAME field cases (should behave the same for these examples)
+        (
+            ["en:dragons", "en:linkin", "en:zeppelin"],
+            "play dragons and linkin",
+            LookupMode.EXACT,
+            ["dragons", "linkin"],
+            LookupField.NAME,
+        ),
+        (
+            ["en:imagine dragons", "en:linkin park", "en:led zeppelin"],
+            "play imagine dragons and linkin park",
+            LookupMode.EXACT,
+            ["imagine dragons", "linkin park"],
+            LookupField.NAME,
+        ),
+        (
+            ["en:dragons", "en:linkin", "en:zeppelin"],
+            "please play imagine dragons and then add linkin park to the queue",
+            LookupMode.CONTAINS,
+            ["dragons", "linkin"],
+            LookupField.NAME,
+        ),
+        (
+            ["en:imagine dragons", "en:linkin park", "en:led zeppelin"],
+            "please play imagine dragons and then add linkin park to the queue",
+            LookupMode.CONTAINS,
+            ["imagine dragons", "linkin park"],
+            LookupField.NAME,
+        ),
+        (
+            ["en:imagine dragons", "en:linkin park"],
+            "play imagine dragons and linkin park",
+            LookupMode.FUZZY,
+            ["imagine dragons", "linkin park"],
+            LookupField.NAME,
+        ),
+        (
+            ["en:imagine dragons", "en:linkin park"],
+            "play imagine dragns and linkin prk",
+            LookupMode.FUZZY,
+            ["imagine dragons", "linkin park"],
+            LookupField.NAME,
+        ),
+        (
+            ["en:imagine dragons", "en:linkin park"],
+            "play linkin park and imagine dragons",
+            LookupMode.FUZZY,
+            ["linkin park", "imagine dragons"],
+            LookupField.NAME,
         ),
     ],
 )
@@ -373,11 +486,36 @@ def test_sentence_search_modes(
     sentence: str,
     mode: LookupMode,
     expected_names: list[str],
+    field: LookupField,
 ):
     dictionary.clear()
     for entry in entries:
         lang, name = parse_lang(entry)
         dictionary.write_one(lang, name, {})
-    results = list(dictionary.sentence_search_sorted(sentence, "en", mode=mode))
+    results = list(
+        dictionary.sentence_search_sorted(sentence, "en", mode=mode, field=field)
+    )
     found_names = [r.item.name for r in results]
     assert sorted(found_names) == sorted(expected_names)
+
+
+@pytest.mark.parametrize(
+    "field,expected",
+    [
+        (LookupField.NAME, ["Qatar"]),
+        (LookupField.PHONETIC, ["Qatar", "guitar"]),
+    ],
+)
+def test_lookupfield_name_vs_phonetic(dictionary, field, expected):
+    dictionary.clear()
+    dictionary.write_one("en", "Qatar", {"meta": 1})
+    dictionary.write_one("en", "guitar", {"meta": 2})
+    dictionary.write_one("en", "bar", {"meta": 3})
+
+    results = list(dictionary.lookup("Qatar", "en", field=field))
+    found_names = [r.name for r in results]
+    assert len(found_names) == len(expected), (
+        f"Expected {len(expected)} matches, but got {len(found_names)} "
+        f"({', '.join(found_names)})"
+    )
+    assert sorted(found_names) == sorted(expected)

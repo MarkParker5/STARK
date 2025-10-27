@@ -41,8 +41,8 @@ SIMPLEPHONE_PROXIMITY_GRAPH: ProximityGraph = {
     "y": {"a": PROX_LOW, "w": PROX_LOW},
     "a": {"y": PROX_LOW, "w": PROX_LOW, "-": PROX_LOW},  # '-' for deletion
     "f": {"w": PROX_MED},
-    " ": {"-": 0},
-    "-": {"a": PROX_LOW, " ": 0},  # insertion
+    " ": {"-": PROX_MIN},  # ignore spaces
+    "-": {"a": PROX_LOW, " ": PROX_MIN},  # insertion
 }
 SKIP_SPACES_GRAPH = {" ": {"-": PROX_MIN}, "-": {" ": PROX_MIN}}
 
