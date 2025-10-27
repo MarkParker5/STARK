@@ -70,14 +70,35 @@ def test_write_all_and_clear(dictionary: Dictionary):
     for entry in data:
         assert list(dictionary.lookup(entry.name, entry.language_code)) == []
 
-@pytest.mark.parametrize('entries,sentence,expected', [
-    ([('lorem', {'id': 10})], 'foo lorem foo', [10]),
-    ([('bar baz', {'id': 29}), ], 'foo ber baz foo', [29]),
-    ([('lorem', {'id': 10})], 'foo lorem test lorem foo', [10, 10]),
-    ([('imagine dragons', {'id': 1}),('linkin park', {'id': 2}),],
-        'ru:включи имя джин драгонс или имейджин драгонс на колонке и потом добавь в очередь лин кин парк пожалуйста', [1, 1, 2]),
-])
-def test_sentence_search(dictionary: Dictionary, entries: list[tuple[str, Metadata]], sentence: str, expected: list[str]):
+
+@pytest.mark.parametrize(
+    "entries,sentence,expected",
+    [
+        ([("lorem", {"id": 10})], "foo lorem foo", [10]),
+        (
+            [
+                ("bar baz", {"id": 29}),
+            ],
+            "foo ber baz foo",
+            [29],
+        ),
+        ([("lorem", {"id": 10})], "foo lorem test lorem foo", [10, 10]),
+        (
+            [
+                ("imagine dragons", {"id": 1}),
+                ("linkin park", {"id": 2}),
+            ],
+            "ru:включи имя джин драгонс или имейджин драгонс на колонке и потом добавь в очередь лин кин парк пожалуйста",
+            [1, 1, 2],
+        ),
+    ],
+)
+def test_sentence_search(
+    dictionary: Dictionary,
+    entries: list[tuple[str, Metadata]],
+    sentence: str,
+    expected: list[str],
+):
     for entry, data in entries:
         lang, name = parse_lang(entry)
         dictionary.write_one(lang, name, data)
@@ -245,14 +266,14 @@ def test_lookup(
         (["en:foobar", "en:bar"], "foobar", LookupMode.CONTAINS, ["foobar", "bar"]),
         # FUZZY match only (typo)
         (["en:hello", "en:world"], "hellp", LookupMode.FUZZY, ["hello"]),
-        # UNTIL_MATCH: EXACT wins
-        (["en:foo", "en:foobar"], "foo", LookupMode.UNTIL_MATCH, ["foo"]),
-        # UNTIL_MATCH: CONTAINS wins (no exact)
-        (["en:foo", "en:bar"], "fo ba", LookupMode.UNTIL_MATCH, ["foo", "bar"]),
-        # UNTIL_MATCH: FUZZY wins (no exact/contains)
-        (["en:hello", "en:world"], "hellp", LookupMode.UNTIL_MATCH, ["hello"]),
-        # UNTIL_MATCH: no matches
-        (["en:foo", "en:bar"], "baz", LookupMode.UNTIL_MATCH, []),
+        # AUTO: EXACT wins
+        (["en:foo", "en:foobar"], "foo", LookupMode.AUTO, ["foo"]),
+        # AUTO: CONTAINS wins (no exact)
+        (["en:foo", "en:bar"], "fo ba", LookupMode.AUTO, ["foo", "bar"]),
+        # AUTO: FUZZY wins (no exact/contains)
+        (["en:hello", "en:world"], "hellp", LookupMode.AUTO, ["hello"]),
+        # AUTO: no matches
+        (["en:foo", "en:bar"], "baz", LookupMode.AUTO, []),
     ],
 )
 def test_lookup_modes(
@@ -316,32 +337,32 @@ def test_lookup_modes(
             LookupMode.FUZZY,
             ["imagine dragons", "linkin park"],
         ),
-        # UNTIL_MATCH: Should return EXACT if present
+        # AUTO: Should return EXACT if present
         (
             ["en:imagine dragons", "en:linkin park", "en:led zeppelin"],
             "play imagine dragons and linkin park",
-            LookupMode.UNTIL_MATCH,
+            LookupMode.AUTO,
             ["imagine dragons", "linkin park"],
         ),
-        # UNTIL_MATCH: No EXACT, but CONTAINS present
+        # AUTO: No EXACT, but CONTAINS present
         (
             ["en:imagine dragons", "en:linkin park"],
             "please play imagine dragons and add linkin park",
-            LookupMode.UNTIL_MATCH,
+            LookupMode.AUTO,
             ["imagine dragons", "linkin park"],
         ),
-        # UNTIL_MATCH: No EXACT/CONTAINS, FUZZY present
+        # AUTO: No EXACT/CONTAINS, FUZZY present
         (
             ["en:imagine dragons", "en:linkin park"],
             "play имя джин драгонс и лин кин парк",
-            LookupMode.UNTIL_MATCH,
+            LookupMode.AUTO,
             ["imagine dragons", "linkin park"],
         ),
-        # UNTIL_MATCH: No matches at all
+        # AUTO: No matches at all
         (
             ["en:imagine dragons", "en:linkin park"],
             "play something else",
-            LookupMode.UNTIL_MATCH,
+            LookupMode.AUTO,
             [],
         ),
     ],

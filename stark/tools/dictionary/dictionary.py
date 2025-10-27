@@ -38,9 +38,12 @@ class LookupMode(Enum):
     EXACT = auto()  # the fastest
     CONTAINS = auto()  # fast
     FUZZY = auto()  # slow
-    UNTIL_MATCH = (
-        auto()
-    )  # tries exact, substring, and fuzzy sequentially until result is not empty
+    AUTO = auto()  # choose the best mode based on the dictionary size
+
+
+# class LookupField(Enum): # TODO: consider implementing
+#     NAME = auto() # same lang only
+#     PHONETIC = auto()
 
 
 class Dictionary:
@@ -97,7 +100,7 @@ class Dictionary:
         self,
         name_candidate: str,
         language_code: str,
-        mode: LookupMode = LookupMode.UNTIL_MATCH,
+        mode: LookupMode = LookupMode.AUTO,
     ) -> list[DictionaryItem]:
         return self._sorted_items(
             language_code,
@@ -126,7 +129,7 @@ class Dictionary:
         self,
         name_candidate: str,
         language_code: str,
-        mode: LookupMode = LookupMode.UNTIL_MATCH,
+        mode: LookupMode = LookupMode.AUTO,
     ) -> Iterable[DictionaryItem]:
         """
         Lookup dictionary items by name_candidate and language_code using LookupMode.
@@ -151,14 +154,11 @@ class Dictionary:
                     ),
                     self.storage.iterate(),
                 )
-            case LookupMode.UNTIL_MATCH:
-                for gen in (
-                    iter(self.lookup(name_candidate, language_code, LookupMode.EXACT)),
-                    iter(
-                        self.lookup(name_candidate, language_code, LookupMode.CONTAINS)
-                    ),
-                    iter(self.lookup(name_candidate, language_code, LookupMode.FUZZY)),
-                ):
+            case LookupMode.AUTO:
+                for mode in [LookupMode.EXACT, LookupMode.CONTAINS, LookupMode.FUZZY]:
+                    if self.storage.get_count() > 10**3 and mode == LookupMode.FUZZY:
+                        continue
+                    gen = iter(self.lookup(name_candidate, language_code, mode))
                     try:
                         first: DictionaryItem = next(gen)
                     except StopIteration:
@@ -186,20 +186,11 @@ class Dictionary:
                     )
                     for span, _ in matches:
                         yield LookupResult(span, item)
-            case LookupMode.UNTIL_MATCH:
-                for gen in (
-                    iter(
-                        self.sentence_search(sentence, language_code, LookupMode.EXACT)
-                    ),
-                    iter(
-                        self.sentence_search(
-                            sentence, language_code, LookupMode.CONTAINS
-                        )
-                    ),
-                    iter(
-                        self.sentence_search(sentence, language_code, LookupMode.FUZZY)
-                    ),
-                ):
+            case LookupMode.AUTO:
+                for mode in [LookupMode.EXACT, LookupMode.CONTAINS, LookupMode.FUZZY]:
+                    if self.storage.get_count() > 10**3 and mode == LookupMode.FUZZY:
+                        continue
+                    gen = iter(self.sentence_search(sentence, language_code, mode))
                     try:
                         first: LookupResult = next(gen)
                     except StopIteration:
@@ -265,7 +256,7 @@ class Dictionary:
         if not all_matches:
             return []
 
-        backtacked_matches: list[LookupResult] = []
+        # backtacked_matches: list[LookupResult] = []
         # for each matched simple code from the dictionary
         for simple_name, dictionary_matches in grouped_matches:
             # simple_name - simple code of a multiword name from dictionary
@@ -275,9 +266,9 @@ class Dictionary:
                 simple_name, [w.simple_phonetic for w in words_track_list]
             ):
                 # combine spans per word into one multiword span
-                subsentence_str = " ".join(
-                    words_track_list[i].text for i in words_indices
-                )
+                # subsentence_str = " ".join(
+                #     words_track_list[i].text for i in words_indices
+                # )
                 span_start = words_track_list[words_indices[0]].span.start
                 span_end = words_track_list[words_indices[-1]].span.end
 
@@ -286,10 +277,9 @@ class Dictionary:
                 #     self._sorted_matches(language_code, subsentence_str, dictionary_matches)
                 # ))
 
-                for item in self._sorted_items(
-                    language_code, subsentence_str, dictionary_matches
-                ):
+                for item in dictionary_matches:
                     yield LookupResult(Span(span_start, span_end), item)
+
                     # backtacked_matches.append(LookupResult(
                     #     Span(span_start, span_end),
                     #     item
@@ -301,6 +291,12 @@ class Dictionary:
         self, language_code: str, name_candidate: str, matches: Iterable[DictionaryItem]
     ) -> list[DictionaryItem]:
         # sort by levenshtein distance of strings' latin representations
+
+        matches = list(matches)
+
+        if len(matches) < 2:
+            return matches
+
         return sorted(
             matches,
             key=lambda item: levenshtein_similarity(
@@ -326,5 +322,5 @@ class Dictionary:
         """
         Calls build() if the storage is empty.
         """
-        if self.storage.is_empty():
+        if self.storage.get_count() == 0:
             await self.build()

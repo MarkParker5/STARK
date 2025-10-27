@@ -36,5 +36,5 @@ class DictionaryStorageMemory(DictionaryStorageProtocol):
         self._name_to_items.clear()
         self._simplephone_to_names.clear()
 
-    def is_empty(self) -> bool:
-        return not self._name_to_items
+    def get_count(self) -> int:
+        return len(self._name_to_items)

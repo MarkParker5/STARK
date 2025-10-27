@@ -1,23 +1,27 @@
+from functools import lru_cache
 import warnings
 
 
 from stark.tools.phonetic import espeak_ng
 
 
+@lru_cache
 def phonetic(string: str, language_code: str):
     """
     Converts a string to simplified latin transcription via phonetic (ipa) transliteration.
     """
-    return " ".join(ipa2lat(to_ipa(word, language_code)) for word in string.split())
+    return " ".join(
+        _ipa2lat(_to_ipa(word, language_code)) for word in string.split()
+    )  # TODO: try calling _to_ipa for the entire sentence
 
 
-def to_ipa(string: str, language_code: str) -> str:
-    return to_ipa__espeak_bin(string, language_code)
+def _to_ipa(string: str, language_code: str) -> str:
+    return _to_ipa__espeak_bin(string, language_code)
 
 
-def ipa2lat(ipa_string: str) -> str:
+def _ipa2lat(ipa_string: str) -> str:
     """Converts IPA to a simplified latin transcription."""
-    return ipa2lat__dict(ipa_string)
+    return _ipa2lat__dict(ipa_string)
 
 
 # ----- Implementations: -----
@@ -154,7 +158,7 @@ _mapping = {
 }
 
 
-def ipa2lat__dict(ipa_string: str) -> str:
+def _ipa2lat__dict(ipa_string: str) -> str:
     if not ipa_string:
         return ""
 
@@ -171,7 +175,7 @@ def ipa2lat__dict(ipa_string: str) -> str:
     return string
 
 
-def to_ipa__espeak_bin(string: str, language_code: str) -> str:
+def _to_ipa__espeak_bin(string: str, language_code: str) -> str:
     return espeak_ng.text_to_ipa(string, language_code)
 
 

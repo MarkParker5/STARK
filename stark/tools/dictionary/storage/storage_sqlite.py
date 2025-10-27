@@ -103,7 +103,7 @@ class DictionaryStorageSQLite(DictionaryStorageProtocol):
 
     def iterate(self) -> Iterable[DictionaryItem]:
         offset = 0
-        page_size = 100
+        page_size = 1000
         while True:
             cur = self._conn.execute(
                 """
@@ -133,11 +133,11 @@ class DictionaryStorageSQLite(DictionaryStorageProtocol):
         )
         self._conn.commit()
 
-    def is_empty(self) -> bool:
+    def get_count(self) -> int:
         cur = self._conn.execute(
             """
             SELECT COUNT(*) FROM dictionary
             """
         )
         count = cur.fetchone()[0]
-        return count == 0
+        return count

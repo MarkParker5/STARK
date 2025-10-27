@@ -14,24 +14,53 @@ from faker import Faker
 
 
 # Benchmark
-# @pytest.mark.timeout(30.0)
+@pytest.mark.timeout(60.0 * 10)
 @pytest.mark.benchmark(
     timer=time.monotonic,
-    min_time=0.1,
-    max_time=1.0,
+    min_time=1,
+    # max_time=1.0,
+    min_rounds=10,
 )
 # Report
 @pytest.mark.report_duration
 @pytest.mark.report_tracemalloc
 # Parametrize
-@pytest.mark.parametrize("dict_size", [100, 1_000, 10_000, 100_000, 1_000_000])
-@pytest.mark.parametrize("success", [True, False])
+@pytest.mark.parametrize(
+    "dict_size",
+    [
+        100,
+        1_000,
+        10_000,
+        100_000,
+        1_000_000,
+        10_000_000,
+    ],
+)
+@pytest.mark.parametrize(
+    "success",
+    [
+        True,
+        # False
+    ],
+)
 @pytest.mark.parametrize(
     "lookup_mode",
-    # [LookupMode.FUZZY, LookupMode.UNTIL_MATCH],
-    [LookupMode.EXACT, LookupMode.CONTAINS, LookupMode.FUZZY, LookupMode.UNTIL_MATCH],
+    [
+        LookupMode.EXACT,
+        LookupMode.CONTAINS,
+        LookupMode.FUZZY,
+        # LookupMode.AUTO,
+    ],
 )
-@pytest.mark.parametrize("lookup_func", ["lookup", "sentence_search"])
+@pytest.mark.parametrize(
+    "lookup_func",
+    [
+        "lookup",
+        # "lookup_sorted",
+        "sentence_search",
+        # "sentence_search_sorted",
+    ],
+)
 @pytest.mark.parametrize("storage_type", ["sqlite"])  # , "memory"])
 # Other
 def test_benchmark__dictionary(
@@ -48,8 +77,7 @@ def test_benchmark__dictionary(
 ):
     # params that are not part of the parametrized cases and just randomly generated
     ne_type = random.choice(["name", "place"])
-    targets_amount = random.choice([1, 1, 1, 2, 3])
-    print(f"{success=}, {ne_type=}, {targets_amount=}")
+    # print(f"{success=}, {ne_type=}, {targets_amount=}")
 
     fake = Faker("en")
 
@@ -89,7 +117,7 @@ def test_benchmark__dictionary(
 
     # Fill the dictionary if needed
 
-    if dictionary.storage.is_empty():
+    if dictionary.storage.get_count() == 0:
         for i in range(dict_size):
             dictionary.write_one(
                 language_code="en", name=get_random_entry(), metadata={"idx": i}
@@ -103,32 +131,45 @@ def test_benchmark__dictionary(
 
     # Select name(s) to search
 
-    targets: list[str] = []
-    for i in range(targets_amount):
-        name = get_random_entry()
-        targets.append(name)
-        if success:
-            dictionary.write_one(
-                language_code="en", name=name, metadata={"idx": f"x{i}"}
-            )
+    def get_targets() -> list[str]:
+        targets_amount = random.choice([1, 1, 1, 2, 3])
+        targets: list[str] = []
+        for i in range(targets_amount):
+            name = get_random_entry()
+            targets.append(name)
+            if success:
+                dictionary.write_one(
+                    language_code="en", name=name, metadata={"idx": f"x{i}"}
+                )
+        return targets
 
     # Prepare sentence
 
-    sentence_length = random.randint(5, 15)
-    sentence = fake.sentence(nb_words=sentence_length)
-    words = sentence.split()
-    for target in targets:
-        index = random.randint(0, len(words) - 1)
-        words[index] += " " + target
-    sentence = " ".join(words)
+    def get_sentence(inject_targets: list[str]) -> str:
+        sentence_length = random.randint(5, 15)
+        sentence = fake.sentence(nb_words=sentence_length)
+        words = sentence.split()
+        for target in inject_targets:
+            index = random.randint(0, len(words) - 1)
+            words[index] += " " + target
+        return " ".join(words)
 
     # Run benchmarks
 
     def execute_lookup():
+        targets = get_targets()
+        sentence = get_sentence(targets)
+
         if lookup_func == "lookup":
             return list(dictionary.lookup(targets[0], "en", mode=lookup_mode))
+        elif lookup_func == "lookup_sorted":
+            return list(dictionary.lookup_sorted(targets[0], "en", mode=lookup_mode))
         elif lookup_func == "sentence_search":
             return list(dictionary.sentence_search(sentence, "en", mode=lookup_mode))
+        elif lookup_func == "sentence_search_sorted":
+            return list(
+                dictionary.sentence_search_sorted(sentence, "en", mode=lookup_mode)
+            )
         else:
             raise ValueError(f"Invalid lookup function: {lookup_func}")
 
@@ -140,8 +181,7 @@ def test_benchmark__dictionary(
     if success:
         assert result
 
-
-# not asserting false success due to possible similar entries
+    # not asserting false success due to possible similar entries
 
 
 # @pytest.mark.benchmark

@@ -1,20 +1,21 @@
 from itertools import groupby
+import string
 from typing import Generator
 
 from stark.tools.common.span import Span
 
 
-def split_indices(s: str, sep: str = ' ') -> Generator[Span, None, None]:
-    assert len(sep) == 1, "Separator must be a single character"
+def split_indices(s: str, sep: str = string.whitespace) -> Generator[Span, None, None]:
+    # assert len(sep) == 1, "Separator must be a single character"
     p = 0
-    for k, g in groupby(s, lambda x: x == sep):
+    for k, g in groupby(s, lambda x: x in sep):
         q = p + sum(1 for _ in g)
         if not k:
             yield Span(p, q)
         p = q
 
-def find_substring_in_words_map(substr: str, words: list[str]) -> list[list[int]]:
 
+def find_substring_in_words_map(substr: str, words: list[str]) -> list[list[int]]:
     remaining = substr.strip()
 
     to_return_candidates: list[int] = []
@@ -22,15 +23,15 @@ def find_substring_in_words_map(substr: str, words: list[str]) -> list[list[int]
 
     for i, word in enumerate(words):
         if remaining in word:
-            remaining = ''
+            remaining = ""
             to_return_candidates.append(i)
 
         elif interception := endswith_startof(word, remaining):
-            remaining = remaining[len(interception):].strip()
+            remaining = remaining[len(interception) :].strip()
             to_return_candidates.append(i)
 
         elif word.startswith(remaining):
-            remaining = ''
+            remaining = ""
             to_return_candidates.append(i)
 
         else:
@@ -44,13 +45,14 @@ def find_substring_in_words_map(substr: str, words: list[str]) -> list[list[int]
 
     return to_return
 
+
 def endswith_startof(s1: str, s2: str) -> str:
     i, j = 0, 0
     n1, n2 = len(s1), len(s2)
 
     while i < n1:
         j = 0
-        temp = ''
+        temp = ""
         while j < n2 and i + j < n1:
             if s1[i + j] != s2[j]:
                 break
@@ -65,4 +67,4 @@ def endswith_startof(s1: str, s2: str) -> str:
 
         i += 1
 
-    return ''
+    return ""
