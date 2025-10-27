@@ -55,8 +55,8 @@ from faker import Faker
     [
         "lookup",
         "lookup_sorted",
-        "sentence_search",
-        "sentence_search_sorted",
+        "search_in_sentence",
+        "search_in_sentence_sorted",
     ],
 )
 @pytest.mark.parametrize("storage_type", ["sqlite"])  # , "memory"])
@@ -162,11 +162,11 @@ def test_benchmark__dictionary(
             return list(dictionary.lookup(targets[0], "en", mode=lookup_mode))
         elif lookup_func == "lookup_sorted":
             return list(dictionary.lookup_sorted(targets[0], "en", mode=lookup_mode))
-        elif lookup_func == "sentence_search":
-            return list(dictionary.sentence_search(sentence, "en", mode=lookup_mode))
-        elif lookup_func == "sentence_search_sorted":
+        elif lookup_func == "search_in_sentence":
+            return list(dictionary.search_in_sentence(sentence, "en", mode=lookup_mode))
+        elif lookup_func == "search_in_sentence_sorted":
             return list(
-                dictionary.sentence_search_sorted(sentence, "en", mode=lookup_mode)
+                dictionary.search_in_sentence_sorted(sentence, "en", mode=lookup_mode)
             )
         else:
             raise ValueError(f"Invalid lookup function: {lookup_func}")

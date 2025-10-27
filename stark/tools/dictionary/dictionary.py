@@ -110,7 +110,7 @@ class Dictionary:
             self.lookup(name_candidate, language_code, mode, field),
         )
 
-    def sentence_search_sorted(
+    def search_in_sentence_sorted(
         self,
         sentence: str,
         language_code: str,
@@ -118,7 +118,7 @@ class Dictionary:
         field: LookupField = LookupField.PHONETIC,
     ) -> list[LookupResult]:
         return sorted(
-            self.sentence_search(sentence, language_code, mode, field),
+            self.search_in_sentence(sentence, language_code, mode, field),
             key=lambda r: levenshtein_similarity_substring(
                 s1=r.item.name
                 if r.item.language_code == language_code
@@ -136,7 +136,7 @@ class Dictionary:
         name_candidate: str,
         language_code: str,
         mode: LookupMode = LookupMode.AUTO,
-        field: LookupField | None = None,
+        field: LookupField = LookupField.PHONETIC,
     ) -> Iterable[DictionaryItem]:
         """
         Lookup dictionary items by name_candidate and language_code using LookupMode and LookupField.
@@ -148,7 +148,6 @@ class Dictionary:
 
         match mode:
             case LookupMode.EXACT:
-                field = field or LookupField.PHONETIC
                 if field == LookupField.PHONETIC:
                     yield from self.storage.search_equal_simple_phonetic(
                         simple_phonetic
@@ -158,7 +157,6 @@ class Dictionary:
                         name_candidate, language_code
                     )
             case LookupMode.CONTAINS:
-                field = field or LookupField.PHONETIC
                 if field == LookupField.PHONETIC:
                     yield from self.storage.search_contains_simple_phonetic(
                         simple_phonetic
@@ -168,12 +166,12 @@ class Dictionary:
                         name_candidate, language_code
                     )
             case LookupMode.FUZZY:
-                field = field or LookupField.PHONETIC
                 if field == LookupField.PHONETIC:
                     yield from filter(
                         lambda item: levenshtein_match(
-                            s1=item.name,
-                            s2=name_candidate,
+                            s1=item.simple_phonetic,
+                            s2=simplephone(phonetic(name_candidate, language_code))
+                            or "",
                             threshold=0.8,
                             proximity_graph=SIMPLEPHONE_PROXIMITY_GRAPH,
                         ),
@@ -201,7 +199,7 @@ class Dictionary:
                         (LookupField.PHONETIC, LookupMode.CONTAINS),
                         (LookupField.PHONETIC, LookupMode.FUZZY),
                     ]
-                    if not field
+                    if field == LookupField.PHONETIC
                     else [
                         (field, LookupMode.EXACT),
                         (field, LookupMode.CONTAINS),
@@ -221,12 +219,12 @@ class Dictionary:
                         yield from gen
                         break
 
-    def sentence_search(
+    def search_in_sentence(
         self,
         sentence: str,
         language_code: str,
         mode: LookupMode = LookupMode.AUTO,
-        field: LookupField | None = None,
+        field: LookupField = LookupField.PHONETIC,
     ) -> Iterable[LookupResult]:
         """
         Sentence search supporting LookupField and LookupMode, matching lookup logic.
@@ -237,9 +235,8 @@ class Dictionary:
 
         match mode:
             case LookupMode.EXACT | LookupMode.CONTAINS:
-                field = field or LookupField.PHONETIC
                 if field == LookupField.PHONETIC:
-                    yield from self._sentence_search_per_word(
+                    yield from self._search_in_sentence_per_word(
                         sentence, language_code, mode
                     )
                 elif field == LookupField.NAME:
@@ -254,7 +251,6 @@ class Dictionary:
                             yield LookupResult(span, item)
                             start = idx + 1
             case LookupMode.FUZZY:
-                field = field or LookupField.PHONETIC
                 if field == LookupField.PHONETIC:
                     simple_phonetic = (
                         simplephone(phonetic(sentence, language_code)) or ""
@@ -287,7 +283,7 @@ class Dictionary:
                         (LookupField.PHONETIC, LookupMode.CONTAINS),
                         (LookupField.PHONETIC, LookupMode.FUZZY),
                     ]
-                    if not field
+                    if field == LookupField.PHONETIC
                     else [
                         (field, LookupMode.EXACT),
                         (field, LookupMode.CONTAINS),
@@ -297,7 +293,7 @@ class Dictionary:
                 for f, m in search_orders:
                     if m == LookupMode.FUZZY and self.storage.get_count() > 10**3:
                         continue
-                    gen = iter(self.sentence_search(sentence, language_code, m, f))
+                    gen = iter(self.search_in_sentence(sentence, language_code, m, f))
                     try:
                         first: LookupResult = next(gen)
                     except StopIteration:
@@ -307,7 +303,7 @@ class Dictionary:
                         yield from gen
                         break
 
-    def _sentence_search_per_word(
+    def _search_in_sentence_per_word(
         self, sentence: str, language_code: str, mode: LookupMode = LookupMode.EXACT
     ) -> Iterable[LookupResult]:
         import logging

@@ -19,7 +19,7 @@ class NLDictionaryName(Object[list[LookupResult]]):
     async def did_parse(self, from_string: str):
         lang = "en"
         self.value = list(
-            self.dictionary.sentence_search(from_string, lang, mode=LookupMode.AUTO)
+            self.dictionary.search_in_sentence(from_string, lang, mode=LookupMode.AUTO)
         )  # TODO: consider using lookup method
         if len(self.value) == 0:
             raise ParseError(f"Could not find '{from_string}' in dictionary")

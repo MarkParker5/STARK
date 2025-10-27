@@ -98,7 +98,7 @@ def test_write_all_and_clear(dictionary: Dictionary):
         ),
     ],
 )
-def test_sentence_search(
+def test_search_in_sentence(
     dictionary: Dictionary,
     entries: list[tuple[str, Metadata]],
     sentence: str,
@@ -110,7 +110,7 @@ def test_sentence_search(
 
     lang, sentence = parse_lang(sentence)
 
-    results = list(dictionary.sentence_search(sentence, lang, mode=LookupMode.FUZZY))
+    results = list(dictionary.search_in_sentence(sentence, lang, mode=LookupMode.FUZZY))
     assert results, f"{expected} not found"
 
     found = [r.item.metadata["id"] for r in results]
@@ -254,7 +254,7 @@ def test_lookup(
     lang, sentence = parse_lang(sentence)
 
     # Perform fuzzy search
-    results = list(dictionary.sentence_search(sentence, lang, mode=LookupMode.FUZZY))
+    results = list(dictionary.search_in_sentence(sentence, lang, mode=LookupMode.FUZZY))
     assert results, f"{expected} not found"
 
     found = [r.item.metadata["id"] for r in results]
@@ -276,7 +276,7 @@ def test_lookup(
         ),
         (
             ["en:hello", "en:world"],
-            "hellp",
+            "hellw",
             LookupMode.FUZZY,
             LookupField.PHONETIC,
             ["hello"],
@@ -297,7 +297,7 @@ def test_lookup(
         ),
         (
             ["en:hello", "en:world"],
-            "hellp",
+            "hellw",
             LookupMode.AUTO,
             LookupField.PHONETIC,
             ["hello"],
@@ -327,7 +327,13 @@ def test_lookup(
             LookupField.NAME,
             [],
         ),
-        (["en:foo", "en:foobar"], "foo", LookupMode.AUTO, None, ["foo"]),
+        (
+            ["en:foo", "en:foobar"],
+            "foo",
+            LookupMode.AUTO,
+            LookupField.PHONETIC,
+            ["foo"],
+        ),
         (
             ["en:hello", "en:world"],
             "hellp",
@@ -481,7 +487,7 @@ def test_lookup_modes(
         ),
     ],
 )
-def test_sentence_search_modes(
+def test_search_in_sentence_modes(
     dictionary: Dictionary,
     entries: list[str],
     sentence: str,
@@ -494,26 +500,27 @@ def test_sentence_search_modes(
         lang, name = parse_lang(entry)
         dictionary.write_one(lang, name, {})
     results = list(
-        dictionary.sentence_search_sorted(sentence, "en", mode=mode, field=field)
+        dictionary.search_in_sentence_sorted(sentence, "en", mode=mode, field=field)
     )
     found_names = [r.item.name for r in results]
     assert sorted(found_names) == sorted(expected_names)
 
 
 @pytest.mark.parametrize(
-    "field,expected",
+    "field,mode,expected",
     [
-        (LookupField.NAME, ["Qatar"]),
-        (LookupField.PHONETIC, ["Qatar", "guitar"]),
+        (LookupField.NAME, LookupMode.AUTO, ["Qatar"]),
+        (LookupField.PHONETIC, LookupMode.AUTO, ["Qatar"]),
+        (LookupField.PHONETIC, LookupMode.FUZZY, ["Qatar", "guitar"]),
     ],
 )
-def test_lookupfield_name_vs_phonetic(dictionary, field, expected):
+def test_lookup_field_name_vs_phonetic(dictionary, field, mode, expected):
     dictionary.clear()
     dictionary.write_one("en", "Qatar", {"meta": 1})
     dictionary.write_one("en", "guitar", {"meta": 2})
-    dictionary.write_one("en", "bar", {"meta": 3})
+    dictionary.write_one("en", "foobar", {"meta": 3})
 
-    results = list(dictionary.lookup("Qatar", "en", field=field))
+    results = list(dictionary.lookup("Qatar", "en", mode=mode, field=field))
     found_names = [r.name for r in results]
     assert len(found_names) == len(expected), (
         f"Expected {len(expected)} matches, but got {len(found_names)} "

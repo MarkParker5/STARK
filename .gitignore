@@ -1,33 +1,46 @@
-__pycache__
+# macOS system files
+.DS_Store
+
+# IDE and editor settings
+.idea/
+
+# Python bytecode and artifacts
+__pycache__/
 *.py[cod]
 *$py.class
 *.pyc
 
-# cython
+# Cython and compiled extensions
 *.pyd
 *.c
 *.so
+
+# Python tooling caches
+*.pytest_cache/
+.mypy_cache/
+
+# Benchmarks and profiling
+prof
+.benchmarks
+
+# Coverage and test cache
+.coverage
+.cache
+
+# Build and distribution directories
 build/
 dist/
+
+# Data and output
 data/
-
-.idea
-*.pytest_cache
-.mypy_cache
-
-*.db
-*.sqlite3
-*.save
-
 audio/
 downloads/
 site/
 
-.DS_Store
+# Database files
+*.db
+*.sqlite3
+*.save
+
+# Project-specific files
 test.py
-
-# benchmarks
-prof
-.benchmarks
-
-.coverage
