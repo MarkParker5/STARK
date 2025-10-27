@@ -40,16 +40,14 @@ keywords = [
 python = "^3.12"
 pydantic = "^2.0.0"
 asyncer = "^0.0.2"
+numpy = "^2.3.3"
 
 # Optional dependencies
-numpy = "^2.3.3"
 sounddevice = { version = "^0.4.5", optional = true }
 soundfile = { version = "^0.11.0", optional = true }
 vosk = { version = "0.3.44", optional = true }
 google-cloud-texttospeech = { version = "^2.14.1", optional = true }
 torch = { version = "^1.13.1", optional = true }
-mkdocs-git-revision-date-localized-plugin = { version = "^1.2.0", optional = true }
-epitran = "^1.26.0"
 
 [tool.poetry.extras]
 gcloud = ["google-cloud-texttospeech", "sounddevice", "soundfile"]
@@ -64,27 +62,26 @@ all = [
     "sounddevice",
     "soundfile",
 ]
-docs = ["mkdocs-material", "mkdocs-git-revision-date-localized-plugin"]
 
 [tool.poetry.group.dev.dependencies]
-# tests and static validation
-pytest = ">=8.1"
+mkdocs-material = {extras = ["imaging"], version = "^9.6.22"}
+mkdocs-git-revision-date-localized-plugin = "^1.4.7"
+cython = "^3.1.5"
+setuptools = "^80.9.0"
 mypy = "^1.1.1"
+pytest = ">=8.1"
 pytest-asyncio = "^0.21.1"
 pytest-trio = "^0.8.0"
 pytest-repeat = "^0.9.1"
 pytest-benchmark = "^5.1.0"
 pytest-profiling = "^1.8.1"
+pytest-resource-usage = "^1.0.0"
+pytest-timeout = "^2.4.0"
+pytest-cov = "^7.0.0"
+coverage = "^7.11.0"
 faker = "^37.11.0"
 pympler = "^1.1"
-pytest-resource-usage = "^1.0.0"
 psutil = "^7.1.1"
-pytest-timeout = "^2.4.0"
-cython = "^3.1.5"
-setuptools = "^80.9.0"
-coverage = "^7.11.0"
-pytest-cov = "^7.0.0"
-mkdocs-material = {extras = ["imaging"], version = "^9.6.22"}
 
 [build-system]
 requires = ["poetry-core"]

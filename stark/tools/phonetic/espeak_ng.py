@@ -3,7 +3,7 @@ import os
 import sys
 import re
 import threading
-from typing import Optional, final
+from typing import Generator, Optional, final
 import ctypes.util
 
 
@@ -185,8 +185,8 @@ class EspeakNG:
         ]
         self.lib_espeak.espeak_SetPhonemeTrace.restype = None
 
-    def _load_libs(self, lib_path: Optional[str]):
-        self.lib_espeak = ctypes.cdll.LoadLibrary(lib_path or self._find_library_path())
+    def _load_libs(self, lib_path: str | None):
+        self.lib_espeak = self._load_espeak(lib_path)
 
         # libc for open_memstream
         if sys.platform.startswith("linux"):
@@ -208,21 +208,33 @@ class EspeakNG:
         else:
             raise RuntimeError("This example currently supports Linux/macOS")
 
-    def _find_library_path(self) -> str:
-        # Try system library search first
-        libname = "espeak-ng"
-        found: str | None = ctypes.util.find_library(libname)
-        if found and os.path.exists(found):
-            return found
+    def _load_espeak(self, lib_path: str | None) -> ctypes.CDLL:
+        for path in ([lib_path] if lib_path else []) + list(self._find_library_path()):
+            try:
+                return ctypes.cdll.LoadLibrary(path)
+            except OSError:
+                pass
+        raise FileNotFoundError(
+            "libespeak-ng not found. Install eSpeak NG or set lib_path manually."
+        )
+
+    def _find_library_path(self) -> Generator[str, None, None]:
+        if lib := ctypes.util.find_library("espeak-ng"):
+            yield lib
 
         # Fallbacks
+
+        yield "libespeak-ng.so.1"
+        yield "libespeak-ng.so"
+
         candidates: list[str] = []
         if sys.platform.startswith("linux"):
             candidates = [
-                "/usr/lib/libespeak-ng.so",
-                "/usr/lib64/libespeak-ng.so",
-                "/usr/lib/x86_64-linux-gnu/libespeak-ng.so",
-                "/usr/local/lib/libespeak-ng.so",
+                "/usr/lib/x86_64-linux-gnu/libespeak-ng.so.1",  # Debian/Ubuntu x86_64
+                "/usr/lib/aarch64-linux-gnu/libespeak-ng.so.1",  # ARM Ubuntu / GH Actions
+                "/usr/lib/libespeak-ng.so.1",  # fallback for other distros
+                "/usr/lib64/libespeak-ng.so.1",  # RHEL/CentOS/Fedora
+                "/usr/local/lib/libespeak-ng.so.1",  # manual compile installs
             ]
         elif sys.platform == "darwin":
             candidates = [
@@ -237,11 +249,7 @@ class EspeakNG:
 
         for path in candidates:
             if os.path.exists(path):
-                return path
-
-        raise FileNotFoundError(
-            "libespeak-ng not found. Install eSpeak NG or set lib_path manually."
-        )
+                yield path
 
 
 """
