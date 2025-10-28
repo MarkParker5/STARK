@@ -11,6 +11,7 @@ from typing import (
     AsyncGenerator,
     Awaitable,
     Callable,
+    ClassVar,
     Generator,
     Generic,
     Optional,
@@ -123,7 +124,7 @@ class Response(BaseModel):
     id: UUID = Field(default_factory=uuid4)
     time: datetime = Field(default_factory=datetime.now)
 
-    _repeat_last: Response | None = None # static instance
+    _repeat_last: ClassVar[Response | None] = None # static instance
 
     @classproperty
     def repeat_last(cls) -> Response:

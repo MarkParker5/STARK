@@ -21,7 +21,7 @@ class Seconds(Object):
         return Pattern('$seconds:Word s')
 
     async def did_parse(self, from_string: str) -> str:
-        self.value = self.seconds.value.split(' ')[0]
+        self.value = self.seconds.value.split()[0]
         return from_string
 
 class Minutes(Object):
@@ -33,7 +33,7 @@ class Minutes(Object):
         return Pattern('$minutes:Word m')
 
     async def did_parse(self, from_string: str) -> str:
-        self.value = self.minutes.value.split(' ')[0]
+        self.value = self.minutes.value.split()[0]
         return from_string
 
 class Hours(Object):
@@ -45,7 +45,7 @@ class Hours(Object):
         return Pattern('$hours:Word h')
 
     async def did_parse(self, from_string: str) -> str:
-        self.value = self.hours.value.split(' ')[0]
+        self.value = self.hours.value.split()[0]
         return from_string
 
 Pattern.add_parameter_type(Seconds)
@@ -55,7 +55,7 @@ Pattern.add_parameter_type(Hours)
 def permutations(pattern_str, words: str | list[str], match: bool, expected_tokens: dict[str, str] | None = None) -> list[tuple[str, str, bool, dict[str, str]]]:
     expected_tokens = expected_tokens or {}
     if isinstance(words, str):
-        words = words.split(' ')
+        words = words.split()
     return [(pattern_str, " ".join(p), match, expected_tokens) for p in itertools.permutations(words)]
 
 class StarObject(Object):
@@ -68,7 +68,7 @@ class StarObject(Object):
 
     async def did_parse(self, from_string: str) -> str:
         # param extraction imitation
-        words = [w.strip() for w in from_string.split(' ') if w.strip() and not w.startswith('no')] #
+        words = [w.strip() for w in from_string.split() if w.strip() and not w.startswith('no')] #
         assert len(words) >= 2, ParseError(f"Expected at least two words without 'no' prefix, got '{from_string}'")
         self.value = " ".join(words[:2])
         # print(type(self), 'did_parse', self.value, words)
@@ -147,7 +147,7 @@ class OOWord(Word):
 
     async def did_parse(self, from_string: str) -> str:
         # param extraction imitation
-        words = [w.strip() for w in from_string.split(' ') if w.strip() and 'oo' in w]
+        words = [w.strip() for w in from_string.split() if w.strip() and 'oo' in w]
         if not words:
             raise ParseError(f"Expected a word with 'oo', got '{from_string}'")
         self.value = words[0]

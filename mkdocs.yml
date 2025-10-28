@@ -6,7 +6,6 @@ site_url: https://stark.markparker.me
 repo_name: MarkParker5/STARK
 repo_url: https://github.com/MarkParker5/STARK
 
-
 copyright: Copyright &copy; Mark Parker
 
 nav:
@@ -23,14 +22,16 @@ nav:
   - Voice Assistant: voice-assistant.md
   - Default Speech Interfaces: default-speech-interfaces.md
   - Where to Host: where-to-host.md
+  - Tools:
+      - Dictionary - Phonetic Lookup: tools/dictionary-tool.md
   - Advanced:
-    - Optimization: advanced/optimization.md
-    - Custom Run: advanced/custom-run.md
-    - Fallback Command / LLM Integration: advanced/fallback-command-llm-integration.md
-    - External Triggers: advanced/external-triggers.md
-    - Custom Interfaces: advanced/custom-interfaces.md
-    - Localization and Multi-Language: advanced/localization-and-multi-language.md
-    - Other: advanced/other.md # TODO: <-
+      - Optimization: advanced/optimization.md
+      - Custom Run: advanced/custom-run.md
+      - Fallback Command / LLM Integration: advanced/fallback-command-llm-integration.md
+      - External Triggers: advanced/external-triggers.md
+      - Custom Interfaces: advanced/custom-interfaces.md
+      - Localization and Multi-Language: advanced/localization-and-multi-language.md
+      - Other: advanced/other.md # TODO: <-
   # - S.T.A.R.K P.L.A.C.E Navigator: /stark-place-navigator.md
 
 theme:
@@ -57,8 +58,7 @@ theme:
     - search.suggest
     - toc.follow
 
-  palette: 
-
+  palette:
     # Palette toggle for automatic mode
     # - media: "(prefers-color-scheme)"
     #   primary: orange
@@ -71,7 +71,7 @@ theme:
     - media: "(prefers-color-scheme: light)"
       primary: orange
       accent: orange
-      scheme: default 
+      scheme: default
       toggle:
         icon: material/weather-sunny
         name: Switch to dark mode
@@ -87,11 +87,11 @@ theme:
 
 extra:
   generator: false
-  
+
   social:
-    - icon: fontawesome/brands/github 
+    - icon: fontawesome/brands/github
       link: https://github.com/MarkParker5/
-  
+
   features:
     - navigation.footer
 
