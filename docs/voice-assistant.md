@@ -1,5 +1,9 @@
 # Voice Assistant (VA) Documentation
 
+## Env Parameters
+
+`STARK_VOICE_CLI`: Prints voice input and output in terminal if set to 1 (default 0). Useful for testing and debugging if no other interface is available.
+
 ## Overview
 
 The VA processes user speech inputs, interacts with a set of commands, and provides responses. The behavior and response of the VA can be modified by setting different "modes". These modes define how the VA should operate in various situations, such as active listening, waiting, or when it's inactive.
@@ -72,7 +76,7 @@ The `Mode` class defines the behavior and settings of the VA in various situatio
 
 ```python
 class Mode(BaseModel):
-    
+
     play_responses: bool = True
     collect_responses: bool = False
     explicit_interaction_pattern: Optional[str] = None
@@ -81,20 +85,20 @@ class Mode(BaseModel):
     mode_on_timeout: Callable[[], Mode] | None = None
     mode_on_interaction: Callable[[], Mode] | None = None
     stop_after_interaction: bool = False
-    
+
     @classproperty
     def active(cls) -> Mode:
         return Mode(
             mode_on_timeout = lambda: Mode.waiting,
         )
-    
+
     @classproperty
     def waiting(cls) -> Mode:
         return Mode(
             collect_responses = True,
             mode_on_interaction = lambda: Mode.active,
         )
-    
+
     @classproperty
     def inactive(cls) -> Mode:
         return Mode(
@@ -104,7 +108,7 @@ class Mode(BaseModel):
             timeout_before_repeat = 0, # repeat all
             mode_on_interaction = lambda: Mode.active,
         )
-    
+
     @classmethod
     def sleeping(cls, pattern: str) -> Mode:
         return Mode(
@@ -115,7 +119,7 @@ class Mode(BaseModel):
             explicit_interaction_pattern = pattern,
             mode_on_interaction = lambda: Mode.active,
         )
-    
+
     @classmethod
     def explicit(cls, pattern: str) -> Mode:
         return Mode(
@@ -158,6 +162,28 @@ To have commands in the VA interact with its modes.
 
 *check [Dependency Injection](dependency-injection.md) for details*
 
----
+## Customizing VA and Observing Events
 
-The VA architecture, as outlined above, provides a dynamic, context-aware, and customizable system for voice interactions. By leveraging modes and contexts, developers can create responsive and adaptive voice experiences.
+If you want to add a custom logic to VA events, for example update GUI, you can subclass the native VoiceAssistant class and override its methods to add desired behavior. Don't forget to call the superclass method to ensure the default behavior is preserved. Voice assistant conforms to SpeechRecognizerDelegate and CommandsContextDelegate protocols, which methods are the main events.
+
+```python
+class MyVoiceAssistant(VoiceAssistant):
+
+    async def speech_recognizer_did_receive_final_result(self, result: str):
+        super().speech_recognizer_did_receive_final_result(result)
+        print('You sad: ', result) # Your custom logic here
+
+    async def speech_recognizer_did_receive_partial_result(self, result: str):
+        super().speech_recognizer_did_receive_partial_result(result)
+        print(f"\rListening...: \x1b[3m{result}\x1b[0m", end="") # Your custom logic here
+
+    async def speech_recognizer_did_receive_empty_result(self):
+        super().speech_recognizer_did_receive_empty_result()
+        # Your custom logic here
+
+    async def commands_context_did_receive_response(self, response: Response):
+        super().commands_context_did_receive_response(response)
+        print('STARK: ', response.text) # Your custom logic here
+```
+
+For more advanced usage, see the source code or use your IDE's autocomplete. Most modern editors support "go to definition" feature which might be very helpful for this.

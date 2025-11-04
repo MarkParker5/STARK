@@ -26,13 +26,17 @@ class CommandsContextLayer:
     commands: list[Command]
     parameters: dict[str, Any]
 
+
 @runtime_checkable
 class CommandsContextDelegate(Protocol):
-    async def commands_context_did_receive_response(self, response: Response): pass
-    def remove_response(self, response: Response): pass
+    async def commands_context_did_receive_response(self, response: Response):
+        pass
+
+    def remove_response(self, response: Response):
+        pass
+
 
 class CommandsContext:
-
     is_stopped = False
     commands_manager: CommandsManager
     dependency_manager: DependencyManager
@@ -44,7 +48,12 @@ class CommandsContext:
     _context_queue: list[CommandsContextLayer]
     _task_group: TaskGroup
 
-    def __init__(self, task_group: TaskGroup, commands_manager: CommandsManager, dependency_manager: DependencyManager = default_dependency_manager):
+    def __init__(
+        self,
+        task_group: TaskGroup,
+        commands_manager: CommandsManager,
+        dependency_manager: DependencyManager = default_dependency_manager,
+    ):
         assert isinstance(task_group, TaskGroup), task_group
         assert isinstance(commands_manager, CommandsManager)
         assert isinstance(dependency_manager, DependencyManager)
@@ -54,8 +63,12 @@ class CommandsContext:
         self._task_group = task_group
         self.dependency_manager = dependency_manager
         self.dependency_manager.add_dependency(None, AsyncResponseHandler, self)
-        self.dependency_manager.add_dependency(None, ResponseHandler, SyncResponseHandler(self))
-        self.dependency_manager.add_dependency('inject_dependencies', None, self.inject_dependencies)
+        self.dependency_manager.add_dependency(
+            None, ResponseHandler, SyncResponseHandler(self)
+        )
+        self.dependency_manager.add_dependency(
+            "inject_dependencies", None, self.inject_dependencies
+        )
 
     @property
     def delegate(self):
@@ -71,43 +84,60 @@ class CommandsContext:
         return CommandsContextLayer(self.commands_manager.commands, {})
 
     async def process_string(self, string: str):
-
         if not self._context_queue:
             self._context_queue.append(self.root_context)
 
-        # search commands
+        # search commands (classic way, by patterns with parameters)
+
         search_results = []
         while self._context_queue:
-
             current_context = self._context_queue[0]
-            search_results = await self.commands_manager.search(string = string, commands = current_context.commands)
+            search_results = await self.commands_manager.search(
+                string=string, commands=current_context.commands
+            )
 
             if search_results:
                 break
             else:
                 self._context_queue.pop(0)
 
-        if not search_results and self.fallback_command and (matches := await self.fallback_command.pattern.match(string)):
+        # switch to fallback if no command found
+
+        if (
+            not search_results
+            and self.fallback_command
+            and (matches := await self.fallback_command.pattern.match(string))
+        ):
             for match in matches:
-                search_results = [SearchResult(
-                    command = self.fallback_command,
-                    match_result = match,
-                    index = 0
-                )]
+                search_results = [
+                    SearchResult(
+                        command=self.fallback_command, match_result=match, index=0
+                    )
+                ]
+
+        # prepare and execute commands
 
         for search_result in search_results or []:
-
             parameters = current_context.parameters
             parameters.update(search_result.match_result.parameters)
-            parameters.update(self.dependency_manager.resolve(search_result.command._runner))
+            parameters.update(
+                self.dependency_manager.resolve(search_result.command._runner)
+            )
 
             self.run_command(search_result.command, parameters)
 
-    def inject_dependencies(self, runner: Command[CommandRunner] | CommandRunner) -> CommandRunner:
+    def inject_dependencies(
+        self, runner: Command[CommandRunner] | CommandRunner
+    ) -> CommandRunner:
         def injected_func(**kwargs) -> ResponseOptions:
-            kwargs.update(self.dependency_manager.resolve(runner._runner if isinstance(runner, Command) else runner))
-            return runner(**kwargs) # type: ignore
-        return injected_func # type: ignore
+            kwargs.update(
+                self.dependency_manager.resolve(
+                    runner._runner if isinstance(runner, Command) else runner
+                )
+            )
+            return runner(**kwargs)  # type: ignore
+
+        return injected_func  # type: ignore
 
     def run_command(self, command: Command, parameters: dict[str, Any] = {}):
         async def command_runner():
@@ -122,8 +152,10 @@ class CommandsContext:
                         await self.respond(response)
 
             elif isinstance(command_return, GeneratorType):
-                message = f'[WARNING] Command {command} is a sync GeneratorType that is not fully supported and may block the main thread. ' + \
-                            'Consider using the ResponseHandler.respond() or async approach instead.'
+                message = (
+                    f"[WARNING] Command {command} is a sync GeneratorType that is not fully supported and may block the main thread. "
+                    + "Consider using the ResponseHandler.respond() or async approach instead."
+                )
                 warnings.warn(message, UserWarning)
                 for response in command_return:
                     if response:
@@ -133,13 +165,15 @@ class CommandsContext:
                 pass
 
             else:
-                raise TypeError(f'Command {command} returned {command_return} of type {type(command_return)} instead of Response or AsyncGeneratorType[Response]')
+                raise TypeError(
+                    f"Command {command} returned {command_return} of type {type(command_return)} instead of Response or AsyncGeneratorType[Response]"
+                )
 
         self._task_group.soonify(command_runner)()
 
     # ResponseHandler
 
-    async def respond(self, response: Response): # async forces to run in main thread
+    async def respond(self, response: Response):  # async forces to run in main thread
         assert isinstance(response, Response)
         self._response_queue.append(response)
 
@@ -185,8 +219,8 @@ class CommandsContext:
 
         await self.delegate.commands_context_did_receive_response(response)
 
-class SyncResponseHandler: # needs for changing thread from worker to main in commands ran with asyncify
 
+class SyncResponseHandler:  # needs for changing thread from worker to main in commands ran with asyncify
     async_response_handler: ResponseHandler
 
     def __init__(self, async_response_handler: ResponseHandler):
