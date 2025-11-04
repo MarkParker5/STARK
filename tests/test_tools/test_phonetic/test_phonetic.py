@@ -3,7 +3,7 @@ import pytest
 from stark.tools.levenshtein import (
     levenshtein_distance,
 )
-from stark.tools.phonetic.ipa import phonetic
+from stark.tools.phonetic.transcription import transcription
 from stark.tools.phonetic.simplephone import simplephone
 
 
@@ -46,7 +46,7 @@ from stark.tools.phonetic.simplephone import simplephone
 )
 def test_phonetic_equivalence(original_str: str, similar_str: str):
     """
-    Test that phonetic() produces the same simplified output for both strings.
+    Test that transcription() produces the same simplified output for both strings.
     """
 
     # IGNORE_SPACES = True # vowels at the end of the word often add an extra A in the simplephone, while being ignored in the middle of the word
@@ -54,10 +54,10 @@ def test_phonetic_equivalence(original_str: str, similar_str: str):
     lang1, orig = original_str.split(":", 1)
     lang2, sim = similar_str.split(":", 1)
 
-    phonetic_orig = phonetic(orig, lang1)
-    phonetic_sim = phonetic(sim, lang2)
-    phonetic_orig_solid = phonetic(orig.replace(" ", ""), lang1)
-    phonetic_sim_solid = phonetic(sim.replace(" ", ""), lang2)
+    phonetic_orig = transcription(orig, lang1)
+    phonetic_sim = transcription(sim, lang2)
+    phonetic_orig_solid = transcription(orig.replace(" ", ""), lang1)
+    phonetic_sim_solid = transcription(sim.replace(" ", ""), lang2)
 
     simple_orig = simplephone(phonetic_orig) or ""
     simple_sim = simplephone(phonetic_sim) or ""
@@ -65,10 +65,10 @@ def test_phonetic_equivalence(original_str: str, similar_str: str):
     simple_sim_solid = simplephone(phonetic_sim_solid) or ""
 
     print(
-        f"phonetic({orig!r}, {lang1!r}) = {phonetic_orig!r} -> simplephone = {simple_orig!r}"
+        f"transcription({orig!r}, {lang1!r}) = {phonetic_orig!r} -> simplephone = {simple_orig!r}"
     )
     print(
-        f"phonetic({sim!r}, {lang2!r}) = {phonetic_sim!r} -> simplephone = {simple_sim!r}"
+        f"transcription({sim!r}, {lang2!r}) = {phonetic_sim!r} -> simplephone = {simple_sim!r}"
     )
 
     def compare_simples(s1, s2):

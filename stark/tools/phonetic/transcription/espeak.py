@@ -126,38 +126,20 @@ espeak: EspeakNG | None = None
 _espeak_lock = threading.Lock()
 
 
-def text_to_ipa(text: str, lang: str, check_chars: bool = True) -> str:
-    with _espeak_lock:
-        global espeak
-        if espeak is None:
-            espeak = EspeakNG(lang)
-        espeak.set_lang(lang)
-        ipa = espeak.text_to_ipa(text, remove_stress=True)
-        if check_chars:
-            for char in {"(", ")", "[", "]"}:
-                assert char not in ipa, (
-                    f"Unexpected character '{char}' in IPA '{ipa}' with lang '{lang}'. Check if the language is supported by eSpeak NG. You can disable this check by setting check_chars=False."
-                )
-        return ipa
+class EspeakIpaProvider:
+    def __init__(self, check_chars: bool = True):
+        self.check_chars = check_chars
 
-
-if __name__ == "__main__":
-    data = [
-        ("en", "Hello World"),
-        ("uk", "Привіт світ"),
-        ("fr", "Bonjour le monde"),
-        ("ru", "Привет мир"),
-        ("en", "Hello World"),
-        ("en", "Hello World"),
-        ("ru", "Привет мир"),
-        ("ru", "Привет мир"),
-        ("uk", "Привіт світ"),
-        ("uk", "Привіт світ"),
-        ("uk", "Привіт світ"),
-        ("en", "Hello, World"),
-        ("uk", "Привіт світ"),
-        ("en", "Hello! World"),
-        ("uk", "Привіт, світ"),
-    ]
-    for lang, text in data:
-        print(f"{lang.upper()}: '{text}' -> '{text_to_ipa(text, lang)}'")
+    def to_ipa(self, string: str, language_code: str) -> str:
+        with _espeak_lock:
+            global espeak
+            if espeak is None:
+                espeak = EspeakNG(language_code)
+            espeak.set_lang(language_code)
+            ipa = espeak.text_to_ipa(string, remove_stress=True)
+            if self.check_chars:
+                for char in {"(", ")", "[", "]"}:
+                    assert char not in ipa, (
+                        f"Unexpected character '{char}' in IPA '{ipa}' with lang '{language_code}'. Check if the language is supported by eSpeak NG. You can disable this check by setting check_chars=False."
+                    )
+            return ipa

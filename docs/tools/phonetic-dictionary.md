@@ -26,7 +26,7 @@ matches[0].metadata  # {"id": 1234})
 You can also scan an entire sentence for names from a dictionary:
 
 ```python
-dictionary.search_in_sentence("good morning plat linkin park on spotify", 'en')
+dictionary.search_in_sentence("good morning play linkin park on spotify", 'en')
 ```
 
 Both `lookup` and `search_in_sentence` receive two optional parameters: `mode: LookupMode = .AUTO` and `field: LookupField = .PHONETIC`.
@@ -54,7 +54,7 @@ sorted(
         s1=name_candidate,
         s2=item.name,
     ) if item.language_code == language_code else levenshtein_similarity( # sort by phonetic similarity for cross-language
-        s1=phonetic(name_candidate, language_code),
+        s1=transcription(name_candidate, language_code),
         s2=item.phonetic,
     ),
     reverse=True,
