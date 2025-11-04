@@ -58,7 +58,7 @@ It's also worth noting that you can extend the list of types by defining custom 
 
 ## Defining Custom Object Types
 
-The S.T.A.R.K toolkit isn't just limited to native types; it empowers developers to define their own custom object types. These bespoke types are constructed by subclassing the `Object` base class and specifying a distinct matching pattern. 
+The S.T.A.R.K toolkit isn't just limited to native types; it empowers developers to define their own custom object types. These bespoke types are constructed by subclassing the `Object` base class and specifying a distinct matching pattern.
 
 A standout feature of the S.T.A.R.K toolkit's patterns is their seamless compatibility with nested objects. In essence, a custom object type can house parameters that are, in themselves, other custom object types. This nesting capability facilitates the crafting of complex and nuanced patterns, capable of interpreting diverse input configurations.
 
@@ -68,7 +68,7 @@ Below is a demonstrative example of how one might structure a custom object type
 class FullName(Object):
     first_name: Word
     second_name: Word
-    
+
     @classproperty
     def pattern(cls) -> Pattern:
         return Pattern('$first_name:Word $second_name:Word')
@@ -90,25 +90,31 @@ Here's an illustrative example:
 
 ```python
 class Lorem(Object):
-    
+
     @classproperty
     def pattern(cls):
         return Pattern('* ipsum')
-    
+
     async def did_parse(self, from_string: str) -> str:
         '''
         Invoked after parsing from the string and assigning the parameters detected in the pattern.
         Directly calling this method is typically unnecessary and uncommon.
-        
-        Override this method to achieve more sophisticated string parsing. 
+
+        Override this method to achieve more sophisticated string parsing.
         '''
-        
+
         if 'lorem' not in from_string:
             raise ParseError('lorem not found') # Throw a ParseError if the string doesn't meet certain criteria
 
         self.value = 'lorem' # Assign additional properties (properties inferred from the pattern are auto-assigned)
         return 'lorem' # Return the smallest substring essential for this object
 ```
+
+Note that the `did_parse` method must return a substring of the input string that was successfully parsed. This substring should be the smallest possible string that still represents the object's value. In case you use 3rd party parser that can't extract substring and just provides the value, you have several options to handle this:
+
+1. If your parser returns a string-ish value, like some kind of name, you can use `levenshtein_search_substring` from the [STARK-Levenshtein](/tools/stark-levenshtein.md) module. This will allow you efficiently find the closest fuzzy match of your named entity in the input string.
+2. Consider using `NLDictionaryName` from [Phonetic Dictionary](/tools/phonetic-dictionary.md) if suits your needs.
+3. If options above are not suitable, take a look at [sliding_window_parser](/tools/sliding-window-parser.md) wrapper. Note that it will call the parser method multiple times to find the best match, which can be optimized by caching intermediate results inside your parser func, but yet still requires careful usage especially with large input strings and long io-bound parsing times.
 
 ## Recommended Use of Caching for `did_parse` Method
 
