@@ -61,7 +61,7 @@ sorted(
 )
 ```
 
-> More details about levenshtein for fuzzy string matching [here](./levenshtein.md) page.
+> More details about levenshtein for fuzzy string matching [here](./stark-levenshtein.md) page.
 
 But in many cases, domain-specific sorting and filtering is the best approach. For example, in navigator app you can prioritize names that are closer to the user's location. For example, Georgia the state for american users, but Georgia the country for european.
 
