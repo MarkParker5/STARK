@@ -14,7 +14,11 @@ from stark.tools.levenshtein import (
     levenshtein_similarity,
     levenshtein_similarity_substring,
 )
-from stark.tools.phonetic.ipa import phonetic
+from stark.tools.phonetic.transcription import (
+    transcription,
+    IpaProvider,
+    EspeakIpaProvider,
+)
 from stark.tools.phonetic.simplephone import simplephone
 from stark.tools.strtools import find_substring_in_words_map, split_indices
 
@@ -52,8 +56,13 @@ class Dictionary:
     Phonetic-aware dictionary with metadata storage.
     """
 
-    def __init__(self, storage: DictionaryStorageProtocol):
+    def __init__(
+        self,
+        storage: DictionaryStorageProtocol,
+        ipa_provider: IpaProvider = EspeakIpaProvider(),
+    ):
         self.storage: DictionaryStorageProtocol = storage
+        self.ipa_provider: IpaProvider = ipa_provider
 
     # ----------------------
     # Write methods
@@ -65,7 +74,9 @@ class Dictionary:
         Add a single entry to the dictionary.
         Phonetic conversion happens internally (mandatory).
         """
-        phonetic_str = phonetic(name, language_code=language_code)
+        phonetic_str = transcription(
+            name, language_code=language_code, ipa_provider=self.ipa_provider
+        )
         simple_phonetic = simplephone(phonetic_str) or ""
         item = DictionaryItem(
             name=name,
@@ -125,7 +136,9 @@ class Dictionary:
                 else r.item.phonetic,
                 s2=sentence
                 if r.item.language_code == language_code
-                else phonetic(sentence, language_code),
+                else transcription(
+                    sentence, language_code, ipa_provider=self.ipa_provider
+                ),
                 ignore_prefix=True,
             )[0][1],  # TODO: review
             reverse=True,
@@ -141,7 +154,14 @@ class Dictionary:
         """
         Lookup dictionary items by name_candidate and language_code using LookupMode and LookupField.
         """
-        simple_phonetic = simplephone(phonetic(name_candidate, language_code)) or ""
+        simple_phonetic = (
+            simplephone(
+                transcription(
+                    name_candidate, language_code, ipa_provider=self.ipa_provider
+                )
+            )
+            or ""
+        )
         logger.debug(
             f"Looking up '{name_candidate}' with simple phonetic '{simple_phonetic}' under mode {mode}, field {field}"
         )
@@ -170,7 +190,13 @@ class Dictionary:
                     yield from filter(
                         lambda item: levenshtein_match(
                             s1=item.simple_phonetic,
-                            s2=simplephone(phonetic(name_candidate, language_code))
+                            s2=simplephone(
+                                transcription(
+                                    name_candidate,
+                                    language_code,
+                                    ipa_provider=self.ipa_provider,
+                                )
+                            )
                             or "",
                             threshold=0.8,
                             proximity_graph=SIMPLEPHONE_PROXIMITY_GRAPH,
@@ -253,7 +279,12 @@ class Dictionary:
             case LookupMode.FUZZY:
                 if field == LookupField.PHONETIC:
                     simple_phonetic = (
-                        simplephone(phonetic(sentence, language_code)) or ""
+                        simplephone(
+                            transcription(
+                                sentence, language_code, ipa_provider=self.ipa_provider
+                            )
+                        )
+                        or ""
                     )
                     for item in self.storage.iterate():
                         for span, _ in levenshtein_search_substring(
@@ -343,7 +374,11 @@ class Dictionary:
                 span=span,
                 text=sentence[span.slice],
                 simple_phonetic=simplephone(
-                    phonetic(sentence[span.slice], language_code)
+                    transcription(
+                        sentence[span.slice],
+                        language_code,
+                        ipa_provider=self.ipa_provider,
+                    )
                 )
                 or "",
             )
@@ -405,7 +440,9 @@ class Dictionary:
             key=lambda item: levenshtein_similarity(
                 s1=name_candidate
                 if item.language_code == language_code
-                else phonetic(name_candidate, language_code),
+                else transcription(
+                    name_candidate, language_code, ipa_provider=self.ipa_provider
+                ),
                 s2=item.name if item.language_code == language_code else item.phonetic,
             ),
             reverse=True,
