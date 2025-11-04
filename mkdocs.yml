@@ -23,7 +23,10 @@ nav:
   - Default Speech Interfaces: default-speech-interfaces.md
   - Where to Host: where-to-host.md
   - Tools:
-      - Dictionary - Phonetic Lookup: tools/dictionary-tool.md
+      - Phonetic Dictionary - Cross-language Name Lookup: tools/phonetic-dictionary.md
+      - Raw Phonetic Tools (IPA & Simplephone): tools/raw-phonetic.md
+      - Levenshtein - Fuzzy String Matching: tools/stark-levenshtein.md
+      - Sliding Window Parser: tools/sliding-window-parser.md
   - Advanced:
       - Optimization: advanced/optimization.md
       - Custom Run: advanced/custom-run.md
