@@ -1,13 +1,17 @@
 from __future__ import annotations
 
+import logging
 import warnings
-from dataclasses import dataclass
 from types import AsyncGeneratorType, GeneratorType
 from typing import Any, Protocol, runtime_checkable
 
 import anyio
 from asyncer import syncify
 from asyncer._main import TaskGroup
+
+from stark.core.commands_context_processor import CommandsContextLayer, ParsedType
+from stark.core.patterns.pattern import ParameterMatch
+
 
 from ..general.dependencies import DependencyManager, default_dependency_manager
 from .command import (
@@ -18,13 +22,10 @@ from .command import (
     ResponseHandler,
     ResponseOptions,
 )
-from .commands_manager import CommandsManager, SearchResult
+from .commands_manager import CommandsManager
 
 
-@dataclass
-class CommandsContextLayer:
-    commands: list[Command]
-    parameters: dict[str, Any]
+logger = logging.getLogger(__name__)
 
 
 @runtime_checkable
@@ -53,6 +54,7 @@ class CommandsContext:
         task_group: TaskGroup,
         commands_manager: CommandsManager,
         dependency_manager: DependencyManager = default_dependency_manager,
+        processors: list[Any] | None = None,
     ):
         assert isinstance(task_group, TaskGroup), task_group
         assert isinstance(commands_manager, CommandsManager)
@@ -69,9 +71,15 @@ class CommandsContext:
         self.dependency_manager.add_dependency(
             "inject_dependencies", None, self.inject_dependencies
         )
+        from .commands_context_search_processor import CommandsContextSearchProcessor
+
+        self.processors = (
+            processors if processors is not None else [CommandsContextSearchProcessor()]
+        )
 
     @property
-    def delegate(self):
+    def delegate(self) -> CommandsContextDelegate:
+        assert self._delegate is not None
         return self._delegate
 
     @delegate.setter
@@ -87,43 +95,48 @@ class CommandsContext:
         if not self._context_queue:
             self._context_queue.append(self.root_context)
 
-        # search commands (classic way, by patterns with parameters)
+        # Run the string and context queue through all the processors
 
-        search_results = []
-        while self._context_queue:
-            current_context = self._context_queue[0]
-            search_results = await self.commands_manager.search(
-                string=string, commands=current_context.commands
+        parsed_types: list[ParsedType] = []
+        search_results: list[Any] = []
+        context_pops: int = 0
+        for processor in self.processors:
+            logger.debug(
+                f"Processing context {processor=} with {string=} {parsed_types=} {self._context_queue=}"
             )
-
+            search_results, context_pops = await processor.process(
+                string, self._context_queue, parsed_types
+            )
             if search_results:
+                # Pop contexts as directed by processor
+                for _ in range(context_pops):
+                    if self._context_queue:
+                        self._context_queue.pop(0)
                 break
-            else:
-                self._context_queue.pop(0)
+        else:  # no results found at all
+            self._context_queue = [
+                self.root_context
+            ]  # nothing found, reset to root context
 
-        # switch to fallback if no command found
-
-        if (
-            not search_results
-            and self.fallback_command
-            and (matches := await self.fallback_command.pattern.match(string))
-        ):
-            for match in matches:
-                search_results = [
-                    SearchResult(
-                        command=self.fallback_command, match_result=match, index=0
-                    )
-                ]
-
-        # prepare and execute commands
+        # Prepare and execute found commands
 
         for search_result in search_results or []:
-            parameters = current_context.parameters
+            current_context = self._context_queue[0]
+            parameters = (
+                current_context.parameters.copy()
+            )  # TODO: pass to the search processor
+            parameters.update(
+                {
+                    p.name: p.parsed_obj
+                    for p in self._get_parsed_parameters(
+                        parsed_types, search_result.command
+                    )
+                }
+            )  # TODO: find the best way to pass parsed_types
             parameters.update(search_result.match_result.parameters)
             parameters.update(
                 self.dependency_manager.resolve(search_result.command._runner)
             )
-
             self.run_command(search_result.command, parameters)
 
     def inject_dependencies(
@@ -218,6 +231,22 @@ class CommandsContext:
             self._context_queue.insert(0, newContext)
 
         await self.delegate.commands_context_did_receive_response(response)
+
+    # private
+
+    def _get_parsed_parameters(self, parsed_types: list[ParsedType], command: Command):
+        # put parsed types to corresponding command parameter keys
+        param_type_to_key = {
+            p.type_name: p.name for p in command.pattern.parameters.values()
+        }
+        return {
+            ParameterMatch(
+                **p.__dict__,
+                name=param_type_to_key[type(p.parsed_obj).__name__],
+            )
+            for p in parsed_types
+            if p.parsed_obj and type(p.parsed_obj).__name__ in param_type_to_key
+        }
 
 
 class SyncResponseHandler:  # needs for changing thread from worker to main in commands ran with asyncify

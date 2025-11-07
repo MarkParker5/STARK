@@ -9,6 +9,8 @@ from stark.general.classproperty import classproperty
 from .. import Pattern
 
 
+# TODO: review programmable init vs did_parse
+# TODO: consider storing parsing metadata here like substr and span
 class Object[T](ABC):
     value: T
 
