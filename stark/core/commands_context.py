@@ -9,9 +9,12 @@ import anyio
 from asyncer import syncify
 from asyncer._main import TaskGroup
 
-from stark.core.commands_context_processor import CommandsContextLayer, ParsedType
-from stark.core.patterns.pattern import ParameterMatch
-
+from stark.core.commands_context_processor import (
+    CommandsContextLayer,
+    RecognizedEntity,
+)
+from stark.core.patterns.parsing import PatternParser
+from stark.core.types.object import Object
 
 from ..general.dependencies import DependencyManager, default_dependency_manager
 from .command import (
@@ -23,7 +26,6 @@ from .command import (
     ResponseOptions,
 )
 from .commands_manager import CommandsManager
-
 
 logger = logging.getLogger(__name__)
 
@@ -41,12 +43,12 @@ class CommandsContext:
     is_stopped = False
     commands_manager: CommandsManager
     dependency_manager: DependencyManager
+    pattern_parser: PatternParser
     last_response: Response | None = None
-    fallback_command: Command | None = None
+    context_queue: list[CommandsContextLayer]
 
     _delegate: CommandsContextDelegate | None = None
     _response_queue: list[Response]
-    _context_queue: list[CommandsContextLayer]
     _task_group: TaskGroup
 
     def __init__(
@@ -59,23 +61,18 @@ class CommandsContext:
         assert isinstance(task_group, TaskGroup), task_group
         assert isinstance(commands_manager, CommandsManager)
         assert isinstance(dependency_manager, DependencyManager)
+        self.pattern_parser = PatternParser()
         self.commands_manager = commands_manager
-        self._context_queue = [self.root_context]
+        self.context_queue = [self.root_context]
         self._response_queue = []
         self._task_group = task_group
         self.dependency_manager = dependency_manager
         self.dependency_manager.add_dependency(None, AsyncResponseHandler, self)
-        self.dependency_manager.add_dependency(
-            None, ResponseHandler, SyncResponseHandler(self)
-        )
-        self.dependency_manager.add_dependency(
-            "inject_dependencies", None, self.inject_dependencies
-        )
+        self.dependency_manager.add_dependency(None, ResponseHandler, SyncResponseHandler(self))
+        self.dependency_manager.add_dependency("inject_dependencies", None, self.inject_dependencies)
         from .commands_context_search_processor import CommandsContextSearchProcessor
 
-        self.processors = (
-            processors if processors is not None else [CommandsContextSearchProcessor()]
-        )
+        self.processors = processors if processors is not None else [CommandsContextSearchProcessor()]
 
     @property
     def delegate(self) -> CommandsContextDelegate:
@@ -92,62 +89,40 @@ class CommandsContext:
         return CommandsContextLayer(self.commands_manager.commands, {})
 
     async def process_string(self, string: str):
-        if not self._context_queue:
-            self._context_queue.append(self.root_context)
+        if not self.context_queue:
+            self.context_queue.append(self.root_context)
 
         # Run the string and context queue through all the processors
 
-        parsed_types: list[ParsedType] = []
+        params_suggestions: list[RecognizedEntity] = []
         search_results: list[Any] = []
         context_pops: int = 0
+
         for processor in self.processors:
-            logger.debug(
-                f"Processing context {processor=} with {string=} {parsed_types=} {self._context_queue=}"
-            )
-            search_results, context_pops = await processor.process(
-                string, self._context_queue, parsed_types
-            )
+            logger.debug(f"Processing context {processor=} with {string=} {params_suggestions=} {self.context_queue=}")
+            search_results, context_pops = await processor.process_string(string, self, params_suggestions)
             if search_results:
                 # Pop contexts as directed by processor
                 for _ in range(context_pops):
-                    if self._context_queue:
-                        self._context_queue.pop(0)
+                    if self.context_queue:
+                        self.context_queue.pop(0)
                 break
         else:  # no results found at all
-            self._context_queue = [
-                self.root_context
-            ]  # nothing found, reset to root context
+            self.context_queue = [self.root_context]  # nothing found, reset to root context
 
-        # Prepare and execute found commands
+        # Prepare and execute found commands;
 
         for search_result in search_results or []:
-            current_context = self._context_queue[0]
-            parameters = (
-                current_context.parameters.copy()
-            )  # TODO: pass to the search processor
-            parameters.update(
-                {
-                    p.name: p.parsed_obj
-                    for p in self._get_parsed_parameters(
-                        parsed_types, search_result.command
-                    )
-                }
-            )  # TODO: find the best way to pass parsed_types
+            current_context = self.context_queue[0]
+            parameters: dict[str, Object] = {}
+            parameters.update(current_context.parameters)
             parameters.update(search_result.match_result.parameters)
-            parameters.update(
-                self.dependency_manager.resolve(search_result.command._runner)
-            )
+            parameters.update(self.dependency_manager.resolve(search_result.command._runner))
             self.run_command(search_result.command, parameters)
 
-    def inject_dependencies(
-        self, runner: Command[CommandRunner] | CommandRunner
-    ) -> CommandRunner:
+    def inject_dependencies(self, runner: Command[CommandRunner] | CommandRunner) -> CommandRunner:
         def injected_func(**kwargs) -> ResponseOptions:
-            kwargs.update(
-                self.dependency_manager.resolve(
-                    runner._runner if isinstance(runner, Command) else runner
-                )
-            )
+            kwargs.update(self.dependency_manager.resolve(runner._runner if isinstance(runner, Command) else runner))
             return runner(**kwargs)  # type: ignore
 
         return injected_func  # type: ignore
@@ -196,15 +171,15 @@ class CommandsContext:
         self.delegate.remove_response(response)
 
     async def pop_context(self):
-        self._context_queue.pop(0)
+        self.context_queue.pop(0)
 
     # Context
 
     def pop_to_root_context(self):
-        self._context_queue = [self.root_context]
+        self.context_queue = [self.root_context]
 
     def add_context(self, context: CommandsContextLayer):
-        self._context_queue.insert(0, context)
+        self.context_queue.insert(0, context)
 
     # ResponseQueue
 
@@ -228,25 +203,9 @@ class CommandsContext:
 
         if response.commands:
             newContext = CommandsContextLayer(response.commands, response.parameters)
-            self._context_queue.insert(0, newContext)
+            self.context_queue.insert(0, newContext)
 
         await self.delegate.commands_context_did_receive_response(response)
-
-    # private
-
-    def _get_parsed_parameters(self, parsed_types: list[ParsedType], command: Command):
-        # put parsed types to corresponding command parameter keys
-        param_type_to_key = {
-            p.type_name: p.name for p in command.pattern.parameters.values()
-        }
-        return {
-            ParameterMatch(
-                **p.__dict__,
-                name=param_type_to_key[type(p.parsed_obj).__name__],
-            )
-            for p in parsed_types
-            if p.parsed_obj and type(p.parsed_obj).__name__ in param_type_to_key
-        }
 
 
 class SyncResponseHandler:  # needs for changing thread from worker to main in commands ran with asyncify
@@ -256,6 +215,7 @@ class SyncResponseHandler:  # needs for changing thread from worker to main in c
         self.async_response_handler = async_response_handler
 
     # ResponseHandler
+    # TODO: review
 
     def respond(self, response: Response):
         syncify(self.async_response_handler.respond)(response)

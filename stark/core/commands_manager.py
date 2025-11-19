@@ -6,8 +6,10 @@ from types import UnionType
 
 from typing_extensions import get_args
 
+from stark.core.patterns.parsing import MatchResult
+
 from .command import AsyncResponseHandler, Command, CommandRunner, ResponseHandler
-from .patterns import MatchResult, Pattern
+from .patterns import Pattern
 
 
 @dataclass
@@ -49,41 +51,29 @@ class CommandsManager:
             # check that runner has all parameters from pattern
 
             error_msg = f"Command {self.name}.{runner.__name__} must have all parameters from pattern;"
-            pattern_params = set(
-                (p.name, Pattern._parameter_types[p.type_name].type.__name__)
-                for p in pattern.parameters.values()
-            )
+            pattern_params = set((p.name, Pattern._parameter_types[p.type_name].type.__name__) for p in pattern.parameters.values())
             command_params = set(
                 (
                     k,
-                    get_args(v)[0].__name__
-                    if type(None) in get_args(v)
-                    else v.__name__,
+                    get_args(v)[0].__name__ if type(None) in get_args(v) else v.__name__,
                 )
                 for k, v in annotations.items()
             )
             difference = pattern_params - command_params
             # TODO: handle unregistered parameter type as a separate error
             assert not difference, (
-                error_msg
-                + f"\n\tPattern got {dict(pattern_params)},\n\tFunction got {dict(command_params)},\n\tDifference: {dict(difference)}"
+                error_msg + f"\n\tPattern got {dict(pattern_params)},\n\tFunction got {dict(command_params)},\n\tDifference: {dict(difference)}"
             )
             # assert {(p.name, p.type) for p in pattern.parameters.values()} <= annotations.items(), error_msg
 
             # additional checks for DI
 
-            if (
-                ResponseHandler in runner.__annotations__.values()
-                and inspect.iscoroutinefunction(runner)
-            ):
+            if ResponseHandler in runner.__annotations__.values() and inspect.iscoroutinefunction(runner):
                 raise TypeError(
                     f"`ResponseHandler` is not compatible with command {self.name}.{runner.__name__} because it is async, use `AsyncResponseHandler` instead"
                 )
 
-            if (
-                AsyncResponseHandler in runner.__annotations__.values()
-                and not inspect.iscoroutinefunction(runner)
-            ):
+            if AsyncResponseHandler in runner.__annotations__.values() and not inspect.iscoroutinefunction(runner):
                 raise TypeError(
                     f"`AsyncResponseHandler` is not compatible with command {self.name}.{runner.__name__} because it is sync, use `ResponseHandler` instead"
                 )

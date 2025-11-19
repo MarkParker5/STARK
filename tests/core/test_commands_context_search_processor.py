@@ -2,7 +2,7 @@ import asyncer
 import pytest
 
 from stark.core.commands_context_search_processor import CommandsContextSearchProcessor
-from stark.core.commands_context_processor import CommandsContextLayer, ParsedType
+from stark.core.commands_context_processor import CommandsContextLayer, RecognizedEntity
 from stark.core.patterns.pattern import Pattern
 from stark.core.types.object import Object
 from stark.core.commands_context import CommandsContext
@@ -148,7 +148,7 @@ async def test_context_param_only(context, context_precedence):
 async def test_ner_only(context, context_single_type):
     context._context_queue.insert(0, context_single_type)
     ner_obj = Location("ner_place")
-    context_parsed_types = [ParsedType(parsed_obj=ner_obj, parsed_substr="ner_place")]
+    context_parsed_types = [RecognizedEntity(parsed_obj=ner_obj, parsed_substr="ner_place")]
     orig_processors = context.processors
     context.processors = [CommandsContextSearchProcessor()]
     results = await context.processors[0].process_context(
@@ -166,7 +166,7 @@ async def test_ner_only(context, context_single_type):
 async def test_ner_precedence_over_context(context, context_precedence):
     context._context_queue.insert(0, context_precedence)
     ner_obj = Location("ner_place")
-    context_parsed_types = [ParsedType(parsed_obj=ner_obj, parsed_substr="ner_place")]
+    context_parsed_types = [RecognizedEntity(parsed_obj=ner_obj, parsed_substr="ner_place")]
     orig_processors = context.processors
     context.processors = [CommandsContextSearchProcessor()]
     results = await context.processors[0].process_context(
@@ -203,7 +203,7 @@ async def test_last_state_nested_object(context, context_nested):
     full_name_obj = TCCSPFullName("John Doe")
     full_name_obj.first_name = "John"
     full_name_obj.second_name = "Doe"
-    parsed_types = [ParsedType(parsed_obj=full_name_obj, parsed_substr="John Doe")]
+    parsed_types = [RecognizedEntity(parsed_obj=full_name_obj, parsed_substr="John Doe")]
     orig_processors = context.processors
     context.processors = [CommandsContextSearchProcessor()]
     results = await context.processors[0].process_context(

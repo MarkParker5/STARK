@@ -56,9 +56,7 @@ class Object[T](ABC):
         return f"{self.value:{spec}}"
 
     def __repr__(self):
-        strValue = (
-            f'"{str(self.value)}"' if type(self.value) is str else str(self.value)
-        )
+        strValue = f'"{str(self.value)}"' if type(self.value) is str else str(self.value)
         return f"<{type(self).__name__} value: {strValue}>"
 
     def __eq__(self, other: object) -> bool:

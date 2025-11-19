@@ -73,7 +73,7 @@ async def commands_context_flow():
             context.delegate = context_delegate
 
             assert len(context_delegate.responses) == 0
-            assert len(context._context_queue) == 1
+            assert len(context.context_queue) == 1
 
             main_task_group.soonify(context.handle_responses)()
             yield (manager, context, context_delegate)

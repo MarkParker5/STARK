@@ -1,25 +1,29 @@
 from __future__ import annotations
 
+import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-import logging
-from typing import Any, NamedTuple, Sequence
+from typing import NamedTuple
 
 from stark.core.command import Command
+from stark.core.commands_context import CommandsContext
+from stark.core.patterns.parsing import ObjectType
 from stark.core.types.object import Object
+from stark.tools.common.span import Span
+
 from .commands_manager import SearchResult
 
 
 @dataclass
 class CommandsContextLayer:
     commands: list[Command]
-    parameters: dict[str, Any]
+    parameters: dict[str, Object]
 
 
-class ParsedType(NamedTuple):
-    parsed_obj: Object | None
-    parsed_substr: str
-    # span
+class RecognizedEntity(NamedTuple):
+    span: Span
+    type: ObjectType
+    key: str | None
 
 
 logger = logging.getLogger(__name__)
@@ -42,11 +46,11 @@ class CommandsContextProcessor(ABC):
     If all layers return empty results, all contexts are popped and an empty result list is returned.
     """
 
-    async def process(
+    async def process_string(
         self,
         string: str,
-        context_queue: Sequence[CommandsContextLayer],
-        parsed_types: list[ParsedType],
+        context: CommandsContext,
+        recognized_entities: list[RecognizedEntity],
     ) -> tuple[list[SearchResult], int]:
         """
         Processes the entire context queue.
@@ -61,21 +65,13 @@ class CommandsContextProcessor(ABC):
         If don't implement a command search (for example, implementing some type of pre-processing), return ([], 0)
         """
         pops = 0
-        for context in context_queue:
-            context_types = [
-                ParsedType(
-                    parsed_obj=v,
-                    parsed_substr=".*?",  # TODO: review
-                )
-                for v in context.parameters.values()
-            ]  # TODO: review, maybe find a way to optionally specify the key
-            logger.debug(
-                f"Command search processing context {context=} with {context_types=} {parsed_types=} combined as {context_types + parsed_types=}"
-            )
-            results = await self.process_context(
+        for layer in context.context_queue:
+            logger.debug(f"Command search processing context {layer=} with {recognized_entities=}")
+            results = await self.process_context_layer(
                 string,
                 context,
-                context_types + parsed_types,
+                layer,
+                recognized_entities,
             )
             if results:
                 return results, pops
@@ -83,11 +79,12 @@ class CommandsContextProcessor(ABC):
         return [], pops
 
     @abstractmethod
-    async def process_context(
+    async def process_context_layer(
         self,
         string: str,
-        context: CommandsContextLayer,
-        parsed_types: list[ParsedType],
+        context: CommandsContext,
+        context_layer: CommandsContextLayer,
+        recognized_entities: list[RecognizedEntity],
     ) -> list[SearchResult]:
         """
         Processes a single context layer.
