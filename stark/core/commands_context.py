@@ -13,7 +13,7 @@ from stark.core.commands_context_processor import (
     CommandsContextLayer,
     RecognizedEntity,
 )
-from stark.core.patterns.parsing import PatternParser
+from stark.core.parsing import PatternParser
 from stark.core.types.object import Object
 
 from ..general.dependencies import DependencyManager, default_dependency_manager
@@ -94,13 +94,13 @@ class CommandsContext:
 
         # Run the string and context queue through all the processors
 
-        params_suggestions: list[RecognizedEntity] = []
+        recognized_entities: list[RecognizedEntity] = []
         search_results: list[Any] = []
         context_pops: int = 0
 
         for processor in self.processors:
-            logger.debug(f"Processing context {processor=} with {string=} {params_suggestions=} {self.context_queue=}")
-            search_results, context_pops = await processor.process_string(string, self, params_suggestions)
+            logger.debug(f"Processing context {processor=} with {string=} {recognized_entities=} {self.context_queue=}")
+            search_results, context_pops = await processor.process_string(string, self, recognized_entities)
             if search_results:
                 # Pop contexts as directed by processor
                 for _ in range(context_pops):
@@ -120,6 +120,8 @@ class CommandsContext:
             parameters.update(self.dependency_manager.resolve(search_result.command._runner))
             self.run_command(search_result.command, parameters)
 
+        return search_results or []
+
     def inject_dependencies(self, runner: Command[CommandRunner] | CommandRunner) -> CommandRunner:
         def injected_func(**kwargs) -> ResponseOptions:
             kwargs.update(self.dependency_manager.resolve(runner._runner if isinstance(runner, Command) else runner))
@@ -128,7 +130,7 @@ class CommandsContext:
         return injected_func  # type: ignore
 
     def run_command(self, command: Command, parameters: dict[str, Any] = {}):
-        async def command_runner():
+        async def command_task():
             command_return = await command(parameters)
 
             if isinstance(command_return, Response):
@@ -157,7 +159,7 @@ class CommandsContext:
                     f"Command {command} returned {command_return} of type {type(command_return)} instead of Response or AsyncGeneratorType[Response]"
                 )
 
-        self._task_group.soonify(command_runner)()
+        self._task_group.soonify(command_task)()
 
     # ResponseHandler
 

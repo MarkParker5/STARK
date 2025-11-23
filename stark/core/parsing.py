@@ -9,6 +9,8 @@ from typing_extensions import NamedTuple
 from stark.core.patterns.pattern import Pattern
 from stark.core.patterns.rules import rules_list
 from stark.core.types import Object
+from stark.core.types.string import String
+from stark.core.types.word import Word
 
 type ObjectType = type[Object]
 
@@ -82,6 +84,8 @@ class PatternParser:
 
     def __init__(self):
         self.parameter_types_by_name = {}
+        self.register_parameter_type(Word)
+        self.register_parameter_type(String)
 
     def register_parameter_type(
         self,

@@ -1,5 +1,7 @@
 from typing import override
-from stark.core.patterns import ParseError, Pattern
+
+from stark.core.parsing import ParseError
+from stark.core.patterns.pattern import Pattern
 from stark.core.types import Object
 from stark.general.classproperty import classproperty
 
@@ -18,9 +20,7 @@ class NLDictionaryName(Object[list[LookupResult]]):
     @override
     async def did_parse(self, from_string: str):
         lang = "en"
-        self.value = list(
-            self.dictionary.search_in_sentence(from_string, lang, mode=LookupMode.AUTO)
-        )  # TODO: consider using lookup method
+        self.value = list(self.dictionary.search_in_sentence(from_string, lang, mode=LookupMode.AUTO))  # TODO: consider using lookup method
         if len(self.value) == 0:
             raise ParseError(f"Could not find '{from_string}' in dictionary")
         if len(self.value) == 1:

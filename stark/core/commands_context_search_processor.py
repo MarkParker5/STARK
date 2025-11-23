@@ -4,13 +4,11 @@ from typing import override
 
 from asyncer import SoonValue, create_task_group
 
-from stark.core.helpers import get_preparsed_parameters
-from stark.core.patterns.parsing import MatchResult, ParameterMatch, PatternParser
-from stark.core.types.object import Object
+from stark.core.parsing import MatchResult, PatternParser, RecognizedEntity
 
 from .command import Command
 from .commands_context import CommandsContext, CommandsContextLayer
-from .commands_context_processor import CommandsContextProcessor, RecognizedEntity
+from .commands_context_processor import CommandsContextProcessor
 from .commands_manager import SearchResult
 
 
@@ -20,19 +18,10 @@ class CommandsContextSearchProcessor(CommandsContextProcessor):
         string: str,
         pattern_parser: PatternParser,
         commands: list[Command],
-        recognized_entities: list[RecognizedEntity] = [],
-        context_params: dict[str, Object] = {},
+        recognized_entities: list[RecognizedEntity],
     ) -> list[SearchResult]:
         results: list[SearchResult] = []
         futures: list[tuple[Command, SoonValue[list[MatchResult]]]] = []
-        context_params_match = {
-            key: ParameterMatch(
-                name=key,
-                parsed_obj=value,
-                parsed_substr=".*",  # TODO: review
-            )
-            for key, value in context_params.items()
-        }
 
         # run concurent commands match
         async with create_task_group() as group:
@@ -40,14 +29,7 @@ class CommandsContextSearchProcessor(CommandsContextProcessor):
                 futures.append(
                     (
                         command,
-                        group.soonify(pattern_parser.match)(
-                            command.pattern,
-                            string,
-                            {
-                                **await get_preparsed_parameters(pattern_parser, string, recognized_entities, command),
-                                **context_params_match,
-                            },
-                        ),
+                        group.soonify(pattern_parser.match)(command.pattern, string, recognized_entities),
                     )
                 )
 
@@ -67,21 +49,11 @@ class CommandsContextSearchProcessor(CommandsContextProcessor):
             if prev.match_result.start == current.match_result.start or prev.match_result.end > current.match_result.start:
                 # constrain prev end to current start
                 prev_cut = await pattern_parser.match(
-                    prev.command.pattern,
-                    string[prev.match_result.start : current.match_result.start],
-                    {
-                        **await get_preparsed_parameters(pattern_parser, string, recognized_entities, prev.command),
-                        **context_params_match,
-                    },
+                    prev.command.pattern, string[prev.match_result.start : current.match_result.start], recognized_entities
                 )
                 # constrain current start to prev end
                 current_cut = await pattern_parser.match(
-                    current.command.pattern,
-                    string[prev.match_result.end : current.match_result.end],
-                    {
-                        **await get_preparsed_parameters(pattern_parser, string, recognized_entities, current.command),
-                        **context_params_match,
-                    },
+                    current.command.pattern, string[prev.match_result.end : current.match_result.end], recognized_entities
                 )
 
                 # less index = more priority to save full match
@@ -107,4 +79,4 @@ class CommandsContextSearchProcessor(CommandsContextProcessor):
         context_layer: CommandsContextLayer,
         recognized_entities: list[RecognizedEntity],
     ) -> list[SearchResult]:
-        return await self.search(string, context.pattern_parser, context_layer.commands, recognized_entities, context_layer.parameters)
+        return await self.search(string, context.pattern_parser, context_layer.commands, recognized_entities)

@@ -4,6 +4,7 @@ import logging
 import re
 from dataclasses import dataclass
 from typing import Generator
+from uuid import uuid4
 
 logger = logging.getLogger(__name__)
 
@@ -14,6 +15,14 @@ class PatternParameter:
     group_name: str  # includes tree prefix
     type_name: str
     optional: bool
+    _id = uuid4()
+
+    def __eq__(self, value: object, /) -> bool:
+        assert isinstance(value, PatternParameter), ValueError(f"Expected PatternParameter, got {type(value)}")
+        return self._id == value._id
+
+    def __hash__(self) -> int:
+        return hash(self._id)
 
 
 class Pattern:

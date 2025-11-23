@@ -1,29 +1,24 @@
 from __future__ import annotations
 
 import logging
-from abc import ABC, abstractmethod
+from abc import ABC
 from dataclasses import dataclass
-from typing import NamedTuple
+from typing import TYPE_CHECKING
 
 from stark.core.command import Command
-from stark.core.commands_context import CommandsContext
-from stark.core.patterns.parsing import ObjectType
+from stark.core.parsing import RecognizedEntity
 from stark.core.types.object import Object
-from stark.tools.common.span import Span
 
 from .commands_manager import SearchResult
+
+if TYPE_CHECKING:
+    from stark.core.commands_context import CommandsContext
 
 
 @dataclass
 class CommandsContextLayer:
     commands: list[Command]
     parameters: dict[str, Object]
-
-
-class RecognizedEntity(NamedTuple):
-    span: Span
-    type: ObjectType
-    key: str | None
 
 
 logger = logging.getLogger(__name__)
@@ -47,10 +42,7 @@ class CommandsContextProcessor(ABC):
     """
 
     async def process_string(
-        self,
-        string: str,
-        context: CommandsContext,
-        recognized_entities: list[RecognizedEntity],
+        self, string: str, context: CommandsContext, recognized_entities: list[RecognizedEntity]
     ) -> tuple[list[SearchResult], int]:
         """
         Processes the entire context queue.
@@ -78,7 +70,6 @@ class CommandsContextProcessor(ABC):
             pops += 1
         return [], pops
 
-    @abstractmethod
     async def process_context_layer(
         self,
         string: str,
@@ -93,4 +84,4 @@ class CommandsContextProcessor(ABC):
         Use case: Implement classic command search or other per-context logic.
         If results are empty, the context will be popped by the caller.
         """
-        pass
+        ...

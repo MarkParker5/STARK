@@ -1,21 +1,21 @@
 import asyncer
 
+from stark.core import (
+    Command,
+    CommandsContext,
+    CommandsManager,
+    Pattern,
+    Response,
+    ResponseStatus,
+)
+from stark.general.blockage_detector import BlockageDetector
 from stark.interfaces.protocols import (
     SpeechRecognizer,
     SpeechRecognizerDelegate,
     SpeechSynthesizer,
     SpeechSynthesizerResult,
 )
-from stark.core import (
-    Command,
-    Pattern,
-    Response,
-    ResponseStatus,
-    CommandsContext,
-    CommandsManager,
-)
-from stark.voice_assistant import VoiceAssistant, Mode
-from stark.general.blockage_detector import BlockageDetector
+from stark.voice_assistant import Mode, VoiceAssistant
 
 
 async def run(

@@ -1,18 +1,24 @@
-from typing import AsyncGenerator
+import logging
+
+logging.getLogger("faker").setLevel(logging.WARNING)
+
 import contextlib
-import pytest
-import asyncer
+from typing import AsyncGenerator
+
 import anyio
-from stark.general.dependencies import DependencyManager
+import asyncer
+import pytest
+
 from stark.core import (
-    CommandsManager,
+    AsyncResponseHandler,
     CommandsContext,
     CommandsContextDelegate,
+    CommandsManager,
     Response,
     ResponseHandler,
-    AsyncResponseHandler,
 )
 from stark.core.types import Word
+from stark.general.dependencies import DependencyManager
 from stark.interfaces.protocols import SpeechRecognizerDelegate
 from stark.voice_assistant import VoiceAssistant
 
@@ -62,9 +68,7 @@ class SpeechSynthesizerMock:
 @pytest.fixture
 async def commands_context_flow():
     @contextlib.asynccontextmanager
-    async def _commands_context_flow() -> AsyncGenerator[
-        tuple[CommandsManager, CommandsContext, CommandsContextDelegateMock], None
-    ]:
+    async def _commands_context_flow() -> AsyncGenerator[tuple[CommandsManager, CommandsContext, CommandsContextDelegateMock], None]:
         async with asyncer.create_task_group() as main_task_group:
             dependencies = DependencyManager()
             manager = CommandsManager()
@@ -85,9 +89,7 @@ async def commands_context_flow():
 @pytest.fixture
 async def commands_context_flow_filled(commands_context_flow):
     @contextlib.asynccontextmanager
-    async def _commands_context_flow_filled() -> AsyncGenerator[
-        tuple[CommandsContext, CommandsContextDelegateMock], None
-    ]:
+    async def _commands_context_flow_filled() -> AsyncGenerator[tuple[CommandsContext, CommandsContextDelegateMock], None]:
         async with commands_context_flow() as (manager, context, context_delegate):
 
             @manager.new("test")
@@ -141,9 +143,7 @@ async def commands_context_flow_filled(commands_context_flow):
                     await handler.respond(Response(text=text, voice=text))
 
                 text = "Needs input"
-                await handler.respond(
-                    Response(text=text, voice=text, needs_user_input=True)
-                )
+                await handler.respond(Response(text=text, voice=text, needs_user_input=True))
 
                 for text in ["Fourth response", "Fifth response", "Sixth response"]:
                     await handler.respond(Response(text=text, voice=text))
@@ -191,9 +191,7 @@ async def voice_assistant(commands_context_flow_filled):
 
 
 def pytest_addoption(parser):
-    parser.addoption(
-        "--benchmark", action="store_true", default=False, help="Run benchmark tests"
-    )
+    parser.addoption("--benchmark", action="store_true", default=False, help="Run benchmark tests")
 
 
 def pytest_runtest_setup(item):

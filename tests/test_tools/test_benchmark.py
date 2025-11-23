@@ -1,6 +1,9 @@
+import random
 import time
-from pympler.asizeof import asizeof
+
 import pytest
+from faker import Faker
+from pympler.asizeof import asizeof
 
 from stark.tools.dictionary.dictionary import Dictionary, LookupMode
 from stark.tools.dictionary.storage.storage_memory import (
@@ -9,8 +12,6 @@ from stark.tools.dictionary.storage.storage_memory import (
 from stark.tools.dictionary.storage.storage_sqlite import (
     DictionaryStorageSQLite,
 )
-import random
-from faker import Faker
 
 
 # Benchmark
@@ -105,11 +106,7 @@ def test_benchmark__dictionary(
         dictionary = Dictionary(DictionaryStorageMemory())
     elif storage_type == "sqlite":
         # dictionary = Dictionary(DictionaryStorageSQLite(":memory:"))
-        dictionary = Dictionary(
-            DictionaryStorageSQLite(
-                f"sqlite3://data/test_dictionary_{ne_type}_{dict_size}.sqlite3"
-            )
-        )
+        dictionary = Dictionary(DictionaryStorageSQLite(f"sqlite3://data/test_dictionary_{ne_type}_{dict_size}.sqlite3"))
     else:
         raise ValueError(f"Invalid storage type: {storage_type}")
 
@@ -117,9 +114,7 @@ def test_benchmark__dictionary(
 
     if dictionary.storage.get_count() == 0:
         for i in range(dict_size):
-            dictionary.write_one(
-                language_code="en", name=get_random_entry(), metadata={"idx": i}
-            )
+            dictionary.write_one(language_code="en", name=get_random_entry(), metadata={"idx": i})
 
     # Log RAM usage of the full dictionary after build
 
@@ -136,9 +131,7 @@ def test_benchmark__dictionary(
             name = get_random_entry()
             targets.append(name)
             if success:
-                dictionary.write_one(
-                    language_code="en", name=name, metadata={"idx": f"x{i}"}
-                )
+                dictionary.write_one(language_code="en", name=name, metadata={"idx": f"x{i}"})
         return targets
 
     # Prepare sentence
@@ -165,9 +158,7 @@ def test_benchmark__dictionary(
         elif lookup_func == "search_in_sentence":
             return list(dictionary.search_in_sentence(sentence, "en", mode=lookup_mode))
         elif lookup_func == "search_in_sentence_sorted":
-            return list(
-                dictionary.search_in_sentence_sorted(sentence, "en", mode=lookup_mode)
-            )
+            return list(dictionary.search_in_sentence_sorted(sentence, "en", mode=lookup_mode))
         else:
             raise ValueError(f"Invalid lookup function: {lookup_func}")
 

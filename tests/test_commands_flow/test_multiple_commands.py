@@ -3,6 +3,10 @@ import random
 import anyio
 import pytest
 
+from stark.core.parsing import PatternParser
+
+pattern_parser = PatternParser()
+
 from stark.core import CommandsManager, Pattern, Response
 from stark.core.commands_context_search_processor import CommandsContextSearchProcessor
 from stark.core.types import Object
@@ -47,7 +51,8 @@ async def test_two_commands_greedy_param(commands_context_flow, autojump_clock):
                 self.value = from_string
                 return from_string
 
-        Pattern.add_parameter_type(AnotherGreedy)
+        context.pattern_parser.register_parameter_type(AnotherGreedy)
+        manager.pattern_parser = context.pattern_parser
 
         @manager.new("command1 $g:AnotherGreedy")
         def cmd1(g: AnotherGreedy):
@@ -70,9 +75,7 @@ async def test_repeating_command(commands_context_flow, autojump_clock):
         def lorem():
             return Response(text="lorem!")
 
-        await context.process_string(
-            "lorem pisum dolor lorem ipsutest_repeating_commanduum dolor sit amet"
-        )
+        await context.process_string("lorem pisum dolor lorem ipsutest_repeating_commanduum dolor sit amet")
         await anyio.sleep(5)
 
         assert len(context_delegate.responses) == 2
@@ -80,9 +83,7 @@ async def test_repeating_command(commands_context_flow, autojump_clock):
         assert context_delegate.responses[1].text == "lorem!"
 
 
-async def test_overlapping_commands_less_priority_cut(
-    commands_context_flow, autojump_clock
-):
+async def test_overlapping_commands_less_priority_cut(commands_context_flow, autojump_clock):
     manager = CommandsManager()
 
     @manager.new("foo bar *")
@@ -93,9 +94,7 @@ async def test_overlapping_commands_less_priority_cut(
     def baz():
         return Response(text="baz!")
 
-    result = await CommandsContextSearchProcessor().search(
-        "foo bar test baz", manager.commands
-    )
+    result = await CommandsContextSearchProcessor().search("foo bar test baz", pattern_parser, manager.commands, [])
     assert len(result) == 2
     assert result[0].match_result.substring == "foo bar test"
     assert result[1].match_result.substring == "baz"
@@ -112,9 +111,7 @@ async def test_overlapping_commands_priority_cut(commands_context_flow, autojump
     def baz():
         return Response(text="baz!")
 
-    result = await CommandsContextSearchProcessor().search(
-        "foo bar test baz", manager.commands
-    )
+    result = await CommandsContextSearchProcessor().search("foo bar test baz", pattern_parser, manager.commands, [])
 
     assert len(result) == 2
     assert result[0].match_result.substring == "foo bar"
@@ -132,16 +129,12 @@ async def test_overlapping_commands_remove(commands_context_flow, autojump_clock
     def barbaz():
         return Response(text="baz!")
 
-    result = await CommandsContextSearchProcessor().search(
-        "foo bar baz", manager.commands
-    )
+    result = await CommandsContextSearchProcessor().search("foo bar baz", pattern_parser, manager.commands, [])
     assert len(result) == 1
     assert result[0].command == foobar
 
 
-async def test_overlapping_commands_remove_inverse(
-    commands_context_flow, autojump_clock
-):
+async def test_overlapping_commands_remove_inverse(commands_context_flow, autojump_clock):
     manager = CommandsManager()
 
     @manager.new("bar baz")
@@ -152,9 +145,7 @@ async def test_overlapping_commands_remove_inverse(
     def foobar():
         return Response(text="foo!")
 
-    result = await CommandsContextSearchProcessor().search(
-        "foo bar baz", manager.commands
-    )
+    result = await CommandsContextSearchProcessor().search("foo bar baz", pattern_parser, manager.commands, [])
     assert len(result) == 1
     assert result[0].command == barbaz
 
@@ -178,7 +169,7 @@ async def test_objects_parse_caching(commands_context_flow, autojump_clock):
     Mock.__name__ = mock_name  # prevent name collision on paralell tests
 
     manager = CommandsManager()
-    Pattern.add_parameter_type(Mock)
+    pattern_parser.register_parameter_type(Mock)
 
     @manager.new(f"hello $mock:{mock_name}")
     def hello(mock: Mock):

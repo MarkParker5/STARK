@@ -1,6 +1,6 @@
 import pytest
 
-from stark.core.patterns.parsing import ParseError
+from stark.core.parsing import ParseError
 from stark.tools.dictionary.dictionary import Dictionary
 from stark.tools.dictionary.models import LookupResult
 from stark.tools.dictionary.nl_dictionary_name import NLDictionaryName
@@ -31,9 +31,7 @@ def setup_dictionary():
         ("Notre Dame de Paris Musical", "Paris", (48.85, 2.35)),
     ],
 )
-async def test_nl_dictionary_name_lookup(
-    query: str, expected_city: str, expected_coords: tuple[float, float]
-):
+async def test_nl_dictionary_name_lookup(query: str, expected_city: str, expected_coords: tuple[float, float]):
     assert expected_city in query  # make sure test is not broken
     obj = NLCityName(value=[])
     substr = await obj.did_parse(query)

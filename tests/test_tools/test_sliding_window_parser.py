@@ -1,6 +1,7 @@
 import pytest
-from stark.tools.sliding_window_parser import _binary_cookie_trim, sliding_window_parse
+
 from stark.tools.common.span import Span
+from stark.tools.sliding_window_parser import _binary_cookie_trim, sliding_window_parse
 
 # --- Test Parsers ---
 
@@ -141,9 +142,7 @@ async def test__binary_cookie_trim_ner(
     expected_value,
 ):
     tokens = phrase.split()
-    char_span, substr, value = await _binary_cookie_trim(
-        tokens, token_start, token_end, parser, baseline_value, phrase
-    )
+    char_span, substr, value = await _binary_cookie_trim(tokens, token_start, token_end, parser, baseline_value, phrase)
     expected_span = char_span_for_substr(phrase, expected_substr)
     assert char_span == expected_span
     assert substr == expected_substr
@@ -227,12 +226,11 @@ async def test__binary_cookie_trim_ner(
         ),
     ],
 )
-async def test_sliding_window_parse_ner(
-    phrase, parser, min_window, max_window, find_one, expected_results
-):
+async def test_sliding_window_parse_ner(phrase, parser, min_window, max_window, find_one, expected_results):
     if not expected_results:
         import pytest
-        from stark.core.patterns.parsing import ParseError
+
+        from stark.core.parsing import ParseError
 
         with pytest.raises(ParseError):
             await sliding_window_parse(
@@ -257,11 +255,7 @@ async def test_sliding_window_parse_ner(
             found = False
             expected_span = char_span_for_substr(phrase, expected_substr)
             for span, substr, value in results:
-                if (
-                    span == expected_span
-                    and substr == expected_substr
-                    and value == expected_value
-                ):
+                if span == expected_span and substr == expected_substr and value == expected_value:
                     found = True
                     break
             assert found, (

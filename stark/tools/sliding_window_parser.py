@@ -1,6 +1,7 @@
 import asyncio
 from typing import Awaitable, Callable
-from stark.core.patterns.parsing import ParseError
+
+from stark.core.parsing import ParseError
 from stark.tools.common.span import Span
 
 
@@ -22,11 +23,7 @@ def _token_span_to_char_span(tokens: list[str], span: Span, phrase: str) -> Span
     if not positions or span.start >= len(positions) or span.end > len(positions):
         return Span(0, 0)
     char_start = positions[span.start][0]
-    char_end = (
-        positions[span.end - 1][1]
-        if span.end > span.start
-        else positions[span.start][0]
-    )
+    char_end = positions[span.end - 1][1] if span.end > span.start else positions[span.start][0]
     return Span(char_start, char_end)
 
 
@@ -122,9 +119,7 @@ async def sliding_window_parse[T](
                 res = None
             if res is None:
                 continue
-            char_span, substr, value = await _binary_cookie_trim(
-                tokens, start, end, parser, res, phrase
-            )
+            char_span, substr, value = await _binary_cookie_trim(tokens, start, end, parser, res, phrase)
             result = (char_span, substr, value)
             if find_one:
                 return [result]

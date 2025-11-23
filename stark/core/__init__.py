@@ -14,5 +14,5 @@ from .commands_context import (
 )
 from .commands_manager import CommandsManager
 
-Pattern.add_parameter_type(types.String)
-Pattern.add_parameter_type(types.Word)
+# Pattern.add_parameter_type(types.String) # TODO: implement in the new approach
+# Pattern.add_parameter_type(types.Word)

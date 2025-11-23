@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import copy
 from abc import ABC
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from stark.general.classproperty import classproperty
 
@@ -16,6 +16,7 @@ class Object[T](ABC):
 
     @classproperty
     def pattern(cls) -> Pattern:
+
         return Pattern("**")
 
     @classproperty
