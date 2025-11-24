@@ -57,7 +57,7 @@ async def test_did_parse_call_order():
             return from_string[:-1]
 
     parser = PatternParser()
-    parser.register_parameter_type(CustomObject)
+    parser.register_parameter_type(CustomObject, CustomParser())
     result = await parser.parse_object(CustomObject, "foobar")
     assert call_order == ["parser", "object"]
     assert result.substring == "fo"

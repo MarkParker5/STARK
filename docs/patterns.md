@@ -73,7 +73,8 @@ class FullName(Object):
     def pattern(cls) -> Pattern:
         return Pattern('$first_name:Word $second_name:Word')
 
-Pattern.add_parameter_type(FullName)
+context = CommandsContext(...)
+context.pattern_parser.register_parameter_type(FullName)
 ```
 
 Upon successfully matching the pattern, S.T.A.R.K will autonomously parse and assign values to `first_name` and `second_name`. It's imperative, just as with command patterns, that class properties are congruent with the pattern in terms of both name and type.
@@ -108,7 +109,44 @@ class Lorem(Object):
 
         self.value = 'lorem' # Assign additional properties (properties inferred from the pattern are auto-assigned)
         return 'lorem' # Return the smallest substring essential for this object
+
+context = CommandsContext(...)
+context.pattern_parser.register_parameter_type(Lorem)
+print(context.pattern_parser.parse_object(Lorem, "lorem ipsum"))
 ```
+
+## Custom Parser Class Example
+
+In some cases, you may want to separate the parsing logic from your data model. This is especially useful when you want to reuse parsing logic, inject dependencies, have longer life cycle, or just keep your models clean. You can define a dedicated parser class for your object type.
+
+Here's an example:
+
+```python
+from stark.core.types import Object, Word
+from stark.core.parsing import Pattern, PatternParser, ObjectParser
+
+class Lorem(Object):
+    @classproperty
+    def pattern(cls):
+        return Pattern("* ipsum")
+
+class LoremParser(ObjectParser):
+    def __init__(self, pattern_parser: PatternParser):
+        self.pattern_parser = pattern_parser
+
+    async def did_parse(self, obj: Lorem, from_string: str) -> str:
+        # Custom parsing logic for Lorem
+        if "lorem" not in from_string:
+            raise ParseError("lorem not found")
+        obj.value = "lorem"
+        return "lorem"
+
+context = CommandsContext(...)
+context.pattern_parser.register_parameter_type(Lorem, parser=LoremParser())
+print(context.pattern_parser.parse_object(Lorem, "lorem ipsum"))
+```
+
+This approach allows you to keep parsing logic separate from your data model and makes it easy to inject dependencies or share logic between different models.
 
 Note that the `did_parse` method must return a substring of the input string that was successfully parsed. This substring should be the smallest possible string that still represents the object's value. In case you use 3rd party parser that can't extract substring and just provides the value, you have several options to handle this:
 

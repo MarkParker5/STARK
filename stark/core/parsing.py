@@ -29,7 +29,7 @@ class ParseError(Exception):
     pass
 
 
-class RegisteredParameterType(NamedTuple):
+class RegisteredParameterType(NamedTuple):  # TODO: use dataclasses instead of names tuples
     name: str
     type: ObjectType
     parser: ObjectParser

@@ -5,6 +5,7 @@ from typing import Union
 import pytest
 
 from stark.core.parsing import PatternParser
+from stark.core.types.slots import SlotsParser
 
 pattern_parser = PatternParser()
 from typing_extensions import Optional
@@ -12,7 +13,7 @@ from typing_extensions import Optional
 from stark.core import Pattern
 from stark.core.parsing import ParseError
 from stark.core.patterns.rules import all_unordered, one_or_more_unordered
-from stark.core.types import Object, Slots, Word
+from stark.core.types import Object, Word
 from stark.general.classproperty import classproperty
 
 
@@ -55,9 +56,6 @@ class Hours(Object):
         return from_string
 
 
-from stark.core.parsing import PatternParser
-
-pattern_parser = PatternParser()
 pattern_parser.register_parameter_type(Seconds)
 pattern_parser.register_parameter_type(Minutes)
 pattern_parser.register_parameter_type(Hours)
@@ -155,13 +153,13 @@ async def test_unordered_patterns(pattern_str, input_str, is_match, expected_tok
     assert {name: obj.value for name, obj in matches[0].parameters.items() if obj} == expected_tokens
 
 
-class StarSlots(Slots):
+class StarSlots(Object):
     a: StarObject
     b: StarObject
     c: StarObject
 
 
-class GreedySlots(Slots):
+class GreedySlots(Object):
     a: GreedyObject
     b: GreedyObject
     c: GreedyObject
@@ -189,8 +187,8 @@ class OOWordSimple(Word):
         return from_string
 
 
-pattern_parser.register_parameter_type(StarSlots)
-pattern_parser.register_parameter_type(GreedySlots)
+pattern_parser.register_parameter_type(StarSlots, parser=SlotsParser(pattern_parser))
+pattern_parser.register_parameter_type(GreedySlots, parser=SlotsParser(pattern_parser))
 pattern_parser.register_parameter_type(OOWord)
 pattern_parser.register_parameter_type(OOWordSimple)
 
@@ -411,24 +409,22 @@ async def test_slots_required_optional_cases(cls_name, slots_dict, input_str, ex
     # Ensure __annotations__ is set for dynamic slots class
     class_dict = dict(slots_dict)
     class_dict["__annotations__"] = {k: v for k, v in slots_dict.items()}
-    slots_cls = type(unique_cls_name, (Slots,), class_dict)
+    slots_cls = type(unique_cls_name, (Object,), class_dict)
 
     # Register the slots class as a parameter type for Pattern
-    from stark.core.parsing import PatternParser
 
-    pattern_parser = PatternParser()
-    pattern_parser.register_parameter_type(slots_cls)
+    pattern_parser.register_parameter_type(slots_cls, parser=SlotsParser(pattern_parser))
 
     pattern = Pattern(f"$slots:{slots_cls.__name__}")
 
     if expected_error is not None:
         with pytest.raises(expected_error):
-            print("Match", m := await pattern.match(input_str))
+            print("Match", m := await pattern_parser.match(pattern, input_str))
             if not m[0].substring.strip():
                 raise ParseError("Empty match")  # small patch until required/optional params are fully implemented
         return
 
-    matches = await pattern.match(input_str)
+    matches = await pattern_parser.match(pattern, input_str)
 
     assert matches, f"Expected a match but got none for input '{input_str}'"
 

@@ -1,5 +1,5 @@
 from .object import Object
-from .slots import Slots
+from .slots import SlotsParser
 from .string import String
 from .word import Word
 # from .Number import Number
