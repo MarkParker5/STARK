@@ -94,11 +94,8 @@ class PatternParser:
         # TODO: consider adding lang parameter
     ):
         assert issubclass(object_type, Object), f'Can`t add parameter type "{object_type.__name__}": it is not a subclass of Object'
-        # error_msg = f'Can`t add parameter type "{object_type.__name__}": pattern parameters do not match properties annotated in class'
-        # TODO: update schema and validation; handle optional parameters; handle short form where type is defined in object
-        # assert object_type.pattern.parameters.items() <= object_type.__annotations__.items(), error_msg
         exists_type = self.parameter_types_by_name.get(object_type.__name__)
-        assert exists_type is None or exists_type.type == object_type, f"Can`t add parameter type: {object_type.__name__} already exists"
+        assert exists_type is None, f"Duplicate parameter type: can`t add parameter type '{object_type.__name__}' because it already exists"
         self.parameter_types_by_name[object_type.__name__] = RegisteredParameterType(
             name=object_type.__name__, type=object_type, parser=parser or ObjectParser()
         )

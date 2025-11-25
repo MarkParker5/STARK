@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, get_args
 
 from stark.core.parsing import ObjectParser, ParameterMatch, ParseError
 
-from .. import PatternParameter
+from ..patterns import PatternParameter
 from .object import Object
 
 if TYPE_CHECKING:

@@ -81,7 +81,6 @@ def char_span_for_substr(phrase: str, substr: str) -> Span:
 # --- _binary_cookie_trim NER tests ---
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "phrase, token_start, token_end, baseline_value, parser, expected_substr, expected_value",
     [
@@ -152,7 +151,6 @@ async def test__binary_cookie_trim_ner(
 # --- sliding_window_parse NER tests ---
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "phrase, parser, min_window, max_window, find_one, expected_results",
     [

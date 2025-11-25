@@ -4,9 +4,8 @@ import copy
 from abc import ABC
 from typing import Any
 
+from stark.core.patterns.pattern import Pattern
 from stark.general.classproperty import classproperty
-
-from .. import Pattern
 
 
 # TODO: review programmable init vs did_parse

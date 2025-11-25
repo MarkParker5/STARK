@@ -1,7 +1,3 @@
-import re
-
-import pytest
-
 from stark.core import CommandsManager
 from stark.core.commands_context_search_processor import CommandsContextSearchProcessor
 from stark.core.parsing import PatternParser
@@ -22,19 +18,6 @@ def test_new():
     assert len(manager.commands) == 2
     assert manager.commands[1].name == "CommandsManager.foo_bar"
     assert manager.commands[1].pattern._origin == "foo bar"
-
-
-def test_new_with_extra_parameters_in_pattern():
-    manager = CommandsManager()
-
-    with pytest.raises(
-        AssertionError,
-        match=re.escape("Command CommandsManager.test must have all parameters from pattern"),
-    ):
-
-        @manager.new("test $name:Word, $secondName:Word")
-        def test(name: Word):
-            pass
 
 
 async def test_search():

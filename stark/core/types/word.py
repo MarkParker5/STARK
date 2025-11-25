@@ -1,4 +1,5 @@
-from .. import Pattern, rules
+from stark.core.patterns import Pattern, rules
+
 from .object import Object, classproperty
 
 

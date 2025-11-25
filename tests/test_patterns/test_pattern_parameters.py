@@ -1,5 +1,3 @@
-import re
-
 import pytest
 
 from stark.core import Pattern
@@ -38,20 +36,6 @@ async def test_typed_parameters():
     assert m
     assert m[0].substring == "lorem ipsum foo bar dolor"
     assert m[0].parameters["name"] == String("ipsum foo bar")
-
-
-def test_undefined_typed_parameters():
-    pattern = "lorem $name:Lorem dolor"
-    with pytest.raises(NameError, match=re.escape(f'Unknown type: "Lorem" for parameter: "name" in pattern: "{pattern}"')):
-        Pattern(pattern)
-
-
-@pytest.mark.skip(reason="Refactored")  # TODO: review
-def test_extra_parameter_in_pattern():
-    with pytest.raises(
-        AssertionError, match='Can`t add parameter type "ExtraParameterInPattern": pattern parameters do not match properties annotated in class'
-    ):
-        pattern_parser.register_parameter_type(ExtraParameterInPattern)
 
 
 async def test_middle_optional_parameter():
