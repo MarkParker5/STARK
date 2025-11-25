@@ -4,8 +4,6 @@ import re
 from abc import ABC
 from dataclasses import dataclass
 
-from typing_extensions import NamedTuple
-
 from stark.core.patterns.pattern import Pattern
 from stark.core.patterns.rules import rules_list
 from stark.core.types import Object
@@ -20,16 +18,18 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class ParseResult(NamedTuple):
-    obj: Object
-    substring: str
-
-
 class ParseError(Exception):
     pass
 
 
-class RegisteredParameterType(NamedTuple):  # TODO: use dataclasses instead of names tuples
+@dataclass
+class ParseResult:
+    obj: Object
+    substring: str
+
+
+@dataclass
+class RegisteredParameterType:  # TODO: use dataclasses instead of names tuples
     name: str
     type: ObjectType
     parser: ObjectParser
@@ -43,7 +43,8 @@ class MatchResult:
     parameters: dict[str, Object | None]  # TODO: use ParameterMatch?
 
 
-class ParameterMatch(NamedTuple):
+@dataclass
+class ParameterMatch:
     name: str
     # regex_substr: str  # not sure this is needed anymore
     parsed_obj: Object | None
