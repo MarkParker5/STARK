@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 from abc import ABC
 from dataclasses import dataclass
+from typing import AsyncGenerator
 
 from stark.core.patterns.pattern import Pattern
 from stark.core.patterns.rules import rules_list
@@ -29,7 +30,7 @@ class ParseResult:
 
 
 @dataclass
-class RegisteredParameterType:  # TODO: use dataclasses instead of names tuples
+class RegisteredParameterType:
     name: str
     type: ObjectType
     parser: ObjectParser
@@ -46,7 +47,6 @@ class MatchResult:
 @dataclass
 class ParameterMatch:
     name: str
-    # regex_substr: str  # not sure this is needed anymore
     parsed_obj: Object | None
     parsed_substr: str
     # TODO: add and use start and/end span to resolve duplication
@@ -58,9 +58,6 @@ class RecognizedEntity:
     substring: str
     type: ObjectType
     key: str | None = None
-
-
-# TODO: implement lru cache for (substr, Type[NLObject]) -> NLObject and for pattern.compile
 
 
 class ObjectParser(ABC):
@@ -101,40 +98,51 @@ class PatternParser:
             name=object_type.__name__, type=object_type, parser=parser or ObjectParser()
         )
 
-    async def parse_object_name(self, class_name: str, from_string: str, parsed_parameters: dict[str, Object | None] | None = None) -> ParseResult:
-        return await self.parse_object(self.parameter_types_by_name[class_name].type, from_string, parsed_parameters)
+    async def parse_object_name(self, class_name: str, from_string: str) -> ParseResult:
+        return await self.parse_object(self.parameter_types_by_name[class_name].type, from_string)
 
-    async def parse_object(
-        self,
-        object_type: ObjectType,
-        from_string: str,
-        parsed_parameters: dict[str, Object | None] | None = None,
-    ) -> ParseResult:
-        parser: ObjectParser = self.parameter_types_by_name[object_type.__name__].parser
-        obj = object_type(from_string)  # temp/default value, may be overridden by did_parse
-        parsed_parameters = parsed_parameters or {}
-        assert parsed_parameters.keys() <= {p.name for p in object_type.pattern.parameters.values() if not p.optional}
+    async def parse_object(self, object_type: ObjectType, from_string: str) -> ParseResult:
+        async for obj in self.parse_objects(object_type, from_string):
+            return obj  # take the first successful parsed result, usually the only one
+        else:
+            raise ParseError(f"Failed to parse object of type {object_type.__name__} from string '{from_string}'")
 
-        for name in object_type.pattern.parameters:
-            value = parsed_parameters[name]
-            setattr(obj, name, value)
+    async def parse_objects(self, object_type: ObjectType, from_string: str) -> AsyncGenerator[ParseResult]:
+        object_matches = await self.match(object_type.pattern, from_string)
 
-        substring = await parser.did_parse(obj, from_string)
-        substring = await obj.did_parse(substring)
+        for object_pattern_match in object_matches:
+            string = object_pattern_match.substring
 
-        assert substring.strip(), ValueError(f"Parsed substring must not be empty. Object: {obj}, Parser: {parser}")
-        assert substring in from_string, ValueError(
-            f"Parsed substring must be a part of the original string. There is no {substring} in {from_string}. Object: {obj}, Parser: {parser}"
-        )
-        assert obj.value is not None, ValueError(
-            f"Parsed object {obj} must have a `value` property set in did_parse method. Object: {obj}, Parser: {parser}"
-        )
+            parser: ObjectParser = self.parameter_types_by_name[object_type.__name__].parser
+            obj = object_type(string)  # temp/default value, may be overridden by did_parse
 
-        return ParseResult(obj, substring)
+            matched_subparams = object_pattern_match.parameters
+            assert matched_subparams.keys() <= {p.name for p in object_type.pattern.parameters.values() if not p.optional}
+
+            for name in object_type.pattern.parameters:
+                value = matched_subparams[name]
+                setattr(obj, name, value)
+
+            try:
+                substring = await parser.did_parse(obj, string)
+                substring = await obj.did_parse(substring)
+            except ParseError:
+                logger.debug(f"Failed to parse object {object_type} with parser {parser} from '{string}'")
+                continue  # skip an try the next match candidate
+
+            assert substring.strip(), ValueError(f"Parsed substring must not be empty. Object: {obj}, Parser: {parser}")
+            assert substring in string, ValueError(
+                f"Parsed substring must be a part of the original string. There is no {substring} in {string}. Object: {obj}, Parser: {parser}"
+            )
+            assert obj.value is not None, ValueError(
+                f"Parsed object {obj} must have a `value` property set in did_parse method. Object: {obj}, Parser: {parser}"
+            )
+
+            yield ParseResult(obj, substring)
 
     async def match(self, pattern: Pattern, string: str, recognized_entities: list[RecognizedEntity] | None = None) -> list[MatchResult]:
         recognized_entities = recognized_entities or []
-        compiled = self._compile_pattern(pattern)  # TODO: consider caching
+        compiled = self._compile_pattern(pattern)
         logger.debug(f'Starting looking for "{pattern=}" "{compiled=}" in "{string}"')
 
         matches = []
@@ -278,32 +286,20 @@ class PatternParser:
 
         # parse the object
         try:
-            object_matches = await self.match(parameter_reg_type.type.pattern, raw_param_substr)
-            if not object_matches:
-                raise ParseError(f"Failed to match object {parameter_reg_type.type} from {raw_param_substr}")
-            object_pattern_match = object_matches[0]
-            parse_result = await self.parse_object(
-                parameter_reg_type.type,
-                from_string=object_pattern_match.substring,
-                parsed_parameters=object_pattern_match.parameters,
+            parse_result = await self.parse_object(parameter_reg_type.type, from_string=raw_param_substr)
+            return ParameterMatch(  # take the first match (the only in most cases)
+                name=param.name,
+                parsed_obj=parse_result.obj,
+                parsed_substr=parse_result.substring,
             )
         except ParseError as e:
             logger.debug(f"Pattern.match ParseError: {e}")
-            # explicitly set match result with None obj so it won't stuck in an infinite retry loop
+            # None found, explicitly set match result to None so it won't stuck in an infinite retry loop
             return ParameterMatch(
                 name=param.name,
-                # regex_substr=raw_param_substr,
                 parsed_obj=None,
                 parsed_substr="",
             )
-
-        return ParameterMatch(
-            name=param.name,
-            # regex_substr=raw_param_substr,
-            parsed_obj=parse_result.obj,
-            parsed_substr=parse_result.substring,
-        )
-        # return None
 
     def _filter_overlapping_matches(self, matches: list[MatchResult]) -> list[MatchResult]:
         filtered = matches.copy()

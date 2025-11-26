@@ -59,6 +59,8 @@ class Object[T](ABC):
         return f"<{type(self).__name__} value: {strValue}>"
 
     def __eq__(self, other: object) -> bool:
+        if other is None:
+            return self.value is None
         if not isinstance(other, type(self)):
             raise NotImplementedError(f"Cannot compare {type(self)} with {type(other)}")
         return self.value == other.value
