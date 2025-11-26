@@ -64,3 +64,6 @@ class Object[T](ABC):
         if not isinstance(other, type(self)):
             raise NotImplementedError(f"Cannot compare {type(self)} with {type(other)}")
         return self.value == other.value
+
+    def __hash__(self) -> int:
+        return hash(self.value)

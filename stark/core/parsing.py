@@ -10,6 +10,7 @@ from stark.core.patterns.rules import rules_list
 from stark.core.types import Object
 from stark.core.types.string import String
 from stark.core.types.word import Word
+from stark.general.cache import alru_cache
 
 type ObjectType = type[Object]
 
@@ -124,8 +125,7 @@ class PatternParser:
                 setattr(obj, name, value)
 
             try:
-                substring = await parser.did_parse(obj, string)
-                substring = await obj.did_parse(substring)
+                substring = await self._did_parse(obj, parser, string)
             except ParseError:
                 logger.debug(f"Failed to parse object {object_type} with parser {parser} from '{string}'")
                 continue  # skip an try the next match candidate
@@ -139,6 +139,12 @@ class PatternParser:
             )
 
             yield ParseResult(obj, substring)
+
+    @alru_cache(maxsize=256, ttl=60 * 10)  # TODO: env vars
+    async def _did_parse(self, obj: Object, parser: ObjectParser, string: str) -> str:
+        substring = await parser.did_parse(obj, string)
+        substring = await obj.did_parse(substring)
+        return substring
 
     async def match(self, pattern: Pattern, string: str, recognized_entities: list[RecognizedEntity] | None = None) -> list[MatchResult]:
         recognized_entities = recognized_entities or []
