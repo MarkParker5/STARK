@@ -70,9 +70,9 @@ class CommandsContext:
         self.dependency_manager.add_dependency(None, AsyncResponseHandler, self)
         self.dependency_manager.add_dependency(None, ResponseHandler, SyncResponseHandler(self))
         self.dependency_manager.add_dependency("inject_dependencies", None, self.inject_dependencies)
-        from .commands_context_search_processor import CommandsContextSearchProcessor
+        from .processors import SearchProcessor
 
-        self.processors = processors if processors is not None else [CommandsContextSearchProcessor()]
+        self.processors = processors if processors is not None else [SearchProcessor()]
 
     @property
     def delegate(self) -> CommandsContextDelegate:

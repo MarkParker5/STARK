@@ -140,7 +140,7 @@ class PatternParser:
 
             yield ParseResult(obj, substring)
 
-    @alru_cache(maxsize=256, ttl=60 * 10)  # TODO: env vars
+    @alru_cache(maxsize=256, ttl=60 * 10)  # TODO: env vars + disable option
     async def _did_parse(self, obj: Object, parser: ObjectParser, string: str) -> str:
         substring = await parser.did_parse(obj, string)
         substring = await obj.did_parse(substring)

@@ -6,13 +6,13 @@ from asyncer import SoonValue, create_task_group
 
 from stark.core.parsing import MatchResult, PatternParser, RecognizedEntity
 
-from .command import Command
-from .commands_context import CommandsContext, CommandsContextLayer
-from .commands_context_processor import CommandsContextProcessor
-from .commands_manager import SearchResult
+from ..command import Command
+from ..commands_context import CommandsContext, CommandsContextLayer
+from ..commands_context_processor import CommandsContextProcessor
+from ..commands_manager import SearchResult
 
 
-class CommandsContextSearchProcessor(CommandsContextProcessor):
+class SearchProcessor(CommandsContextProcessor):
     async def search(
         self,
         string: str,

@@ -1,6 +1,6 @@
 from stark.core import CommandsManager
-from stark.core.commands_context_search_processor import CommandsContextSearchProcessor
 from stark.core.parsing import PatternParser
+from stark.core.processors import SearchProcessor
 from stark.core.types import Word
 
 pattern_parser = PatternParser()
@@ -36,20 +36,20 @@ async def test_search():
         pass
 
     # test
-    result = await CommandsContextSearchProcessor().search("test", pattern_parser, manager.commands, [])
+    result = await SearchProcessor().search("test", pattern_parser, manager.commands, [])
     assert result is not None
     assert len(result) == 1
     assert result[0].command.name == "CommandsManager.test"
 
     # hello
-    result = await CommandsContextSearchProcessor().search("hello world", pattern_parser, manager.commands, [])
+    result = await SearchProcessor().search("hello world", pattern_parser, manager.commands, [])
     assert result is not None
     assert len(result) == 1
     assert result[0].command.name == "CommandsManager.hello"
     assert result[0].match_result.parameters["name"].value == "world"
 
     # hello2
-    result = await CommandsContextSearchProcessor().search("hello new world", pattern_parser, manager.commands, [])
+    result = await SearchProcessor().search("hello new world", pattern_parser, manager.commands, [])
     assert result is not None
     assert len(result) == 1
     assert result[0].command == hello2
