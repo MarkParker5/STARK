@@ -44,3 +44,4 @@ site/
 
 # Project-specific files
 test.py
+.env
