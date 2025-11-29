@@ -69,5 +69,8 @@ class CommandsManager:
 
         return creator
 
+    def append(self, command: Command):
+        self.commands.append(command)
+
     def extend(self, other_manager: CommandsManager):
         self.commands.extend(other_manager.commands)

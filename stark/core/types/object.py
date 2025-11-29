@@ -13,6 +13,10 @@ from stark.general.classproperty import classproperty
 class Object[T](ABC):
     value: T
 
+    def __init__(self, value: Any):
+        """Just init with a wrapped value."""
+        self.value = value
+
     @classproperty
     def pattern(cls) -> Pattern:
         return Pattern("**")
@@ -27,14 +31,12 @@ class Object[T](ABC):
         """
         return False  # TODO: review default behavior
 
-    def __init__(self, value: Any):
-        """Just init with wrapped value."""
-        self.value = value
-
     async def did_parse(self, from_string: str) -> str:
+        # TODO: consider making this a `@classmethod def parse` and passing all parameters as kwargs instead of using object's properties
         """
         This method is called after parsing from string and setting parameters found in pattern.
         You will very rarely, if ever, need to call this method directly.
+        If you want to parse string to an object, use `parse_object` method of the `PatternParser` instance.
 
         Override this method for more complex parsing from string.
 
