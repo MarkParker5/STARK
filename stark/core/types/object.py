@@ -4,11 +4,12 @@ import copy
 from abc import ABC
 from typing import Any
 
+from stark.core.patterns.pattern import Pattern
 from stark.general.classproperty import classproperty
 
-from .. import Pattern
 
-
+# TODO: review programmable init vs did_parse
+# TODO: consider storing parsing metadata here like substr and span
 class Object[T](ABC):
     value: T
 
@@ -54,12 +55,15 @@ class Object[T](ABC):
         return f"{self.value:{spec}}"
 
     def __repr__(self):
-        strValue = (
-            f'"{str(self.value)}"' if type(self.value) is str else str(self.value)
-        )
+        strValue = f'"{str(self.value)}"' if type(self.value) is str else str(self.value)
         return f"<{type(self).__name__} value: {strValue}>"
 
     def __eq__(self, other: object) -> bool:
+        if other is None:
+            return self.value is None
         if not isinstance(other, type(self)):
             raise NotImplementedError(f"Cannot compare {type(self)} with {type(other)}")
         return self.value == other.value
+
+    def __hash__(self) -> int:
+        return hash(self.value)

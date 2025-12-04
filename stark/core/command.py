@@ -31,11 +31,16 @@ from pydantic import BaseModel, Field
 from ..general.classproperty import classproperty
 from .patterns import Pattern
 
-ResponseOptions = Optional['Response'] | Generator[Optional['Response'], None, None] | AsyncGenerator[Optional['Response'], None]
+ResponseOptions = (
+    Optional["Response"]
+    | Generator[Optional["Response"], None, None]
+    | AsyncGenerator[Optional["Response"], None]
+)
 AwaitResponse = Awaitable[ResponseOptions]
 AsyncCommandRunner = Callable[..., AwaitResponse]
-SyncCommandRunner = Callable[..., Optional['Response']]
-CommandRunner = TypeVar('CommandRunner', bound = SyncCommandRunner | AsyncCommandRunner)
+SyncCommandRunner = Callable[..., Optional["Response"]]
+CommandRunner = TypeVar("CommandRunner", bound=SyncCommandRunner | AsyncCommandRunner)
+
 
 class Command(Generic[CommandRunner]):
     name: str
@@ -49,7 +54,12 @@ class Command(Generic[CommandRunner]):
         self._runner = runner
         update_wrapper(self, runner)
 
-    def run(self, parameters_dict: dict[str, Any] | None = None, / , **kwparameters: dict[str, Any]) -> AwaitResponse:
+    def run(
+        self,
+        parameters_dict: dict[str, Any] | None = None,
+        /,
+        **kwparameters: dict[str, Any],
+    ) -> AwaitResponse:
         # allow call both with and without dict unpacking
         # e.g. command.run(foo = bar, lorem = ipsum), command.run(**parameters) and command.run(parameters)
         # where parameters is dict {'foo': bar, 'lorem': ipsum}
@@ -64,20 +74,31 @@ class Command(Generic[CommandRunner]):
 
         runner: AsyncCommandRunner
 
-        if inspect.iscoroutinefunction(self._runner) or inspect.isasyncgen(self._runner):
-             # async functions (coroutines) and async generators are remain as is
+        if inspect.iscoroutinefunction(self._runner) or inspect.isasyncgen(
+            self._runner
+        ):
+            # async functions (coroutines) and async generators are remain as is
             runner = cast(AsyncCommandRunner, self._runner)
         else:
             # sync functions are wrapped with asyncer.asyncify to make them async (coroutines)
             # async generators are not supported yet by asyncer.asyncify (https://github.com/tiangolo/asyncer/discussions/86)
             runner = asyncer.asyncify(cast(SyncCommandRunner, self._runner))
 
-        if any(p.kind == p.VAR_KEYWORD for p in inspect.signature(self._runner).parameters.values()):
+        if any(
+            p.kind == p.VAR_KEYWORD
+            for p in inspect.signature(self._runner).parameters.values()
+        ):
             # if command runner accepts **kwargs, pass all parameters
             coroutine = runner(**parameters)
         else:
             # otherwise pass only parameters that are in command runner signature to prevent TypeError: got an unexpected keyword argument
-            coroutine = runner(**{k: v for k, v in parameters.items() if k in self._runner.__code__.co_varnames})
+            coroutine = runner(
+                **{
+                    k: v
+                    for k, v in parameters.items()
+                    if k in self._runner.__code__.co_varnames
+                }
+            )
 
         @wraps(runner)
         async def coroutine_wrapper() -> ResponseOptions:
@@ -86,13 +107,15 @@ class Command(Generic[CommandRunner]):
             except Exception as e:
                 logger.error(e)
                 response = Response(
-                    text = f'Command {self} raised an exception: {e.__class__.__name__}',
-                    voice = f'Command {self} raised an exception: {e.__class__.__name__}',
-                    status = ResponseStatus.error
+                    text=f"Command {self} raised an exception: {e.__class__.__name__}",
+                    voice=f"Command {self} raised an exception: {e.__class__.__name__}",
+                    status=ResponseStatus.error,
                 )
             if inspect.isgenerator(response):
-                message = f'[WARNING] Command {self} is a sync GeneratorType that is not fully supported and may block the main thread. ' + \
-                            'Consider using the ResponseHandler.respond() or async approach instead.'
+                message = (
+                    f"[WARNING] Command {self} is a sync GeneratorType that is not fully supported and may block the main thread. "
+                    + "Consider using the ResponseHandler.respond() or async approach instead."
+                )
                 warnings.warn(message, UserWarning)
             return response
 
@@ -103,7 +126,8 @@ class Command(Generic[CommandRunner]):
         return self.run(*args, **kwargs)
 
     def __repr__(self):
-        return f'<Command {self.name}>'
+        return f"<Command {self.name}>"
+
 
 class ResponseStatus(Enum):
     none = auto()
@@ -113,9 +137,10 @@ class ResponseStatus(Enum):
     info = auto()
     error = auto()
 
+
 class Response(BaseModel):
-    voice: str = ''
-    text: str = ''
+    voice: str = ""
+    text: str = ""
     status: ResponseStatus = ResponseStatus.success
     needs_user_input: bool = False
     commands: list[Command] = []
@@ -124,7 +149,7 @@ class Response(BaseModel):
     id: UUID = Field(default_factory=uuid4)
     time: datetime = Field(default_factory=datetime.now)
 
-    _repeat_last: ClassVar[Response | None] = None # static instance
+    _repeat_last: ClassVar[Response | None] = None  # static instance
 
     @classproperty
     def repeat_last(cls) -> Response:
@@ -139,12 +164,24 @@ class Response(BaseModel):
     def __eq__(self, other):
         return self.id == other.id
 
+
 class ResponseHandler(Protocol):
-    def respond(self, response: Response): pass
-    def unrespond(self, response: Response): pass
-    def pop_context(self): pass
+    def respond(self, response: Response):
+        pass
+
+    def unrespond(self, response: Response):
+        pass
+
+    def pop_context(self):
+        pass
+
 
 class AsyncResponseHandler(Protocol):
-    async def respond(self, response: Response): pass
-    async def unrespond(self, response: Response): pass
-    async def pop_context(self): pass
+    async def respond(self, response: Response):
+        pass
+
+    async def unrespond(self, response: Response):
+        pass
+
+    async def pop_context(self):
+        pass

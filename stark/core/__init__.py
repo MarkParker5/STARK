@@ -1,4 +1,3 @@
-from .patterns import Pattern, PatternParameter, rules
 from . import types
 from .command import (
     AsyncResponseHandler,
@@ -13,6 +12,4 @@ from .commands_context import (
     CommandsContextLayer,
 )
 from .commands_manager import CommandsManager
-
-Pattern.add_parameter_type(types.String)
-Pattern.add_parameter_type(types.Word)
+from .patterns import Pattern, PatternParameter, rules

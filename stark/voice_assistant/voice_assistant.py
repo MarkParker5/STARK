@@ -25,19 +25,24 @@ class ResponseCache(Response):
     # needs to save timeout_before_repeat that was set by mode at the moment of saving because it can change later and may lead to skipping responses
     timeout_before_repeat: int = 0
 
-class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
 
+class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
     speech_recognizer: SpeechRecognizer
     speech_synthesizer: SpeechSynthesizer
     commands_context: CommandsContext
 
     mode: Mode
-    ignore_responses: list[ResponseStatus] # TODO: to Mode
+    ignore_responses: list[ResponseStatus]  # TODO: to Mode
 
     _responses: list[ResponseCache]
     _last_interaction_time: datetime
 
-    def __init__(self, speech_recognizer: SpeechRecognizer, speech_synthesizer: SpeechSynthesizer, commands_context: CommandsContext):
+    def __init__(
+        self,
+        speech_recognizer: SpeechRecognizer,
+        speech_synthesizer: SpeechSynthesizer,
+        commands_context: CommandsContext,
+    ):
         assert isinstance(speech_recognizer, SpeechRecognizer)
         assert isinstance(speech_synthesizer, SpeechSynthesizer)
         assert isinstance(commands_context, CommandsContext)
@@ -54,15 +59,17 @@ class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
 
     @property
     def timeout_reached(self):
-        return (datetime.now() - self._last_interaction_time).total_seconds() >= self.mode.timeout_after_interaction
+        return (
+            datetime.now() - self._last_interaction_time
+        ).total_seconds() >= self.mode.timeout_after_interaction
 
     # SpeechRecognizerDelegate
 
     async def speech_recognizer_did_receive_final_result(self, result: str):
         if os.getenv("STARK_VOICE_CLI", "0") == "1":
-            print(f'\nYou: {result}')
+            print(f"\nYou: {result}")
         else:
-            logger.info(f'You: {result}')
+            logger.info(f"You: {result}")
         # check explicit interaction if needed
         if pattern_str := self.mode.explicit_interaction_pattern:
             if not await Pattern(pattern_str).match(result):
@@ -82,7 +89,7 @@ class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
 
     async def speech_recognizer_did_receive_partial_result(self, result: str):
         if os.getenv("STARK_VOICE_CLI", "0") == "1":
-            print(f'\rYou: \x1B[3m{result}\x1B[0m', end = '')
+            print(f"\rYou: \x1b[3m{result}\x1b[0m", end="")
 
     async def speech_recognizer_did_receive_empty_result(self):
         pass
@@ -90,7 +97,6 @@ class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
     # CommandsContextDelegate
 
     async def commands_context_did_receive_response(self, response: Response):
-
         if response.status in self.ignore_responses:
             return
 
@@ -100,7 +106,11 @@ class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
             self.mode = self.mode.mode_on_timeout()
 
         if self.timeout_reached and self.mode.collect_responses:
-            self._responses.append(ResponseCache(**response.dict(), timeout_before_repeat = timeout_before_repeat))
+            self._responses.append(
+                ResponseCache(
+                    **response.dict(), timeout_before_repeat=timeout_before_repeat
+                )
+            )
 
         # play response if needed
 
@@ -116,12 +126,16 @@ class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
 
         while self._responses:
             response = self._responses.pop(0)
-            if (datetime.now() - response.time).total_seconds() <= response.timeout_before_repeat:
+            if (
+                datetime.now() - response.time
+            ).total_seconds() <= response.timeout_before_repeat:
                 self._responses.insert(0, response)
                 continue
 
             await self._play_response(response)
-            self.commands_context.add_context(CommandsContextLayer(response.commands, response.parameters))
+            self.commands_context.add_context(
+                CommandsContextLayer(response.commands, response.parameters)
+            )
 
             if response.needs_user_input:
                 break
@@ -140,9 +154,9 @@ class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
 
         if response.text:
             if os.getenv("STARK_VOICE_CLI", "0") == "1":
-                print(f'S.T.A.R.K.: {response.text}')
+                print(f"S.T.A.R.K.: {response.text}")
             else:
-                logger.info(f'S.T.A.R.K.: {response.text}')
+                logger.info(f"S.T.A.R.K.: {response.text}")
 
         if response.voice:
             was_recognizing = self.speech_recognizer.is_recognizing

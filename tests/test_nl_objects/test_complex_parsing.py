@@ -1,8 +1,7 @@
 import pytest
 
 from stark.core import Pattern
-from stark.core.patterns.parsing import ObjectParser, parse_object
-from stark.core.patterns.pattern import ParseError
+from stark.core.parsing import ObjectParser, ParseError, PatternParser
 from stark.core.types import Object
 from stark.general.classproperty import classproperty
 
@@ -20,18 +19,22 @@ class Lorem(Object):
 
 
 async def test_complex_parsing_failed():
+    parser = PatternParser()
+    parser.register_parameter_type(Lorem)
     with pytest.raises(ParseError):
-        await parse_object(Lorem, ObjectParser(), "some lor ipsum")
+        await parser.parse_object(Lorem, "some lor ipsum")
 
 
 async def test_complex_parsing():
+    parser = PatternParser()
+    parser.register_parameter_type(Lorem)
     string = "some lorem ipsum"
-    match = await parse_object(Lorem, ObjectParser(), string)
+    match = await parser.parse_object(Lorem, string)
     assert match
     assert match.obj
     assert match.obj.value == "lorem"
     assert match.substring == "lorem ipsum"
-    assert (await Lorem.pattern.match(string))[0].substring == "lorem ipsum"
+    assert (await parser.match(Lorem.pattern, string))[0].substring == "lorem ipsum"
 
 
 async def test_did_parse_call_order():
@@ -53,7 +56,9 @@ async def test_did_parse_call_order():
             assert from_string == "foo"
             return from_string[:-1]
 
-    result = await parse_object(CustomObject, CustomParser(), "foobar")
+    parser = PatternParser()
+    parser.register_parameter_type(CustomObject, CustomParser())
+    result = await parser.parse_object(CustomObject, "foobar")
     assert call_order == ["parser", "object"]
     assert result.substring == "fo"
 
@@ -124,10 +129,11 @@ class Greedy(Object):
         return from_string
 
 
-Pattern.add_parameter_type(Foo)
-Pattern.add_parameter_type(Bar)
-Pattern.add_parameter_type(Baz)
-Pattern.add_parameter_type(Greedy)
+pattern_parser = PatternParser()
+pattern_parser.register_parameter_type(Foo)
+pattern_parser.register_parameter_type(Bar)
+pattern_parser.register_parameter_type(Baz)
+pattern_parser.register_parameter_type(Greedy)
 
 
 @pytest.mark.parametrize(
@@ -182,16 +188,10 @@ Pattern.add_parameter_type(Greedy)
         ),
     ],
 )
-async def test_complex_parsing__parametrized(
-    pattern_string: str, input_string: str, expected_params: dict[str, str | None]
-):
+async def test_complex_parsing__parametrized(pattern_string: str, input_string: str, expected_params: dict[str, str | None]):
     pattern = Pattern(pattern_string)
-    matches = await pattern.match(input_string)
-    print(
-        f'Pattern: {pattern_string} "{pattern.compiled}", Input: {input_string}, Expected Params: {expected_params}'
-    )
+    matches = await pattern_parser.match(pattern, input_string)
+    print(f'Pattern: {pattern_string} "{pattern_parser._compile_pattern(pattern)}", Input: {input_string}, Expected Params: {expected_params}')
     assert matches
     print(f"Match: {matches[0].substring}, Got Params: {matches[0].parameters}")
-    assert {
-        name: obj.value if obj else None for name, obj in matches[0].parameters.items()
-    } == expected_params
+    assert {name: obj.value if obj else None for name, obj in matches[0].parameters.items()} == expected_params

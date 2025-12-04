@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "stark-engine"
-version = "4.2.2"
+version = "4.3.0"
 description = "S.T.A.R.K - Speech and Text Algorithmic Recognition Kit. Modern framework for creating powerfull voice assistants."
 authors = ["MarkParker5 <mark@parker-programs.com>"]
 license = "CC BY-NC-SA 4.0"
@@ -37,7 +37,7 @@ keywords = [
 
 
 [tool.poetry.dependencies]
-python = "^3.12"
+python = ">=3.12,<3.15"
 pydantic = "^2.0.0"
 asyncer = "^0.0.2"
 numpy = "^2.3.3"
@@ -48,12 +48,14 @@ soundfile = { version = "^0.11.0", optional = true }
 vosk = { version = "0.3.44", optional = true }
 google-cloud-texttospeech = { version = "^2.14.1", optional = true }
 torch = { version = "^1.13.1", optional = true }
+spacy = { version = "^3.8.11", optional = true }
 
 [tool.poetry.extras]
 gcloud = ["google-cloud-texttospeech", "sounddevice", "soundfile"]
 vosk = ["vosk", "sounddevice"]
 silero = ["torch", "numpy", "sounddevice"]
 sound = ["sounddevice", "soundfile"]
+spacy = ["spacy"]
 all = [
     "google-cloud-texttospeech",
     "vosk",
@@ -61,6 +63,7 @@ all = [
     "numpy",
     "sounddevice",
     "soundfile",
+    "spacy",
 ]
 
 [tool.poetry.group.dev.dependencies]
