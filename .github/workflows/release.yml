@@ -7,11 +7,12 @@ on:
   workflow_dispatch:
 
 jobs:
-  publish:
+  version:
     permissions:
-      id-token: write
       contents: write
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.VERSION }}
     steps:
       - uses: actions/checkout@v3
         with:
@@ -42,11 +43,62 @@ jobs:
           echo Using version $(poetry version --short)
           echo VERSION="v$(poetry version --short)" >> $GITHUB_OUTPUT
 
-      - name: Build distribution
-        id: build
+  build:
+    needs: version
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: master
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
         run: |
-          poetry build
-          echo FILE="$(ls dist/*.whl -U | head -1)" >> $GITHUB_OUTPUT
+          python -m pip install --upgrade pip
+          pip install poetry
+          poetry install
+
+      - name: Build wheel
+        run: poetry build -f wheel
+
+      - name: Build sdist
+        if: matrix.python-version == '3.12'
+        run: poetry build -f sdist
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ matrix.python-version }}
+          path: dist/*
+
+  publish:
+    needs: [version, build]
+    permissions:
+      id-token: write
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: master
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v2
+        with:
+          python-version: "3.12"
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
@@ -56,12 +108,12 @@ jobs:
       - name: Create tag
         uses: rickstaa/action-create-tag@v1
         with:
-          tag: ${{ steps.version.outputs.VERSION }}
+          tag: ${{ needs.version.outputs.version }}
 
       - name: Generate changelog
         id: changelog
         run: |
-          changelog=$(git log --pretty=format:"- %s" "${{ steps.version.outputs.VERSION }}..HEAD")
+          changelog=$(git log --pretty=format:"- %s" "${{ needs.version.outputs.version }}..HEAD")
 
       - name: Create GitHub Release
         id: create_release
@@ -69,18 +121,16 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
         with:
-          tag_name: ${{ steps.version.outputs.VERSION }}
-          release_name: Release ${{ steps.version.outputs.VERSION }}
+          tag_name: ${{ needs.version.outputs.version }}
+          release_name: Release ${{ needs.version.outputs.version }}
           body: ${{ steps.changelog.outputs.changelog }}
           draft: false
           prerelease: false
 
-      - name: Upload .whl file
-        uses: actions/upload-release-asset@v1
+      - name: Upload wheel files
+        run: |
+          for whl in dist/*.whl; do
+            gh release upload "${{ needs.version.outputs.version }}" "$whl" --clobber
+          done
         env:
-          GITHUB_TOKEN: ${{ secrets.GIT_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ steps.build.outputs.FILE }}
-          asset_name: ${{ steps.build.outputs.FILE }}
-          asset_content_type: application/zip
+          GH_TOKEN: ${{ secrets.GIT_TOKEN }}

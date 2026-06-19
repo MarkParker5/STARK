@@ -85,6 +85,7 @@ coverage = "^7.11.0"
 faker = "^37.11.0"
 pympler = "^1.1"
 psutil = "^7.1.1"
+trio = "^0.33.0"
 
 [build-system]
 requires = ["poetry-core"]
