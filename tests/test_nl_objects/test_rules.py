@@ -111,12 +111,25 @@ pattern_parser.register_parameter_type(GreedyObject)
         *permutations(f"{one_or_more_unordered('apple', 'banana', 'cherry')}", "banana", True),
         *permutations(f"{one_or_more_unordered('apple', 'banana', 'cherry')}", "", False),
         # --- Parameter cases ---
-        *permutations(f"{all_unordered('$h:Hours', '$m:Minutes', '$s:Seconds')}", ["12 h", "30 m", "45 s"], True, {"h": "12", "m": "30", "s": "45"}),
+        *permutations(
+            f"{all_unordered('$h:Hours', '$m:Minutes', '$s:Seconds')}",
+            ["12 h", "30 m", "45 s"],
+            True,
+            {"h": "12", "m": "30", "s": "45"},
+        ),
         *permutations(f"{all_unordered('$h:Hours', '$m:Minutes', '$s:Seconds')}", ["12 h", "30 m"], False),
         *permutations(
-            f"{one_or_more_unordered('$h:Hours', '$m:Minutes', '$s:Seconds')}", ["12 h", "30 m", "45 s"], True, {"h": "12", "m": "30", "s": "45"}
+            f"{one_or_more_unordered('$h:Hours', '$m:Minutes', '$s:Seconds')}",
+            ["12 h", "30 m", "45 s"],
+            True,
+            {"h": "12", "m": "30", "s": "45"},
         ),
-        *permutations(f"{one_or_more_unordered('$h:Hours', '$m:Minutes', '$s:Seconds')}", ["12 h", "30 m"], True, {"h": "12", "m": "30"}),
+        *permutations(
+            f"{one_or_more_unordered('$h:Hours', '$m:Minutes', '$s:Seconds')}",
+            ["12 h", "30 m"],
+            True,
+            {"h": "12", "m": "30"},
+        ),
         *permutations(f"{one_or_more_unordered('$h:Hours', '$m:Minutes', '$s:Seconds')}", ["12 h"], True, {"h": "12"}),
         # --- Check unordered doesn't affect wildcard and greedy ---
         (
@@ -135,7 +148,9 @@ pattern_parser.register_parameter_type(GreedyObject)
 )
 async def test_unordered_patterns(pattern_str, input_str, is_match, expected_tokens):
     if "StarObject" in pattern_str or "GreedyObject" in pattern_str:
-        pytest.skip(reason="Wildcard (star) and greedy objects do not work correctly with unordered patterns. Use Slots instead")
+        pytest.skip(
+            reason="Wildcard (star) and greedy objects do not work correctly with unordered patterns. Use Slots instead"
+        )
 
     print(f'Pattern: "{pattern_str}", Input: "{input_str}", Expected Params: {expected_tokens}')
     p = Pattern(f"{pattern_str}")
@@ -196,8 +211,20 @@ pattern_parser.register_parameter_type(OOWordSimple)
 @pytest.mark.parametrize(
     "pattern_str, input_str, is_match, match_str, expected_tokens",
     [
-        ("$slots:StarSlots", "one foo two bar three baz", True, "one foo two bar three baz", {"a": "one foo", "b": "two bar", "c": "three baz"}),
-        ("$slots:GreedySlots", "one foo two bar three baz", True, "one foo two bar three baz", {"a": "one foo", "b": "two bar", "c": "three baz"}),
+        (
+            "$slots:StarSlots",
+            "one foo two bar three baz",
+            True,
+            "one foo two bar three baz",
+            {"a": "one foo", "b": "two bar", "c": "three baz"},
+        ),
+        (
+            "$slots:GreedySlots",
+            "one foo two bar three baz",
+            True,
+            "one foo two bar three baz",
+            {"a": "one foo", "b": "two bar", "c": "three baz"},
+        ),
         (
             "$slots:StarSlots",
             "noabc one foo two bar three baz noend",

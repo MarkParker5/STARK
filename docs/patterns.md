@@ -26,6 +26,15 @@ Selections provide flexibility in your voice command patterns by allowing multip
 
 - `{foo|bar}`: This pattern is designed to capture repetitions. It matches one or more occurrences of `'foo'` or `'bar'`. For example, if a user said "foo foo bar", this pattern would successfully match. Note: Be cautious with this pattern as it can match long, unexpected repetitions.
 
+There are also two plain-text helper functions for ordered groups:
+
+```python
+from stark.core.patterns.rules import one_from, one_or_more_from
+```
+
+- `one_from(*args)` → `(a|b|c)`
+- `one_or_more_from(*args)` → `{a|b|c}`
+
 General Tip: While creating patterns, always keep the user's natural way of speaking in mind. Testing your patterns with real users can help ensure that your voice assistant responds effectively to a variety of commands.
 
 ## Parameters Parsing
@@ -157,6 +166,97 @@ Note that the `did_parse` method must return a substring of the input string tha
 ## Recommended Use of Caching for `did_parse` Method
 
 When the `did_parse` method is involved in the matching process, especially if it performs complex computations or external lookups, it can slow down the overall matching process. To alleviate this potential bottleneck, it's highly recommended to use caching. By storing previously parsed objects in a cache, you can avoid redundant work and improve the overall performance of your custom voice assistant.
+
+---
+
+## (beta) Unordered Patterns
+
+By default, parameters in a pattern must appear in a fixed order. Unordered patterns relax this constraint. The user can say the parts in any order and S.T.A.R.K will still match them.
+
+There are two flavours, available as helper functions from `stark.core.patterns.rules`:
+
+### `all_unordered(*args)` — all required
+
+Every listed element must be present in the input. Order doesn't matter.
+
+```python
+from stark.core.patterns.rules import all_unordered
+
+pattern = Pattern(f"{all_unordered('$h:Hours', '$m:Minutes', '$s:Seconds')}")
+# matches "12 h 30 m 45 s", "45 s 12 h 30 m", etc.
+# does NOT match "12 h 30 m" (missing seconds)
+```
+
+### `one_or_more_unordered(*args)` — at least one required
+
+At least one element must match. The rest are optional. Order doesn't matter.
+
+```python
+from stark.core.patterns.rules import one_or_more_unordered
+
+pattern = Pattern(f"{one_or_more_unordered('$h:Hours', '$m:Minutes', '$s:Seconds')}")
+# matches "12 h 30 m 45 s", "12 h", "30 m 45 s", etc.
+# does NOT match "" (at least one must be present)
+```
+
+> **Note:** Unordered patterns use lookahead-based regex under the hood and don't work well with multi-word wildcards (`**`). For unordered multi-word parameters, use Slots instead.
+
+## Slots
+
+Slots provide unordered parameter extraction for Object types with multiple fields. Unlike unordered patterns (which work at the regex level), Slots parse each field independently from the input string, so they handle multi-word and greedy parameters correctly.
+
+### Defining a Slots class
+
+A Slots class is a regular `Object` subclass. Each annotated field (except `value`) becomes a slot that will be parsed independently. Fields can be required or optional (`Optional[T]` / `T | None`).
+
+```python
+from typing import Optional
+from stark.core.types import Object, Word
+
+class TimerSlots(Object):
+    hours: Hours           # required
+    minutes: Minutes       # required
+    seconds: Optional[Seconds]  # optional
+
+    # NOTE: no pattern needed for TimerSlots
+```
+
+### Registering with SlotsParser
+
+Unlike regular Object types, Slots classes use `SlotsParser` instead of the default parser:
+
+```python
+from stark.core.types.slots import SlotsParser
+
+context = CommandsContext(...)
+context.pattern_parser.register_parameter_type(
+    TimerSlots,
+    parser=SlotsParser(context.pattern_parser) # <-
+)
+```
+
+### Using Slots in patterns
+
+Reference the Slots class like any other parameter type:
+
+```python
+@manager.new('set timer $timer:TimerSlots')
+async def set_timer(timer: TimerSlots) -> Response:
+    h = timer.hours       # Hours object or None
+    m = timer.minutes     # Minutes object
+    s = timer.seconds     # Seconds object or None
+    ...
+```
+
+### How it works
+
+`SlotsParser` iterates over each slot and tries to parse its type from the remaining input string. Successfully parsed substrings are removed before parsing the next slot. After all slots are processed:
+
+- At least one slot must have matched, otherwise parsing fails.
+- Required (non-optional) slots must all match, otherwise parsing fails.
+- The `value` property is set to the minimal substring spanning all matched slots.
+
+This makes Slots ideal for commands where parameters can appear in any order and may include multi-word values — something that regex-based unordered patterns can't handle reliably.
 
 ---
 
