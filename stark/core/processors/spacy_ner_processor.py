@@ -3,24 +3,15 @@ from __future__ import annotations
 import logging
 import subprocess
 import sys
-from dataclasses import dataclass
 from typing import TYPE_CHECKING, override
 
-from stark.core.command import Command
-from stark.core.commands_context_processor import CommandsContextProcessor
+from stark.core.commands_context_processor import CommandsContextProcessor, RecognizedEntity
 from stark.core.commands_manager import SearchResult
-from stark.core.parsing import ObjectType, RecognizedEntity
+from stark.core.parsing import ObjectType
 from stark.core.types.location import Location
-from stark.core.types.object import Object
 
 if TYPE_CHECKING:
     from stark.core.commands_context import CommandsContext
-
-
-@dataclass
-class CommandsContextLayer:
-    commands: list[Command]
-    parameters: dict[str, Object]
 
 
 logger = logging.getLogger(__name__)

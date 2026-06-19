@@ -45,6 +45,7 @@ class CommandsContext:
     dependency_manager: DependencyManager
     pattern_parser: PatternParser
     last_response: Response | None = None
+    # TODO: add history
     context_queue: list[CommandsContextLayer]
 
     _delegate: CommandsContextDelegate | None = None

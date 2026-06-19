@@ -7,62 +7,61 @@ from stark.general.json_encoder import StarkJsonEncoder
 
 
 async def test_command_json():
-    manager = CommandsManager('TestManager')
+    manager = CommandsManager("TestManager")
 
-    @manager.new('test pattern $word:Word')
+    @manager.new("test pattern $word:Word")
     def test(var: str, word: Word, foo: int | None = None) -> Response:
-        '''test command'''
+        """test command"""
         return Response(text=var)
 
-    string = json.dumps(test, cls = StarkJsonEncoder)
+    string = json.dumps(test, cls=StarkJsonEncoder)
     parsed = json.loads(string)
 
-    assert parsed['name'] == 'TestManager.test'
-    assert parsed['pattern']['origin'] == r'test pattern $word:Word'
-    assert parsed['declaration'] == 'def test(var: str, word: Word, foo: int | None = None) -> Response'
-    assert parsed['docstring'] == 'test command'
+    assert parsed["name"] == "TestManager.test"
+    assert parsed["pattern"]["origin"] == r"test pattern $word:Word"
+    assert parsed["declaration"] == "def test(var: str, word: Word, foo: int | None = None) -> Response"
+    assert parsed["docstring"] == "test command"
+
 
 async def test_async_command_complicate_type_json():
-    manager = CommandsManager('TestManager')
+    manager = CommandsManager("TestManager")
 
-    @manager.new('async test')
-    async def test2(
-        some: AsyncGenerator[
-            Callable[
-                [Any], Type
-            ],
-            list[None]
-        ]
-    ):
+    @manager.new("async test")
+    async def test2(some: AsyncGenerator[Callable[[Any], Type], list[None]]):
         return Response()
 
-    string = json.dumps(test2, cls = StarkJsonEncoder)
+    string = json.dumps(test2, cls=StarkJsonEncoder)
     parsed = json.loads(string)
 
-    assert parsed['name'] == 'TestManager.test2'
-    assert parsed['pattern']['origin'] == r'async test'
-    assert parsed['declaration'] == 'async def test2(some: AsyncGenerator)' # TODO: improve AsyncGenerator to full type
+    assert parsed["name"] == "TestManager.test2"
+    assert parsed["pattern"]["origin"] == r"async test"
+    assert parsed["declaration"] == "async def test2(some: AsyncGenerator)"  # TODO: improve AsyncGenerator to full type
     # assert parsed['declaration'] == 'async def test2(some: AsyncGenerator[Callable[[Any], Type], list[None], None])'
-    assert parsed['docstring'] == ''
+    assert parsed["docstring"] == ""
+
 
 def test_manager_json():
+    manager = CommandsManager("TestManager")
 
-    manager = CommandsManager('TestManager')
-
-    @manager.new('')
+    @manager.new("")
     def test(): ...
 
-    @manager.new('')
+    @manager.new("")
     def test2(): ...
 
-    @manager.new('')
+    @manager.new("")
     def test3(): ...
 
-    @manager.new('')
+    @manager.new("")
     def test4(): ...
 
-    string = json.dumps(manager, cls = StarkJsonEncoder)
+    string = json.dumps(manager, cls=StarkJsonEncoder)
     parsed = json.loads(string)
 
-    assert parsed['name'] == 'TestManager'
-    assert {c['name'] for c in parsed['commands']} == {'TestManager.test', 'TestManager.test2', 'TestManager.test3', 'TestManager.test4',}
+    assert parsed["name"] == "TestManager"
+    assert {c["name"] for c in parsed["commands"]} == {
+        "TestManager.test",
+        "TestManager.test2",
+        "TestManager.test3",
+        "TestManager.test4",
+    }
