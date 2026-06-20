@@ -41,14 +41,14 @@ def dummy_runner_extra(foo: Word, bar: Word) -> None:
 def test_health_check_success():
     parser = PatternParser()
     parser.register_parameter_type(DummyType)
-    command = Command("dummy", DummyType.pattern, dummy_runner)
+    command = Command("dummy", {'base': DummyType.pattern}, dummy_runner)
     health_check(parser, [command])  # Should not raise
 
 
 def test_health_check_missing_param():
     parser = PatternParser()
     parser.register_parameter_type(DummyType)
-    command = Command("dummy", DummyType.pattern, dummy_runner_missing)
+    command = Command("dummy", {'base': DummyType.pattern}, dummy_runner_missing)
     with pytest.raises(AssertionError, match="function missing parameters"):
         health_check(parser, [command])
 
@@ -56,7 +56,7 @@ def test_health_check_missing_param():
 def test_health_check_unknown_param_type_in_command():
     parser = PatternParser()
     # forgot to register DummyType
-    command = Command("dummy", Pattern("$dummy:DummyType"), dummy_runner)
+    command = Command("dummy", {'base': Pattern("$dummy:DummyType")}, dummy_runner)
     with pytest.raises(AssertionError, match="Unknown parameter type"):
         health_check(parser, [command])
 

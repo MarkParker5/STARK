@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 from stark.core.command import Command
 from stark.core.parsing import RecognizedEntity
 from stark.core.types.object import Object
+from stark.general.localisation import LocaleString
 
 from .commands_manager import SearchResult
 
@@ -42,7 +43,10 @@ class CommandsContextProcessor(ABC):
     """
 
     async def process_string(
-        self, string: str, context: CommandsContext, recognized_entities: list[RecognizedEntity]
+        self,
+        string: LocaleString,
+        context: CommandsContext,
+        recognized_entities: list[RecognizedEntity],
     ) -> tuple[list[SearchResult], int]:
         """
         Processes the entire context queue.
@@ -72,7 +76,7 @@ class CommandsContextProcessor(ABC):
 
     async def process_context_layer(
         self,
-        string: str,
+        string: LocaleString,
         context: CommandsContext,
         context_layer: CommandsContextLayer,
         recognized_entities: list[RecognizedEntity],

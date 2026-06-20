@@ -11,6 +11,7 @@ from stark.core.types import Object
 from stark.core.types.string import String
 from stark.core.types.word import Word
 from stark.general.cache import alru_cache
+from stark.general.localisation import LanguageCode, LocaleString, Localizer
 
 type ObjectType = type[Object]
 
@@ -18,6 +19,8 @@ type ObjectType = type[Object]
 import logging
 
 logger = logging.getLogger(__name__)
+
+_LOCALIZER_KEY_REGEX = re.compile(r"@(?P<key>[A-Za-z_][A-Za-z0-9_]*)")
 
 
 class ParseError(Exception):
@@ -62,7 +65,13 @@ class RecognizedEntity:
 
 
 class ObjectParser(ABC):
-    async def did_parse(self, obj: Object, from_string: str) -> str:
+    localizer: Localizer | None = None
+
+    @property
+    def patterns(self) -> dict[str, Pattern] | None:
+        return None
+
+    async def did_parse(self, obj: Object, from_string: LocaleString) -> str:
         """
         This method is called after parsing from string and setting parameters found in pattern.
         You will very rarely, if ever, need to call this method directly.
@@ -80,9 +89,11 @@ class ObjectParser(ABC):
 
 class PatternParser:
     parameter_types_by_name: dict[str, RegisteredParameterType] = {}
+    localizer: Localizer | None
 
-    def __init__(self):
+    def __init__(self, localizer: Localizer | None = None):
         self.parameter_types_by_name = {}
+        self.localizer = localizer
         self.register_parameter_type(Word)
         self.register_parameter_type(String)
 
@@ -92,35 +103,70 @@ class PatternParser:
         parser: ObjectParser | None = None,
         # TODO: consider adding lang parameter
     ):
-        assert issubclass(object_type, Object), f'Can`t add parameter type "{object_type.__name__}": it is not a subclass of Object'
-        exists_type = self.parameter_types_by_name.get(object_type.__name__)
-        assert exists_type is None, f"Duplicate parameter type: can`t add parameter type '{object_type.__name__}' because it already exists"
-        self.parameter_types_by_name[object_type.__name__] = RegisteredParameterType(
-            name=object_type.__name__, type=object_type, parser=parser or ObjectParser()
+        assert issubclass(object_type, Object), (
+            f'Can`t add parameter type "{object_type.__name__}": it is not a subclass of Object'
         )
+        exists_type = self.parameter_types_by_name.get(object_type.__name__)
+        assert exists_type is None, (
+            f"Duplicate parameter type: can`t add parameter type '{object_type.__name__}' because it already exists"
+        )
+        resolved_parser = parser or ObjectParser()
+        resolved_parser.localizer = self.localizer
+        self.parameter_types_by_name[object_type.__name__] = RegisteredParameterType(
+            name=object_type.__name__, type=object_type, parser=resolved_parser
+        )
+        self._validate_localizer_keys(object_type)
 
-    async def parse_object_name(self, class_name: str, from_string: str) -> ParseResult:
+    def _validate_localizer_keys(self, object_type: ObjectType):
+        for pattern in object_type.patterns.values():
+            keys = _LOCALIZER_KEY_REGEX.findall(pattern._origin)
+            if not keys:
+                continue
+            if not self.localizer:
+                raise ValueError(
+                    f"Pattern '{pattern._origin}' of type '{object_type.__name__}' contains @key references but no Localizer is configured on PatternParser"
+                )
+            for key in keys:
+                self.localizer.verify_key_exists(key)
+
+    @staticmethod
+    def _has_localizer_keys(pattern: Pattern) -> bool:
+        return bool(_LOCALIZER_KEY_REGEX.search(pattern._origin))
+
+    async def parse_object_name(self, class_name: str, from_string: str | LocaleString) -> ParseResult:
         return await self.parse_object(self.parameter_types_by_name[class_name].type, from_string)
 
-    async def parse_object(self, object_type: ObjectType, from_string: str) -> ParseResult:
+    async def parse_object(self, object_type: ObjectType, from_string: str | LocaleString) -> ParseResult:
         async for obj in self.parse_objects(object_type, from_string):
             return obj  # take the first successful parsed result, usually the only one
         else:
             raise ParseError(f"Failed to parse object of type {object_type.__name__} from string '{from_string}'")
 
-    async def parse_objects(self, object_type: ObjectType, from_string: str) -> AsyncGenerator[ParseResult]:
-        object_matches = await self.match(object_type.pattern, from_string)
+    def _resolve_pattern(self, object_type: ObjectType, language_code: LanguageCode) -> Pattern:
+        parser = self.parameter_types_by_name[object_type.__name__].parser
+        patterns = parser.patterns or object_type.patterns
+        if language_code in patterns:
+            return patterns[language_code]
+        return patterns["base"]
+
+    async def parse_objects(
+        self, object_type: ObjectType, from_string: str | LocaleString
+    ) -> AsyncGenerator[ParseResult]:
+        from_string = from_string if isinstance(from_string, LocaleString) else LocaleString(from_string)
+        language_code = from_string.language_code
+        pattern = self._resolve_pattern(object_type, language_code)
+        object_matches = await self.match(pattern, from_string)
 
         for object_pattern_match in object_matches:
-            string = object_pattern_match.substring
+            string = from_string._with(object_pattern_match.substring)  # TODO: review _with usage
 
             parser: ObjectParser = self.parameter_types_by_name[object_type.__name__].parser
             obj = object_type(string)  # temp/default value, may be overridden by did_parse
 
             matched_subparams = object_pattern_match.parameters
-            assert matched_subparams.keys() <= {p.name for p in object_type.pattern.parameters.values() if not p.optional}
+            assert matched_subparams.keys() <= {p.name for p in pattern.parameters.values() if not p.optional}
 
-            for name in object_type.pattern.parameters:
+            for name in pattern.parameters:
                 value = matched_subparams[name]
                 setattr(obj, name, value)
 
@@ -141,14 +187,22 @@ class PatternParser:
             yield ParseResult(obj, substring)
 
     @alru_cache(maxsize=256, ttl=60 * 10)  # TODO: env vars + disable option
-    async def _did_parse(self, obj: Object, parser: ObjectParser, string: str) -> str:
+    async def _did_parse(self, obj: Object, parser: ObjectParser, string: LocaleString) -> str:
         substring = await parser.did_parse(obj, string)
+        substring = string._with(substring) if not isinstance(substring, LocaleString) else substring
         substring = await obj.did_parse(substring)
         return substring
 
-    async def match(self, pattern: Pattern, string: str, recognized_entities: list[RecognizedEntity] | None = None) -> list[MatchResult]:
+    async def match(
+        self,
+        pattern: Pattern,
+        string: str | LocaleString,
+        recognized_entities: list[RecognizedEntity] | None = None,
+    ) -> list[MatchResult]:
+        string = string if isinstance(string, LocaleString) else LocaleString(string)
+        language_code = string.language_code
         recognized_entities = recognized_entities or []
-        compiled = self._compile_pattern(pattern)
+        compiled = self._compile_pattern(pattern, language_code=language_code)
         logger.debug(f'Starting looking for "{pattern=}" "{compiled=}" in "{string}"')
 
         matches = []
@@ -159,7 +213,9 @@ class PatternParser:
 
             new_match = None
             command_substr = string[match.start() : match.end()]
-            new_match, parsed_parameters = await self._parse_parameters_for_match(pattern, command_substr, recognized_entities)
+            new_match, parsed_parameters = await self._parse_parameters_for_match(
+                pattern, command_substr, recognized_entities, language_code
+            )
             assert new_match is not None, "new_match should not be None"
             new_match = new_match or match
 
@@ -186,7 +242,10 @@ class PatternParser:
                     substring=command_str,
                     start=start,
                     end=end,
-                    parameters={name: (parameter.parsed_obj if parameter else None) for name, parameter in all_parameters.items()},
+                    parameters={
+                        name: (parameter.parsed_obj if parameter else None)
+                        for name, parameter in all_parameters.items()
+                    },
                 )
             )
             logger.debug(f"Match result: {matches[-1]}")
@@ -198,7 +257,11 @@ class PatternParser:
         return sorted(re.finditer(compiled, string), key=lambda match: match.start())
 
     async def _parse_parameters_for_match(
-        self, pattern: Pattern, string: str, recognized_entities: list[RecognizedEntity]
+        self,
+        pattern: Pattern,
+        string: LocaleString,
+        recognized_entities: list[RecognizedEntity],
+        language_code: LanguageCode,
     ) -> tuple[re.Match | None, dict[str, ParameterMatch]]:
         parsed_parameters: dict[str, ParameterMatch] = {}
         logger.debug(f'Captured candidate "{string}"')
@@ -214,7 +277,7 @@ class PatternParser:
             prefill = {name: parameter.parsed_substr for name, parameter in parsed_parameters.items()}
 
             # re-run regex only in the current command_str
-            compiled = self._compile_pattern(pattern, prefill=prefill)
+            compiled = self._compile_pattern(pattern, prefill=prefill, language_code=language_code)
             new_matches = list(re.finditer(compiled, string))
 
             logger.debug(f'Re capturing parameters {string} prefill={prefill} compiled="{compiled}"')
@@ -269,7 +332,10 @@ class PatternParser:
                 ),
             )
             parameter_match = await self._parse_single_parameter(
-                pattern, parameter_name, match_str_groups[parameter_name].strip(), recognized_entities
+                pattern,
+                parameter_name,
+                string._with(match_str_groups[parameter_name].strip()),
+                recognized_entities,
             )
             if parameter_match is not None:
                 parsed_parameters[parameter_name] = parameter_match
@@ -277,7 +343,11 @@ class PatternParser:
         return new_match, parsed_parameters
 
     async def _parse_single_parameter(
-        self, pattern: Pattern, parameter_name: str, raw_param_substr: str, recognized_entities: list[RecognizedEntity]
+        self,
+        pattern: Pattern,
+        parameter_name: str,
+        raw_param_substr: LocaleString,
+        recognized_entities: list[RecognizedEntity],
     ) -> ParameterMatch | None:
         param = pattern.group_name_to_param[parameter_name]
         parameter_reg_type = self.parameter_types_by_name[param.type_name]
@@ -287,7 +357,7 @@ class PatternParser:
         # check recognized entities, update substring if found match
         for entity in recognized_entities:
             if entity.substring in raw_param_substr and entity.type is parameter_reg_type.type:
-                raw_param_substr = entity.substring
+                raw_param_substr = raw_param_substr._with(entity.substring)
                 logger.debug(f"Adjusting for recognized entity: '{entity.substring}'")
 
         # parse the object
@@ -321,10 +391,26 @@ class PatternParser:
         pattern: Pattern,
         group_prefix: str = "",
         prefill: dict[str, str] | None = None,
+        language_code: LanguageCode = "base",
     ) -> str:  # transform Pattern to classic regex with named groups
         prefill = prefill or {}
 
         pattern_str: str = pattern._origin
+
+        if self._has_localizer_keys(pattern):
+            if not self.localizer:
+                raise ValueError(
+                    f"Pattern '{pattern._origin}' contains @key references but no Localizer is configured on PatternParser"
+                )
+
+            def _resolve_key(m: re.Match) -> str:
+                key = m.group("key")
+                resolved = self.localizer.get_recognizable(key, language_code)
+                if resolved is None:
+                    raise KeyError(f"Localizer key '@{key}' not found for language '{language_code}'")
+                return resolved
+
+            pattern_str = _LOCALIZER_KEY_REGEX.sub(_resolve_key, pattern_str)
 
         #   transform core expressions to regex
 
@@ -341,17 +427,24 @@ class PatternParser:
         for parameter in pattern.parameters.values():
             parameter_type = self.parameter_types_by_name[parameter.type_name].type
 
-            arg_declaration = f"\\${parameter.name}\\:{parameter_type.__name__}"  # NOTE: special chars escaped for regex
+            arg_declaration = (
+                f"\\${parameter.name}\\:{parameter_type.__name__}"  # NOTE: special chars escaped for regex
+            )
             if parameter.name in prefill:
                 arg_pattern = prefill[parameter.name]  # TODO: review wether re.escape is needed
             else:  # replace pattern annotation with compiled regex
                 parameter.group_name = ((group_prefix + "_") if group_prefix else "") + parameter.name
-                arg_pattern = self._compile_pattern(parameter_type.pattern, group_prefix=parameter.group_name).replace("\\", r"\\")
+                param_pattern = self._resolve_pattern(parameter_type, language_code)
+                arg_pattern = self._compile_pattern(
+                    param_pattern, group_prefix=parameter.group_name, language_code=language_code
+                ).replace("\\", r"\\")
 
                 if parameter_type.greedy and arg_pattern[-1] in {"*", "+", "}", "?"}:
                     # compensate greedy did_parse with non-greedy regex, so it won't consume next params during initial regex
                     arg_pattern += "?"
-                    if pattern_str.endswith(f"${parameter.name}:{parameter_type.__name__}"):  # NOTE: regex chars are NOT escaped
+                    if pattern_str.endswith(
+                        f"${parameter.name}:{parameter_type.__name__}"
+                    ):  # NOTE: regex chars are NOT escaped
                         # compensate the last non_greedy regex to allow consuming till the end of the string
                         # middle greedy params are limited/stretched by neighbor params
                         arg_pattern += "$"

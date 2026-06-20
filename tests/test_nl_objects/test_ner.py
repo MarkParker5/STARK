@@ -6,6 +6,7 @@ from stark.core.commands_context import CommandsContext
 from stark.core.parsing import RecognizedEntity
 from stark.core.processors import SpacyNERProcessor
 from stark.core.types.location import Location
+from stark.general.localisation import LocaleString
 
 
 @pytest.mark.parametrize(
@@ -19,5 +20,5 @@ from stark.core.types.location import Location
 async def test_ner_layer(input_text, expected_entities):
     recognized_entities: list[RecognizedEntity] = []
     ner = SpacyNERProcessor(lang_models={"en": "en_core_web_sm"})
-    await ner.process_string(input_text, cast(CommandsContext, None), recognized_entities)
+    await ner.process_string(LocaleString(input_text, "en"), cast(CommandsContext, None), recognized_entities)
     assert [e.type(e.substring) for e in recognized_entities] == expected_entities

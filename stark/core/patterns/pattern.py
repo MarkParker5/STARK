@@ -27,7 +27,6 @@ class PatternParameter:
 
 class Pattern:
     parameters: dict[str, PatternParameter]
-    # compiled: str
 
     _origin: str
     _parameter_regex: re.Pattern

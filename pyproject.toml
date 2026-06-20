@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "stark-engine"
-version = "4.3.2"
+version = "4.4.0"
 description = "S.T.A.R.K - Speech and Text Algorithmic Recognition Kit. Modern framework for creating powerfull voice assistants."
 authors = ["MarkParker5 <mark@parker-programs.com>"]
 license = "CC BY-NC-SA 4.0"
@@ -39,7 +39,8 @@ keywords = [
 [tool.poetry.dependencies]
 python = ">=3.12,<3.15"
 pydantic = "^2.0.0"
-asyncer = "^0.0.2"
+asyncer = ">=0.0.8,<1.0.0"
+anyio = ">=4.0.0,<5.0.0"
 numpy = "^2.3.3"
 
 # Optional dependencies

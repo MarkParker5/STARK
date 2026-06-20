@@ -6,6 +6,7 @@ from typing import Any
 
 from stark.core.patterns.pattern import Pattern
 from stark.general.classproperty import classproperty
+from stark.general.localisation import LocaleString
 
 
 # TODO: review programmable init vs did_parse
@@ -16,6 +17,10 @@ class Object[T](ABC):
     @classproperty
     def pattern(cls) -> Pattern:
         return Pattern("**")
+
+    @classproperty
+    def patterns(cls) -> dict[str, Pattern]:
+        return {"base": cls.pattern}
 
     @classproperty
     def greedy(
@@ -31,7 +36,7 @@ class Object[T](ABC):
         """Just init with wrapped value."""
         self.value = value
 
-    async def did_parse(self, from_string: str) -> str:
+    async def did_parse(self, from_string: LocaleString) -> str:
         """
         This method is called after parsing from string and setting parameters found in pattern.
         You will very rarely, if ever, need to call this method directly.
@@ -55,7 +60,7 @@ class Object[T](ABC):
         return f"{self.value:{spec}}"
 
     def __repr__(self):
-        strValue = f'"{str(self.value)}"' if type(self.value) is str else str(self.value)
+        strValue = f'"{str(self.value)}"' if isinstance(self.value, str) else str(self.value)
         return f"<{type(self).__name__} value: {strValue}>"
 
     def __eq__(self, other: object) -> bool:

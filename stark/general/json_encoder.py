@@ -17,7 +17,7 @@ class StarkJsonEncoder(json.JSONEncoder):
         elif isinstance(obj, Command):
             return {
                 'name': obj.name,
-                'pattern': obj.pattern,
+                'patterns': {lang: self.default(p) for lang, p in obj.patterns.items()},
                 'declaration': self.get_function_declaration(obj._runner),
                 'docstring': inspect.getdoc(obj._runner) or ''
             }

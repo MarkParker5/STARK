@@ -18,7 +18,7 @@ async def test_command_json():
     parsed = json.loads(string)
 
     assert parsed['name'] == 'TestManager.test'
-    assert parsed['pattern']['origin'] == r'test pattern $word:Word'
+    assert parsed['patterns']['base']['origin'] == r'test pattern $word:Word'
     assert parsed['declaration'] == 'def test(var: str, word: Word, foo: int | None = None) -> Response'
     assert parsed['docstring'] == 'test command'
 
@@ -40,7 +40,7 @@ async def test_async_command_complicate_type_json():
     parsed = json.loads(string)
 
     assert parsed['name'] == 'TestManager.test2'
-    assert parsed['pattern']['origin'] == r'async test'
+    assert parsed['patterns']['base']['origin'] == r'async test'
     assert parsed['declaration'] == 'async def test2(some: AsyncGenerator)' # TODO: improve AsyncGenerator to full type
     # assert parsed['declaration'] == 'async def test2(some: AsyncGenerator[Callable[[Any], Type], list[None], None])'
     assert parsed['docstring'] == ''

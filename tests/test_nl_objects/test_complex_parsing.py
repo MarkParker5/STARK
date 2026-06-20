@@ -188,10 +188,14 @@ pattern_parser.register_parameter_type(Greedy)
         ),
     ],
 )
-async def test_complex_parsing__parametrized(pattern_string: str, input_string: str, expected_params: dict[str, str | None]):
+async def test_complex_parsing__parametrized(
+    pattern_string: str, input_string: str, expected_params: dict[str, str | None]
+):
     pattern = Pattern(pattern_string)
     matches = await pattern_parser.match(pattern, input_string)
-    print(f'Pattern: {pattern_string} "{pattern_parser._compile_pattern(pattern)}", Input: {input_string}, Expected Params: {expected_params}')
+    print(
+        f'Pattern: {pattern_string} "{pattern_parser._compile_pattern(pattern)}", Input: {input_string}, Expected Params: {expected_params}'
+    )
     assert matches
     print(f"Match: {matches[0].substring}, Got Params: {matches[0].parameters}")
     assert {name: obj.value if obj else None for name, obj in matches[0].parameters.items()} == expected_params

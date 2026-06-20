@@ -111,6 +111,8 @@ class Lorem(Object):
         Directly calling this method is typically unnecessary and uncommon.
 
         Override this method to achieve more sophisticated string parsing.
+        The from_string argument is a LocaleString — same as the regular string, but provides `from_string.language_code: LanguageCode`
+        for language-aware parsing. See Localization docs for details.
         '''
 
         if 'lorem' not in from_string:

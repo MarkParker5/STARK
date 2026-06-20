@@ -31,9 +31,14 @@ class CommandsManager:
                 return command
         return None
 
-    def new(self, pattern_str: str, hidden: bool = False):
+    def new(self, pattern_str: str | dict[str, str], hidden: bool = False):
         def creator(runner: CommandRunner) -> Command:
-            pattern = Pattern(pattern_str)
+            if isinstance(pattern_str, dict):
+                patterns = {lang: Pattern(p) for lang, p in pattern_str.items()}
+                if 'base' not in patterns:
+                    patterns['base'] = next(iter(patterns.values()))
+            else:
+                patterns = {'base': Pattern(pattern_str)}
 
             # take the main type from Optionals
             annotations = dict()
@@ -60,7 +65,7 @@ class CommandsManager:
 
             # create command
 
-            cmd = Command(f"{self.name}.{runner.__name__}", pattern, runner)
+            cmd = Command(f"{self.name}.{runner.__name__}", patterns, runner)
 
             if not hidden:
                 self.commands.append(cmd)

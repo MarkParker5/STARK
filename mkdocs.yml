@@ -33,7 +33,10 @@ nav:
       - Fallback Command / LLM Integration: advanced/fallback-command-llm-integration.md
       - External Triggers: advanced/external-triggers.md
       - Custom Interfaces: advanced/custom-interfaces.md
-      - Localization and Multi-Language: advanced/localization-and-multi-language.md
+  - Localization and Multi-Language:
+      - localization-and-multi-language/index.md
+      - Localizing Parsing: localization-and-multi-language/localizing-parsing.md
+      - Localizing Responses: localization-and-multi-language/localizing-responses.md
       - Other: advanced/other.md # TODO: <-
   # - S.T.A.R.K P.L.A.C.E Navigator: /stark-place-navigator.md
 

@@ -15,6 +15,7 @@ from stark.core.commands_context_processor import (
 )
 from stark.core.parsing import PatternParser
 from stark.core.types.object import Object
+from stark.general.localisation import LocaleString, Localizer
 
 from ..general.dependencies import DependencyManager, default_dependency_manager
 from .command import (
@@ -57,11 +58,12 @@ class CommandsContext:
         commands_manager: CommandsManager,
         dependency_manager: DependencyManager = default_dependency_manager,
         processors: list[Any] | None = None,
+        localizer: Localizer | None = None,
     ):
         assert isinstance(task_group, TaskGroup), task_group
         assert isinstance(commands_manager, CommandsManager)
         assert isinstance(dependency_manager, DependencyManager)
-        self.pattern_parser = PatternParser()
+        self.pattern_parser = PatternParser(localizer=localizer)
         self.commands_manager = commands_manager
         self.context_queue = [self.root_context]
         self._response_queue = []
@@ -88,7 +90,9 @@ class CommandsContext:
     def root_context(self):
         return CommandsContextLayer(self.commands_manager.commands, {})
 
-    async def process_string(self, string: str):
+    async def process_string(self, string: str | LocaleString):
+        string = LocaleString(string) if not isinstance(string, LocaleString) else string
+
         if not self.context_queue:
             self.context_queue.append(self.root_context)
 
@@ -100,7 +104,9 @@ class CommandsContext:
 
         for processor in self.processors:
             logger.debug(f"Processing context {processor=} with {string=} {recognized_entities=} {self.context_queue=}")
-            search_results, context_pops = await processor.process_string(string, self, recognized_entities)
+            search_results, context_pops = await processor.process_string(
+                string, self, recognized_entities
+            )
             if search_results:
                 # Pop contexts as directed by processor
                 for _ in range(context_pops):

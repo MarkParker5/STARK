@@ -17,7 +17,7 @@ def test_new():
 
     assert len(manager.commands) == 2
     assert manager.commands[1].name == "CommandsManager.foo_bar"
-    assert manager.commands[1].pattern._origin == "foo bar"
+    assert manager.commands[1].get_pattern("base")._origin == "foo bar"
 
 
 async def test_search():

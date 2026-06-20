@@ -12,6 +12,7 @@ from stark.core.commands_manager import SearchResult
 from stark.core.parsing import ObjectType, RecognizedEntity
 from stark.core.types.location import Location
 from stark.core.types.object import Object
+from stark.general.localisation import LocaleString
 
 if TYPE_CHECKING:
     from stark.core.commands_context import CommandsContext
@@ -74,13 +75,18 @@ class SpacyNERProcessor(CommandsContextProcessor):
 
     @override
     async def process_string(
-        self, string: str, context: CommandsContext, recognized_entities: list[RecognizedEntity]
+        self,
+        string: LocaleString,
+        context: CommandsContext,
+        recognized_entities: list[RecognizedEntity],
     ) -> tuple[list[SearchResult], int]:
-        lang = "en"  # TODO: pass lang, consider implementing multilang
-        doc = self.nlps[lang](string)
+        lang = string.language_code if string.language_code in self.nlps else next(iter(self.nlps))
+        doc = self.nlps[lang](str(string))
         for entity in doc.ents:
             entity_type = self.label_types.get(entity.label_) or self.label_types.get("default")
-            logger.debug(f"Found entity '{entity.text}' with label '{entity.label_}'. The corresponding entity type is {entity_type}.")
+            logger.debug(
+                f"Found entity '{entity.text}' with label '{entity.label_}'. The corresponding entity type is {entity_type}."
+            )
             if not entity_type:
                 continue
             recognized_entities.append(RecognizedEntity(entity.text, entity_type))  # Span(entity.start, entity.end)
@@ -91,7 +97,12 @@ class SpacyNERProcessor(CommandsContextProcessor):
     def _install_model(self, model: str):
         logger.info(f"Installing model {model}...")
 
-        proc = subprocess.Popen([sys.executable, "-m", "spacy", "download", model], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        proc = subprocess.Popen(
+            [sys.executable, "-m", "spacy", "download", model],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+        )
         for line in proc.stdout or []:
             print(line, end="")
         proc.wait()

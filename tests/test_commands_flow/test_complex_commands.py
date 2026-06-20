@@ -39,7 +39,7 @@ async def test_command_flow_optional_parameter(commands_context_flow, autojump_c
             else:
                 raise ValueError("No category, device or room provided")
 
-        print(context.pattern_parser._compile_pattern(turn_on.pattern))
+        print(context.pattern_parser._compile_pattern(turn_on.get_pattern("base")))
 
         await context.process_string("turn on cooling")
         await anyio.sleep(5)

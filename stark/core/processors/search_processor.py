@@ -5,6 +5,7 @@ from typing import override
 from asyncer import SoonValue, create_task_group
 
 from stark.core.parsing import MatchResult, PatternParser, RecognizedEntity
+from stark.general.localisation import LocaleString
 
 from ..command import Command
 from ..commands_context import CommandsContext, CommandsContextLayer
@@ -15,11 +16,13 @@ from ..commands_manager import SearchResult
 class SearchProcessor(CommandsContextProcessor):
     async def search(
         self,
-        string: str,
+        string: str | LocaleString,
         pattern_parser: PatternParser,
         commands: list[Command],
         recognized_entities: list[RecognizedEntity],
     ) -> list[SearchResult]:
+        string = string if isinstance(string, LocaleString) else LocaleString(string)
+        language_code = string.language_code
         results: list[SearchResult] = []
         futures: list[tuple[Command, SoonValue[list[MatchResult]]]] = []
 
@@ -29,7 +32,9 @@ class SearchProcessor(CommandsContextProcessor):
                 futures.append(
                     (
                         command,
-                        group.soonify(pattern_parser.match)(command.pattern, string, recognized_entities),
+                        group.soonify(pattern_parser.match)(
+                            command.get_pattern(language_code), string, recognized_entities
+                        ),
                     )
                 )
 
@@ -46,19 +51,28 @@ class SearchProcessor(CommandsContextProcessor):
 
         # copy to prevent affecting iteration by removing items; slice makes copy automatically
         for prev, current in zip(results.copy(), results[1:]):  # TODO: concurrent; optimize using cache
-            if prev.match_result.start == current.match_result.start or prev.match_result.end > current.match_result.start:
+            if (
+                prev.match_result.start == current.match_result.start
+                or prev.match_result.end > current.match_result.start
+            ):
                 # constrain prev end to current start
                 prev_cut = await pattern_parser.match(
-                    prev.command.pattern, string[prev.match_result.start : current.match_result.start], recognized_entities
+                    prev.command.get_pattern(language_code),
+                    string[prev.match_result.start : current.match_result.start],
+                    recognized_entities,
                 )
                 # constrain current start to prev end
                 current_cut = await pattern_parser.match(
-                    current.command.pattern, string[prev.match_result.end : current.match_result.end], recognized_entities
+                    current.command.get_pattern(language_code),
+                    string[prev.match_result.end : current.match_result.end],
+                    recognized_entities,
                 )
 
                 # less index = more priority to save full match
                 priority1, priority2 = (prev, current) if prev.index < current.index else (current, prev)
-                priority1_cut, priority2_cut = (prev_cut, current_cut) if prev.index < current.index else (current_cut, prev_cut)
+                priority1_cut, priority2_cut = (
+                    (prev_cut, current_cut) if prev.index < current.index else (current_cut, prev_cut)
+                )
 
                 if new_matches := priority2_cut:  # if can cut less priority
                     priority2.match_result = new_matches[0]
@@ -74,7 +88,7 @@ class SearchProcessor(CommandsContextProcessor):
     @override
     async def process_context_layer(
         self,
-        string: str,
+        string: LocaleString,
         context: CommandsContext,
         context_layer: CommandsContextLayer,
         recognized_entities: list[RecognizedEntity],
