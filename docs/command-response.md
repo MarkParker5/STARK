@@ -4,15 +4,15 @@ The `Response` class represents the outcome of processing a command in the S.T.A
 
 ## Response Properties
 
-### `voice: str`
+### `voice: str | LocalizableString`
 **Default:** `''`
 
-This string will be converted to speech and played back to the user. If left empty, no vocal response will be given.
+This string will be converted to speech and played back to the user. If left empty, no vocal response will be given. Accepts `LocalizableString` for localized responses — see [Localizing Responses](localization-and-multi-language/localizing-responses.md).
 
-### `text: str`
+### `text: str | LocalizableString`
 **Default:** `''`
 
-This property provides a textual representation of the response. It can be displayed in an application interface or used for logging.
+This property provides a textual representation of the response. It can be displayed in an application interface or used for logging. Accepts `LocalizableString` for localized responses.
 
 ### `status: ResponseStatus`
 **Default:** `ResponseStatus.success`
@@ -67,6 +67,38 @@ Responses play a vital role in the user interaction flow. The `VoiceAssistant` c
 - **Repeating responses:** If there has been recent interaction, the assistant may opt to repeat specific responses, ensuring the user is reminded of any ongoing processes or required actions.
 
 This dynamic and flexible system of handling responses ensures that the user experience is interactive and engaging.
+
+---
+
+## Formatting Locale-Sensitive Values with PyICU
+
+When building responses that include numbers, dates, units, or currencies, [PyICU](https://pypi.org/project/PyICU/) provides locale-aware formatting out of the box. PyICU wraps the ICU C++ library, the same internationalisation engine used by platforms and projects including Apple's Foundation Kit that powers iOS/macOS apps, Android, Chromium, and many Linux applications.
+
+```python
+import icu
+
+# Spelled-out numbers (useful for TTS)
+formatter = icu.RuleBasedNumberFormat(icu.URBNFRuleSetTag.SPELLOUT, icu.Locale("en"))
+formatter.format(42)  # "forty-two"
+
+# Locale-aware date
+df = icu.DateFormat.createDateInstance(icu.DateFormat.LONG, icu.Locale("de"))
+df.format(icu.Calendar.getNow())  # "21. Juni 2026"
+
+# Units
+mf = icu.MeasureFormat(icu.Locale("en"), icu.UMeasureFormatWidth.WIDE)
+mf.format(icu.Measure(5, icu.UMeasureUnit.KILOMETER))  # "5 kilometers"
+mf.format(icu.Measure(7, icu.UMeasureUnit.POUND))  # "7 pounds"
+
+# Pluralization in message templates
+msg = icu.MessageFormat("{num, plural, one {# item} other {# items}}", icu.Locale("en"))
+msg.format([1])  # "1 item"
+msg.format([5])  # "5 items"
+```
+
+PyICU is not a dependency of S.T.A.R.K — install it separately (`pip install PyICU`) and use it alongside `LocalizableString` for formatting dynamic values before injecting them into your response templates. A tighter integration (e.g., a built-in formatting layer or a convenience wrapper) is on the radar but the exact shape is TBD — if you have ideas or want to draft an implementation, contributions are welcome via [STARK PLACE](contributing-and-shared-usage-stark-place.md).
+
+For more on response localization, see [Localizing Responses](localization-and-multi-language/localizing-responses.md).
 
 ---
 

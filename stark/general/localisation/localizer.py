@@ -3,6 +3,7 @@ from pathlib import Path
 import warnings
 import logging
 
+from .localizable_string import LocalizableString
 from .strings import StringsFile
 
 
@@ -23,6 +24,18 @@ class Localizer:
         self.base_language = base_language
         self.localizable = {}
         self.recognizable = {}
+
+    def localize(self, localizable_string: LocalizableString | str) -> str:
+        if not isinstance(localizable_string, LocalizableString):
+            return localizable_string
+        resolved = self.get_localizable(localizable_string.string, localizable_string.language_code)
+        if resolved is None:
+            warnings.warn(
+                f"Localizer key '{localizable_string.string}' not found for language '{localizable_string.language_code}', using raw key as fallback",
+                RuntimeWarning,
+            )
+            resolved = localizable_string.string
+        return resolved.format(**localizable_string.arguments)
 
     def get_localizable(self, key: str, language: str) -> str | None:
         return self._get_string(key, language, self.localizable)

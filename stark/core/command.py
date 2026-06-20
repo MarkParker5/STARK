@@ -29,7 +29,7 @@ import asyncer
 from pydantic import BaseModel, Field
 
 from ..general.classproperty import classproperty
-from ..general.localisation import LanguageCode
+from ..general.localisation import LanguageCode, LocalizableString
 from .patterns import Pattern
 
 ResponseOptions = (
@@ -132,8 +132,8 @@ class ResponseStatus(Enum):
 
 
 class Response(BaseModel):
-    voice: str = ""
-    text: str = ""
+    voice: str | LocalizableString = ""
+    text: str | LocalizableString = ""
     status: ResponseStatus = ResponseStatus.success
     needs_user_input: bool = False
     commands: list[Command] = []
