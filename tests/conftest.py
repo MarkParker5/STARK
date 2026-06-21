@@ -40,6 +40,9 @@ class SpeechRecognizerMock:
     is_recognizing: bool = False
     delegate: SpeechRecognizerDelegate | None = None
 
+    def microphone_did_receive_sample(self, data):
+        pass
+
     async def start_listening(self):
         pass
 

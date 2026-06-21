@@ -11,6 +11,7 @@ from stark.core.types import Object
 from stark.core.types.string import String
 from stark.core.types.word import Word
 from stark.general.cache import alru_cache
+from stark.general.feature_flags import FeatureFlag, get_flag
 from stark.general.localisation import LanguageCode, LocaleString, Localizer
 
 type ObjectType = type[Object]
@@ -203,6 +204,9 @@ class PatternParser:
         language_code = string.language_code
         recognized_entities = recognized_entities or []
         compiled = self._compile_pattern(pattern, language_code=language_code)
+
+        compiled = self._expand_recognizable_suggestions(compiled, string)
+
         logger.debug(f'Starting looking for "{pattern=}" "{compiled=}" in "{string}"')
 
         matches = []
@@ -253,6 +257,21 @@ class PatternParser:
         matches = self._filter_overlapping_matches(matches)
         return sorted(matches, key=lambda m: len(m.substring), reverse=True)
 
+    def _expand_recognizable_suggestions(self, compiled: str, string: LocaleString) -> str:
+        if not get_flag(FeatureFlag.ENABLE_RECOGNIZABLE_EXPAND):
+            return compiled
+        from stark.models.transcription_string import TranscriptionString
+        if not isinstance(string, TranscriptionString) or not string.suggestions:
+            return compiled
+        suggestions: dict[str, set[str]] = {}
+        for s in string.suggestions:
+            if hasattr(s, 'keyword') and hasattr(s, 'variant'):
+                suggestions.setdefault(s.keyword, set()).add(s.variant)
+        for keyword, variants in suggestions.items():
+            if keyword in compiled:
+                compiled = compiled.replace(keyword, f'({keyword}|{"|".join(variants)})')
+        return compiled
+
     def _find_initial_matches(self, compiled: str, string: str) -> list[re.Match]:
         return sorted(re.finditer(compiled, string), key=lambda match: match.start())
 
@@ -278,6 +297,7 @@ class PatternParser:
 
             # re-run regex only in the current command_str
             compiled = self._compile_pattern(pattern, prefill=prefill, language_code=language_code)
+            compiled = self._expand_recognizable_suggestions(compiled, string)
             new_matches = list(re.finditer(compiled, string))
 
             logger.debug(f'Re capturing parameters {string} prefill={prefill} compiled="{compiled}"')

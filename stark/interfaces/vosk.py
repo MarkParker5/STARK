@@ -8,9 +8,11 @@ from queue import Empty, Queue
 from typing import Optional, cast
 
 import anyio
-import sounddevice
 import vosk
 from pydantic import BaseModel, Field, ValidationError
+
+from stark.general.localisation import LanguageCode
+from stark.models.voice_transcription import VoiceTranscriptionTrack, VoiceTranscriptionWord
 
 from .protocols import SpeechRecognizer, SpeechRecognizerDelegate
 
@@ -18,15 +20,17 @@ logger = logging.getLogger(__name__)
 
 vosk.SetLogLevel(-1)
 
+
 class KaldiTranscriptionWord(BaseModel):
     word: str
     start: float
     end: float
-    conf: float | None = None # only for KaldiMBR
+    conf: float | None = None  # only for KaldiMBR
+
 
 class KaldiMBR(BaseModel):
     text: str
-    result: list[KaldiTranscriptionWord] = Field(default_factory = list)
+    result: list[KaldiTranscriptionWord] = Field(default_factory=list)
     spk: list[float]
     spk_frames: int
 
@@ -34,28 +38,30 @@ class KaldiMBR(BaseModel):
     def confidence(self):
         return sum(word.conf for word in self.result) / len(self.result)
 
+
 class KaldiTranscription(BaseModel):
     text: str
-    result: list[KaldiTranscriptionWord] = Field(default_factory = list)
+    result: list[KaldiTranscriptionWord] = Field(default_factory=list)
     confidence: float
+
 
 class KaldiResult(BaseModel):
     alternatives: list[KaldiTranscription]
 
-class VoskSpeechRecognizer(SpeechRecognizer):
 
+class VoskSpeechRecognizer(SpeechRecognizer):
     _delegate: SpeechRecognizerDelegate | None = None
 
     audio_queue: Queue
 
     samplerate: int
     blocksize = 8000
-    dtype = 'int16'
+    dtype = "int16"
     channels = 1
     kaldiRecognizer: vosk.KaldiRecognizer
 
-    last_result: Optional[str] = ''
-    last_partial_result: str = ''
+    last_result: Optional[str] = ""
+    last_partial_result: str = ""
     last_partial_update_time: Optional[datetime] = None
 
     is_recognizing = True
@@ -64,38 +70,51 @@ class VoskSpeechRecognizer(SpeechRecognizer):
     _stored_speakers: dict[int, list[int]] = {}
     _speaker_trashold = 0.75
 
-    def __init__(self, model_url: str, speaker_model_url: str | None = None):
-        downloads = 'downloads'
-        model_path = downloads + '/' + model_url.split('/')[-1].replace('.zip', '')
-        zip_path = model_path + '.zip'
-        speaker_model_path = downloads + '/' + speaker_model_url.split('/')[-1].replace('.zip', '') if speaker_model_url else None
+    language_code: LanguageCode
 
-        if not os.path.isdir('downloads'):
-            os.mkdir('downloads')
+    def __init__(
+        self,
+        model_url: str,
+        language_code: LanguageCode = "base",
+        speaker_model_url: str | None = None,
+        samplerate: int = 16000,
+    ):
+        downloads = "downloads"
+        model_path = downloads + "/" + model_url.split("/")[-1].replace(".zip", "")
+        zip_path = model_path + ".zip"
+        speaker_model_path = (
+            downloads + "/" + speaker_model_url.split("/")[-1].replace(".zip", "") if speaker_model_url else None
+        )
+
+        if not os.path.isdir("downloads"):
+            os.mkdir("downloads")
 
         if not os.path.isdir(model_path):
-            logger.info('VOSK: Downloading model...')
+            logger.info("VOSK: Downloading model...")
             urllib.request.urlretrieve(model_url, zip_path)
             zip_file = zipfile.ZipFile(zip_path)
             zip_file.extractall(downloads)
             os.remove(zip_path)
-            logger.info('VOSK: Model downloaded!')
+            logger.info("VOSK: Model downloaded!")
 
         if speaker_model_url and not os.path.isdir(cast(str, speaker_model_path)):
-            logger.info('VOSK: Downloading speaker model...')
+            logger.info("VOSK: Downloading speaker model...")
             urllib.request.urlretrieve(speaker_model_url, zip_path)
             zip_file = zipfile.ZipFile(zip_path)
             zip_file.extractall(downloads)
             os.remove(zip_path)
-            logger.info('VOSK: Speaker model downloaded!')
+            logger.info("VOSK: Speaker model downloaded!")
 
+        self.language_code = language_code
         self.audio_queue = Queue()
-        self.samplerate = int(sounddevice.query_devices(kind = 'input')['default_samplerate'])
+        self.samplerate = samplerate
         vosk_model = vosk.Model(model_path)
         speaker_model = vosk.SpkModel(speaker_model_path) if speaker_model_path else None
         self.kaldiRecognizer = vosk.KaldiRecognizer(vosk_model, self.samplerate)
-        self.kaldiRecognizer.SetMaxAlternatives(0) # 0 (default) returns KaldiMBR; 1+ returns KaldiResult (with bad confidence implementation)
-        self.kaldiRecognizer.SetWords(True) # needs to calculate MBR average confidence; (default: False)
+        self.kaldiRecognizer.SetMaxAlternatives(
+            0
+        )  # 0 (default) returns KaldiMBR; 1+ returns KaldiResult (with bad confidence implementation)
+        self.kaldiRecognizer.SetWords(True)  # needs to calculate MBR average confidence; (default: False)
         if speaker_model_url:
             self.kaldiRecognizer.SetSpkModel(speaker_model)
 
@@ -108,39 +127,37 @@ class VoskSpeechRecognizer(SpeechRecognizer):
         assert delegate is None or isinstance(delegate, SpeechRecognizerDelegate)
         self._delegate = delegate
 
-    @property
-    def sounddevice_parameters(self):
-        return {
-            'samplerate': self.samplerate,
-            'blocksize': self.blocksize,
-            'dtype': self.dtype,
-            'channels': self.channels,
-            'callback': self._audio_input_callback
-        }
+    def microphone_did_receive_sample(self, data):
+        if self.is_recognizing:
+            self.audio_queue.put(data)
 
     def stop_listening(self):
         self._is_listening = False
         self.audio_queue = Queue()
 
-    async def start_listening(self):
-        if self._is_listening: return
+    def reset(self):
+        self.kaldiRecognizer.Reset()
 
-        self.last_partial_result = ''
+    async def start_listening(self):
+        if self._is_listening:
+            return
+
+        self.last_partial_result = ""
         self.last_partial_update_time = None
         self._is_listening = True
 
-        with sounddevice.RawInputStream(**self.sounddevice_parameters):
-            while self._is_listening:
-                try:
-                    if data := self.audio_queue.get(block = False):
-                        await self._transcribe(data)
-                except Empty:
-                    pass
-                await anyio.sleep(0.01)
+        while self._is_listening:
+            try:
+                if data := self.audio_queue.get(block=False):
+                    await self._transcribe(data)
+            except Empty:
+                pass
+            await anyio.sleep(0.01)
 
     async def _transcribe(self, data):
         delegate = self.delegate
-        if not delegate: return
+        if not delegate:
+            return
 
         if self.kaldiRecognizer.AcceptWaveform(data):
             self.last_partial_update_time = None
@@ -157,15 +174,40 @@ class VoskSpeechRecognizer(SpeechRecognizer):
                     transcription = result.alternatives[0]
                     text = transcription.text
                 except ValidationError:
-                    text = json.loads(raw_json).get('text')
+                    text = json.loads(raw_json).get("text")
 
             if text:
-                # if result.spk:
-                #     speaker, similarity = self._get_speaker(result.spk)
-                #     print(f'\nSpeaker: {speaker} ({similarity * 100:.2f}%)\n') # TODO: log or  os.getenv("STARK_VOICE_CLI", "0") == "1"
-
                 self.last_result = text
-                await delegate.speech_recognizer_did_receive_final_result(text)
+
+                # build VoiceTranscriptionTrack from Kaldi result
+                voice_words = []
+                spk = []
+                spk_frames = 0
+                if isinstance(result, KaldiMBR):
+                    for kw in result.result:
+                        voice_words.append(
+                            VoiceTranscriptionWord(
+                                word=kw.word,
+                                language_code=self.language_code,
+                                char_start=0,
+                                char_end=len(kw.word),
+                                start=kw.start,
+                                end=kw.end,
+                                conf=kw.conf,
+                            )
+                        )
+                    spk = result.spk
+                    spk_frames = result.spk_frames
+
+                track = VoiceTranscriptionTrack(
+                    text=text,
+                    result=voice_words,
+                    spk=spk,
+                    spk_frames=spk_frames,
+                    language_code=self.language_code,
+                )
+                vts = track.to_voice_transcription_string()
+                await delegate.speech_recognizer_did_receive_final_result(vts)
             else:
                 self.last_result = None
                 await delegate.speech_recognizer_did_receive_empty_result()
@@ -173,14 +215,10 @@ class VoskSpeechRecognizer(SpeechRecognizer):
         else:
             result = json.loads(self.kaldiRecognizer.PartialResult())
             # partial always returns {"partial": "..."}
-            if (string := result.get('partial')) and string != self.last_partial_result:
+            if (string := result.get("partial")) and string != self.last_partial_result:
                 self.last_partial_result = string
                 self.last_partial_update_time = datetime.now()
                 await delegate.speech_recognizer_did_receive_partial_result(string)
-
-    def _audio_input_callback(self, indata, frames, time, status):
-        if not self.is_recognizing: return
-        self.audio_queue.put(bytes(indata))
 
     def _get_speaker(self, vector: list[int]) -> tuple[int, float]:
         # TODO: search Is not working good, need to improve the algorithm
@@ -203,7 +241,7 @@ class VoskSpeechRecognizer(SpeechRecognizer):
         return cast(int, matched_speaker_id), best_similarity
 
     def _cosine_similarity(self, vector_a, vector_b) -> float:
-        dot_product = sum(a*b for a, b in zip(vector_a, vector_b))
-        norm_a = sum(a*a for a in vector_a) ** 0.5
-        norm_b = sum(b*b for b in vector_b) ** 0.5
+        dot_product = sum(a * b for a, b in zip(vector_a, vector_b))
+        norm_a = sum(a * a for a in vector_a) ** 0.5
+        norm_b = sum(b * b for b in vector_b) ** 0.5
         return dot_product / (norm_a * norm_b)

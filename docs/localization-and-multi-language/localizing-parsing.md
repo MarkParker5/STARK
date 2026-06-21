@@ -219,3 +219,5 @@ context = CommandsContext(
 ```
 
 The Localizer is automatically propagated to `PatternParser` and all `ObjectParser` instances registered on it.
+
+For mixed-language input with per-word language metadata, see [Multilanguage Input](multilanguage-input.md).

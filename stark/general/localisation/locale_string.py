@@ -153,6 +153,17 @@ class LocaleString(str):
         a, b, c = super().rpartition(sep)
         return self._with(a), self._with(b), self._with(c)
 
+    # --- utility ---
+
+    def removing(self, substring: str) -> LocaleString:
+        return self.replace(substring, "")
+
+    def are_substrings_overlapping(self, a: str, b: str) -> bool | None:
+        """Check if two substrings refer to the same span of the original input.
+        Returns True if overlapping, False if not, None if cannot determine.
+        Subclasses with richer metadata (timestamps, phonetics) override this."""
+        return None
+
     # --- repr ---
 
     def __repr__(self) -> str:

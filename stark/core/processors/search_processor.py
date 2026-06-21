@@ -5,6 +5,7 @@ from typing import override
 from asyncer import SoonValue, create_task_group
 
 from stark.core.parsing import MatchResult, PatternParser, RecognizedEntity
+from stark.general.feature_flags import FeatureFlag, get_flag
 from stark.general.localisation import LocaleString
 
 from ..command import Command
@@ -23,27 +24,37 @@ class SearchProcessor(CommandsContextProcessor):
     ) -> list[SearchResult]:
         string = string if isinstance(string, LocaleString) else LocaleString(string)
         language_code = string.language_code
-        results: list[SearchResult] = []
-        futures: list[tuple[Command, SoonValue[list[MatchResult]]]] = []
 
-        # run concurent commands match
+        # collect all tracks to match (primary + alternatives)
+        tracks_to_match: list[tuple[str | LocaleString, str]] = [(string, language_code)]
+
+        # matrix cross-language matching on alternative tracks
+        if get_flag(FeatureFlag.ENABLE_MULTILANG_MATRIX):
+            from stark.models.transcription_string import TranscriptionString
+
+            if isinstance(string, TranscriptionString) and string.alternative_texts:
+                for alt_lang, alt_text in string.alternative_texts.items():
+                    if alt_lang == language_code:
+                        continue
+                    tracks_to_match.append((alt_text, alt_lang))
+
+        # match all tracks concurrently
+        all_futures: list[SoonValue[list[SearchResult]]] = []
         async with create_task_group() as group:
-            for command in commands:
-                futures.append(
-                    (
-                        command,
-                        group.soonify(pattern_parser.match)(
-                            command.get_pattern(language_code), string, recognized_entities
-                        ),
+            for track_string, track_lang in tracks_to_match:
+                all_futures.append(
+                    group.soonify(self._match_commands)(
+                        track_string, track_lang, pattern_parser, commands, recognized_entities
                     )
                 )
 
-        # read all finished matches
-        i = 0
-        for command, future in futures:
-            for match in future.value:  # empty for most of commands (not matched)
-                results.append(SearchResult(command=command, match_result=match, index=i))
-                i += 1
+        results: list[SearchResult] = []
+        for future in all_futures:
+            results.extend(future.value)
+
+        # deduplicate cross-track matches via string's overlap detection
+        if len(tracks_to_match) > 1:
+            results = self._deduplicate_cross_track(results, string)
 
         # resolve overlapped results
 
@@ -82,6 +93,65 @@ class SearchProcessor(CommandsContextProcessor):
                     results.remove(priority2)
 
         return results
+
+    async def _match_commands(
+        self,
+        string: str | LocaleString,
+        language_code: str,
+        pattern_parser: PatternParser,
+        commands: list[Command],
+        recognized_entities: list[RecognizedEntity],
+    ) -> list[SearchResult]:
+        results: list[SearchResult] = []
+        futures: list[tuple[Command, SoonValue[list[MatchResult]]]] = []
+
+        # run concurent commands match
+        async with create_task_group() as group:
+            for command in commands:
+                futures.append(
+                    (
+                        command,
+                        group.soonify(pattern_parser.match)(
+                            command.get_pattern(language_code), string, recognized_entities
+                        ),
+                    )
+                )
+
+        # read all finished matches
+        i = 0
+        for command, future in futures:
+            for match in future.value:  # empty for most of commands (not matched)
+                results.append(SearchResult(command=command, match_result=match, index=i))
+                i += 1
+
+        return results
+
+    @staticmethod
+    def _deduplicate_cross_track(results: list[SearchResult], string: LocaleString) -> list[SearchResult]:
+        if len(results) <= 1:
+            return results
+
+        deduplicated: list[SearchResult] = []
+        for result in results:
+            is_duplicate = False
+            for existing in deduplicated:
+                if result.command.name != existing.command.name:
+                    continue
+                overlapping = string.are_substrings_overlapping(
+                    result.match_result.substring,
+                    existing.match_result.substring,
+                )
+                if overlapping is None:
+                    continue
+                if overlapping:
+                    if len(result.match_result.substring) > len(existing.match_result.substring):
+                        deduplicated.remove(existing)
+                        deduplicated.append(result)
+                    is_duplicate = True
+                    break
+            if not is_duplicate:
+                deduplicated.append(result)
+        return deduplicated
 
     # Implement CommandsContextProcessor
 

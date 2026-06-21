@@ -1,5 +1,4 @@
 import logging
-import os
 from datetime import datetime
 from typing import cast
 
@@ -13,6 +12,8 @@ from ..core import (
     Response,
     ResponseStatus,
 )
+from ..general.feature_flags import FeatureFlag, get_flag
+from ..general.localisation import LocaleString, LocalizableString
 from ..interfaces.protocols import (
     SpeechRecognizer,
     SpeechRecognizerDelegate,
@@ -65,8 +66,8 @@ class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
 
     # SpeechRecognizerDelegate
 
-    async def speech_recognizer_did_receive_final_result(self, result: str):
-        if os.getenv("STARK_VOICE_CLI", "0") == "1":
+    async def speech_recognizer_did_receive_final_result(self, result: str | LocaleString):
+        if get_flag(FeatureFlag.ENABLE_VOICE_CLI):
             print(f"\nYou: {result}")
         else:
             logger.info(f"You: {result}")
@@ -88,7 +89,7 @@ class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
         await self.commands_context.process_string(result)
 
     async def speech_recognizer_did_receive_partial_result(self, result: str):
-        if os.getenv("STARK_VOICE_CLI", "0") == "1":
+        if get_flag(FeatureFlag.ENABLE_VOICE_CLI):
             print(f"\rYou: \x1b[3m{result}\x1b[0m", end="")
 
     async def speech_recognizer_did_receive_empty_result(self):
@@ -152,15 +153,25 @@ class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
     async def _play_response(self, response: Response):
         self.commands_context.last_response = response
 
-        if response.text:
-            if os.getenv("STARK_VOICE_CLI", "0") == "1":
-                print(f"S.T.A.R.K.: {response.text}")
-            else:
-                logger.info(f"S.T.A.R.K.: {response.text}")
+        localizer = self.commands_context.pattern_parser.localizer
 
-        if response.voice:
+        text = response.text
+        if isinstance(text, LocalizableString) and localizer:
+            text = localizer.localize(text)
+
+        voice = response.voice
+        if isinstance(voice, LocalizableString) and localizer:
+            voice = localizer.localize(voice)
+
+        if text:
+            if get_flag(FeatureFlag.ENABLE_VOICE_CLI):
+                print(f"S.T.A.R.K.: {text}")
+            else:
+                logger.info(f"S.T.A.R.K.: {text}")
+
+        if voice:
             was_recognizing = self.speech_recognizer.is_recognizing
             self.speech_recognizer.is_recognizing = False
-            speech = await self.speech_synthesizer.synthesize(response.voice)
+            speech = await self.speech_synthesizer.synthesize(str(voice))
             await speech.play()
             self.speech_recognizer.is_recognizing = was_recognizing
