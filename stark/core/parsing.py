@@ -261,10 +261,10 @@ class PatternParser:
         if not get_flag(FeatureFlag.ENABLE_RECOGNIZABLE_EXPAND):
             return compiled
         from stark.models.transcription_string import TranscriptionString
-        if not isinstance(string, TranscriptionString) or not string.suggestions:
+        if not isinstance(string, TranscriptionString) or not string.recognizable_alternatives:
             return compiled
         suggestions: dict[str, set[str]] = {}
-        for s in string.suggestions:
+        for s in string.recognizable_alternatives:
             if hasattr(s, 'keyword') and hasattr(s, 'variant'):
                 suggestions.setdefault(s.keyword, set()).add(s.variant)
         for keyword, variants in suggestions.items():

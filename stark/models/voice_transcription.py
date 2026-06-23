@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from typing import Generator, NamedTuple, TYPE_CHECKING
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Generator, NamedTuple
 
 from pydantic import BaseModel, Field
-
-from dataclasses import dataclass
 
 from stark.general.localisation.language_code import LanguageCode
 from stark.models.transcription_string import TranscriptionWord
@@ -29,11 +28,11 @@ class VoiceTranscriptionWord(TranscriptionWord):
 
 
 class VoiceTranscriptionTrack(BaseModel):
-    text: str = ''
+    text: str = ""
     result: list[VoiceTranscriptionWord] = Field(default_factory=list)
     spk: list[float] = Field(default_factory=list)
     spk_frames: int = 0
-    language_code: LanguageCode = 'base'
+    language_code: LanguageCode = "base"
 
     @property
     def confidence(self):
@@ -53,7 +52,7 @@ class VoiceTranscriptionTrack(BaseModel):
             if remaining.startswith(word.word):
                 if not start_time:
                     start_time = word.start
-                remaining = remaining[len(word.word):].strip()
+                remaining = remaining[len(word.word) :].strip()
                 to_remove_candidates.append(word)
             else:
                 remaining = substring[:].strip()
@@ -61,15 +60,17 @@ class VoiceTranscriptionTrack(BaseModel):
                 to_remove_candidates = []
 
             if not remaining and start_time is not None:
-                new_words.append(VoiceTranscriptionWord(
-                    word=replacement,
-                    language_code=word.language_code,
-                    char_start=0,
-                    char_end=len(replacement),
-                    start=start_time,
-                    end=word.end,
-                    conf=1,
-                ))
+                new_words.append(
+                    VoiceTranscriptionWord(
+                        word=replacement,
+                        language_code=word.language_code,
+                        char_start=0,
+                        char_end=len(replacement),
+                        start=start_time,
+                        end=word.end,
+                        conf=1,
+                    )
+                )
                 to_remove.extend(to_remove_candidates)
                 to_remove_candidates = []
                 remaining = substring[:].strip()
@@ -88,11 +89,11 @@ class VoiceTranscriptionTrack(BaseModel):
         if new_words:
             self.result.extend(new_words)
 
-        self.text = ' '.join(word.word for word in self.result)
+        self.text = " ".join(word.word for word in self.result)
 
     def get_slice(self, start: float, end: float) -> VoiceTranscriptionTrack:
         new_track = VoiceTranscriptionTrack(
-            text='',
+            text="",
             result=[],
             spk=self.spk,
             spk_frames=self.spk_frames,
@@ -104,20 +105,24 @@ class VoiceTranscriptionTrack(BaseModel):
                 continue
             if word.middle >= end:
                 break
-            new_track.result.append(VoiceTranscriptionWord(
-                word=word.word,
-                language_code=word.language_code,
-                char_start=0,
-                char_end=len(word.word),
-                start=word.start,
-                end=word.end,
-                conf=word.conf,
-            ))
+            new_track.result.append(
+                VoiceTranscriptionWord(
+                    word=word.word,
+                    language_code=word.language_code,
+                    char_start=0,
+                    char_end=len(word.word),
+                    start=word.start,
+                    end=word.end,
+                    conf=word.conf,
+                )
+            )
 
-        new_track.text = ' '.join(word.word for word in new_track.result)
+        new_track.text = " ".join(word.word for word in new_track.result)
         return new_track
 
-    def get_time(self, substring: str, from_index: int = 0, to_index: int | None = None) -> Generator[tuple[float, float], None, None]:
+    def get_time(
+        self, substring: str, from_index: int = 0, to_index: int | None = None
+    ) -> Generator[tuple[float, float], None, None]:
         if not substring:
             return
 
@@ -145,7 +150,7 @@ class VoiceTranscriptionTrack(BaseModel):
             elif remaining.startswith(word.word):
                 if start_time is None:
                     start_time = word.start
-                remaining = remaining[len(word.word):].strip()
+                remaining = remaining[len(word.word) :].strip()
             else:
                 remaining = substring[:].strip()
                 start_time = None
@@ -154,22 +159,83 @@ class VoiceTranscriptionTrack(BaseModel):
                 yield start_time, word.end
                 remaining = substring[:].strip()
 
+    def position_to_time(self, position: int) -> float | None:
+        char_count = 0
+        for word in self.text.split():
+            word_start = self.text.index(word, char_count)
+            word_end = word_start + len(word)
+            if word_start <= position <= word_end:
+                frac = (position - word_start) / max(len(word), 1)
+                for w in self.result:
+                    if w.word == word:
+                        return w.start + frac * (w.end - w.start)
+                return None
+            char_count = word_end + 1
+        return None
+
+    def time_to_position(self, time: float) -> int:
+        char_count = 0
+        for word in self.text.split():
+            word_start = self.text.index(word, char_count)
+            for w in self.result:
+                if w.word == word:
+                    if w.start <= time <= w.end:
+                        frac = (time - w.start) / max(w.end - w.start, 0.001)
+                        return int(word_start + frac * len(word))
+                    if w.start > time:
+                        return word_start
+                    break
+            char_count = word_start + len(word) + 1
+        return len(self.text)
+
     def to_voice_transcription_string(self) -> VoiceTranscriptionString:
         from stark.models.voice_transcription_string import VoiceTranscriptionString
+
         offset = 0
         adjusted: list[VoiceTranscriptionWord] = []
         for w in self.result:
-            adjusted.append(VoiceTranscriptionWord(
-                word=w.word,
-                language_code=w.language_code or self.language_code,
-                char_start=offset,
-                char_end=offset + len(w.word),
-                start=w.start,
-                end=w.end,
-                conf=w.conf,
-            ))
+            adjusted.append(
+                VoiceTranscriptionWord(
+                    word=w.word,
+                    language_code=w.language_code or self.language_code,
+                    char_start=offset,
+                    char_end=offset + len(w.word),
+                    start=w.start,
+                    end=w.end,
+                    conf=w.conf,
+                )
+            )
             offset += len(w.word) + 1
         return VoiceTranscriptionString(self.text, None, tuple(adjusted), track=self)
+
+    def position_to_time(self, position: int) -> float | None:
+        char_count = 0
+        for word in self.text.split():
+            word_start = self.text.index(word, char_count)
+            word_end = word_start + len(word)
+            if word_start <= position <= word_end:
+                frac = (position - word_start) / max(len(word), 1)
+                word_times = list(self.get_time(word))
+                if word_times:
+                    wt_start, wt_end = word_times[0]
+                    return wt_start + frac * (wt_end - wt_start)
+                return None
+            char_count = word_end + 1
+        return None
+
+    def time_to_position(self, time: float) -> int:
+        char_count = 0
+        for word in self.text.split():
+            word_start_char = self.text.index(word, char_count)
+            word_end_char = word_start_char + len(word)
+            word_times = list(self.get_time(word))
+            if word_times and word_times[0][0] <= time <= word_times[0][1]:
+                frac = (time - word_times[0][0]) / max(word_times[0][1] - word_times[0][0], 0.001)
+                return int(word_start_char + frac * len(word))
+            if word_times and word_times[0][0] > time:
+                return word_start_char
+            char_count = word_end_char + 1
+        return len(self.text)
 
     def __hash__(self) -> int:
         return hash(self.text)
@@ -213,27 +279,27 @@ class Transcription(BaseModel):
                         if (ow.conf or 0) >= (w.conf or 0):
                             lang = origin_lang
                         break
-            voice_words.append(VoiceTranscriptionWord(
-                word=w.word,
-                language_code=lang,
-                char_start=offset,
-                char_end=offset + len(w.word),
-                start=w.start,
-                end=w.end,
-                conf=w.conf,
-            ))
+            voice_words.append(
+                VoiceTranscriptionWord(
+                    word=w.word,
+                    language_code=lang,
+                    char_start=offset,
+                    char_end=offset + len(w.word),
+                    start=w.start,
+                    end=w.end,
+                    conf=w.conf,
+                )
+            )
             offset += len(w.word) + 1
 
-        alternative_texts = {
-            lang: LocaleString(track.text, lang)
-            for lang, track in self.origins.items()
-        }
+        alternative_texts = {lang: LocaleString(track.text, lang) for lang, track in self.origins.items()}
 
         return VoiceTranscriptionString(
             best.text,
             None,
             tuple(voice_words),
             alternative_texts=alternative_texts,
-            suggestions=tuple(self.suggestions),
+            recognizable_alternatives=tuple(self.suggestions),
             track=best,
+            alternative_tracks=dict(self.origins),
         )

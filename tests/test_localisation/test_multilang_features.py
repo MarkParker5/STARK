@@ -118,7 +118,7 @@ async def test_suggestions_expand_regex(monkeypatch):
 
     ts = TranscriptionString.from_words(
         [("helo", "en"), ("there", "en")],
-        suggestions=(Suggestion(variant="helo", keyword="hello"),),
+        recognizable_alternatives=[Suggestion(variant="helo", keyword="hello")],
     )
 
     # "helo there" doesn't match "hello there" normally
@@ -133,7 +133,7 @@ async def test_suggestions_not_expanded_by_default():
 
     ts = TranscriptionString.from_words(
         [("helo", "en"), ("there", "en")],
-        suggestions=(Suggestion(variant="helo", keyword="hello"),),
+        recognizable_alternatives=[Suggestion(variant="helo", keyword="hello")],
     )
 
     matches = await p.match(Pattern("hello there"), ts)
@@ -233,51 +233,172 @@ def test_build_best_confidence_language_priority():
     assert "привет" in best2.text
 
 
-# --- Cross-track phonetic dedup ---
+# --- Position translation ---
 
 
-def test_phonetic_dedup_similar_strings(monkeypatch):
-    monkeypatch.setenv("STARK_ENABLE_MULTILANG_PHONETIC_OVERLAP", "1")
-
-    from stark.core.parsing import MatchResult
-    from stark.core.commands_manager import SearchResult
-    from stark.core.command import Command
-
-    cmd = Command("test.greet", {"base": Pattern("hello")}, lambda: None)
-
-    # TranscriptionString enables phonetic overlap detection
-    ts = TranscriptionString.from_words([("hello", "en"), ("world", "en")])
-
-    results = [
-        SearchResult(cmd, MatchResult(substring="hello world", start=0, end=11, parameters={}), index=0),
-        SearchResult(cmd, MatchResult(substring="helo world", start=0, end=10, parameters={}), index=1),
-    ]
-
-    deduped = SearchProcessor._deduplicate_cross_track(results, ts)
-    assert len(deduped) == 1
-    assert deduped[0].match_result.substring == "hello world"
-
-
-def test_phonetic_dedup_different_strings(monkeypatch):
-    monkeypatch.setenv("STARK_ENABLE_MULTILANG_PHONETIC_OVERLAP", "1")
-
-    from stark.core.parsing import MatchResult
-    from stark.core.commands_manager import SearchResult
-    from stark.core.command import Command
-
-    cmd = Command("test.greet", {"base": Pattern("hello")}, lambda: None)
-
-    ts = TranscriptionString.from_words([("hello", "en"), ("world", "en")])
-
-    results = [
-        SearchResult(cmd, MatchResult(substring="hello world", start=0, end=11, parameters={}), index=0),
-        SearchResult(cmd, MatchResult(substring="привет мир", start=0, end=10, parameters={}), index=1),
-    ]
-
-    deduped = SearchProcessor._deduplicate_cross_track(results, ts)
-    assert len(deduped) == 2
-
-
-def test_locale_string_overlap_returns_none():
+def test_locale_string_translate_position_identity():
     ls = LocaleString("hello world", "en")
-    assert ls.are_substrings_overlapping("hello", "world") is None
+    assert ls.translate_position(5, "hello world", "hello world") == 5
+
+
+def test_locale_string_translate_position_different_text():
+    ls = LocaleString("hello world", "en")
+    assert ls.translate_position(3, "другой текст", "hello world") == 3  # identity for plain LocaleString
+
+
+# --- Cross-track overlap resolution (VoiceTranscriptionString) ---
+
+
+from stark.models.voice_transcription_string import VoiceTranscriptionString
+
+
+def _vts_word(word, lang, start, end, conf=0.9):
+    return VoiceTranscriptionWord(
+        word=word, language_code=lang, char_start=0, char_end=len(word),
+        start=start, end=end, conf=conf,
+    )
+
+
+def _vts_track(words, lang='en'):
+    return VoiceTranscriptionTrack(
+        text=' '.join(w.word for w in words),
+        result=words,
+        language_code=lang,
+    )
+
+
+def _make_vts(en_words, ru_words):
+    """Build a VoiceTranscriptionString with English primary and Russian alternative."""
+    from stark.models.voice_transcription import Transcription
+
+    en_track = _vts_track(en_words, 'en')
+    ru_track = _vts_track(ru_words, 'ru')
+    transcription = Transcription(
+        best=en_track,
+        origins={'en': en_track, 'ru': ru_track},
+    )
+    return transcription.to_voice_transcription_string()
+
+
+@pytest.fixture
+def cross_track_parser():
+    p = PatternParser()
+    return p
+
+
+@pytest.fixture
+def cross_track_manager():
+    m = CommandsManager()
+
+    @m.new({"base": "set timer", "en": "set timer", "ru": "поставь таймер"})
+    async def set_timer() -> Response:
+        return Response(text="Timer set")
+
+    @m.new({"base": "play songs", "en": "play songs", "ru": "включи музыку"})
+    async def play_songs() -> Response:
+        return Response(text="Playing")
+
+    return m
+
+
+async def test_cross_track_no_overlap(cross_track_parser, cross_track_manager):
+    """Two commands from different tracks that DON'T overlap in time — both should be kept."""
+    vts = _make_vts(
+        en_words=[
+            _vts_word("set", "en", 0.0, 0.3),
+            _vts_word("timer", "en", 0.3, 0.7),
+            _vts_word("and", "en", 0.7, 0.9),
+            _vts_word("play", "en", 0.9, 1.2),
+            _vts_word("songs", "en", 1.2, 1.6),
+        ],
+        ru_words=[
+            _vts_word("поставь", "ru", 0.0, 0.3),
+            _vts_word("таймер", "ru", 0.3, 0.7),
+            _vts_word("и", "ru", 0.7, 0.9),
+            _vts_word("включи", "ru", 0.9, 1.2),
+            _vts_word("музыку", "ru", 1.2, 1.6),
+        ],
+    )
+
+    processor = SearchProcessor()
+    results = await processor.search(vts, cross_track_parser, cross_track_manager.commands, [])
+
+    # Both commands should match — "set timer" from English, "включи музыку" from Russian (or both from English)
+    assert len(results) >= 2
+    names = {r.command.name for r in results}
+    assert "CommandsManager.set_timer" in names
+    assert "CommandsManager.play_songs" in names
+
+
+async def test_cross_track_full_overlap_same_command(cross_track_parser, cross_track_manager):
+    """Same command matches in both tracks (full overlap in time) — should keep one."""
+    vts = _make_vts(
+        en_words=[
+            _vts_word("set", "en", 0.0, 0.3),
+            _vts_word("timer", "en", 0.3, 0.7),
+        ],
+        ru_words=[
+            _vts_word("поставь", "ru", 0.0, 0.3),
+            _vts_word("таймер", "ru", 0.3, 0.7),
+        ],
+    )
+
+    processor = SearchProcessor()
+    results = await processor.search(vts, cross_track_parser, cross_track_manager.commands, [])
+
+    timer_results = [r for r in results if r.command.name == "CommandsManager.set_timer"]
+    # same command from both tracks overlaps fully — overlap resolver should remove one
+    assert len(timer_results) == 1
+
+
+async def test_cross_track_partial_overlap(cross_track_parser):
+    """Two different commands partially overlap in time — should try to cut or remove lower priority."""
+    m = CommandsManager()
+
+    @m.new({"base": "set timer for five", "en": "set timer for five"})
+    async def set_timer_long() -> Response:
+        return Response(text="Timer")
+
+    @m.new({"base": "five songs", "ru": "пять песен"})
+    async def five_songs() -> Response:
+        return Response(text="Songs")
+
+    vts = _make_vts(
+        en_words=[
+            _vts_word("set", "en", 0.0, 0.3),
+            _vts_word("timer", "en", 0.3, 0.7),
+            _vts_word("for", "en", 0.7, 0.9),
+            _vts_word("five", "en", 0.9, 1.2),
+            _vts_word("songs", "en", 1.2, 1.6),
+        ],
+        ru_words=[
+            _vts_word("сет", "ru", 0.0, 0.3),
+            _vts_word("таймер", "ru", 0.3, 0.7),
+            _vts_word("фор", "ru", 0.7, 0.9),
+            _vts_word("пять", "ru", 0.9, 1.2),
+            _vts_word("песен", "ru", 1.2, 1.6),
+        ],
+    )
+
+    processor = SearchProcessor()
+    results = await processor.search(vts, cross_track_parser, m.commands, [])
+
+    # "set timer for five" and "пять песен" overlap at "five"/"пять" (0.9-1.2s)
+    # overlap resolver should either cut one or remove the lower priority
+    assert len(results) >= 1
+    names = {r.command.name for r in results}
+    assert "CommandsManager.set_timer_long" in names
+
+
+async def test_single_track_no_cross_track_issues(cross_track_parser, cross_track_manager):
+    """Plain LocaleString — no alternative tracks, standard single-track behavior."""
+    processor = SearchProcessor()
+    results = await processor.search(
+        LocaleString("set timer and play songs", "en"),
+        cross_track_parser, cross_track_manager.commands, [],
+    )
+
+    assert len(results) == 2
+    names = {r.command.name for r in results}
+    assert "CommandsManager.set_timer" in names
+    assert "CommandsManager.play_songs" in names

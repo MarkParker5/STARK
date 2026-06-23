@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Sequence
+
 from stark.general.localisation.language_code import LanguageCode
 
 
@@ -134,13 +136,13 @@ class LocaleString(str):
 
     # --- str → list[str] methods ---
 
-    def split(self, sep: str | None = None, maxsplit: int = -1) -> list[LocaleString]:
+    def split(self, sep: str | None = None, maxsplit: int = -1) -> Sequence[LocaleString]:
         return [self._with(s) for s in super().split(sep, maxsplit)]
 
-    def rsplit(self, sep: str | None = None, maxsplit: int = -1) -> list[LocaleString]:
+    def rsplit(self, sep: str | None = None, maxsplit: int = -1) -> Sequence[LocaleString]:
         return [self._with(s) for s in super().rsplit(sep, maxsplit)]
 
-    def splitlines(self, keepends: bool = False) -> list[LocaleString]:
+    def splitlines(self, keepends: bool = False) -> Sequence[LocaleString]:
         return [self._with(s) for s in super().splitlines(keepends)]
 
     # --- str → tuple[str, ...] methods ---
@@ -158,11 +160,11 @@ class LocaleString(str):
     def removing(self, substring: str) -> LocaleString:
         return self.replace(substring, "")
 
-    def are_substrings_overlapping(self, a: str, b: str) -> bool | None:
-        """Check if two substrings refer to the same span of the original input.
-        Returns True if overlapping, False if not, None if cannot determine.
-        Subclasses with richer metadata (timestamps, phonetics) override this."""
-        return None
+    def translate_position(self, position: int, from_track: str, to_track: str) -> int:
+        """Translate a character position from one track's coordinate system to another's.
+        For plain LocaleString, all tracks share the same coordinate system (identity).
+        VoiceTranscriptionString overrides to translate via timestamps."""
+        return position
 
     # --- repr ---
 

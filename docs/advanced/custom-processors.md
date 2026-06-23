@@ -51,11 +51,19 @@ context = CommandsContext(
 
 Order matters — pre-processors should come before search processors.
 
-## Metadata Preservation
+## Metadata on Input Strings
 
-Input strings may carry metadata via `LocaleString` subclasses (`TranscriptionString`, `VoiceTranscriptionString`). This metadata includes per-word language codes, alternative transcription tracks, and voice timing data.
+Input strings may carry metadata via `LocaleString` or subclasses (`TranscriptionString`, `VoiceTranscriptionString`). Processors can **read** this metadata:
 
-**Processors must never strip this metadata.** When transforming or slicing the input string, use the string's own methods (`_with`, `replace`, slicing) which preserve metadata through the `LocaleString` subclass chain. Avoid constructing plain `str` objects from metadata-carrying strings.
+- `string.language_code` — the majority language of the input
+- `string.words` — per-word language annotations (if `TranscriptionString`)
+- `string.suggestions` — phonetic suggestion variants (if populated by STT relay)
+- `string.alternative_texts` — same utterance transcribed by different language models
+- `string.track` — voice timing/confidence data (if `VoiceTranscriptionString`)
+
+Processors **cannot mutate** the string's metadata — `LocaleString` subclasses are immutable (str subclass). To transform the string, use its methods (`replace`, slicing, `_with`) which return new instances with preserved metadata.
+
+**Processors must never strip metadata.** Avoid constructing plain `str` objects from metadata-carrying strings:
 
 ```python
 # Good — preserves metadata:
@@ -66,4 +74,17 @@ substring = string[start:end]
 modified = str(string).replace("old", "new")  # plain str, metadata lost
 ```
 
-If a processor needs to pass additional context downstream, use `RecognizedEntity` objects — they're designed for inter-processor communication.
+## Inter-Processor Communication
+
+### `RecognizedEntity`
+
+A `RecognizedEntity` marks a substring that likely corresponds to a specific named entity or parameter type — it doesn't parse the substring, but narrows the search bounds for subsequent processors. This is valuable because finding the correct substring boundaries is the hardest part of parameter parsing.
+
+```python
+recognized_entities.append(RecognizedEntity(
+    substring="London",
+    type=Location,  # the Object type this substring likely matches
+))
+```
+
+The `SearchProcessor` uses recognized entities to constrain parameter extraction — when a `RecognizedEntity` matches a parameter's type and its substring appears within the parameter's regex match, the parser narrows to that exact substring instead of the full regex capture.

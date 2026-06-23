@@ -29,7 +29,7 @@ class TranscriptionString(LocaleString):
 
     _words: tuple[TranscriptionWord, ...]
     _alternative_texts: dict[str, LocaleString]
-    _suggestions: tuple  # tuple[Suggestion, ...] — avoids circular import, typed at usage
+    recognizable_alternatives: list
     _language_code_override: LanguageCode | None
 
     def __new__(
@@ -38,14 +38,14 @@ class TranscriptionString(LocaleString):
         language_code: LanguageCode | None = None,
         words: tuple[TranscriptionWord, ...] | list[TranscriptionWord] = (),
         alternative_texts: dict[str, LocaleString] | None = None,
-        suggestions: tuple | list = (),
+        recognizable_alternatives: list | None = None,
     ) -> TranscriptionString:
         resolved_words = tuple(words)
         resolved_lang = language_code or _majority_language(resolved_words) or "base"
         instance = super().__new__(cls, value, resolved_lang)
         instance._words = resolved_words
         instance._alternative_texts = alternative_texts or {}
-        instance._suggestions = tuple(suggestions)
+        instance.recognizable_alternatives = list(recognizable_alternatives or [])
         instance._language_code_override = language_code
         return instance
 
@@ -54,7 +54,7 @@ class TranscriptionString(LocaleString):
         cls,
         words: list[tuple[str, LanguageCode]],
         alternative_texts: dict[str, LocaleString] | None = None,
-        suggestions: tuple | list = (),
+        recognizable_alternatives: list | None = None,
     ) -> TranscriptionString:
         text_parts: list[str] = []
         tw_list: list[TranscriptionWord] = []
@@ -66,7 +66,7 @@ class TranscriptionString(LocaleString):
             text_parts.append(word)
             offset = char_end + 1  # +1 for space
         text = " ".join(text_parts)
-        return cls(text, words=tw_list, alternative_texts=alternative_texts, suggestions=suggestions)
+        return cls(text, words=tw_list, alternative_texts=alternative_texts, recognizable_alternatives=recognizable_alternatives)
 
     @property
     def language_code(self) -> LanguageCode:
@@ -86,17 +86,13 @@ class TranscriptionString(LocaleString):
     def alternative_texts(self) -> dict[str, LocaleString]:
         return self._alternative_texts
 
-    @property
-    def suggestions(self) -> tuple:
-        return self._suggestions
-
     # --- core overrides ---
 
     def _with(self, value: str) -> TranscriptionString:
         try:
             start = str.index(self, value)
         except ValueError:
-            return TranscriptionString(value, self.language_code, (), self._alternative_texts, self._suggestions)
+            return TranscriptionString(value, self.language_code, (), self._alternative_texts, self.recognizable_alternatives)
         end = start + len(value)
         return self._slice_by_offset(value, start, end)
 
@@ -134,12 +130,12 @@ class TranscriptionString(LocaleString):
             else:
                 new_words.append(w)
 
-        return TranscriptionString(result_text, None, new_words, self._alternative_texts, self._suggestions)
+        return TranscriptionString(result_text, None, new_words, self._alternative_texts, self.recognizable_alternatives)
 
     def strip(self, chars: str | None = None) -> TranscriptionString:
         result_str = str.strip(self, chars)
         if not result_str:
-            return TranscriptionString("", self.language_code, (), self._alternative_texts, self._suggestions)
+            return TranscriptionString("", self.language_code, (), self._alternative_texts, self.recognizable_alternatives)
         start = str.index(self, result_str)
         end = start + len(result_str)
         return self._slice_by_offset(result_str, start, end)
@@ -150,7 +146,7 @@ class TranscriptionString(LocaleString):
         search_start = 0
         for part in parts:
             if not part:
-                result.append(TranscriptionString("", self.language_code, (), self._alternative_texts, self._suggestions))
+                result.append(TranscriptionString("", self.language_code, (), self._alternative_texts, self.recognizable_alternatives))
                 continue
             try:
                 idx = str.index(self, part, search_start)
@@ -169,17 +165,10 @@ class TranscriptionString(LocaleString):
             for w in self._words
             if w.char_start >= start and w.char_end <= end
         )
-        return TranscriptionString(value, None, filtered, self._alternative_texts, self._suggestions)
+        return TranscriptionString(value, None, filtered, self._alternative_texts, self.recognizable_alternatives)
 
-    def are_substrings_overlapping(self, a: str, b: str) -> bool | None:
-        from stark.general.feature_flags import FeatureFlag, get_flag
-        if not get_flag(FeatureFlag.ENABLE_MULTILANG_PHONETIC_OVERLAP):
-            return None
-        try:
-            from stark.tools.levenshtein import levenshtein_similarity
-        except ImportError:
-            return None
-        return levenshtein_similarity(s1=a, s2=b) > 0.6
+    # translate_position: inherited from LocaleString (identity).
+    # Cross-track overlap resolution requires timestamps — use VoiceTranscriptionString.
 
     def __repr__(self) -> str:
         return f"TranscriptionString({str.__repr__(self)}, language_code={self.language_code!r}, words={len(self._words)})"
