@@ -49,7 +49,7 @@ async def greet(name: Word) -> Response:
 
 ## Resolving at Response Time
 
-The core framework stores `LocalizableString` as-is in the `Response` object — it does not resolve it automatically. Resolution happens at the delegate level (e.g., `VoiceAssistant` provided by stark), where the `Localizer` is available:
+The core framework stores `LocalizableString` as-is in the `Response` object. Resolution happens at the delegate level, where the `Localizer` is available. `VoiceAssistant` provided by STARK already does that automatically under the hood.
 
 ```python
 # In your custom delegate / response handler:

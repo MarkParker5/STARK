@@ -161,9 +161,9 @@ This approach allows you to keep parsing logic separate from your data model and
 
 Note that the `did_parse` method must return a substring of the input string that was successfully parsed. This substring should be the smallest possible string that still represents the object's value. In case you use 3rd party parser that can't extract substring and just provides the value, you have several options to handle this:
 
-1. If your parser returns a string-ish value, like some kind of name, you can use `levenshtein_search_substring` from the [STARK-Levenshtein](/tools/stark-levenshtein.md) module. This will allow you efficiently find the closest fuzzy match of your named entity in the input string.
-2. Consider using `NLDictionaryName` from [Phonetic Dictionary](/tools/phonetic-dictionary.md) if suits your needs.
-3. If options above are not suitable, take a look at [sliding_window_parser](/tools/sliding-window-parser.md) wrapper. Note that it will call the parser method multiple times to find the best match, which can be optimized by caching intermediate results inside your parser func, but yet still requires careful usage especially with large input strings and long io-bound parsing times.
+1. If your parser returns a string-ish value, like some kind of name, you can use `levenshtein_search_substring` from the [STARK-Levenshtein](tools/stark-levenshtein.md) module. This will allow you efficiently find the closest fuzzy match of your named entity in the input string.
+2. Consider using `NLDictionaryName` from [Phonetic Dictionary](tools/phonetic-dictionary.md) if suits your needs.
+3. If options above are not suitable, take a look at [sliding_window_parser](tools/sliding-window-parser.md) wrapper. Note that it will call the parser method multiple times to find the best match, which can be optimized by caching intermediate results inside your parser func, but yet still requires careful usage especially with large input strings and long io-bound parsing times.
 
 ## Recommended Use of Caching for `did_parse` Method
 

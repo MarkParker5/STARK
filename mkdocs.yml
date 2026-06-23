@@ -40,7 +40,7 @@ nav:
       - Localizing Parsing: localization-and-multi-language/localizing-parsing.md
       - Multilanguage Input: localization-and-multi-language/multilanguage-input.md
       - Localizing Responses: localization-and-multi-language/localizing-responses.md
-      - Other: advanced/other.md # TODO: <-
+  - Other: advanced/other.md # TODO: <-
   # - S.T.A.R.K P.L.A.C.E Navigator: /stark-place-navigator.md
 
 theme:

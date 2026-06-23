@@ -128,7 +128,7 @@ class NLNumberParser(ObjectParser):
         ...
 ```
 
-For simple types that don't need an `ObjectParser`, override `did_parse` directly on the Object:
+For simple types that don't self.localizer or any other features of `ObjectParser`, you can still use `did_parse` directly on the Object:
 
 ```python
 class NLNumber(Object):
@@ -141,6 +141,8 @@ class NLNumber(Object):
             self.value = parse_english_number(from_string)
         return from_string
 ```
+
+More details about parsing of custom types at [ObjectParser](../patterns.md#defining-custom-object-types)
 
 ### Programmatic Patterns
 
