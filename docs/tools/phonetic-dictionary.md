@@ -9,16 +9,16 @@
 Create a dictionary in memory and add an entry:
 ```python
 dictionary = Dictionary(storage=DictionaryStorageMemory())
-dictionary.write_one('en', "Linkin Park", {"id": 1234})
+dictionary.write_one('en', "Linkin Park", {"id": 2017})
 ```
 
 Then you can look up names by different spellings, homophones, or even cross-language phonetic similarity:
 ```python
-matches = dictionary.lookup("linkoln perk", 'en')
-matches[0].metadata  # {"id": 1234})
+matches = dictionary.lookup("linkoln perk", 'en') # misspelled case
+matches[0].metadata  # {"id": 2017})
 
 matches = dictionary.lookup("лінкін парк", 'ua') # ukrainian spelling of Linkin Park
-matches[0].metadata  # {"id": 1234})
+matches[0].metadata  # {"id": 2017})
 ```
 
 ### Search in Sentence

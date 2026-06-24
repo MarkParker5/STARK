@@ -236,6 +236,43 @@ def test_build_best_confidence_language_priority():
 # --- Position translation ---
 
 
+# --- RecognizableAlternativesProcessor ---
+
+
+async def test_recognizable_alternatives_processor(tmp_path, monkeypatch):
+    from pathlib import Path
+    from stark.core.processors.recognizable_alternatives_processor import RecognizableAlternativesProcessor
+
+    # create recognizable strings
+    d = tmp_path / "strings" / "en"
+    d.mkdir(parents=True)
+    (d / "recognizable.strings").write_text('"hello" = "hello";')
+    (d / "localizable.strings").write_text('"hello" = "hello";')
+    monkeypatch.chdir(tmp_path)
+
+    from stark.general.localisation import Localizer
+    localizer = Localizer(languages={"en"})
+    localizer.load()
+
+    parser = PatternParser(localizer=localizer)
+
+    from unittest.mock import MagicMock
+    context = MagicMock()
+    context.pattern_parser = parser
+
+    ts = TranscriptionString.from_words([("helo", "en"), ("world", "en")])
+    assert len(ts.recognizable_alternatives) == 0
+
+    processor = RecognizableAlternativesProcessor()
+    await processor.process_string(ts, context, [])
+
+    assert len(ts.recognizable_alternatives) >= 1
+    assert any(s.keyword == "hello" and s.variant == "helo" for s in ts.recognizable_alternatives)
+
+
+# --- Position translation ---
+
+
 def test_locale_string_translate_position_identity():
     ls = LocaleString("hello world", "en")
     assert ls.translate_position(5, "hello world", "hello world") == 5
@@ -388,6 +425,40 @@ async def test_cross_track_partial_overlap(cross_track_parser):
     assert len(results) >= 1
     names = {r.command.name for r in results}
     assert "CommandsManager.set_timer_long" in names
+
+
+def test_translate_position_between_different_tracks():
+    """translate_position must use each track's own timestamps, not just the primary track."""
+    vts = _make_vts(
+        en_words=[
+            _vts_word("set", "en", 0.0, 0.3),
+            _vts_word("timer", "en", 0.3, 0.7),
+        ],
+        ru_words=[
+            _vts_word("поставь", "ru", 0.0, 0.3),
+            _vts_word("таймер", "ru", 0.3, 0.7),
+        ],
+    )
+
+    en_text = "set timer"
+    ru_text = "поставь таймер"
+
+    # position 0 in English ("set" start, time=0.0) should map to position 0 in Russian ("поставь" start)
+    pos = vts.translate_position(0, en_text, ru_text)
+    assert pos == 0
+
+    # position 4 in English (start of "timer", time=0.3) should map near the boundary in Russian
+    # time 0.3 is exactly at "поставь" end / "таймер" start boundary
+    pos = vts.translate_position(4, en_text, ru_text)
+    assert 7 <= pos <= 8  # boundary between "поставь" (7 chars) and "таймер" (starts at 8)
+
+    # position 0 in Russian should map to 0 in English
+    pos = vts.translate_position(0, ru_text, en_text)
+    assert pos == 0
+
+    # same track = identity
+    pos = vts.translate_position(4, en_text, en_text)
+    assert pos == 4
 
 
 async def test_single_track_no_cross_track_issues(cross_track_parser, cross_track_manager):
