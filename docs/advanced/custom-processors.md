@@ -58,7 +58,7 @@ When `CommandsContext.process_string()` is called, it runs the input through eac
 
 Generates phonetic alternatives from Localizer's recognizable strings. For each recognizable keyword, slides a window over the input words and computes levenshtein similarity. Matches above 0.6 threshold are appended to `string.recognizable_alternatives`.
 
-These alternatives are consumed by `PatternParser._expand_recognizable_suggestions()` (when `STARK_ENABLE_RECOGNIZABLE_EXPAND=1`) to widen compiled regexes — e.g., `"hello"` in the regex becomes `"(hello|helo)"`.
+These alternatives are consumed by `PatternParser._expand_recognizable_suggestions()` to widen compiled regexes — e.g., `"hello"` in the regex becomes `"(hello|helo)"`.
 
 **Complexity:** O(R × W) levenshtein comparisons, where R = recognizable strings in active language, W = input words. Each comparison is O(len(candidate) × len(keyword)).
 
@@ -73,7 +73,7 @@ Uses spaCy NER to mark named entities (locations, organizations, etc.) as `Recog
 Matches input against all registered command patterns. Handles:
 - Pattern matching via `PatternParser.match()` — O(C × P) where C = commands in the current context window, P = pattern complexity
 - Matrix cross-language matching across alternative tracks (when `STARK_ENABLE_MULTILANG_MATRIX=1`) — multiplies by T (number of tracks which is the number of languages with active STT)
-- Recognizable suggestions regex expansion (when `STARK_ENABLE_RECOGNIZABLE_EXPAND=1`) — O(S) string replacements per match, where S = suggestions
+- Recognizable suggestions regex expansion — O(S) string replacements per match, where S = suggestions
 - Overlap resolution with cross-track position translation — O(R), where R = results
 
 **Complexity:** O(T × C × P) for matching + O(R) for overlap resolution
@@ -152,7 +152,7 @@ recognized_entities.append(RecognizedEntity(
 
 ### `recognizable_alternatives`
 
-Phonetic suggestion variants on `TranscriptionString`. Pre-processors append `Suggestion(variant, keyword)` pairs. `SearchProcessor` injects these into compiled regexes when `STARK_ENABLE_RECOGNIZABLE_EXPAND=1`.
+Phonetic suggestion variants on `TranscriptionString`. Pre-processors append `Suggestion(variant, keyword)` pairs. `SearchProcessor` injects these into compiled patterns.
 
 ```python
 from stark.models.voice_transcription import Suggestion

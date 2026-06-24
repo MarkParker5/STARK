@@ -71,3 +71,5 @@ await context.process_string(ts)
 ```
 
 The parser handles it as a regular string — `TranscriptionString` is a `str` subclass. The metadata enhances pattern resolution without requiring any changes to your commands or types.
+
+See [Feature Flags](advanced/feature-flags.md) for additional configuration options like tweaking multilingual features.

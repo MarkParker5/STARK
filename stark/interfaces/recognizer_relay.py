@@ -111,6 +111,7 @@ class SpeechRecognizerRelay:
 
         if not self._current_transcription:
             return
+        self._current_transcription = None
 
         # build best confidence track; language priority follows recognizer order
         language_priority = {
@@ -119,8 +120,6 @@ class SpeechRecognizerRelay:
         tracks = {track.model_copy(deep=True) for track in current.origins.values()}
         current.best = self._build_best_confidence(tracks, language_priority=language_priority)
         current.best.language_code = "base"
-
-        self._current_transcription = None
 
         # emit as VoiceTranscriptionString
         vts = current.to_voice_transcription_string()

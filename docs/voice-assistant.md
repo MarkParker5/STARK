@@ -238,12 +238,5 @@ VoskSpeechRecognizer(
 
 Speaker embeddings are stored per-word in `VoiceTranscriptionTrack.spk` and preserved through the entire flow. They are not used yet, but the infrastructure is ready for a future speaker diarization module.
 
-### Environment Flags
-
-| Flag | Default | Description |
-|------|---------|-------------|
-| `STARK_MULTILANG_MATRIX` | `1` | Enable matrix cross-language matching across alternative tracks |
-| `STARK_MULTILANG_OVERLAP` | `cut` | Overlap resolution strategy: `cut`, `first_match`, or `voice` |
-| `STARK_ENABLE_RECOGNIZABLE_EXPAND` | `0` | Inject phonetic variants into compiled regex (experimental) |
-
 See [Localizing Parsing](localization-and-multi-language/localizing-parsing.md) for details on these features.
+See [Feature Flags](advanced/feature-flags.md) for additional configuration options like enabling printing the conversation or tweaking multilingual features.
