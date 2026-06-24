@@ -112,8 +112,7 @@ async def test_plain_string_still_works(parser, manager):
 # --- Recognizable suggestions expansion ---
 
 
-async def test_suggestions_expand_regex(monkeypatch):
-    monkeypatch.setenv("STARK_ENABLE_RECOGNIZABLE_EXPAND", "1")
+async def test_suggestions_expand_regex():
     p = PatternParser()
 
     ts = TranscriptionString.from_words(
@@ -122,18 +121,18 @@ async def test_suggestions_expand_regex(monkeypatch):
     )
 
     # "helo there" doesn't match "hello there" normally
-    # but with expansion, regex becomes "(hello|helo) there"
+    # but with alternatives present, regex becomes "(hello|helo) there"
     matches = await p.match(Pattern("hello there"), ts)
     assert len(matches) == 1
     assert matches[0].substring == "helo there"
 
 
-async def test_suggestions_not_expanded_by_default():
+async def test_suggestions_not_expanded_without_alternatives():
     p = PatternParser()
 
     ts = TranscriptionString.from_words(
         [("helo", "en"), ("there", "en")],
-        recognizable_alternatives=[Suggestion(variant="helo", keyword="hello")],
+        # no recognizable_alternatives → no expansion
     )
 
     matches = await p.match(Pattern("hello there"), ts)

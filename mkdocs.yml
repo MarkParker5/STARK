@@ -27,6 +27,7 @@ nav:
       - Raw Phonetic Tools (IPA & Simplephone): tools/raw-phonetic.md
       - Levenshtein - Fuzzy String Matching: tools/stark-levenshtein.md
       - Sliding Window Parser: tools/sliding-window-parser.md
+      - Recognizable Alternatives - Fuzzy Command Matching: tools/recognizable-alternatives.md
   - Advanced:
       - Optimization: advanced/optimization.md
       - Custom Run: advanced/custom-run.md

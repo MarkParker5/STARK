@@ -258,8 +258,7 @@ class PatternParser:
         return sorted(matches, key=lambda m: len(m.substring), reverse=True)
 
     def _expand_recognizable_suggestions(self, compiled: str, string: LocaleString) -> str:
-        if not get_flag(FeatureFlag.ENABLE_RECOGNIZABLE_EXPAND):
-            return compiled
+        """Inject recognizable alternatives into compiled regex. O(S) where S = suggestions."""
         from stark.models.transcription_string import TranscriptionString
 
         if not isinstance(string, TranscriptionString) or not string.recognizable_alternatives:

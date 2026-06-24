@@ -1,5 +1,7 @@
 # Dictionary - Phonetic Lookup
 
+> **Experimental.** This feature is functional but the API and behavior may change. See also [Recognizable Alternatives](recognizable-alternatives.md) which solves a similar problem at a different level. We're still exploring the best approach — feel free to use both, and please report your experience at https://github.com/MarkParker5/STARK/discussions.
+
 > NOTE: requires [libespeak-ng binary](https://github.com/espeak-ng/espeak-ng/blob/master/docs/guide.md#installation) installed in the system
 
 ## Overview

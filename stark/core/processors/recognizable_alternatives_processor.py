@@ -18,8 +18,8 @@ class RecognizableAlternativesProcessor(CommandsContextProcessor):
 
     Reads recognizable strings from the Localizer, computes phonetic suggestions
     against the input text, and appends them to TranscriptionString.recognizable_alternatives.
-    These are used by PatternParser._expand_recognizable_suggestions when
-    STARK_ENABLE_RECOGNIZABLE_EXPAND is enabled.
+    These are used by PatternParser._expand_recognizable_suggestions to widen
+    compiled regexes — automatically enabled when alternatives are present.
 
     Place this processor before SearchProcessor in the pipeline.
 
