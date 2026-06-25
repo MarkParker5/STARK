@@ -44,7 +44,6 @@ class LocaleString(str):
 
     language_code: LanguageCode
 
-    @classmethod
     def __new__(cls, value: str = "", language_code: LanguageCode = "base") -> Self:
         instance = super().__new__(cls, value)
         instance.language_code = language_code
@@ -162,8 +161,15 @@ class LocaleString(str):
         return self.replace(substring, "")
 
     def translate_position(self, position: int, from_track: str, to_track: str) -> int | None:
-        """Translate a character position from one substring index system to another's.
-        VoiceTranscriptionString overrides to translate via timestamps."""
+        """
+        Translate a character position from one substring index system to another's.
+        VoiceTranscriptionString overrides to translate via timestamps.
+
+        Return None if the position is out of bounds (no overlap).
+
+        Raises ValueError if the position can't be translated and overlap cannot be verified.
+
+        """
         if from_track == to_track:
             return position
         elif from_track in to_track:
@@ -171,10 +177,10 @@ class LocaleString(str):
         elif to_track in from_track:
             return position - from_track.index(to_track)
         else:
-            return None
-            # raise ValueError(
-            #     f"Cannot translate position from '{from_track}' to '{to_track}'; one must be a substring of the other"
-            # )
+            # return None
+            raise ValueError(
+                f"Cannot translate position from '{from_track}' to '{to_track}'; one must be a substring of the other"
+            )
 
     # --- repr ---
 

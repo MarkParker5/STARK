@@ -71,12 +71,28 @@ class SearchProcessor(CommandsContextProcessor):
             current_src, current_lang, current = current_entry
 
             # check for overlaps
-            current_start_in_prev = string.translate_position(current.match_result.start, current_src, prev_src)
+            try:
+                current_start_in_prev = string.translate_position(current.match_result.start, current_src, prev_src)
+            except ValueError:
+                # can't translate between tracks — drop lower priority
+                loser_entry = current_entry if prev.index < current.index else prev_entry
+                if loser_entry in tagged:
+                    tagged.remove(loser_entry)
+                continue
+
             if current_start_in_prev is None or prev.match_result.end <= current_start_in_prev:
                 # no overlap
                 continue
 
             # overlap — try to cut each in its own source text
+            try:
+                prev_end_in_current = string.translate_position(prev.match_result.end, prev_src, current_src)
+            except ValueError:
+                loser_entry = current_entry if prev.index < current.index else prev_entry
+                if loser_entry in tagged:
+                    tagged.remove(loser_entry)
+                continue
+
             prev_cut = (
                 await pattern_parser.match(
                     prev.command.get_pattern(prev_lang),
@@ -87,7 +103,6 @@ class SearchProcessor(CommandsContextProcessor):
                 else []
             )
 
-            prev_end_in_current = string.translate_position(prev.match_result.end, prev_src, current_src)
             current_cut = (
                 await pattern_parser.match(
                     current.command.get_pattern(current_lang),

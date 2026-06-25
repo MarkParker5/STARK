@@ -160,8 +160,9 @@ class VoiceTranscriptionTrack(BaseModel):
                 yield start_time, word.end
                 remaining = substring[:].strip()
 
-    def position_to_time(self, position: int) -> float:
-        assert 0 <= position <= len(self.text), ValueError("Position out of range")
+    def position_to_time(self, position: int) -> float | None:
+        if position < 0 or position > len(self.text) or not self.result:
+            return None
         offset = 0
         prev_end_time: float | None = None
         for w in self.result:
@@ -180,13 +181,11 @@ class VoiceTranscriptionTrack(BaseModel):
             # update offsets
             prev_end_time = w.end
             offset = word_end + 1
-        raise ValueError("Position not found")
-        # if self.result:
-        #     return self.result[-1].end
-        # return 0.0
+        return None
 
     def time_to_position(self, time: float) -> int | None:
-        assert 0 <= time <= self.result[-1].end, ValueError("Time out of range")
+        if not self.result or time < 0 or time > self.result[-1].end:
+            return None
         offset = 0
         for i, w in enumerate(self.result):
             word_start = offset

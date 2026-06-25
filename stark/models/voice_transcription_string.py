@@ -19,7 +19,6 @@ class VoiceTranscriptionString(TranscriptionString):
     _track: VoiceTranscriptionTrack | None
     _alternative_tracks: dict[str, VoiceTranscriptionTrack]
 
-    @classmethod
     def __new__(
         cls,
         value: str = "",
@@ -97,17 +96,18 @@ class VoiceTranscriptionString(TranscriptionString):
         )
 
     def translate_position(self, position: int, from_track: str, to_track: str) -> int | None:
-        """If None, position is out of range and cannot be translated - tracks don't overlap"""
+        """Return translated position, None if out of range (confirmed no overlap),
+        or raise ValueError if translation is impossible (can't verify overlap)."""
         try:
             return super().translate_position(position, from_track, to_track)
         except ValueError:
-            pass
-        assert isinstance(from_track, VoiceTranscriptionString) and isinstance(to_track, VoiceTranscriptionString), (
-            "from_track and to_track must either be substring of one another, or be VoiceTranscriptionString instances with timestamp metadata"
-        )
+            if not self._track or not self._alternative_tracks:
+                raise
         from_vt = self._get_track_for(from_track)
         to_vt = self._get_track_for(to_track)
         time = from_vt.position_to_time(position)
+        if time is None:
+            return None
         # get_slice preserves absolute timestamps, so time is in the same coordinate system for both tracks
         return to_vt.time_to_position(time)
 
