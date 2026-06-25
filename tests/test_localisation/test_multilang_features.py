@@ -1,5 +1,4 @@
 """Tests for multilanguage features: matrix matching, suggestions expansion, and relay confidence building."""
-import os
 
 import pytest
 
@@ -17,7 +16,6 @@ from stark.models.voice_transcription import (
     VoiceTranscriptionTrack,
     VoiceTranscriptionWord,
 )
-
 
 # --- Fixtures ---
 
@@ -46,7 +44,7 @@ def manager():
     m = CommandsManager()
 
     @m.new({"base": "hello $name:Word", "en": "hello $name:Word", "ru": "привет $name:Word"})
-    async def greet(name: Word) -> Response:
+    def greet(name: Word) -> Response:
         return Response(text=f"Hello {name}!")
 
     return m
@@ -63,11 +61,11 @@ async def test_matrix_matching_finds_command_in_alternative_track(parser, manage
         },
     )
 
-    processor = SearchProcessor()
-    results = await processor.search(ts, parser, manager.commands, [])
+    results = await SearchProcessor().search(ts, parser, manager.commands, [])
 
-    assert len(results) >= 1
+    assert len(results) == 1
     assert results[0].command.name == "CommandsManager.greet"
+    assert results[0].match_result.parameters["name"] == "world"
 
 
 async def test_matrix_matching_finds_russian_command_from_alternative(parser, manager):
@@ -144,14 +142,19 @@ async def test_suggestions_not_expanded_without_alternatives():
 
 def _make_word(word, lang, start, end, conf):
     return VoiceTranscriptionWord(
-        word=word, language_code=lang, char_start=0, char_end=len(word),
-        start=start, end=end, conf=conf,
+        word=word,
+        language_code=lang,
+        char_start=0,
+        char_end=len(word),
+        start=start,
+        end=end,
+        conf=conf,
     )
 
 
-def _make_track(words, lang='en'):
+def _make_track(words, lang="en"):
     return VoiceTranscriptionTrack(
-        text=' '.join(w.word for w in words),
+        text=" ".join(w.word for w in words),
         result=words,
         language_code=lang,
     )
@@ -162,15 +165,21 @@ def test_build_best_confidence_prefers_higher_confidence():
 
     relay = SpeechRecognizerRelay([])
 
-    en_track = _make_track([
-        _make_word("hello", "en", 0.0, 0.5, 0.9),
-        _make_word("world", "en", 0.5, 1.0, 0.8),
-    ], "en")
+    en_track = _make_track(
+        [
+            _make_word("hello", "en", 0.0, 0.5, 0.9),
+            _make_word("world", "en", 0.5, 1.0, 0.8),
+        ],
+        "en",
+    )
 
-    ru_track = _make_track([
-        _make_word("привет", "ru", 0.0, 0.5, 0.3),
-        _make_word("мир", "ru", 0.5, 1.0, 0.4),
-    ], "ru")
+    ru_track = _make_track(
+        [
+            _make_word("привет", "ru", 0.0, 0.5, 0.3),
+            _make_word("мир", "ru", 0.5, 1.0, 0.4),
+        ],
+        "ru",
+    )
 
     best = relay._build_best_confidence({en_track, ru_track})
 
@@ -183,21 +192,27 @@ def test_build_best_confidence_mixed_languages():
 
     relay = SpeechRecognizerRelay([])
 
-    en_track = _make_track([
-        _make_word("set", "en", 0.0, 0.3, 0.9),
-        _make_word("timer", "en", 0.3, 0.7, 0.8),
-        _make_word("for", "en", 0.7, 0.9, 0.9),
-        _make_word("two", "en", 0.9, 1.2, 0.3),
-        _make_word("hours", "en", 1.2, 1.6, 0.3),
-    ], "en")
+    en_track = _make_track(
+        [
+            _make_word("set", "en", 0.0, 0.3, 0.9),
+            _make_word("timer", "en", 0.3, 0.7, 0.8),
+            _make_word("for", "en", 0.7, 0.9, 0.9),
+            _make_word("two", "en", 0.9, 1.2, 0.3),
+            _make_word("hours", "en", 1.2, 1.6, 0.3),
+        ],
+        "en",
+    )
 
-    ru_track = _make_track([
-        _make_word("сет", "ru", 0.0, 0.3, 0.3),
-        _make_word("таймер", "ru", 0.3, 0.7, 0.3),
-        _make_word("фор", "ru", 0.7, 0.9, 0.3),
-        _make_word("два", "ru", 0.9, 1.2, 0.9),
-        _make_word("часа", "ru", 1.2, 1.6, 0.9),
-    ], "ru")
+    ru_track = _make_track(
+        [
+            _make_word("сет", "ru", 0.0, 0.3, 0.3),
+            _make_word("таймер", "ru", 0.3, 0.7, 0.3),
+            _make_word("фор", "ru", 0.7, 0.9, 0.3),
+            _make_word("два", "ru", 0.9, 1.2, 0.9),
+            _make_word("часа", "ru", 1.2, 1.6, 0.9),
+        ],
+        "ru",
+    )
 
     best = relay._build_best_confidence({en_track, ru_track})
 
@@ -239,7 +254,7 @@ def test_build_best_confidence_language_priority():
 
 
 async def test_recognizable_alternatives_processor(tmp_path, monkeypatch):
-    from pathlib import Path
+
     from stark.core.processors.recognizable_alternatives_processor import RecognizableAlternativesProcessor
 
     # create recognizable strings
@@ -250,12 +265,14 @@ async def test_recognizable_alternatives_processor(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
 
     from stark.general.localisation import Localizer
+
     localizer = Localizer(languages={"en"})
     localizer.load()
 
     parser = PatternParser(localizer=localizer)
 
     from unittest.mock import MagicMock
+
     context = MagicMock()
     context.pattern_parser = parser
 
@@ -285,19 +302,21 @@ def test_locale_string_translate_position_different_text():
 # --- Cross-track overlap resolution (VoiceTranscriptionString) ---
 
 
-from stark.models.voice_transcription_string import VoiceTranscriptionString
-
-
 def _vts_word(word, lang, start, end, conf=0.9):
     return VoiceTranscriptionWord(
-        word=word, language_code=lang, char_start=0, char_end=len(word),
-        start=start, end=end, conf=conf,
+        word=word,
+        language_code=lang,
+        char_start=0,
+        char_end=len(word),
+        start=start,
+        end=end,
+        conf=conf,
     )
 
 
-def _vts_track(words, lang='en'):
+def _vts_track(words, lang="en"):
     return VoiceTranscriptionTrack(
-        text=' '.join(w.word for w in words),
+        text=" ".join(w.word for w in words),
         result=words,
         language_code=lang,
     )
@@ -307,11 +326,11 @@ def _make_vts(en_words, ru_words):
     """Build a VoiceTranscriptionString with English primary and Russian alternative."""
     from stark.models.voice_transcription import Transcription
 
-    en_track = _vts_track(en_words, 'en')
-    ru_track = _vts_track(ru_words, 'ru')
+    en_track = _vts_track(en_words, "en")
+    ru_track = _vts_track(ru_words, "ru")
     transcription = Transcription(
         best=en_track,
-        origins={'en': en_track, 'ru': ru_track},
+        origins={"en": en_track, "ru": ru_track},
     )
     return transcription.to_voice_transcription_string()
 
@@ -465,7 +484,9 @@ async def test_single_track_no_cross_track_issues(cross_track_parser, cross_trac
     processor = SearchProcessor()
     results = await processor.search(
         LocaleString("set timer and play songs", "en"),
-        cross_track_parser, cross_track_manager.commands, [],
+        cross_track_parser,
+        cross_track_manager.commands,
+        [],
     )
 
     assert len(results) == 2

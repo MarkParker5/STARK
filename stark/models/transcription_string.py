@@ -66,7 +66,12 @@ class TranscriptionString(LocaleString):
             text_parts.append(word)
             offset = char_end + 1  # +1 for space
         text = " ".join(text_parts)
-        return cls(text, words=tw_list, alternative_texts=alternative_texts, recognizable_alternatives=recognizable_alternatives)
+        return cls(
+            text,
+            words=tw_list,
+            alternative_texts=alternative_texts,
+            recognizable_alternatives=recognizable_alternatives,
+        )
 
     @property
     def language_code(self) -> LanguageCode:
@@ -92,7 +97,9 @@ class TranscriptionString(LocaleString):
         try:
             start = str.index(self, value)
         except ValueError:
-            return TranscriptionString(value, self.language_code, (), self._alternative_texts, self.recognizable_alternatives)
+            return TranscriptionString(
+                value, self.language_code, (), self._alternative_texts, self.recognizable_alternatives
+            )
         end = start + len(value)
         return self._slice_by_offset(value, start, end)
 
@@ -126,16 +133,22 @@ class TranscriptionString(LocaleString):
                     new = ""  # only add replacement word once
                 continue
             if w.char_start >= old_end:
-                new_words.append(TranscriptionWord(w.word, w.language_code, w.char_start + len_diff, w.char_end + len_diff))
+                new_words.append(
+                    TranscriptionWord(w.word, w.language_code, w.char_start + len_diff, w.char_end + len_diff)
+                )
             else:
                 new_words.append(w)
 
-        return TranscriptionString(result_text, None, new_words, self._alternative_texts, self.recognizable_alternatives)
+        return TranscriptionString(
+            result_text, None, new_words, self._alternative_texts, self.recognizable_alternatives
+        )
 
     def strip(self, chars: str | None = None) -> TranscriptionString:
         result_str = str.strip(self, chars)
         if not result_str:
-            return TranscriptionString("", self.language_code, (), self._alternative_texts, self.recognizable_alternatives)
+            return TranscriptionString(
+                "", self.language_code, (), self._alternative_texts, self.recognizable_alternatives
+            )
         start = str.index(self, result_str)
         end = start + len(result_str)
         return self._slice_by_offset(result_str, start, end)
@@ -146,7 +159,11 @@ class TranscriptionString(LocaleString):
         search_start = 0
         for part in parts:
             if not part:
-                result.append(TranscriptionString("", self.language_code, (), self._alternative_texts, self.recognizable_alternatives))
+                result.append(
+                    TranscriptionString(
+                        "", self.language_code, (), self._alternative_texts, self.recognizable_alternatives
+                    )
+                )
                 continue
             try:
                 idx = str.index(self, part, search_start)
@@ -171,7 +188,9 @@ class TranscriptionString(LocaleString):
     # Cross-track overlap resolution requires timestamps — use VoiceTranscriptionString.
 
     def __repr__(self) -> str:
-        return f"TranscriptionString({str.__repr__(self)}, language_code={self.language_code!r}, words={len(self._words)})"
+        return (
+            f"TranscriptionString({str.__repr__(self)}, language_code={self.language_code!r}, words={len(self._words)})"
+        )
 
 
 def _majority_language(words: tuple[TranscriptionWord, ...] | list[TranscriptionWord]) -> LanguageCode | None:

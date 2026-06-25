@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import cast
+
 from stark.general.localisation.language_code import LanguageCode
 from stark.general.localisation.locale_string import LocaleString
 from stark.models.transcription_string import TranscriptionString, TranscriptionWord
@@ -17,6 +19,7 @@ class VoiceTranscriptionString(TranscriptionString):
     _track: VoiceTranscriptionTrack | None
     _alternative_tracks: dict[str, VoiceTranscriptionTrack]
 
+    @classmethod
     def __new__(
         cls,
         value: str = "",
@@ -28,6 +31,7 @@ class VoiceTranscriptionString(TranscriptionString):
         alternative_tracks: dict[str, VoiceTranscriptionTrack] | None = None,
     ) -> VoiceTranscriptionString:
         instance = super().__new__(cls, value, language_code, words, alternative_texts, recognizable_alternatives)
+        instance = cast(VoiceTranscriptionString, instance)
         instance._track = track
         instance._alternative_tracks = alternative_tracks or {}
         return instance
@@ -92,27 +96,28 @@ class VoiceTranscriptionString(TranscriptionString):
             self._alternative_tracks,
         )
 
-    def translate_position(self, position: int, from_track: str, to_track: str) -> int:
-        if not self._track or from_track == to_track:
-            return position
+    def translate_position(self, position: int, from_track: str, to_track: str) -> int | None:
+        """If None, position is out of range and cannot be translated - tracks don't overlap"""
+        try:
+            return super().translate_position(position, from_track, to_track)
+        except ValueError:
+            pass
+        assert isinstance(from_track, VoiceTranscriptionString) and isinstance(to_track, VoiceTranscriptionString), (
+            "from_track and to_track must either be substring of one another, or be VoiceTranscriptionString instances with timestamp metadata"
+        )
         from_vt = self._get_track_for(from_track)
-        if not from_vt:
-            return position
-        time = from_vt.position_to_time(position)
-        if time is None:
-            return position
         to_vt = self._get_track_for(to_track)
-        if not to_vt:
-            return position
+        time = from_vt.position_to_time(position)
+        # get_slice preserves absolute timestamps, so time is in the same coordinate system for both tracks
         return to_vt.time_to_position(time)
 
-    def _get_track_for(self, text: str) -> VoiceTranscriptionTrack | None:
-        if self._track and self._track.text == text:
+    def _get_track_for(self, text: str) -> VoiceTranscriptionTrack:
+        if self._track and text in self._track.text:
             return self._track
         for alt_track in self._alternative_tracks.values():
-            if alt_track.text == text:
+            if text in alt_track.text:
                 return alt_track
-        return self._track
+        raise ValueError(f"no track found for text: {text}")
 
     def _slice_track_for(self, value: str) -> VoiceTranscriptionTrack | None:
         if not self._track or not value:

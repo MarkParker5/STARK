@@ -92,6 +92,7 @@ class VoiceTranscriptionTrack(BaseModel):
         self.text = " ".join(word.word for word in self.result)
 
     def get_slice(self, start: float, end: float) -> VoiceTranscriptionTrack:
+        # word timestamps are preserved as-is (absolute), not rebased to zero; translate_position relies on this
         new_track = VoiceTranscriptionTrack(
             text="",
             result=[],
@@ -159,34 +160,49 @@ class VoiceTranscriptionTrack(BaseModel):
                 yield start_time, word.end
                 remaining = substring[:].strip()
 
-    def position_to_time(self, position: int) -> float | None:
-        char_count = 0
-        for word in self.text.split():
-            word_start = self.text.index(word, char_count)
-            word_end = word_start + len(word)
+    def position_to_time(self, position: int) -> float:
+        assert 0 <= position <= len(self.text), ValueError("Position out of range")
+        offset = 0
+        prev_end_time: float | None = None
+        for w in self.result:
+            word_start = offset
+            word_end = offset + len(w.word)
+            if position < word_start:
+                # position is on the space between prev word and this one
+                if prev_end_time is not None:  # get the point between prev and current word
+                    return (prev_end_time + w.start) / 2
+                # if no prev word, this is the first word, return its start time
+                return w.start
             if word_start <= position <= word_end:
-                frac = (position - word_start) / max(len(word), 1)
-                for w in self.result:
-                    if w.word == word:
-                        return w.start + frac * (w.end - w.start)
-                return None
-            char_count = word_end + 1
-        return None
+                # return timestamp in the word's range proportional to in-word char position
+                frac = (position - word_start) / max(len(w.word), 1)
+                return w.start + frac * (w.end - w.start)
+            # update offsets
+            prev_end_time = w.end
+            offset = word_end + 1
+        raise ValueError("Position not found")
+        # if self.result:
+        #     return self.result[-1].end
+        # return 0.0
 
-    def time_to_position(self, time: float) -> int:
-        char_count = 0
-        for word in self.text.split():
-            word_start = self.text.index(word, char_count)
-            for w in self.result:
-                if w.word == word:
-                    if w.start <= time <= w.end:
-                        frac = (time - w.start) / max(w.end - w.start, 0.001)
-                        return int(word_start + frac * len(word))
-                    if w.start > time:
-                        return word_start
-                    break
-            char_count = word_start + len(word) + 1
-        return len(self.text)
+    def time_to_position(self, time: float) -> int | None:
+        assert 0 <= time <= self.result[-1].end, ValueError("Time out of range")
+        offset = 0
+        for i, w in enumerate(self.result):
+            word_start = offset
+            if w.start <= time <= w.end:
+                frac = (time - w.start) / max(w.end - w.start, 0.001)
+                return int(word_start + frac * len(w.word))
+            if w.start > time:
+                # time falls in the gap before this word
+                if i > 0:
+                    prev = self.result[i - 1]
+                    return offset - 1  # the space char
+                return word_start
+            offset = word_start + len(w.word) + 1
+        # raise ValueError("Position not found")
+        # return len(self.text)
+        return None
 
     def to_voice_transcription_string(self) -> VoiceTranscriptionString:
         from stark.models.voice_transcription_string import VoiceTranscriptionString
@@ -207,35 +223,6 @@ class VoiceTranscriptionTrack(BaseModel):
             )
             offset += len(w.word) + 1
         return VoiceTranscriptionString(self.text, None, tuple(adjusted), track=self)
-
-    def position_to_time(self, position: int) -> float | None:
-        char_count = 0
-        for word in self.text.split():
-            word_start = self.text.index(word, char_count)
-            word_end = word_start + len(word)
-            if word_start <= position <= word_end:
-                frac = (position - word_start) / max(len(word), 1)
-                word_times = list(self.get_time(word))
-                if word_times:
-                    wt_start, wt_end = word_times[0]
-                    return wt_start + frac * (wt_end - wt_start)
-                return None
-            char_count = word_end + 1
-        return None
-
-    def time_to_position(self, time: float) -> int:
-        char_count = 0
-        for word in self.text.split():
-            word_start_char = self.text.index(word, char_count)
-            word_end_char = word_start_char + len(word)
-            word_times = list(self.get_time(word))
-            if word_times and word_times[0][0] <= time <= word_times[0][1]:
-                frac = (time - word_times[0][0]) / max(word_times[0][1] - word_times[0][0], 0.001)
-                return int(word_start_char + frac * len(word))
-            if word_times and word_times[0][0] > time:
-                return word_start_char
-            char_count = word_end_char + 1
-        return len(self.text)
 
     def __hash__(self) -> int:
         return hash(self.text)

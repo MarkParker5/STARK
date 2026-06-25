@@ -60,8 +60,9 @@ class SearchProcessor(CommandsContextProcessor):
                 tagged.append((source_text, track_lang, r))
 
         # sort by start position (translated to primary track for ordering)
-        primary = str(string)
-        tagged.sort(key=lambda t: string.translate_position(t[2].match_result.start, t[0], primary))
+        # primary = str(string)
+        # tagged.sort(key=lambda t: string.translate_position(t[2].match_result.start, t[0], primary))
+        tagged.sort(key=lambda t: t[2].match_result.start)
 
         # resolve overlaps — each result lives in its own source track's coordinates
         # translate between tracks on demand for comparison and cutting
@@ -69,14 +70,13 @@ class SearchProcessor(CommandsContextProcessor):
             prev_src, prev_lang, prev = prev_entry
             current_src, current_lang, current = current_entry
 
-            # translate prev.end into current's coordinate system to check overlap
-            prev_end_in_current = string.translate_position(prev.match_result.end, prev_src, current_src)
-
-            if prev_end_in_current <= current.match_result.start:
+            # check for overlaps
+            current_start_in_prev = string.translate_position(current.match_result.start, current_src, prev_src)
+            if current_start_in_prev is None or prev.match_result.end <= current_start_in_prev:
+                # no overlap
                 continue
 
             # overlap — try to cut each in its own source text
-            current_start_in_prev = string.translate_position(current.match_result.start, current_src, prev_src)
             prev_cut = (
                 await pattern_parser.match(
                     prev.command.get_pattern(prev_lang),
@@ -87,13 +87,14 @@ class SearchProcessor(CommandsContextProcessor):
                 else []
             )
 
+            prev_end_in_current = string.translate_position(prev.match_result.end, prev_src, current_src)
             current_cut = (
                 await pattern_parser.match(
                     current.command.get_pattern(current_lang),
                     current_src[prev_end_in_current : current.match_result.end],
                     recognized_entities,
                 )
-                if prev_end_in_current < current.match_result.end
+                if prev_end_in_current is not None and prev_end_in_current < current.match_result.end
                 else []
             )
 

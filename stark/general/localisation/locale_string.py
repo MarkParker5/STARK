@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Sequence
+from typing import Self, Sequence, SupportsIndex
 
 from stark.general.localisation.language_code import LanguageCode
 
@@ -44,127 +44,137 @@ class LocaleString(str):
 
     language_code: LanguageCode
 
-    def __new__(cls, value: str = "", language_code: LanguageCode = "base") -> LocaleString:
+    @classmethod
+    def __new__(cls, value: str = "", language_code: LanguageCode = "base") -> Self:
         instance = super().__new__(cls, value)
         instance.language_code = language_code
         return instance
 
-    def _with(self, value: str) -> LocaleString:
-        return LocaleString(value, self.language_code)
+    def _with(self, value: str) -> Self:
+        return self.__class__(value, self.language_code)
 
     # --- operators ---
 
-    def __getitem__(self, key) -> LocaleString:
+    def __getitem__(self, key) -> Self:
         return self._with(super().__getitem__(key))
 
-    def __add__(self, other: str) -> LocaleString:
+    def __add__(self, other: str) -> Self:
         return self._with(super().__add__(other))
 
-    def __radd__(self, other: str) -> LocaleString:
+    def __radd__(self, other: str) -> Self:
         return self._with(other.__add__(self))
 
-    def __mul__(self, n: int) -> LocaleString:
+    def __mul__(self, n: SupportsIndex) -> Self:
         return self._with(super().__mul__(n))
 
-    def __rmul__(self, n: int) -> LocaleString:
+    def __rmul__(self, n: SupportsIndex) -> Self:
         return self._with(super().__rmul__(n))
 
-    def __mod__(self, args) -> LocaleString:
+    def __mod__(self, args) -> Self:
         return self._with(super().__mod__(args))
 
     # --- str → str methods ---
 
-    def replace(self, old: str, new: str, count: int = -1) -> LocaleString:
+    def replace(self, old: str, new: str, count: SupportsIndex = -1) -> Self:
         return self._with(super().replace(old, new, count))
 
-    def strip(self, chars: str | None = None) -> LocaleString:
+    def strip(self, chars: str | None = None) -> Self:
         return self._with(super().strip(chars))
 
-    def lstrip(self, chars: str | None = None) -> LocaleString:
+    def lstrip(self, chars: str | None = None) -> Self:
         return self._with(super().lstrip(chars))
 
-    def rstrip(self, chars: str | None = None) -> LocaleString:
+    def rstrip(self, chars: str | None = None) -> Self:
         return self._with(super().rstrip(chars))
 
-    def lower(self) -> LocaleString:
+    def lower(self) -> Self:
         return self._with(super().lower())
 
-    def upper(self) -> LocaleString:
+    def upper(self) -> Self:
         return self._with(super().upper())
 
-    def title(self) -> LocaleString:
+    def title(self) -> Self:
         return self._with(super().title())
 
-    def capitalize(self) -> LocaleString:
+    def capitalize(self) -> Self:
         return self._with(super().capitalize())
 
-    def casefold(self) -> LocaleString:
+    def casefold(self) -> Self:
         return self._with(super().casefold())
 
-    def swapcase(self) -> LocaleString:
+    def swapcase(self) -> Self:
         return self._with(super().swapcase())
 
-    def center(self, width: int, fillchar: str = " ") -> LocaleString:
+    def center(self, width: SupportsIndex, fillchar: str = " ") -> Self:
         return self._with(super().center(width, fillchar))
 
-    def ljust(self, width: int, fillchar: str = " ") -> LocaleString:
+    def ljust(self, width: SupportsIndex, fillchar: str = " ") -> Self:
         return self._with(super().ljust(width, fillchar))
 
-    def rjust(self, width: int, fillchar: str = " ") -> LocaleString:
+    def rjust(self, width: SupportsIndex, fillchar: str = " ") -> Self:
         return self._with(super().rjust(width, fillchar))
 
-    def zfill(self, width: int) -> LocaleString:
+    def zfill(self, width: SupportsIndex) -> Self:
         return self._with(super().zfill(width))
 
-    def expandtabs(self, tabsize: int = 8) -> LocaleString:
+    def expandtabs(self, tabsize: SupportsIndex = 8) -> Self:
         return self._with(super().expandtabs(tabsize))
 
-    def join(self, iterable) -> LocaleString:
+    def join(self, iterable) -> Self:
         return self._with(super().join(iterable))
 
-    def format(self, *args, **kwargs) -> LocaleString:
+    def format(self, *args, **kwargs) -> Self:
         return self._with(super().format(*args, **kwargs))
 
-    def format_map(self, mapping) -> LocaleString:
+    def format_map(self, mapping) -> Self:
         return self._with(super().format_map(mapping))
 
-    def removeprefix(self, prefix: str) -> LocaleString:
+    def removeprefix(self, prefix: str) -> Self:
         return self._with(super().removeprefix(prefix))
 
-    def removesuffix(self, suffix: str) -> LocaleString:
+    def removesuffix(self, suffix: str) -> Self:
         return self._with(super().removesuffix(suffix))
 
     # --- str → list[str] methods ---
 
-    def split(self, sep: str | None = None, maxsplit: int = -1) -> Sequence[LocaleString]:
+    def split(self, sep: str | None = None, maxsplit: SupportsIndex = -1) -> Sequence[Self]:  # type: ignore[override]
         return [self._with(s) for s in super().split(sep, maxsplit)]
 
-    def rsplit(self, sep: str | None = None, maxsplit: int = -1) -> Sequence[LocaleString]:
+    def rsplit(self, sep: str | None = None, maxsplit: SupportsIndex = -1) -> Sequence[Self]:  # type: ignore[override]
         return [self._with(s) for s in super().rsplit(sep, maxsplit)]
 
-    def splitlines(self, keepends: bool = False) -> Sequence[LocaleString]:
+    def splitlines(self, keepends: bool = False) -> Sequence[Self]:  # type: ignore[override]
         return [self._with(s) for s in super().splitlines(keepends)]
 
     # --- str → tuple[str, ...] methods ---
 
-    def partition(self, sep: str) -> tuple[LocaleString, LocaleString, LocaleString]:
+    def partition(self, sep: str) -> tuple[Self, Self, Self]:
         a, b, c = super().partition(sep)
         return self._with(a), self._with(b), self._with(c)
 
-    def rpartition(self, sep: str) -> tuple[LocaleString, LocaleString, LocaleString]:
+    def rpartition(self, sep: str) -> tuple[Self, Self, Self]:
         a, b, c = super().rpartition(sep)
         return self._with(a), self._with(b), self._with(c)
 
     # --- utility ---
 
-    def removing(self, substring: str) -> LocaleString:
+    def removing(self, substring: str) -> Self:
         return self.replace(substring, "")
 
-    def translate_position(self, position: int, from_track: str, to_track: str) -> int:
-        """Translate a character position from one track's coordinate system to another's.
-        For plain LocaleString, all tracks share the same coordinate system (identity).
+    def translate_position(self, position: int, from_track: str, to_track: str) -> int | None:
+        """Translate a character position from one substring index system to another's.
         VoiceTranscriptionString overrides to translate via timestamps."""
-        return position
+        if from_track == to_track:
+            return position
+        elif from_track in to_track:
+            return position + to_track.index(from_track)
+        elif to_track in from_track:
+            return position - from_track.index(to_track)
+        else:
+            return None
+            # raise ValueError(
+            #     f"Cannot translate position from '{from_track}' to '{to_track}'; one must be a substring of the other"
+            # )
 
     # --- repr ---
 
