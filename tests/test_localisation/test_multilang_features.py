@@ -315,6 +315,101 @@ def test_translate_position_ru_to_en():
     assert vts.translate_position(0, "поставь таймер", "set timer") == 0
 
 
+# --- LanguageCode DI: cross-track commands get their own language ---
+
+
+async def test_cross_track_commands_receive_correct_language_code(commands_context_flow, autojump_clock):
+    """Two commands matched from different tracks each receive the language of their own match."""
+    from stark.general.localisation.language_code import LanguageCode
+
+    async with commands_context_flow() as (manager, context, context_delegate):
+
+        @manager.new({"en": "set timer"})
+        async def set_timer(lang: LanguageCode) -> Response:
+            return Response(text=f"timer:{lang}")
+
+        @manager.new({"ru": "включи музыку"})
+        async def play_music(lang: LanguageCode) -> Response:
+            return Response(text=f"music:{lang}")
+
+        vts = _make_vts(
+            en_words=[
+                _vts_word("set", "en", 0.0, 0.3),
+                _vts_word("timer", "en", 0.3, 0.7),
+                _vts_word("lucci", "en", 0.9, 1.2),
+                _vts_word("music", "en", 1.2, 1.6),
+            ],
+            ru_words=[
+                _vts_word("сет", "ru", 0.0, 0.3),
+                _vts_word("таймер", "ru", 0.3, 0.7),
+                _vts_word("и", "ru", 0.7, 0.9),
+                _vts_word("включи", "ru", 0.9, 1.2),
+                _vts_word("музыку", "ru", 1.2, 1.6),
+            ],
+        )
+
+        import anyio
+
+        await context.process_string(vts)
+        await anyio.sleep(1)
+
+        texts = {r.text for r in context_delegate.responses}
+        assert "timer:en" in texts
+        assert "music:ru" in texts
+
+
+async def test_mixed_language_single_track_language_changes_per_match(commands_context_flow, autojump_clock):
+    """Single 'best' track with English words first and Russian words second.
+    Two commands match different portions — each receives the majority language
+    of its own matched substring after slicing."""
+    from stark.general.localisation.language_code import LanguageCode
+    from stark.models.voice_transcription import Transcription
+
+    async with commands_context_flow() as (manager, context, context_delegate):
+
+        @manager.new({"en": "set timer"})
+        async def set_timer(lang: LanguageCode) -> Response:
+            return Response(text=f"timer:{lang}")
+
+        @manager.new({"ru": "включи музыку"})
+        async def play_music(lang: LanguageCode) -> Response:
+            return Response(text=f"music:{lang}")
+
+        # single best track: en words then ru words (mixed-language utterance)
+        best_words = [
+            VoiceTranscriptionWord(
+                word="set", language_code="en", char_start=0, char_end=3, start=0.0, end=0.3, conf=0.9
+            ),
+            VoiceTranscriptionWord(
+                word="timer", language_code="en", char_start=4, char_end=9, start=0.3, end=0.7, conf=0.9
+            ),
+            VoiceTranscriptionWord(
+                word="включи", language_code="ru", char_start=10, char_end=16, start=0.9, end=1.2, conf=0.9
+            ),
+            VoiceTranscriptionWord(
+                word="музыку", language_code="ru", char_start=17, char_end=23, start=1.2, end=1.6, conf=0.9
+            ),
+        ]
+        best_track = VoiceTranscriptionTrack(
+            text="set timer включи музыку",
+            result=best_words,
+            language_code="en",
+        )
+        transcription = Transcription(best=best_track)
+        vts = transcription.to_voice_transcription_string()
+
+        import anyio
+
+        await context.process_string(vts)
+        await anyio.sleep(1)
+
+        texts = {r.text for r in context_delegate.responses}
+        # "set timer" slice has majority en words → lang="en"
+        assert "timer:en" in texts
+        # "включи музыку" matched from ru track → lang="ru"
+        assert "music:ru" in texts
+
+
 # --- matrix matching: sequential (no overlap) ---
 
 

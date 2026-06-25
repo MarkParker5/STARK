@@ -32,20 +32,25 @@ If the key is not found, `localize()` emits a `RuntimeWarning` and falls back to
 
 ## Using in Commands
 
-`Response.text` and `Response.voice` accept both plain `str` and `LocalizableString`:
+`Response.text` and `Response.voice` accept both plain `str` and `LocalizableString`.
+
+To know which language to respond in, annotate any parameter with `LanguageCode` — the framework injects the language of the matched substring automatically via dependency injection. The parameter name doesn't matter, only the type annotation:
 
 ```python
+from stark.general.localisation.language_code import LanguageCode
+
 @manager.new({
     "base": "hello $name:Word",
     "ru": "привет $name:Word",
 })
-async def greet(name: Word) -> Response:
-    lang = name.value.language_code  # from the parsed input
+async def greet(name: Word, lang: LanguageCode) -> Response:
     return Response(
         text=LocalizableString("greeting_response", lang, name=str(name)),
         voice=LocalizableString("greeting_response", lang, name=str(name)),
     )
 ```
+
+When the user says "привет мир", the pattern matches via the Russian pattern, so `lang` is `"ru"`. When they say "hello world", `lang` is `"en"`. For mixed-language input with `TranscriptionString`, the language is the majority language of the matched substring's words.
 
 ## Resolving at Response Time
 

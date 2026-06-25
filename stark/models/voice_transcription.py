@@ -119,6 +119,11 @@ class VoiceTranscriptionTrack(BaseModel):
             )
 
         new_track.text = " ".join(word.word for word in new_track.result)
+        if new_track.result:
+            from collections import Counter
+
+            counts = Counter(w.language_code for w in new_track.result)
+            new_track.language_code = counts.most_common(1)[0][0]
         return new_track
 
     def get_time(
@@ -257,7 +262,7 @@ class Transcription(BaseModel):
         offset = 0
         voice_words: list[VoiceTranscriptionWord] = []
         for w in best.result:
-            lang = best.language_code
+            lang = w.language_code or best.language_code
             # find which origin had the highest confidence for this word's time
             for origin_lang, origin_track in self.origins.items():
                 for ow in origin_track.result:

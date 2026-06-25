@@ -16,8 +16,9 @@ from stark.core.commands_context_processor import (
 from stark.core.parsing import PatternParser
 from stark.core.types.object import Object
 from stark.general.localisation import LocaleString, Localizer
+from stark.general.localisation.language_code import LanguageCode
 
-from ..general.dependencies import DependencyManager, default_dependency_manager
+from ..general.dependencies import Dependency, DependencyManager, default_dependency_manager
 from .command import (
     AsyncResponseHandler,
     Command,
@@ -104,9 +105,7 @@ class CommandsContext:
 
         for processor in self.processors:
             logger.debug(f"Processing context {processor=} with {string=} {recognized_entities=} {self.context_queue=}")
-            search_results, context_pops = await processor.process_string(
-                string, self, recognized_entities
-            )
+            search_results, context_pops = await processor.process_string(string, self, recognized_entities)
             if search_results:
                 # Pop contexts as directed by processor
                 for _ in range(context_pops):
@@ -123,7 +122,15 @@ class CommandsContext:
             parameters: dict[str, Object] = {}
             parameters.update(current_context.parameters)
             parameters.update(search_result.match_result.parameters)
+
+            substring = search_result.match_result.substring
+            lang = substring.language_code if isinstance(substring, LocaleString) else string.language_code
+            lang_dep = Dependency(None, LanguageCode, lang)
+            self.dependency_manager.dependencies.add(lang_dep)
             parameters.update(self.dependency_manager.resolve(search_result.command._runner))
+            # language is a command-specific temporary dependency
+            self.dependency_manager.dependencies.discard(lang_dep)
+
             self.run_command(search_result.command, parameters)
 
         return search_results or []

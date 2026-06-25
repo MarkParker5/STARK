@@ -16,6 +16,21 @@ async def hello(handler: AsyncResponseHandler) -> Response:
 
 In the showcased example, the `AsyncResponseHandler` is automatically injected into the `foo` command function upon its invocation.
 
+## Language Code
+
+The `LanguageCode` dependency provides the language of the substring that matched the command's pattern. It's injected per-command — if two commands match in different languages from the same input, each receives its own language. Matched by type annotation; the parameter name doesn't matter.
+
+```python
+from stark.general.localisation.language_code import LanguageCode
+from stark.general.localisation import LocalizableString
+
+@manager.new({"en": "set timer", "ru": "поставь таймер"})
+async def set_timer(lang: LanguageCode) -> Response:
+    return Response(text=LocalizableString("timer_set", lang))
+```
+
+When the user says "поставь таймер", `lang` is `"ru"`. When they say "set timer", `lang` is `"en"`. For mixed-language input with `TranscriptionString`, the language is the majority language of the matched substring's words.
+
 ## `inject_dependency`
 
 The `inject_dependency` method serves to integrate specific dependencies into a function. This method determines the function's dependencies and subsequently calls it. Contrary to the response handler, this dependency is identified by the argument's name.
