@@ -7,6 +7,7 @@ from asyncer import SoonValue, create_task_group
 from stark.core.parsing import MatchResult, PatternParser, RecognizedEntity
 from stark.general.feature_flags import FeatureFlag, get_flag
 from stark.general.localisation import LocaleString
+from stark.general.localisation.language_code import LanguageCode
 
 from ..command import Command
 from ..commands_context import CommandsContext, CommandsContextLayer
@@ -133,7 +134,7 @@ class SearchProcessor(CommandsContextProcessor):
     async def _match_commands(
         self,
         string: str | LocaleString,
-        language_code: str,
+        language_code: LanguageCode,
         pattern_parser: PatternParser,
         commands: list[Command],
         recognized_entities: list[RecognizedEntity],

@@ -1,6 +1,8 @@
+import re
 from dataclasses import dataclass
 from pathlib import Path
-import re
+
+from stark.general.localisation.language_code import LanguageCode
 
 
 @dataclass
@@ -13,12 +15,12 @@ class String:
 class StringsFile:
 
     strings: dict[str, String]
-    language_code: str
+    language_code: LanguageCode
     path: Path
 
     _pattern = re.compile(r'(\/\*(?P<comment>[\s\S]*?)\*\/)?[\s]*"(?P<key>[^"]+)"\s?=\s?"(?P<value>[^"]+)";')
 
-    def __init__(self, path: Path, language_code: str):
+    def __init__(self, path: Path, language_code: LanguageCode):
         self.path = path
         self.language_code = language_code
         self.strings = {}

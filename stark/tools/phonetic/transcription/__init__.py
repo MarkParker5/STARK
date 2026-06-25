@@ -1,13 +1,16 @@
-from .protocol import IpaProvider
+from functools import lru_cache
+
+from stark.general.localisation.language_code import LanguageCode
+
 from .espeak import EspeakIpaProvider
 from .ipa2lat import ipa2lat
-from functools import lru_cache
+from .protocol import IpaProvider
 
 
 @lru_cache
 def transcription(
     string: str,
-    language_code: str,
+    language_code: LanguageCode,
     ipa_provider: IpaProvider = EspeakIpaProvider(),
 ) -> str:
     """

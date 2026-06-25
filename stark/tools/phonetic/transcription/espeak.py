@@ -4,6 +4,8 @@ import re
 import sys
 import threading
 from typing import Generator, Optional, final
+
+from stark.general.localisation.language_code import LanguageCode
 import ctypes.util
 
 
@@ -130,7 +132,7 @@ class EspeakIpaProvider:
     def __init__(self, check_chars: bool = True):
         self.check_chars = check_chars
 
-    def to_ipa(self, string: str, language_code: str) -> str:
+    def to_ipa(self, string: str, language_code: LanguageCode) -> str:
         with _espeak_lock:
             global espeak
             if espeak is None:
