@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import time
 import urllib.request
 import zipfile
 from datetime import datetime
@@ -66,6 +67,7 @@ class VoskSpeechRecognizer(SpeechRecognizer):
 
     is_recognizing = True
     _is_listening = False
+    _stream_start_monotonic: float = 0.0
 
     _stored_speakers: dict[int, list[int]] = {}
     _speaker_trashold = 0.75
@@ -144,6 +146,7 @@ class VoskSpeechRecognizer(SpeechRecognizer):
 
         self.last_partial_result = ""
         self.last_partial_update_time = None
+        self._stream_start_monotonic = time.monotonic()
         self._is_listening = True
 
         while self._is_listening:
@@ -184,6 +187,7 @@ class VoskSpeechRecognizer(SpeechRecognizer):
                 spk = []
                 spk_frames = 0
                 if isinstance(result, KaldiMBR):
+                    t0 = self._stream_start_monotonic
                     for kw in result.result:
                         voice_words.append(
                             VoiceTranscriptionWord(
@@ -191,8 +195,8 @@ class VoskSpeechRecognizer(SpeechRecognizer):
                                 language_code=self.language_code,
                                 char_start=0,
                                 char_end=len(kw.word),
-                                start=kw.start,
-                                end=kw.end,
+                                start=t0 + kw.start,
+                                end=t0 + kw.end,
                                 conf=kw.conf,
                             )
                         )
