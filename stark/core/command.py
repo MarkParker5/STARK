@@ -43,10 +43,10 @@ CommandRunner = TypeVar("CommandRunner", bound=SyncCommandRunner | AsyncCommandR
 
 class Command(Generic[CommandRunner]):
     name: str
-    patterns: dict[str, Pattern]
+    patterns: dict[LanguageCode, Pattern]
     _runner: CommandRunner
 
-    def __init__(self, name: str, patterns: dict[str, Pattern], runner: CommandRunner):
+    def __init__(self, name: str, patterns: dict[LanguageCode, Pattern], runner: CommandRunner):
         assert patterns and all(isinstance(p, Pattern) for p in patterns.values())
         self.name = name
         self.patterns = patterns

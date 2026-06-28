@@ -4,6 +4,7 @@ from stark.general.localisation.language_code import LanguageCode
 
 from .espeak import EspeakIpaProvider
 from .ipa2lat import ipa2lat
+from .latin_passthrough import LatinPassthroughProvider
 from .protocol import IpaProvider
 
 

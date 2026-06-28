@@ -37,10 +37,10 @@ nav:
       - Custom Processors: advanced/custom-processors.md
       - Feature Flags: advanced/feature-flags.md
   - Localization and Multi-Language:
-      - localization-and-multi-language/index.md
-      - Localizing Parsing: localization-and-multi-language/localizing-parsing.md
-      - Multilanguage Input: localization-and-multi-language/multilanguage-input.md
-      - Localizing Responses: localization-and-multi-language/localizing-responses.md
+      - localization-and-multilingual/index.md
+      - Localizing Parsing: localization-and-multilingual/localizing-parsing.md
+      - Multilanguage Input: localization-and-multilingual/multilanguage-input.md
+      - Localizing Responses: localization-and-multilingual/localizing-responses.md
   - Other: advanced/other.md # TODO: <-
   # - S.T.A.R.K P.L.A.C.E Navigator: /stark-place-navigator.md
 

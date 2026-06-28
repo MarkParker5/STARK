@@ -1,7 +1,7 @@
 import warnings
 
 from stark.core.command import Command
-from stark.core.parsing import PatternParser, _LOCALIZER_KEY_REGEX
+from stark.core.parsing import _LOCALIZER_KEY_REGEX, PatternParser
 
 
 def health_check(pattern_parser: PatternParser, commands: list[Command]) -> None:
@@ -32,17 +32,19 @@ def health_check(pattern_parser: PatternParser, commands: list[Command]) -> None
         for lang, cmd_pattern in command.patterns.items():
             if pattern_parser.localizer and pattern_parser._has_localizer_keys(cmd_pattern):
                 for key in _LOCALIZER_KEY_REGEX.findall(cmd_pattern._origin):
-                    pattern_parser.localizer.verify_key_exists(key)
+                    pattern_parser.localizer.verify_recognizable(key)
         for param in command.get_pattern("base").parameters.values():
             assert param.type_name in pattern_parser.parameter_types_by_name, (
-                f"Unknown parameter type '{param.type_name}' in pattern '{command.get_pattern("base")}' of command '{command.name}'. Known types: {sorted(pattern_parser.parameter_types_by_name.keys())}"
+                f"Unknown parameter type '{param.type_name}' in pattern '{command.get_pattern('base')}' of command '{command.name}'. Known types: {sorted(pattern_parser.parameter_types_by_name.keys())}"
             )
 
     # 5. Commands: all pattern params are expected by the runner func
     for command in commands:
         pattern_params = set(command.get_pattern("base").parameters.keys())
         runner_params = set(command._runner.__annotations__.keys())
-        assert pattern_params <= runner_params, f"Command '{command.name}' function missing parameters: {pattern_params - runner_params}"
+        assert pattern_params <= runner_params, (
+            f"Command '{command.name}' function missing parameters: {pattern_params - runner_params}"
+        )
 
     # 6. Pattern syntax validity (TODO)
     # for command in commands:
@@ -54,7 +56,9 @@ def health_check(pattern_parser: PatternParser, commands: list[Command]) -> None
             try:
                 pattern_parser._compile_pattern(p, language_code=lang)
             except Exception as e:
-                warnings.warn(f"Failed to compile pattern '{p}' of type '{reg_type.type.__name__}' (language '{lang}'): {e}")
+                warnings.warn(
+                    f"Failed to compile pattern '{p}' of type '{reg_type.type.__name__}' (language '{lang}'): {e}"
+                )
     for command in commands:
         for lang, p in command.patterns.items():
             try:

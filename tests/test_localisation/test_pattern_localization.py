@@ -125,7 +125,7 @@ async def test_at_key_missing_key(tmp_path, monkeypatch):
     localizer = Localizer(languages={"en"})
     localizer.load()
 
-    with pytest.raises(KeyError, match="nonexistent_key"):
+    with pytest.warns(RuntimeWarning, match="nonexistent_key.*not found.*Added.*Translation needed"):
         parser = PatternParser(localizer=localizer)
 
         class BadType2(Object):

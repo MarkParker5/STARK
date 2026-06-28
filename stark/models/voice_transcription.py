@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Generator, NamedTuple
+from typing import TYPE_CHECKING, Generator
 
 from pydantic import BaseModel, Field
 
 from stark.general.localisation.language_code import LanguageCode
-from stark.models.transcription_string import TranscriptionWord
+from stark.models.transcription_string import Correction, TranscriptionWord
 
 if TYPE_CHECKING:
     from stark.models.voice_transcription_string import VoiceTranscriptionString
@@ -232,15 +232,10 @@ class VoiceTranscriptionTrack(BaseModel):
         return hash(self.text)
 
 
-class Suggestion(NamedTuple):
-    variant: str
-    keyword: str
-
-
 class Transcription(BaseModel):
     best: VoiceTranscriptionTrack
     origins: dict[str, VoiceTranscriptionTrack] = Field(default_factory=dict)
-    suggestions: list[Suggestion] = Field(default_factory=list)
+    corrections: list[Correction] = Field(default_factory=list)
 
     def replace(self, substring: str, replacement: str):
         for origin in [*self.origins.values(), self.best]:
@@ -250,7 +245,7 @@ class Transcription(BaseModel):
         return Transcription(
             best=self.best.get_slice(start, end),
             origins={k: v.get_slice(start, end) for k, v in self.origins.items()},
-            suggestions=self.suggestions,
+            corrections=self.corrections,
         )
 
     def to_voice_transcription_string(self) -> VoiceTranscriptionString:
@@ -290,7 +285,7 @@ class Transcription(BaseModel):
             None,
             tuple(voice_words),
             alternative_texts=alternative_texts,
-            recognizable_alternatives=tuple(self.suggestions),
+            corrections=tuple(self.corrections),
             track=best,
             alternative_tracks=dict(self.origins),
         )

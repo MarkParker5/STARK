@@ -25,11 +25,11 @@ class VoiceTranscriptionString(TranscriptionString):
         language_code: LanguageCode | None = None,
         words: tuple[TranscriptionWord, ...] | list[TranscriptionWord] = (),
         alternative_texts: dict[str, LocaleString] | None = None,
-        recognizable_alternatives: list | None = None,
+        corrections: list | None = None,
         track: VoiceTranscriptionTrack | None = None,
         alternative_tracks: dict[str, VoiceTranscriptionTrack] | None = None,
     ) -> VoiceTranscriptionString:
-        instance = super().__new__(cls, value, language_code, words, alternative_texts, recognizable_alternatives)
+        instance = super().__new__(cls, value, language_code, words, alternative_texts, corrections)
         instance = cast(VoiceTranscriptionString, instance)
         instance._track = track
         instance._alternative_tracks = alternative_tracks or {}
@@ -47,7 +47,7 @@ class VoiceTranscriptionString(TranscriptionString):
             None,
             base._words,
             base._alternative_texts,
-            base.recognizable_alternatives,
+            base.corrections,
             sliced_track,
             self._alternative_tracks,
         )
@@ -61,7 +61,7 @@ class VoiceTranscriptionString(TranscriptionString):
             None,
             base._words,
             base._alternative_texts,
-            base.recognizable_alternatives,
+            base.corrections,
             sliced_track,
             self._alternative_tracks,
         )
@@ -77,7 +77,7 @@ class VoiceTranscriptionString(TranscriptionString):
             None,
             base._words,
             base._alternative_texts,
-            base.recognizable_alternatives,
+            base.corrections,
             track,
             self._alternative_tracks,
         )
@@ -90,7 +90,7 @@ class VoiceTranscriptionString(TranscriptionString):
             None,
             base._words,
             base._alternative_texts,
-            base.recognizable_alternatives,
+            base.corrections,
             sliced_track,
             self._alternative_tracks,
         )

@@ -29,7 +29,8 @@ def test_localizer_loads_only_enabled_languages(tmp_path, monkeypatch):
 
     assert localizer.get_recognizable("greeting", "en") == "hello|hi"
     assert localizer.get_recognizable("greeting", "ru") == "привет|здравствуй"
-    assert localizer.get_recognizable("greeting", "de") is None
+    # "de" not loaded — falls back to base_language ("en")
+    assert localizer.get_recognizable("greeting", "de") == "hello|hi"
 
 
 def test_localizer_base_fallback(tmp_path, monkeypatch):

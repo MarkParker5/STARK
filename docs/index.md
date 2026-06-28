@@ -22,7 +22,7 @@ New to S.T.A.R.K.? Consider reading the articles in navigation sequentially for 
 
 - 🧠 **Extendable with LLMs**: Enhance Stark's cognition by integrating leading language models like ChatGPT. More in [Fallback Command](advanced/fallback-command-llm-integration.md)
 
-- 🌐 **Multilingual Support**: Interact with Stark in [multiple languages](advanced/localization-and-multi-language.md).
+- 🌐 **Multilingual Support**: Interact with Stark in [multiple languages](advanced/localization-and-multilingual.md).
 
 - **🔧 Absolute Customization**: Craft complex commands, integrate various speech or text interfaces, adapt voice assistant modes, or even override existing classes.
 

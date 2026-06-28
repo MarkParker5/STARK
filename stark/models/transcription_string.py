@@ -3,8 +3,15 @@ from __future__ import annotations
 from collections import Counter
 from dataclasses import dataclass
 
+from typing import NamedTuple
+
 from stark.general.localisation.language_code import LanguageCode
 from stark.general.localisation.locale_string import LocaleString
+
+
+class Correction(NamedTuple):
+    variant: str
+    keyword: str
 
 
 @dataclass(frozen=True)
@@ -29,7 +36,8 @@ class TranscriptionString(LocaleString):
 
     _words: tuple[TranscriptionWord, ...]
     _alternative_texts: dict[str, LocaleString]
-    recognizable_alternatives: list
+    corrections: list[Correction]
+    _corrections_by_track: dict[str, list[Correction]]
     _language_code_override: LanguageCode | None
 
     def __new__(
@@ -38,14 +46,15 @@ class TranscriptionString(LocaleString):
         language_code: LanguageCode | None = None,
         words: tuple[TranscriptionWord, ...] | list[TranscriptionWord] = (),
         alternative_texts: dict[str, LocaleString] | None = None,
-        recognizable_alternatives: list | None = None,
+        corrections: list | None = None,
     ) -> TranscriptionString:
         resolved_words = tuple(words)
         resolved_lang = language_code or _majority_language(resolved_words) or "base"
         instance = super().__new__(cls, value, resolved_lang)
         instance._words = resolved_words
         instance._alternative_texts = alternative_texts or {}
-        instance.recognizable_alternatives = list(recognizable_alternatives or [])
+        instance.corrections = list(corrections or [])
+        instance._corrections_by_track = {}
         instance._language_code_override = language_code
         return instance
 
@@ -54,7 +63,7 @@ class TranscriptionString(LocaleString):
         cls,
         words: list[tuple[str, LanguageCode]],
         alternative_texts: dict[str, LocaleString] | None = None,
-        recognizable_alternatives: list | None = None,
+        corrections: list | None = None,
     ) -> TranscriptionString:
         text_parts: list[str] = []
         tw_list: list[TranscriptionWord] = []
@@ -70,7 +79,7 @@ class TranscriptionString(LocaleString):
             text,
             words=tw_list,
             alternative_texts=alternative_texts,
-            recognizable_alternatives=recognizable_alternatives,
+            corrections=corrections,
         )
 
     @property
@@ -97,9 +106,7 @@ class TranscriptionString(LocaleString):
         try:
             start = str.index(self, value)
         except ValueError:
-            return TranscriptionString(
-                value, self.language_code, (), self._alternative_texts, self.recognizable_alternatives
-            )
+            return TranscriptionString(value, self.language_code, (), self._alternative_texts, self.corrections)
         end = start + len(value)
         return self._slice_by_offset(value, start, end)
 
@@ -139,16 +146,12 @@ class TranscriptionString(LocaleString):
             else:
                 new_words.append(w)
 
-        return TranscriptionString(
-            result_text, None, new_words, self._alternative_texts, self.recognizable_alternatives
-        )
+        return TranscriptionString(result_text, None, new_words, self._alternative_texts, self.corrections)
 
     def strip(self, chars: str | None = None) -> TranscriptionString:
         result_str = str.strip(self, chars)
         if not result_str:
-            return TranscriptionString(
-                "", self.language_code, (), self._alternative_texts, self.recognizable_alternatives
-            )
+            return TranscriptionString("", self.language_code, (), self._alternative_texts, self.corrections)
         start = str.index(self, result_str)
         end = start + len(result_str)
         return self._slice_by_offset(result_str, start, end)
@@ -160,9 +163,7 @@ class TranscriptionString(LocaleString):
         for part in parts:
             if not part:
                 result.append(
-                    TranscriptionString(
-                        "", self.language_code, (), self._alternative_texts, self.recognizable_alternatives
-                    )
+                    TranscriptionString("", self.language_code, (), self._alternative_texts, self.corrections)
                 )
                 continue
             try:
@@ -182,7 +183,7 @@ class TranscriptionString(LocaleString):
             for w in self._words
             if w.char_start >= start and w.char_end <= end
         )
-        return TranscriptionString(value, None, filtered, self._alternative_texts, self.recognizable_alternatives)
+        return TranscriptionString(value, None, filtered, self._alternative_texts, self.corrections)
 
     # translate_position: inherited from LocaleString (identity).
     # Cross-track overlap resolution requires timestamps — use VoiceTranscriptionString.

@@ -9,11 +9,11 @@ process_string(input)
     │
     ▼
 ┌─────────────────────────────────────┐
-│  Processor 1: Pre-processing        │  e.g. RecognizableAlternativesProcessor
+│  Processor 1: Pre-processing        │  e.g. CorrectionsProcessor
 │  Input: string, recognized_entities │  - reads string metadata
-│  Output: ([], 0) — pass-through     │  - mutates recognizable_alternatives
+│  Output: ([], 0) — pass-through     │  - updates corrections
 │  Side effects:                      │  - appends to recognized_entities
-│    string.recognizable_alternatives │
+│    string.corrections               │
 │    recognized_entities              │
 └──────────────┬──────────────────────┘
                │
@@ -29,7 +29,7 @@ process_string(input)
                ▼
 ┌─────────────────────────────────────┐
 │  Processor 3: Search                │  e.g. SearchProcessor
-│  Input: string, recognized_entities │  - uses recognizable_alternatives
+│  Input: string, recognized_entities │  - uses corrections
 │  Output: ([SearchResult, ...], 0)   │    for regex expansion
 │  Uses:                              │  - uses recognized_entities
 │    PatternParser.match()            │    for parameter extraction
@@ -54,13 +54,15 @@ When `CommandsContext.process_string()` is called, it runs the input through eac
 
 ## Built-in Processors
 
-### `RecognizableAlternativesProcessor` (pre-processor)
+### `CorrectionsProcessor` (pre-processor)
 
-Generates phonetic alternatives from Localizer's recognizable strings. For each recognizable keyword, slides a window over the input words and computes levenshtein similarity. Matches above 0.6 threshold are appended to `string.recognizable_alternatives`.
+Generates phonetic corrections using `Dictionary`-based phonetic matching. Accepts any `Dictionary` instances — including one built from recognizable.strings via `build_recognizable_dictionary()`. For each input word/phrase, runs dictionary sentence search and appends matching corrections to `string.corrections`.
 
-These alternatives are consumed by `PatternParser._expand_recognizable_suggestions()` to widen compiled regexes — e.g., `"hello"` in the regex becomes `"(hello|helo)"`.
+These corrections are consumed by `PatternParser._expand_corrections()` to widen compiled regexes — e.g., `"hello"` in the regex becomes `"(hello|helo)"`.
 
-**Complexity:** O(R × W) levenshtein comparisons, where R = recognizable strings in active language, W = input words. Each comparison is O(len(candidate) × len(keyword)).
+Included automatically for recognizable.strings in the default pipeline when a `localizer` is provided.
+
+See [Corrections](../tools/corrections.md) for full documentation.
 
 ### `SpacyNERProcessor` (pre-processor)
 
@@ -73,7 +75,7 @@ Uses spaCy NER to mark named entities (locations, organizations, etc.) as `Recog
 Matches input against all registered command patterns. Handles:
 - Pattern matching via `PatternParser.match()` — O(C × P) where C = commands in the current context window, P = pattern complexity
 - Matrix cross-language matching across alternative tracks (when `STARK_ENABLE_MULTILANG_MATRIX=1`) — multiplies by T (number of tracks which is the number of languages with active STT)
-- Recognizable suggestions regex expansion — O(S) string replacements per match, where S = suggestions
+- Corrections regex expansion — O(C) string replacements per match, where C = corrections
 - Overlap resolution with cross-track position translation — O(R), where R = results
 
 **Complexity:** O(T × C × P) for matching + O(R) for overlap resolution
@@ -103,17 +105,14 @@ class MySearchProcessor(CommandsContextProcessor):
 Pass your processors to `CommandsContext` or `run()`. Order matters — pre-processors before search, search before fallback:
 
 ```python
-from stark.core.processors import (
-    RecognizableAlternativesProcessor,
-    SearchProcessor,
-    SpacyNERProcessor,
-)
+from stark.core.processors import CorrectionsProcessor, SearchProcessor, SpacyNERProcessor
+from stark.tools.dictionary import build_recognizable_dictionary
 
 context = CommandsContext(
     task_group=main_task_group,
     commands_manager=manager,
     processors=[
-        RecognizableAlternativesProcessor(),  # 1. generate phonetic alternatives
+        CorrectionsProcessor(dictionaries=[dictionary]),  # 1. generate phonetic corrections
         SpacyNERProcessor(lang_models={"en": "en_core_web_sm"}),  # 2. mark entities
         SearchProcessor(),  # 3. match commands
         # MyFallbackProcessor(),  # 4. optionally handle unmatched input
@@ -129,7 +128,7 @@ Input string may be a plain python str, but also may carry metadata via `LocaleS
 |-----------|------|--------|-------------|
 | `language_code` | `LanguageCode` | All `LocaleString` | Majority language of the input |
 | `words` | `tuple[TranscriptionWord]` | `TranscriptionString` | Per-word language annotations |
-| `recognizable_alternatives` | `list[Suggestion]` | `TranscriptionString` | **Mutable.** Phonetic variants for regex expansion |
+| `corrections` | `list[Correction]` | `TranscriptionString` | **Mutable.** Phonetic corrections for regex expansion |
 | `alternative_texts` | `dict[str, LocaleString]` | `TranscriptionString` | Same utterance from different language models |
 | `track` | `VoiceTranscriptionTrack` | `VoiceTranscriptionString` | Word timestamps, confidence, speaker data. Subclass of `TranscriptionString`. Produced by `VoskSpeechRecognizer` and passed unchanged by `VoiceAssistant` |
 
@@ -150,13 +149,13 @@ recognized_entities.append(RecognizedEntity(
 
 `SearchProcessor` uses these to constrain parameter extraction — when a `RecognizedEntity` matches a parameter's type and appears within the regex match, the parser narrows to that exact substring.
 
-### `recognizable_alternatives`
+### `corrections`
 
-Phonetic suggestion variants on `TranscriptionString`. Pre-processors append `Suggestion(variant, keyword)` pairs. `SearchProcessor` injects these into compiled patterns.
+Phonetic correction variants on `TranscriptionString`. Pre-processors append `Correction(variant, keyword)` pairs. `SearchProcessor` injects these into compiled patterns.
 
 ```python
-from stark.models.voice_transcription import Suggestion
-string.recognizable_alternatives.append(
-    Suggestion(variant="helo", keyword="hello")
+from stark.models.voice_transcription import Correction
+string.corrections.append(
+    Correction(variant="helo", keyword="hello")
 )
 ```

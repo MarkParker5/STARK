@@ -18,7 +18,7 @@ from stark.models.voice_transcription import (
 logger = logging.getLogger(__name__)
 
 
-class SpeechRecognizerRelay:
+class SpeechRecognizerRelay(SpeechRecognizer):
     """Broadcasts audio to N per-language recognizers, assembles the best transcription by confidence."""
 
     _speech_recognizers: list[SpeechRecognizer]

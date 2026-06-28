@@ -30,7 +30,11 @@ async def run(
     localizer: Localizer | None = None,
 ):
     if processors is None:
-        processors = [SearchProcessor()]
+        if localizer:
+            from stark.core.processors.corrections_processor import CorrectionsProcessor
+            processors = [CorrectionsProcessor(), SearchProcessor()]
+        else:
+            processors = [SearchProcessor()]
 
     async with asyncer.create_task_group() as main_task_group:
         context = CommandsContext(

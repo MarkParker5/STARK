@@ -238,5 +238,5 @@ VoskSpeechRecognizer(
 
 Speaker embeddings are stored per-word in `VoiceTranscriptionTrack.spk` and preserved through the entire flow. They are not used yet, but the infrastructure is ready for a future speaker diarization module.
 
-See [Localizing Parsing](localization-and-multi-language/localizing-parsing.md) for details on these features.
+See [Localizing Parsing](localization-and-multilingual/localizing-parsing.md) for details on these features.
 See [Feature Flags](advanced/feature-flags.md) for additional configuration options like enabling printing the conversation or tweaking multilingual features.

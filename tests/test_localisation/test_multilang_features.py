@@ -7,8 +7,8 @@ from stark.core.patterns import Pattern
 from stark.core.processors.search_processor import SearchProcessor
 from stark.general.localisation import LocaleString
 from stark.models.transcription_string import TranscriptionString
+from stark.models.transcription_string import Correction
 from stark.models.voice_transcription import (
-    Suggestion,
     VoiceTranscriptionTrack,
     VoiceTranscriptionWord,
 )
@@ -21,7 +21,7 @@ async def test_suggestions_expand_regex():
 
     ts = TranscriptionString.from_words(
         [("helo", "en"), ("there", "en")],
-        recognizable_alternatives=[Suggestion(variant="helo", keyword="hello")],
+        corrections=[Correction(variant="helo", keyword="hello")],
     )
 
     # "helo there" doesn't match "hello there" normally
@@ -36,7 +36,7 @@ async def test_suggestions_not_expanded_without_alternatives():
 
     ts = TranscriptionString.from_words(
         [("helo", "en"), ("there", "en")],
-        # no recognizable_alternatives → no expansion
+        # no corrections → no expansion
     )
 
     matches = await p.match(Pattern("hello there"), ts)
@@ -153,40 +153,40 @@ def test_build_best_confidence_language_priority():
     assert "привет" in best2.text
 
 
-# --- RecognizableAlternativesProcessor ---
+# --- CorrectionsProcessor ---
 
 
-async def test_recognizable_alternatives_processor(tmp_path, monkeypatch):
+async def test_corrections_processor(tmp_path, monkeypatch):
+    from unittest.mock import MagicMock
 
-    from stark.core.processors.recognizable_alternatives_processor import RecognizableAlternativesProcessor
+    from stark.core.processors.corrections_processor import CorrectionsProcessor
+    from stark.general.localisation import Localizer
+    from stark.tools.dictionary import build_recognizable_dictionary
+    from stark.tools.phonetic.transcription import LatinPassthroughProvider
 
-    # create recognizable strings
     d = tmp_path / "strings" / "en"
     d.mkdir(parents=True)
     (d / "recognizable.strings").write_text('"hello" = "hello";')
     (d / "localizable.strings").write_text('"hello" = "hello";')
     monkeypatch.chdir(tmp_path)
 
-    from stark.general.localisation import Localizer
-
     localizer = Localizer(languages={"en"})
     localizer.load()
 
+    dictionary = build_recognizable_dictionary(localizer, ipa_provider=LatinPassthroughProvider())
     parser = PatternParser(localizer=localizer)
-
-    from unittest.mock import MagicMock
 
     context = MagicMock()
     context.pattern_parser = parser
 
     ts = TranscriptionString.from_words([("helo", "en"), ("world", "en")])
-    assert len(ts.recognizable_alternatives) == 0
+    assert len(ts.corrections) == 0
 
-    processor = RecognizableAlternativesProcessor()
+    processor = CorrectionsProcessor(dictionaries=[dictionary])
     await processor.process_string(ts, context, [])
 
-    assert len(ts.recognizable_alternatives) >= 1
-    assert any(s.keyword == "hello" and s.variant == "helo" for s in ts.recognizable_alternatives)
+    assert len(ts.corrections) == 1
+    assert ts.corrections[0] == Correction(variant="helo", keyword="hello")
 
 
 # --- Position translation ---

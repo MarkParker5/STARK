@@ -7,7 +7,7 @@ The `Response` class represents the outcome of processing a command in the S.T.A
 ### `voice: str | LocalizableString`
 **Default:** `''`
 
-This string will be converted to speech and played back to the user. If left empty, no vocal response will be given. Accepts `LocalizableString` for localized responses — see [Localizing Responses](localization-and-multi-language/localizing-responses.md).
+This string will be converted to speech and played back to the user. If left empty, no vocal response will be given. Accepts `LocalizableString` for localized responses — see [Localizing Responses](localization-and-multilingual/localizing-responses.md).
 
 ### `text: str | LocalizableString`
 **Default:** `''`
@@ -98,7 +98,7 @@ msg.format([5])  # "5 items"
 
 PyICU is not a dependency of S.T.A.R.K — install it separately (`pip install PyICU`) and use it alongside `LocalizableString` for formatting dynamic values before injecting them into your response templates. A tighter integration (e.g., a built-in formatting layer or a convenience wrapper) is on the radar but the exact shape is TBD — if you have ideas or want to draft an implementation, contributions are welcome via [STARK PLACE](contributing-and-shared-usage-stark-place.md).
 
-For more on response localization, see [Localizing Responses](localization-and-multi-language/localizing-responses.md).
+For more on response localization, see [Localizing Responses](localization-and-multilingual/localizing-responses.md).
 
 ---
 

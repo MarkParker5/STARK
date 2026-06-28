@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from abc import ABC
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import AsyncGenerator
 
 from stark.core.patterns.pattern import Pattern
@@ -11,8 +11,16 @@ from stark.core.types import Object
 from stark.core.types.string import String
 from stark.core.types.word import Word
 from stark.general.cache import alru_cache
-from stark.general.feature_flags import FeatureFlag, get_flag
+from typing import NamedTuple
+
 from stark.general.localisation import LanguageCode, LocaleString, Localizer
+from stark.models.transcription_string import Correction
+from stark.tools.common.span import Span
+
+
+class CorrectionMatch(NamedTuple):
+    span: Span
+    correction: Correction
 
 type ObjectType = type[Object]
 
@@ -47,6 +55,8 @@ class MatchResult:
     start: int
     end: int
     parameters: dict[str, Object | None]  # TODO: use ParameterMatch?
+    corrections: list[CorrectionMatch] = field(default_factory=list)
+    corrected_string: str = ""
 
 
 @dataclass
@@ -128,7 +138,7 @@ class PatternParser:
                     f"Pattern '{pattern._origin}' of type '{object_type.__name__}' contains @key references but no Localizer is configured on PatternParser"
                 )
             for key in keys:
-                self.localizer.verify_key_exists(key)
+                self.localizer.verify_recognizable(key)
 
     @staticmethod
     def _has_localizer_keys(pattern: Pattern) -> bool:
@@ -205,7 +215,7 @@ class PatternParser:
         recognized_entities = recognized_entities or []
         compiled = self._compile_pattern(pattern, language_code=language_code)
 
-        compiled = self._expand_recognizable_suggestions(compiled, string)
+        compiled, correction_groups = self._expand_corrections(compiled, string)
 
         logger.debug(f'Starting looking for "{pattern=}" "{compiled=}" in "{string}"')
 
@@ -241,6 +251,21 @@ class PatternParser:
             end = match.start() + new_match.end()
             command_str = string[start:end].strip()
 
+            # Backtrack corrections via named groups
+            match_corrections: list[CorrectionMatch] = []
+            for group_name, keyword in correction_groups.items():
+                if group_name not in match.groupdict():
+                    continue
+                captured = match.group(group_name)
+                if captured and captured != keyword:
+                    span = Span(match.start(group_name) - start, match.end(group_name) - start)
+                    match_corrections.append(CorrectionMatch(span, Correction(captured, keyword)))
+
+            # Reconstruct corrected string by applying replacements right-to-left
+            corrected = str(command_str)
+            for cm in sorted(match_corrections, key=lambda cm: cm.span.start, reverse=True):
+                corrected = corrected[: cm.span.start] + cm.correction.keyword + corrected[cm.span.end :]
+
             matches.append(
                 MatchResult(
                     substring=command_str,
@@ -250,6 +275,8 @@ class PatternParser:
                         name: (parameter.parsed_obj if parameter else None)
                         for name, parameter in all_parameters.items()
                     },
+                    corrections=match_corrections,
+                    corrected_string=corrected,
                 )
             )
             logger.debug(f"Match result: {matches[-1]}")
@@ -257,20 +284,52 @@ class PatternParser:
         matches = self._filter_overlapping_matches(matches)
         return sorted(matches, key=lambda m: len(m.substring), reverse=True)
 
-    def _expand_recognizable_suggestions(self, compiled: str, string: LocaleString) -> str:
-        """Inject recognizable alternatives into compiled regex. O(S) where S = suggestions."""
+    def _expand_corrections(self, compiled: str, string: LocaleString) -> tuple[str, dict[str, str]]:
+        """Inject corrections into compiled regex as named groups.
+
+        Returns (expanded_regex, group_to_keyword_map) where group_to_keyword_map
+        maps named group names to their correction keywords for back-tracking.
+        """
         from stark.models.transcription_string import TranscriptionString
 
-        if not isinstance(string, TranscriptionString) or not string.recognizable_alternatives:
-            return compiled
-        suggestions: dict[str, set[str]] = {}
-        for s in string.recognizable_alternatives:
-            if hasattr(s, "keyword") and hasattr(s, "variant"):
-                suggestions.setdefault(s.keyword, set()).add(s.variant)
-        for keyword, variants in suggestions.items():
-            if keyword in compiled:
-                compiled = compiled.replace(keyword, f"({keyword}|{'|'.join(variants)})")
-        return compiled
+        empty_map: dict[str, str] = {}
+        if not isinstance(string, TranscriptionString):
+            return compiled, empty_map
+
+        all_corrections = list(string.corrections)
+        for track_corrections in string._corrections_by_track.values():
+            all_corrections.extend(track_corrections)
+
+        if not all_corrections:
+            return compiled, empty_map
+
+        grouped: dict[str, set[str]] = {}
+        for c in all_corrections:
+            grouped.setdefault(c.keyword, set()).add(c.variant)
+
+        # each occurrence of a keyword gets a unique named group because re module
+        # doesn't allow duplicate group names
+        # (the third-party `regex` module does via DUPNAMES, but some bechmarks show it's ~2x slower — not worth swapping for the hot path)
+        # TODO: review regex vs re for STARK again later
+        group_map: dict[str, str] = {}
+        for keyword, variants in grouped.items():
+            alternatives = "|".join([re.escape(v) for v in variants])
+            result_parts: list[str] = []
+            remaining = compiled
+            found = False
+            while keyword in remaining:
+                idx = remaining.index(keyword)
+                group_name = f"_corr{len(group_map)}"
+                group_map[group_name] = keyword
+                replacement = f"(?P<{group_name}>{re.escape(keyword)}|{alternatives})"
+                result_parts.append(remaining[:idx])
+                result_parts.append(replacement)
+                remaining = remaining[idx + len(keyword) :]
+                found = True
+            if found:
+                result_parts.append(remaining)
+                compiled = "".join(result_parts)
+        return compiled, group_map
 
     def _find_initial_matches(self, compiled: str, string: str) -> list[re.Match]:
         return sorted(re.finditer(compiled, string), key=lambda match: match.start())
@@ -297,7 +356,7 @@ class PatternParser:
 
             # re-run regex only in the current command_str
             compiled = self._compile_pattern(pattern, prefill=prefill, language_code=language_code)
-            compiled = self._expand_recognizable_suggestions(compiled, string)
+            compiled, _ = self._expand_corrections(compiled, string)
             new_matches = list(re.finditer(compiled, string))
 
             logger.debug(f'Re capturing parameters {string} prefill={prefill} compiled="{compiled}"')

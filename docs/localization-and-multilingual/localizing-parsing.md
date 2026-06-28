@@ -210,6 +210,8 @@ localizer.load()  # discovers and reads .strings files
 
 Only languages in the `languages` set are loaded — the rest are ignored even if files exist on disk. The `base` directory is always loaded.
 
+`load()` automatically creates missing `strings/{lang}/` directories and empty `.strings` files for all configured languages. If a pattern uses an `@key` that doesn't exist in any loaded language, `health_check` automatically adds the key to the base `recognizable.strings` with its own name as the default value and a warning is emitted. This means you can start using `@key` syntax immediately — the files and entries are created for you, and you fill in translations later.
+
 Pass the Localizer when creating `CommandsContext`:
 
 ```python

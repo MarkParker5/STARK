@@ -85,8 +85,25 @@ This enables matching names and words across different languages and spellings.
 
 For even more fuzzyness, consider using the levenshtein distance with the default proximity graph for simplephone (`SIMPLEPHONE_PROXIMITY_GRAPH`). For details see [STARK's Levenshtein implementation](./stark-levenshtein.md)
 
+## IPA Providers
+
+The `transcription()` function accepts an `ipa_provider` parameter:
+
+- `EspeakIpaProvider()` — default, requires [espeak-ng](https://github.com/espeak-ng/espeak-ng) system binary
+- `EpitranIpaProvider()` — pure Python via the `epitran` library, supports 120+ languages, slightly slower than `EspeakIpaProvider` and different language support
+- `LatinPassthroughProvider(fallback=None)` — returns latin text unchanged (lowercased), delegates non-latin to the fallback provider, raises `ValueError` for non-latin text if no fallback is provided. No external dependencies for latin-only text. Fastest for latin-only text, but less accurate.
+
+You are free to implement your own IPA provider by subclassing `IpaProvider`.
+
+```python
+from stark.tools.phonetic.transcription import transcription, LatinPassthroughProvider
+
+# No espeak needed for English
+result = transcription("hello world", "en", ipa_provider=LatinPassthroughProvider())
+# → "hello world"
+```
+
 ## Notes
 
-- `transcription` requires [espeak-ng](https://github.com/espeak-ng/espeak-ng) installed on your system.
-- These functions are used internally by the Dictionary Tool for phonetic and fuzzy lookup.
+- These functions are used internally by the Dictionary and [Corrections](corrections.md) for phonetic and fuzzy lookup.
 - For more details, see the source code or use your IDE's autocomplete.

@@ -1,8 +1,6 @@
 # Dictionary - Phonetic Lookup
 
-> **Experimental.** This feature is functional but the API and behavior may change. See also [Recognizable Alternatives](recognizable-alternatives.md) which solves a similar problem at a different level. We're still exploring the best approach — feel free to use both, and please report your experience at https://github.com/MarkParker5/STARK/discussions.
-
-> NOTE: requires [libespeak-ng binary](https://github.com/espeak-ng/espeak-ng/blob/master/docs/guide.md#installation) installed in the system
+> NOTE: requires an IPA provider. Default is `EspeakIpaProvider` ([libespeak-ng binary](https://github.com/espeak-ng/espeak-ng/blob/master/docs/guide.md#installation) installed in the system). For latin-only use cases, `LatinPassthroughProvider` works without external dependencies, is faster, but less accurate. See [raw-phonetic.md](tools/raw-phonetic.md) for more details.
 
 ## Overview
 
@@ -111,6 +109,12 @@ class DictionaryItem:
 ```
 
 Inspect your IDE suggestions and the source code (most modern editors support "go to definition" feature) for more details.
+
+## Automatic [Corrections](corrections.md) Generation
+
+Corrections is a matching feature that widens command pattern to accept translation/phonetic variants of known keywords. When STT or user input contains a misspelling or phonetic approximation, this feature injects the variant into the compiled regex so the command still matches.
+
+See [Corrections](corrections.md) for how Dictionary integrates with the corrections pipeline.
 
 ## Encapsulate Storage and Filling Logic
 
