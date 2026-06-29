@@ -146,7 +146,7 @@ jobs:
         with:
           tag_name: ${{ needs.version.outputs.version }}
           release_name: Release ${{ needs.version.outputs.version }}
-          body: ${{ steps.changelog.outputs.changelog }}
+          body: ${{ steps.changelog.outputs.BODY }}
           draft: false
           prerelease: false
 
