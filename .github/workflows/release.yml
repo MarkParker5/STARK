@@ -113,7 +113,30 @@ jobs:
       - name: Generate changelog
         id: changelog
         run: |
-          changelog=$(git log --pretty=format:"- %s" "${{ needs.version.outputs.version }}..HEAD")
+          PREV_TAG=$(git describe --tags --abbrev=0 "${{ needs.version.outputs.version }}^" 2>/dev/null || git rev-list --max-parents=0 HEAD)
+          RANGE="${PREV_TAG}..${{ needs.version.outputs.version }}"
+
+          COMMITS=$(git log --pretty=format:"- %s" "$RANGE")
+
+          NEW_DOCS=$(git diff --diff-filter=A --name-only "$RANGE" -- 'docs/*.md' 'docs/**/*.md' | sed 's|^docs/||; s|\.md$||' | while read -r p; do echo "- [${p}](https://stark.markparker.me/${p})"; done)
+          CHANGED_DOCS=$(git diff --diff-filter=M --name-only "$RANGE" -- 'docs/*.md' 'docs/**/*.md' | sed 's|^docs/||; s|\.md$||' | while read -r p; do echo "- [${p}](https://stark.markparker.me/${p})"; done)
+
+          {
+            echo "BODY<<EOF"
+            if [ -n "$NEW_DOCS" ]; then
+              echo "## New Documentation"
+              echo "$NEW_DOCS"
+              echo ""
+            fi
+            if [ -n "$CHANGED_DOCS" ]; then
+              echo "## Updated Documentation"
+              echo "$CHANGED_DOCS"
+              echo ""
+            fi
+            echo "## Changes"
+            echo "$COMMITS"
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
         id: create_release
