@@ -1,6 +1,6 @@
 # Dictionary - Phonetic Lookup
 
-> NOTE: requires an IPA provider. Default is `EspeakIpaProvider` ([libespeak-ng binary](https://github.com/espeak-ng/espeak-ng/blob/master/docs/guide.md#installation) installed in the system). For latin-only use cases, `LatinPassthroughProvider` works without external dependencies, is faster, but less accurate. See [raw-phonetic.md](tools/raw-phonetic.md) for more details.
+> NOTE: requires an IPA provider. Default is `EspeakIpaProvider` ([libespeak-ng binary](https://github.com/espeak-ng/espeak-ng/blob/master/docs/guide.md#installation) installed in the system). For latin-only use cases, `LatinPassthroughProvider` works without external dependencies, is faster, but less accurate. See [raw-phonetic.md](raw-phonetic.md) for more details.
 
 ## Overview
 

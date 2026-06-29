@@ -1,5 +1,12 @@
 # Welcome to S.T.A.R.K.
 
+!!! tip "LLM-Friendly Docs"
+
+    Building with S.T.A.R.K. using an AI coding assistant? Point it at the machine-readable docs:
+
+    - [`/llms.txt`](/llms.txt) — page index with descriptions
+    - [`/llms-full.txt`](/llms-full.txt) — complete documentation in a single file
+
 ## Speech and Text Algorithmic Recognition Kit
 
 Welcome to S.T.A.R.K., a modern, advanced, asynchronous, and fast framework designed for creating intuitive natural language interfaces, especially voice-based. Think of it as the [FastAPI](https://fastapi.tiangolo.com/) but with speech instead of http.
@@ -22,7 +29,7 @@ New to S.T.A.R.K.? Consider reading the articles in navigation sequentially for 
 
 - 🧠 **Extendable with LLMs**: Enhance Stark's cognition by integrating leading language models like ChatGPT. More in [Fallback Command](advanced/fallback-command-llm-integration.md)
 
-- 🌐 **Multilingual Support**: Interact with Stark in [multiple languages](advanced/localization-and-multilingual.md).
+- 🌐 **Multilingual Support**: Interact with Stark in [multiple languages](localization-and-multilingual/index.md).
 
 - **🔧 Absolute Customization**: Craft complex commands, integrate various speech or text interfaces, adapt voice assistant modes, or even override existing classes.
 

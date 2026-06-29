@@ -27,7 +27,7 @@ nav:
       - Raw Phonetic Tools (IPA & Simplephone): tools/raw-phonetic.md
       - Levenshtein - Fuzzy String Matching: tools/stark-levenshtein.md
       - Sliding Window Parser: tools/sliding-window-parser.md
-      - Recognizable Alternatives - Fuzzy Command Matching: tools/recognizable-alternatives.md
+      - Corrections - Phonetic Pattern Matching: tools/corrections.md
   - Advanced:
       - Optimization: advanced/optimization.md
       - Custom Run: advanced/custom-run.md
@@ -117,6 +117,8 @@ markdown_extensions:
   - pymdownx.inlinehilite
   - pymdownx.snippets
   - pymdownx.superfences
+  - admonition
+  - pymdownx.details
   - pymdownx.caret
   - pymdownx.mark
   - pymdownx.tilde
@@ -131,6 +133,35 @@ plugins:
   - git-revision-date-localized:
       enable_creation_date: true
       type: timeago
+  - llmstxt:
+      markdown_description: |
+        S.T.A.R.K. (Speech and Text Algorithmic Recognition Kit) is a modern, async Python framework
+        for building voice assistants and natural language interfaces. Think FastAPI but for speech.
+        It runs on-device, supports multiple languages, integrates with LLMs, and features advanced
+        pattern-based NL parsing, context-aware commands, and community extensions via STARK-PLACE.
+      full_output: llms-full.txt
+      sections:
+        Getting Started:
+          - installation.md
+          - first-steps.md
+          - contributing-and-shared-usage-stark-place.md
+        Commands:
+          - creating-commands.md
+          - sync-vs-async-commands.md
+          - command-response.md
+          - commands-context.md
+          - patterns.md
+          - dependency-injection.md
+        Voice Assistant:
+          - voice-assistant.md
+          - default-speech-interfaces.md
+          - where-to-host.md
+        Tools:
+          - tools/*.md
+        Advanced:
+          - advanced/*.md
+        Localization and Multi-Language:
+          - localization-and-multilingual/*.md
   # - git-committers:
   #     repository: MarkParker5/STARK
   #     branch: master

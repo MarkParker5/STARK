@@ -33,9 +33,9 @@ When a `localizer` is provided and no custom `processors` are specified, `Correc
 
 The processor accepts any `Dictionary` instance — not just ones built from recognizable.strings. You can pass custom dictionaries populated with domain-specific vocabulary.
 
-**Lookup modes:** The processor supports the same modes as `Dictionary`: `EXACT`, `CONTAINS`, `FUZZY`, and `AUTO` (default). Pass via `CorrectionsProcessor(dictionaries=[...], mode=LookupMode.FUZZY)`. See [Phonetic Dictionary](tools/phonetic-dictionary.md) for more details.
+**Lookup modes:** The processor supports the same modes as `Dictionary`: `EXACT`, `CONTAINS`, `FUZZY`, and `AUTO` (default). Pass via `CorrectionsProcessor(dictionaries=[...], mode=LookupMode.FUZZY)`. See [Phonetic Dictionary](phonetic-dictionary.md) for more details.
 
-**Multilingual:** For `TranscriptionString` with alternative tracks, the processor runs dictionary search per each track and stores per-track corrections. See [Localization and Multilingual](localization-and-multilingual)
+**Multilingual:** For `TranscriptionString` with alternative tracks, the processor runs dictionary search per each track and stores per-track corrections. See [Localization and Multilingual](../localization-and-multilingual/index.md)
 
 ### 2. Expansion (automatic)
 
@@ -56,7 +56,7 @@ This enables UIs to show the corrected text to the user, and simplifies debuggin
 
 ### Recognizable Strings (built-in)
 
-`build_recognizable_dictionary()` creates a Dictionary from all loaded `recognizable.strings` bundles. See [Localizing Parsing](localization-and-multilingual/localizing-parsing.md)
+`build_recognizable_dictionary()` creates a Dictionary from all loaded `recognizable.strings` bundles. See [Localizing Parsing](../localization-and-multilingual/localizing-parsing.md)
 
 ### Custom Dictionaries
 
@@ -89,7 +89,7 @@ dict = build_recognizable_dictionary(
 )
 ```
 
-See [Phonetic Dictionary](tools/phonetic-dictionary.md) and [Phonetic Tools](tools/raw-phonetic.md) for more details and native implementations.
+See [Phonetic Dictionary](phonetic-dictionary.md) and [Phonetic Tools](raw-phonetic.md) for more details and native implementations.
 
 ## Comparison with NLDictionaryName
 
