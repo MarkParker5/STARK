@@ -1,4 +1,8 @@
-# Dictionary - Phonetic Lookup
+---
+description: Cross-language phonetic name and keyword lookup for Python. Find misspelled, accented, or transliterated names (e.g. Cyrillic to Latin) with fuzzy and exact matching.
+---
+
+# Phonetic Dictionary: Cross-Language Name & Keyword Lookup
 
 > NOTE: requires an IPA provider. Default is `EspeakIpaProvider` ([libespeak-ng binary](https://github.com/espeak-ng/espeak-ng/blob/master/docs/guide.md#installation) installed in the system). For latin-only use cases, `LatinPassthroughProvider` works without external dependencies, is faster, but less accurate. See [raw-phonetic.md](raw-phonetic.md) for more details.
 
@@ -17,7 +21,7 @@ Then you can look up names by different spellings, homophones, or even cross-lan
 matches = dictionary.lookup("linkoln perk", 'en') # misspelled case
 matches[0].metadata  # {"id": 2017})
 
-matches = dictionary.lookup("лінкін парк", 'ua') # ukrainian spelling of Linkin Park
+matches = dictionary.lookup("лінкін парк", 'uk') # ukrainian spelling of Linkin Park
 matches[0].metadata  # {"id": 2017})
 ```
 
@@ -82,6 +86,7 @@ NLCityName.dictionary.clear()
 NLCityName.dictionary.write_one("de", "Nürnberg", {"coords": (49.45, 11.08)})
 NLCityName.dictionary.write_one("en", "London",   {"coords": (51.51, -0.13)})
 NLCityName.dictionary.write_one("en", "Paris",    {"coords": (48.85, 2.35 )})
+NLCityName.dictionary.write_one("cs", "Praha",    {"coords": (50.08, 14.44)})
 
 @manager.new('weather in $city:NLCityName')
 def hello(weather: NLCityName):
@@ -112,7 +117,7 @@ Inspect your IDE suggestions and the source code (most modern editors support "g
 
 ## Automatic [Corrections](corrections.md) Generation
 
-Corrections is a matching feature that widens command pattern to accept translation/phonetic variants of known keywords. When STT or user input contains a misspelling or phonetic approximation, this feature injects the variant into the compiled regex so the command still matches.
+Corrections is a matching feature that widens command pattern to accept translation/phonetic variants of known keywords. When STT or user input contains a misspelling or phonetic approximation, this feature injects the variant into the compiled pattern so the command still matches.
 
 See [Corrections](corrections.md) for how Dictionary integrates with the corrections pipeline.
 

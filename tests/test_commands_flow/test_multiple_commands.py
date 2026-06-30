@@ -18,11 +18,11 @@ async def test_multiple_commands(commands_context_flow, autojump_clock):
 
         @manager.new("foo bar")
         def foobar():
-            return Response(text="foo!")
+            return Response("foo!")
 
         @manager.new("lorem * dolor")
         def lorem():
-            return Response(text="lorem!")
+            return Response("lorem!")
 
         # original test
         await context.process_string("foo bar lorem ipsum dolor")
@@ -56,11 +56,11 @@ async def test_two_commands_greedy_param(commands_context_flow, autojump_clock):
 
         @manager.new("command1 $g:AnotherGreedy")
         def cmd1(g: AnotherGreedy):
-            return Response(text=f"cmd1:{g.value}")
+            return Response(f"cmd1:{g.value}")
 
         @manager.new("command2")
         def cmd2():
-            return Response(text="cmd2!")
+            return Response("cmd2!")
 
         await context.process_string("command1 some words command2")
         await anyio.sleep(1)
@@ -73,7 +73,7 @@ async def test_repeating_command(commands_context_flow, autojump_clock):
 
         @manager.new("lorem * dolor")
         def lorem():
-            return Response(text="lorem!")
+            return Response("lorem!")
 
         await context.process_string("lorem pisum dolor lorem ipsutest_repeating_commanduum dolor sit amet")
         await anyio.sleep(5)
@@ -88,11 +88,11 @@ async def test_overlapping_commands_less_priority_cut(commands_context_flow, aut
 
     @manager.new("foo bar *")
     def foobar():
-        return Response(text="foo!")
+        return Response("foo!")
 
     @manager.new("* baz")
     def baz():
-        return Response(text="baz!")
+        return Response("baz!")
 
     result = await SearchProcessor().search("foo bar test baz", pattern_parser, manager.commands, [])
     assert len(result) == 2
@@ -105,11 +105,11 @@ async def test_overlapping_commands_priority_cut(commands_context_flow, autojump
 
     @manager.new("foo bar *")
     def foobar():
-        return Response(text="foo!")
+        return Response("foo!")
 
     @manager.new("*t baz")
     def baz():
-        return Response(text="baz!")
+        return Response("baz!")
 
     result = await SearchProcessor().search("foo bar test baz", pattern_parser, manager.commands, [])
 
@@ -123,11 +123,11 @@ async def test_overlapping_commands_remove(commands_context_flow, autojump_clock
 
     @manager.new("foo bar")
     def foobar():
-        return Response(text="foo!")
+        return Response("foo!")
 
     @manager.new("bar baz")
     def barbaz():
-        return Response(text="baz!")
+        return Response("baz!")
 
     result = await SearchProcessor().search("foo bar baz", pattern_parser, manager.commands, [])
     assert len(result) == 1
@@ -139,11 +139,11 @@ async def test_overlapping_commands_remove_inverse(commands_context_flow, autoju
 
     @manager.new("bar baz")
     def barbaz():
-        return Response(text="baz!")
+        return Response("baz!")
 
     @manager.new("foo bar")
     def foobar():
-        return Response(text="foo!")
+        return Response("foo!")
 
     result = await SearchProcessor().search("foo bar baz", pattern_parser, manager.commands, [])
     assert len(result) == 1

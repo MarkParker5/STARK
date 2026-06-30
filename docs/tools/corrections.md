@@ -1,8 +1,12 @@
-# Corrections (Pattern Extension for Phonetic Matching) \[EXPERIMENTAL]
+---
+description: Automatically widen string and pattern matching to accept phonetic and misspelling variants in Python. Useful for STT post-processing and fuzzy command matching.
+---
+
+# Corrections: Automatic Phonetic & Misspelling Tolerance for Pattern Matching \[EXPERIMENTAL]
 
 Corrections is a matching feature that widens command pattern to accept translation/phonetic variants of known keywords. When STT or user input contains a misspelling or phonetic approximation, this feature injects the variant into the compiled pattern so the command still matches.
 
-Example: user says "tern on the lite" → dictionary contains "turn" and "light" → regex expands `"turn"` to `"(turn|tern)"` and `"light"` to `"(light|lite)"` → command "turn on the light" matches.
+Example: user says "tern on the lite" → dictionary contains "turn" and "light" → pattern expands `"turn"` to `"(turn|tern)"` and `"light"` to `"(light|lite)"` → command "turn on the light" matches.
 
 ## How It Works
 
@@ -31,7 +35,7 @@ context = CommandsContext(
 
 When a `localizer` is provided and no custom `processors` are specified, `CorrectionsProcessor` is included automatically in the default pipeline.
 
-The processor accepts any `Dictionary` instance — not just ones built from recognizable.strings. You can pass custom dictionaries populated with domain-specific vocabulary.
+The processor accepts any `Dictionary` instance, not just ones built from recognizable.strings. You can pass custom dictionaries populated with domain-specific vocabulary.
 
 **Lookup modes:** The processor supports the same modes as `Dictionary`: `EXACT`, `CONTAINS`, `FUZZY`, and `AUTO` (default). Pass via `CorrectionsProcessor(dictionaries=[...], mode=LookupMode.FUZZY)`. See [Phonetic Dictionary](phonetic-dictionary.md) for more details.
 
@@ -39,16 +43,16 @@ The processor accepts any `Dictionary` instance — not just ones built from rec
 
 ### 2. Expansion (automatic)
 
-When corrections are present on the input string, `PatternParser.match()` automatically injects them into the compiled pattern before matching. For each `Correction(variant, keyword)`, if `keyword` appears as a literal in the compiled regex, it's replaced with `(keyword|variant1|variant2|...)`.
+When corrections are present on the input string, `PatternParser.match()` automatically injects them into the compiled pattern before matching. For each `Correction(variant, keyword)`, if `keyword` appears as a literal in the compiled pattern, it's replaced with `(keyword|variant1|variant2|...)`.
 
-No flag needed despite being an experimental feature — expansion is triggered by the presence of corrections.
+No flag needed despite being an experimental feature, expansion is triggered by the presence of corrections.
 
 ### 3. Back-tracking
 
 After a successful match, `MatchResult` records which corrections were applied:
 
-- `corrections: dict[str, str]` — maps each variant to its keyword (e.g. `{"tern": "turn"}`)
-- `corrected_string: str` — the matched substring with corrections applied (e.g. `"turn on the light"`)
+- `corrections: dict[str, str]`, maps each variant to its keyword (e.g. `{"tern": "turn"}`)
+- `corrected_string: str`, the matched substring with corrections applied (e.g. `"turn on the light"`)
 
 This enables UIs to show the corrected text to the user, and simplifies debugging.
 
@@ -60,7 +64,7 @@ This enables UIs to show the corrected text to the user, and simplifies debuggin
 
 ### Custom Dictionaries
 
-Any `Dictionary` instance works — populate it with domain-specific vocabulary:
+Any `Dictionary` instance works, populate it with domain-specific vocabulary:
 
 ```python
 from stark.tools.dictionary import Dictionary

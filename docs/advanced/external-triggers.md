@@ -24,7 +24,7 @@ Once the VA has stopped listening after an interaction, you can restart the `Spe
 
 ## Implementing External Triggers
 
-Do note that you probably need to implement a [custom run function](custom-run.md) to add cuncurrent process or create a separate thread.
+Do note that you probably need to implement a [custom run function](custom-run.md) to add cuncurrent process or create a separate thread. If your trigger source isn't voice at all (a button, a webhook, a message), you likely want a custom [`CommandsContextDelegate`](custom-interfaces.md) instead of `VoiceAssistant` entirely.
 
 The beauty of external triggers lies in their versatility. Here are some ways to integrate them:
 
@@ -47,3 +47,5 @@ You can find external trigger implementations at [stark_place/triggers](https://
 ---
 
 By embracing external triggers, you can elevate the adaptability and user experience of your voice assistant. Whether it's a simple keyboard shortcut or an intricate hardware setup, STARK's flexibility ensures that your VA is always ready and responsive, aligned with the needs of your user base.
+
+Built a trigger that isn't listed here? A hardware sensor, a wakeword model, anything. Help is wanted expanding this list and the [stark_place/triggers](https://github.com/MarkParker5/STARK-PLACE/tree/master/stark_place/triggers) collection. [Discuss it](https://github.com/MarkParker5/STARK/discussions) before or after building, either works, and we need all the feedback we can get.

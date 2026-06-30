@@ -1,4 +1,8 @@
-# Sliding Window Parser
+---
+description: Extract parameters from free text in Python using a sliding window parser. Find and parse partial matches without requiring the whole string to match.
+---
+
+# Sliding Window Parser: Extract Parameters from Free Text in Python
 
 ## Overview
 
@@ -26,7 +30,7 @@ print(result) # [(Span(27, 39), "september 5", ("date", "2024-09-05"))]
 
 ### Parameters
 
-```
+```python
 async def sliding_window_parse(
     phrase: str,
     parser: Callable[[str], Awaitable[T]],
@@ -35,7 +39,7 @@ async def sliding_window_parse(
     concurrency: int | None = None,
     find_one: bool = True,
 ) -> list[tuple[Span, str, T]]:
-
+'''
 - **phrase** – text to parse
 - **parser** – async callable returning a parsed value, `None`, or ParseError
 - **min_window / max_window** – window size range in tokens (words)
@@ -50,4 +54,5 @@ Returns:
 
         If find_one=True, returns a single-item list with the first match (faster, less parser calls).
         If no match is found, raises ParseError, so the list is never empty, meaning result[0] is always safe.
+'''
 ```

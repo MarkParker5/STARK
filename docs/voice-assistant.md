@@ -1,5 +1,7 @@
 # Voice Assistant (VA) Documentation
 
+For the full picture on getting an assistant running, `run()`, custom overrides, and IO options beyond voice, see [How to Run](how-to-run.md). This page covers the `VoiceAssistant` class itself and its `Mode` system in depth.
+
 ## Env Parameters
 
 `STARK_VOICE_CLI`: Prints voice input and output in terminal if set to 1 (default 0). Useful for testing and debugging if no other interface is available.
@@ -201,10 +203,10 @@ manager = CommandsManager()
 
 recognizers = [
     VoskSpeechRecognizer(model_url="https://...", language_code="en"),
-    VoskSpeechRecognizer(model_url="https://...", language_code="ru"),
+    VoskSpeechRecognizer(model_url="https://...", language_code="de"),
 ]
 
-localizer = Localizer(languages={"en", "ru"})
+localizer = Localizer(languages={"en", "de"})
 localizer.load()
 
 await run(
@@ -215,7 +217,7 @@ await run(
 )
 ```
 
-When a list is provided, `run()` automatically creates **SpeechRecognizerRelay** — waits for all recognizers to report, builds the best transcription by per-word confidence comparison, and emits a `VoiceTranscriptionString` with per-word language codes
+When a list is provided, `run()` automatically creates **SpeechRecognizerRelay**, waits for all recognizers to report, builds the best transcription by per-word confidence comparison, and emits a `VoiceTranscriptionString` with per-word language codes
 
 The relay produces a `VoiceTranscriptionString` that carries:
 

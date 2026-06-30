@@ -194,7 +194,7 @@ async def test_commands_manager_localized_patterns():
 
     @manager.new({"en": "hello $name:Word", "ru": "привет $name:Word"})
     async def greet(name: Word) -> Response:
-        return Response(text=f"Hello {name}!")
+        return Response(f"Hello {name}!")
 
     assert greet.patterns is not None
     assert "en" in greet.patterns
@@ -246,7 +246,7 @@ async def test_commands_manager_single_pattern():
 
     @manager.new("hello $name:Word")
     async def greet(name: Word) -> Response:
-        return Response(text=f"Hello {name}!")
+        return Response(f"Hello {name}!")
 
     assert greet.patterns == {"base": greet.get_pattern("base")}
     assert greet.get_pattern("base")._origin == "hello $name:Word"

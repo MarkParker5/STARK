@@ -6,8 +6,7 @@ from stark.core.parsing import PatternParser
 from stark.core.patterns import Pattern
 from stark.core.processors.search_processor import SearchProcessor
 from stark.general.localisation import LocaleString
-from stark.models.transcription_string import TranscriptionString
-from stark.models.transcription_string import Correction
+from stark.models.transcription_string import Correction, TranscriptionString
 from stark.models.voice_transcription import (
     VoiceTranscriptionTrack,
     VoiceTranscriptionWord,
@@ -326,11 +325,11 @@ async def test_cross_track_commands_receive_correct_language_code(commands_conte
 
         @manager.new({"en": "set timer"})
         async def set_timer(lang: LanguageCode) -> Response:
-            return Response(text=f"timer:{lang}")
+            return Response(f"timer:{lang}")
 
         @manager.new({"ru": "включи музыку"})
         async def play_music(lang: LanguageCode) -> Response:
-            return Response(text=f"music:{lang}")
+            return Response(f"music:{lang}")
 
         vts = _make_vts(
             en_words=[
@@ -369,11 +368,11 @@ async def test_mixed_language_single_track_language_changes_per_match(commands_c
 
         @manager.new({"en": "set timer"})
         async def set_timer(lang: LanguageCode) -> Response:
-            return Response(text=f"timer:{lang}")
+            return Response(f"timer:{lang}")
 
         @manager.new({"ru": "включи музыку"})
         async def play_music(lang: LanguageCode) -> Response:
-            return Response(text=f"music:{lang}")
+            return Response(f"music:{lang}")
 
         # single best track: en words then ru words (mixed-language utterance)
         best_words = [
@@ -421,11 +420,11 @@ async def test_matrix_sequential_no_command_overlap_both_match():
 
     @m.new({"en": "set timer"})
     async def set_timer() -> Response:
-        return Response(text="timer")
+        return Response("timer")
 
     @m.new({"ru": "включи музыку"})
     async def play_music() -> Response:
-        return Response(text="music")
+        return Response("music")
 
     # en: "set timer and включи музыку" — only "set timer" matches en pattern
     # ru: "поставь таймер и включи музыку" — only "включи музыку" matches ru pattern
@@ -462,11 +461,11 @@ async def test_matrix_sequential_no_transcription_overlap_both_match():
 
     @m.new({"en": "set timer"})
     async def set_timer() -> Response:
-        return Response(text="timer")
+        return Response("timer")
 
     @m.new({"ru": "выключи свет"})
     async def lights_off() -> Response:
-        return Response(text="lights off")
+        return Response("lights off")
 
     vts = _make_vts(
         en_words=[
@@ -495,7 +494,7 @@ async def test_matrix_only_alternative_track_matches():
 
     @m.new({"ru": "включи музыку"})
     async def play_music() -> Response:
-        return Response(text="music")
+        return Response("music")
 
     vts = _make_vts(
         en_words=[
@@ -522,7 +521,7 @@ async def test_matrix_disabled_skips_alternatives(monkeypatch):
 
     @m.new({"ru": "включи музыку"})
     async def play_music() -> Response:
-        return Response(text="music")
+        return Response("music")
 
     vts = _make_vts(
         en_words=[
@@ -547,7 +546,7 @@ async def test_matrix_full_overlap_same_command_deduped():
 
     @m.new({"en": "set timer", "ru": "поставь таймер"})
     async def set_timer() -> Response:
-        return Response(text="timer")
+        return Response("timer")
 
     vts = _make_vts(
         en_words=[
@@ -573,11 +572,11 @@ async def test_matrix_full_overlap_different_commands_primary_track_wins():
 
     @m.new({"en": "stop music"})
     async def stop_music_en() -> Response:
-        return Response(text="stopped")
+        return Response("stopped")
 
     @m.new({"ru": "стоп музыка"})
     async def stop_music_ru() -> Response:
-        return Response(text="остановлено")
+        return Response("остановлено")
 
     vts = _make_vts(
         en_words=[
@@ -607,11 +606,11 @@ async def test_matrix_partial_overlap_loser_removed():
 
     @m.new({"en": "set timer for five minutes"})
     async def set_timer() -> Response:
-        return Response(text="timer set")
+        return Response("timer set")
 
     @m.new({"ru": "пять минут включи музыку"})
     async def play_after_five() -> Response:
-        return Response(text="playing after 5")
+        return Response("playing after 5")
 
     vts = _make_vts(
         en_words=[
@@ -650,11 +649,11 @@ async def test_matrix_partial_overlap_winner_cuttable():
 
     @m.new({"en": "play *"})
     async def play() -> Response:
-        return Response(text="playing")
+        return Response("playing")
 
     @m.new({"ru": "стоп таймер"})
     async def stop_timer() -> Response:
-        return Response(text="stopped")
+        return Response("stopped")
 
     vts = _make_vts(
         en_words=[
@@ -697,7 +696,7 @@ async def test_ts_no_timestamps_single_match_in_alt():
 
     @m.new({"ru": "включи музыку"})
     async def play_music() -> Response:
-        return Response(text="playing")
+        return Response("playing")
 
     ts = TranscriptionString.from_words(
         [("turn", "en"), ("on", "en"), ("music", "en")],
@@ -716,11 +715,11 @@ async def test_ts_no_timestamps_two_commands_same_track_no_overlap():
 
     @m.new({"en": "set timer"})
     async def set_timer() -> Response:
-        return Response(text="timer")
+        return Response("timer")
 
     @m.new({"en": "play songs"})
     async def play_songs() -> Response:
-        return Response(text="songs")
+        return Response("songs")
 
     ts = TranscriptionString.from_words(
         [("set", "en"), ("timer", "en"), ("and", "en"), ("play", "en"), ("songs", "en")],
@@ -744,11 +743,11 @@ async def test_ts_no_timestamps_two_commands_same_track_overlap_cuttable():
 
     @m.new({"en": "set timer *"})
     async def set_timer() -> Response:
-        return Response(text="timer")
+        return Response("timer")
 
     @m.new({"en": "stop"})
     async def stop_after() -> Response:
-        return Response(text="stopped")
+        return Response("stopped")
 
     ts = TranscriptionString.from_words(
         [("set", "en"), ("timer", "en"), ("for", "en"), ("five", "en"), ("minutes", "en"), ("stop", "en")],
@@ -771,11 +770,11 @@ async def test_ts_no_timestamps_cross_track_no_overlap():
 
     @m.new({"en": "set timer"})
     async def set_timer() -> Response:
-        return Response(text="timer")
+        return Response("timer")
 
     @m.new({"ru": "включи музыку"})
     async def play_music() -> Response:
-        return Response(text="playing")
+        return Response("playing")
 
     ts = TranscriptionString.from_words(
         [("set", "en"), ("timer", "en"), ("and", "en"), ("turn", "en"), ("on", "en"), ("music", "en")],
@@ -795,11 +794,11 @@ async def test_ts_no_timestamps_cross_track_overlap():
 
     @m.new({"en": "set timer for five"})
     async def set_timer() -> Response:
-        return Response(text="timer")
+        return Response("timer")
 
     @m.new({"ru": "пять минут включи музыку"})
     async def play_after() -> Response:
-        return Response(text="playing")
+        return Response("playing")
 
     ts = TranscriptionString.from_words(
         [

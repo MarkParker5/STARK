@@ -1,9 +1,7 @@
 from pathlib import Path
 
-import pytest
-
 from stark.core.command import Response
-from stark.general.localisation import Localizer, LocalizableString
+from stark.general.localisation import LocalizableString, Localizer
 
 
 def _create_strings_file(root: Path, lang: str, name: str, content: str):
@@ -94,6 +92,6 @@ def test_response_accepts_localizable_string():
 
 
 def test_response_accepts_plain_str():
-    r = Response(text="hello", voice="hello")
+    r = Response("hello", voice="hello")
     assert r.text == "hello"
     assert r.voice == "hello"

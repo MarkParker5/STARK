@@ -142,6 +142,13 @@ class Response(BaseModel):
     id: UUID = Field(default_factory=uuid4)
     time: datetime = Field(default_factory=datetime.now)
 
+    def __init__(self, *args, **kwargs):
+        if args:
+            kwargs["text"] = args[0]
+        if voice := kwargs.get("voice", kwargs.get("text")):  # fallback voice to text if text present
+            kwargs["voice"] = voice
+        super().__init__(**kwargs)
+
     _repeat_last: ClassVar[Response | None] = None  # static instance
 
     @classproperty

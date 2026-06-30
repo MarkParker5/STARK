@@ -52,8 +52,7 @@ from stark.core.types import Word
 
 @manager.new('Hello $name:Word')
 async def example_function(name: Word) -> Response:
-    text = voice = f'You said {name}!'
-    return Response(text=text, voice=voice)
+    return Response(f'You said {name}!')
 ```
 
 ## Native Types List
@@ -177,7 +176,7 @@ By default, parameters in a pattern must appear in a fixed order. Unordered patt
 
 There are two flavours, available as helper functions from `stark.core.patterns.rules`:
 
-### `all_unordered(*args)` — all required
+### `all_unordered(*args)`, all required
 
 Every listed element must be present in the input. Order doesn't matter.
 
@@ -189,7 +188,7 @@ pattern = Pattern(f"{all_unordered('$h:Hours', '$m:Minutes', '$s:Seconds')}")
 # does NOT match "12 h 30 m" (missing seconds)
 ```
 
-### `one_or_more_unordered(*args)` — at least one required
+### `one_or_more_unordered(*args)`, at least one required
 
 At least one element must match. The rest are optional. Order doesn't matter.
 
@@ -201,11 +200,11 @@ pattern = Pattern(f"{one_or_more_unordered('$h:Hours', '$m:Minutes', '$s:Seconds
 # does NOT match "" (at least one must be present)
 ```
 
-> **Note:** Unordered patterns use lookahead-based regex under the hood and don't work well with multi-word wildcards (`**`). For unordered multi-word parameters, use Slots instead.
+> **Note:** Unordered patterns use lookahead-based matching under the hood and don't work well with multi-word wildcards (`**`). For unordered multi-word parameters, use Slots instead.
 
 ## Slots
 
-Slots provide unordered parameter extraction for Object types with multiple fields. Unlike unordered patterns (which work at the regex level), Slots parse each field independently from the input string, so they handle multi-word and greedy parameters correctly.
+Slots provide unordered parameter extraction for Object types with multiple fields. Unlike unordered patterns (which work at the pattern level), Slots parse each field independently from the input string, so they handle multi-word and greedy parameters correctly.
 
 ### Defining a Slots class
 
@@ -258,8 +257,10 @@ async def set_timer(timer: TimerSlots) -> Response:
 - Required (non-optional) slots must all match, otherwise parsing fails.
 - The `value` property is set to the minimal substring spanning all matched slots.
 
-This makes Slots ideal for commands where parameters can appear in any order and may include multi-word values — something that regex-based unordered patterns can't handle reliably.
+This makes Slots ideal for commands where parameters can appear in any order and may include multi-word values, something that pattern-based unordered matching can't handle reliably.
 
 ---
 
 By understanding and mastering patterns in the S.T.A.R.K toolkit, you'll be well-equipped to create powerful and dynamic custom voice assistants. Happy coding!
+
+Pattern matching itself runs as one stage in a pluggable pipeline, see [Custom Processors](advanced/custom-processors.md) if you want to add your own stage (e.g. NER, phonetic correction) before or after matching.

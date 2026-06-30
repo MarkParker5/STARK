@@ -1,17 +1,13 @@
-# First Steps
+# Hello World
 
-Congratulations on installing the STARK framework! This guide is designed to help you familiarize yourself with its primary components and to set up your first voice-driven application using STARK. We'll demonstrate how to create a basic voice assistant that responds to the "hello" command.
+Congratulations on installing S.T.A.R.K.! This guide walks through your first voice-driven application: a command that responds to "hello" by saying "Hello, Stark!" back. <small>([jump to async commands →](creating-commands.md#async-commands))</small>
 
-## Hello World
+## Hello, Stark!
 
-STARK provides flexibility by allowing you to integrate different implementations for speech recognition and synthesis. For this tutorial, we will employ the Vosk implementation for speech recognition and the Silero implementation for speech synthesis.
+S.T.A.R.K. doesn't lock you into one speech engine, it's built around protocols, so any recognizer or synthesizer that implements them works. This tutorial uses Vosk for speech recognition and Silero for speech synthesis, both fully offline. Both download and cache their models automatically on first use:
 
-Before diving in, you'll need to specify URLs for the models. Both Vosk and Silero are designed to automatically download and cache the models upon their first use.
-
-- [Vosk Model URL: Visit Vosk models to select an appropriate model.](https://alphacephei.com/vosk/models)
-- [Silero Model URL: Visit Silero models to identify a suitable model.](https://github.com/snakers4/silero-models?tab=readme-ov-file#models-and-speakers)
-
-At the heart of STARK is the `CommandsManager`, a component dedicated to managing the commands your voice assistant can comprehend. Here's a comprehensive example showcasing how to define a new command, initialize the speech recognizer and synthesizer, and run the voice assistant:
+- [Vosk models](https://alphacephei.com/vosk/models), pick one for your language
+- [Silero models](https://github.com/snakers4/silero-models?tab=readme-ov-file#models-and-speakers), pick a voice
 
 ```py
 import anyio
@@ -23,23 +19,27 @@ from stark.interfaces.silero import SileroSpeechSynthesizer
 VOSK_MODEL_URL = "YOUR_CHOSEN_VOSK_MODEL_URL"
 SILERO_MODEL_URL = "YOUR_CHOSEN_SILERO_MODEL_URL"
 
-recognizer = VoskSpeechRecognizer(model_url=VOSK_MODEL_URL)
-synthesizer = SileroSpeechSynthesizer(model_url=SILERO_MODEL_URL)
+manager = CommandsManager()                                         # 1
 
-manager = CommandsManager()
-
-@manager.new('hello')
-async def hello_command() -> Response:
-    text = voice = 'Hello, world!'
-    return Response(text=text, voice=voice)
+@manager.new('hello')                                                # 2
+def hello_command() -> Response:
+    return Response('Hello, Stark!', voice='Hello, Stark!')     # 3
 
 async def main():
-    await run(manager, recognizer, synthesizer)
+    recognizer = VoskSpeechRecognizer(model_url=VOSK_MODEL_URL)      # 4
+    synthesizer = SileroSpeechSynthesizer(model_url=SILERO_MODEL_URL)
+    await run(manager, recognizer, synthesizer)                      # 5
 
 if __name__ == '__main__':
     anyio.run(main)
 ```
 
-In this code snippet, we defined a new command for the voice assistant. When the word "hello" is spoken, the `hello_command` function is triggered, which then issues a greeting in response.
+1. `CommandsManager` is where every command your assistant understands gets registered.
+2. `@manager.new('hello')` registers a command matched against the pattern `'hello'`. Patterns can get much more dynamic than a literal word, see [Patterns](patterns.md).
+3. A `Response` carries both the spoken (`voice`) and displayed (`text`) reply, they don't have to match, but here they do. Plenty of other fields exist (status, follow-up commands, parameters), see [Command Response](command-response.md) in Core Concepts.
+4. Pick a recognizer and synthesizer. These two are offline; S.T.A.R.K. doesn't require any cloud service or API key to work.
+5. `run()` wires the manager, recognizer, and synthesizer together and starts listening. Say "hello," hear "Hello, Stark!" back.
 
-It's important to note that STARK accommodates both synchronous (`def`) and asynchronous (`async def`) command definitions. For a deeper dive into the use-cases and distinctions between these two command types, consult the [Sync vs Async Commands](sync-vs-async-commands.md) article.
+This command is declared plain `def`, simplest option, and S.T.A.R.K. handles the rest. Once you start awaiting things inside a command, you'll want `async def` instead, see [Async Commands](creating-commands.md#async-commands) and [Sync vs Async Commands](sync-vs-async-commands.md) for when to reach for which.
+
+Prefer to skip the microphone for now and type input in a terminal instead? See [How to Run](how-to-run.md) for the no-audio variant of this same example.

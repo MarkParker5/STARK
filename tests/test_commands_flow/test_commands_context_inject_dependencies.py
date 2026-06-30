@@ -9,7 +9,7 @@ async def test_commands_context_inject_dependencies(commands_context_flow, autoj
 
         @manager.new("foo")
         async def foo(handler: AsyncResponseHandler) -> Response:
-            return Response(text="foo!")
+            return Response("foo!")
 
         @manager.new("bar")
         async def bar(inject_dependencies):
@@ -29,7 +29,7 @@ async def test_language_code_injected_from_match(commands_context_flow, autojump
 
         @manager.new("hello")
         async def hello(lang: LanguageCode) -> Response:
-            return Response(text=f"lang={lang}")
+            return Response(f"lang={lang}")
 
         await context.process_string(LocaleString("hello", "en"))
         await anyio.sleep(1)
@@ -45,7 +45,7 @@ async def test_language_code_injected_any_parameter_name(commands_context_flow, 
 
         @manager.new("hello")
         async def hello(language: LanguageCode) -> Response:
-            return Response(text=f"language={language}")
+            return Response(f"language={language}")
 
         await context.process_string(LocaleString("hello", "fr"))
         await anyio.sleep(1)

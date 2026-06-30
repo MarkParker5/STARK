@@ -8,7 +8,7 @@ In instances where a single input correlates with multiple commands, the system 
 
 ## The Contextual Hierarchy
 
-Visualize the entire system as a tree. Each context functions as a node, with its linked sub-contexts acting as its offspring. As users navigate this tree, they move between nodes—either delving deeper or backtracking—to consistently find the right command match.
+Visualize the entire system as a tree. Each context functions as a node, with its linked sub-contexts acting as its offspring. As users navigate this tree, they move between nodes, either delving deeper or backtracking, to consistently find the right command match.
 
 ## Command Context Processing
 
@@ -38,20 +38,17 @@ For additional details on responses, visit the [Command Response](command-respon
 ```python
 @manager.new('hello', hidden=True) 
 def hello_context(**params):
-    voice = text = f'Hi, {params["name"]}!'
-    return Response(text=text, voice=voice)
+    return Response(f'Hi, {params["name"]}!')
 
 @manager.new('bye', hidden=True)
 def bye_context(name: Word, handler: ResponseHandler):
     handler.pop_context()
-    return Response(text=f'Bye, {name}!')
+    return Response(f'Bye, {name}!')
 
 @manager.new('hello $name:Word')
 def hello(name: Word):
-    text = voice = f'Hello, {name}!'
     return Response(
-        text=text,
-        voice=voice,
+        f'Hello, {name}!',
         commands=[hello_context, bye_context],
         parameters={'name': name}
     )
@@ -80,3 +77,36 @@ The code example provided demonstrates how to define and manage commands using a
 - The response not only contains the greeting but also a list of commands (`hello_context` and `bye_context`) that can be triggered next. This showcases the hierarchical and contextual nature of the system. Additionally, the name is passed as a parameter for potential use in subsequent commands.
 
 In summary, the code example gives us a glimpse into the contextual and hierarchical command management system. With the use of the `hidden` attribute, commands can be kept away from the root context, making them accessible only when they are contextually relevant.
+
+## A Real Nested Menu
+
+The example above is the mechanism in isolation. Here's the same mechanism solving something concrete: a `room → device → action` smart-home menu, three levels deep.
+
+```python
+@manager.new('turn off', hidden=True)
+def turn_lights_off(room: str, handler: ResponseHandler) -> Response:
+    handler.pop_context()                                                  # 1
+    return Response(f'{room.title()} lights off.')
+
+@manager.new('lights', hidden=True)
+def lights_menu(room: str) -> Response:
+    return Response(
+        text=f'{room.title()} lights — say "turn off".',
+        commands=[turn_lights_off],                                        # 2
+        parameters={'room': room},                                         # 3
+    )
+
+@manager.new('$room:(living room|kitchen|bedroom)')
+def room_menu(room: str) -> Response:
+    return Response(
+        text=f'{room.title()} — say "lights" to continue.',
+        commands=[lights_menu],
+        parameters={'room': room},
+    )
+```
+
+1. `pop_context()` removes this layer once the action completes, say "living room", then "lights", then "turn off", and the context unwinds back to root after the lights go off. No context is left dangling.
+2. Only `turn_lights_off` is offered next, at this depth, nothing else makes sense, so nothing else is suggested.
+3. `room` flows down from the first command to the last via `parameters`, without the user repeating themselves at each step ("living room", not "turn off the living room lights").
+
+This is the same context push/pop mechanism powering the `stop timer` command in [Sync vs Async Commands](sync-vs-async-commands.md#background-commands), a context-scoped command isn't limited to menus; it's just as natural for "cancel the thing I just started."

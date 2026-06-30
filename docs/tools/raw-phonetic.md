@@ -1,4 +1,8 @@
-# Raw Phonetic Tools: IPA & Simplephone
+---
+description: IPA phonetic transcription and simplephone encoding for Python. Convert text in any language to a language-agnostic phonetic code for fuzzy, cross-language matching.
+---
+
+# Raw Phonetic Tools: IPA Transcription & Simplephone Encoding for Python
 
 ## Overview
 
@@ -22,6 +26,10 @@ sp = simplephone("Linkin Park")      # e.g. "linkin park" → "LNKNPARK"
 
 # Combine for best fuzzy matching (recommended for cross-language)
 sp_combined = simplephone(transcription("Лінкін Парк", "uk"))  # → "LNKNPARK"
+
+# Same idea for any other language, Polish and Italian here
+sp_pl = simplephone(transcription("Linkin Park", "pl"))  # → "LNKNPARK"
+sp_it = simplephone(transcription("Linkin Park", "it"))  # → "LNKNPARK"
 
 # Direct IPA to Latin conversion
 latin = ipa2lat("tɛst")  # → "test"
@@ -89,9 +97,9 @@ For even more fuzzyness, consider using the levenshtein distance with the defaul
 
 The `transcription()` function accepts an `ipa_provider` parameter:
 
-- `EspeakIpaProvider()` — default, requires [espeak-ng](https://github.com/espeak-ng/espeak-ng) system binary
-- `EpitranIpaProvider()` — pure Python via the `epitran` library, supports 120+ languages, slightly slower than `EspeakIpaProvider` and different language support
-- `LatinPassthroughProvider(fallback=None)` — returns latin text unchanged (lowercased), delegates non-latin to the fallback provider, raises `ValueError` for non-latin text if no fallback is provided. No external dependencies for latin-only text. Fastest for latin-only text, but less accurate.
+- `EspeakIpaProvider()`, default, requires [espeak-ng](https://github.com/espeak-ng/espeak-ng) system binary
+- `EpitranIpaProvider()`, pure Python via the `epitran` library, supports 120+ languages, slightly slower than `EspeakIpaProvider` and different language support
+- `LatinPassthroughProvider(fallback=None)`, returns latin text unchanged (lowercased), delegates non-latin to the fallback provider, raises `ValueError` for non-latin text if no fallback is provided. No external dependencies for latin-only text. Fastest for latin-only text, but less accurate.
 
 You are free to implement your own IPA provider by subclassing `IpaProvider`.
 

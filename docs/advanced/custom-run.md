@@ -1,175 +1,138 @@
 # Custom Run
 
-STARK's flexibility and extensibility can be attributed to its ability to cater to various use cases and environments. An essential feature of the framework is the capacity to customize the run function. This allows developers to personalize the core functionality, integrating custom setups, or extending the capabilities of the framework.
+`run()` is opinionated, it always wires a `VoiceAssistant`, always starts the microphone, always uses the default processor pipeline unless told otherwise (see [How to Run](../how-to-run.md) for the parameters it does expose). Most of the time, those defaults are exactly right. When they're not, you want a different startup sequence, extra concurrent tasks, custom logging baked into the assembly itself, replicate `run()` and adjust it, rather than fighting its assumptions from the outside.
 
-Below is a quick guide on how to understand and make use of the custom run function.
+This page walks through what `run()` actually does, so a custom version isn't guesswork.
 
 ## Understanding the Default Run Function
 
-The `run` function in STARK serves as the primary entry point that sets up and commences the voice assistant.
-
 ```python
 import asyncer
 
-from stark.interfaces.protocols import SpeechRecognizer, SpeechSynthesizer
 from stark.core import CommandsContext, CommandsManager
-from stark.voice_assistant import VoiceAssistant
+from stark.core.health_check import health_check
+from stark.core.processors.search_processor import SearchProcessor
 from stark.general.blockage_detector import BlockageDetector
+from stark.interfaces.microphone import Microphone
+from stark.interfaces.protocols import SpeechRecognizer, SpeechSynthesizer
+from stark.voice_assistant import VoiceAssistant
 
 
 async def run(
     manager: CommandsManager,
     speech_recognizer: SpeechRecognizer,
-    speech_synthesizer: SpeechSynthesizer
+    speech_synthesizer: SpeechSynthesizer,
 ):
     async with asyncer.create_task_group() as main_task_group:
-        context = CommandsContext(
-            task_group = main_task_group, 
-            commands_manager = manager
+        context = CommandsContext(                                          # 1
+            task_group=main_task_group,
+            commands_manager=manager,
+            processors=[SearchProcessor()],
         )
-        voice_assistant = VoiceAssistant(
-            speech_recognizer = speech_recognizer,
-            speech_synthesizer = speech_synthesizer,
-            commands_context = context
+
+        voice_assistant = VoiceAssistant(                                   # 2
+            speech_recognizer=speech_recognizer,
+            speech_synthesizer=speech_synthesizer,
+            commands_context=context,
         )
-        speech_recognizer.delegate = voice_assistant
+        speech_recognizer.delegate = voice_assistant                        # 3
         context.delegate = voice_assistant
-        
-        main_task_group.soonify(speech_recognizer.start_listening)()
+
+        health_check(context.pattern_parser, manager.commands)              # 4
+
+        main_task_group.soonify(speech_recognizer.start_listening)()        # 5
+        microphone = Microphone(speech_recognizer.microphone_did_receive_sample)
+        main_task_group.soonify(microphone.start_listening)()
         main_task_group.soonify(context.handle_responses)()
-        
-        detector = BlockageDetector()
+
+        detector = BlockageDetector()                                       # 6
         main_task_group.soonify(detector.monitor)()
-
 ```
 
-Let's dissect it:
-
-```python
-async def run(
-    manager: CommandsManager,
-    speech_recognizer: SpeechRecognizer,
-    speech_synthesizer: SpeechSynthesizer
-):
-
-```
-
-**Parameters:**
-
-- `manager`: An instance of `CommandsManager` which holds all the commands that the voice assistant can recognize and process.
-- `speech_recognizer`: The implementation you've selected for speech recognition.
-- `speech_synthesizer`: The implementation you've chosen for speech synthesis.
-
-```python
-async with asyncer.create_task_group() as main_task_group:
-```
-
-Here, a task group is created using `asyncer`. Task groups allow you to manage several tasks concurrently.
-
-```python
-context = CommandsContext(
-    task_group = main_task_group, 
-    commands_manager = manager
-)
-```
-
-A `CommandsContext` is initialized. This holds the context in which commands are executed, including the associated task group and the command manager.
-
-```python
-voice_assistant = VoiceAssistant(
-    speech_recognizer = speech_recognizer,
-    speech_synthesizer = speech_synthesizer,
-    commands_context = context
-)
-```
-
-The `VoiceAssistant` is then created and initialized with the recognizer, synthesizer, and context.
-
-```python
-speech_recognizer.delegate = voice_assistant
-context.delegate = voice_assistant
-```
-
-Both the speech recognizer and the commands context are associated with the voice assistant as their delegates. This setup ensures that when the recognizer captures any speech or when there's a command response to handle, the voice assistant processes them.
-
-```python
-main_task_group.soonify(speech_recognizer.start_listening)()
-main_task_group.soonify(context.handle_responses)()
-```
-
-Tasks are added to the main task group: One to start the speech recognizer's listening process, and the other to handle responses from executed commands.
-
-```python
-detector = BlockageDetector()
-main_task_group.soonify(detector.monitor)()
-```
-
-A blockage detector is introduced and initialized. This mechanism ensures that any potential deadlocks or blocking calls within the async code are detected, allowing for smooth operation.
+1. `CommandsContext` is the engine, it holds the command manager, the processor pipeline (here, just pattern matching via `SearchProcessor`), and the task group everything else runs in.
+2. `VoiceAssistant` is the default IO layer, gluing the recognizer and synthesizer to the context. See [Custom IO & Context Delegate](custom-interfaces.md) if you want to swap this out for something other than voice.
+3. The recognizer and the context both report to `voice_assistant` as their delegate, this is the wiring that makes "the mic heard something" eventually become "a response got spoken."
+4. `health_check` validates the whole command set at startup, catches things like a missing `@key` localization reference (see [Localizing Parsing](../localization-and-multilingual/localizing-parsing.md)) before a user ever triggers it.
+5. Three tasks run concurrently for the lifetime of the assistant: listening for speech, reading microphone samples, and delivering queued responses. See [Sync vs Async Commands](../sync-vs-async-commands.md) for why this concurrency matters.
+6. `BlockageDetector` watches the main thread and warns if something blocks it for too long, a safety net for the mistake [Optimization](optimization.md) is mostly about avoiding.
 
 ## Customizing the Run Function
 
-Customizing the `run` function provides a pathway to inject additional functionalities or to adapt the framework to specific needs.
+Common reasons to write your own version instead of relying on [`run()`'s exposed parameters](../how-to-run.md):
 
-For instance, you could:
+- Extra concurrent tasks alongside the assistant (a background sync job, a health-check server, a metrics reporter)
+- Custom logging or analytics wired in at the assembly point, not inside individual commands
+- A different processor pipeline assembled conditionally, beyond what passing `processors=[...]` to `run()` already covers
 
-- Integrate other third-party tools or services.
-- Implement custom logging or analytics mechanisms.
-- Extend with other asynchronous operations to run concurrently with the voice assistant.
+When customizing, keep the core structure intact, task group creation, delegate wiring, and the order things are assigned in. Getting delegates assigned before tasks start matters; assign them too late and early events get dropped.
 
-When customizing, ensure that you maintain the core structure, especially the initialization of the main components and the task group management. The ordering can be crucial, especially when setting delegates.
-
-To kickstart your customization, replicate the default run function as your foundation, and weave in your specific adjustments or additions as needed. Consequently, a "Hello, World" implementation with a custom run would appear as:
+A "Hello, Stark!" assistant with a custom run, extending the default with one extra background task:
 
 ```python
 import asyncer
+import anyio
 from stark import CommandsContext, CommandsManager, Response
+from stark.core.health_check import health_check
+from stark.core.processors.search_processor import SearchProcessor
+from stark.general.blockage_detector import BlockageDetector
+from stark.interfaces.microphone import Microphone
 from stark.interfaces.protocols import SpeechRecognizer, SpeechSynthesizer
 from stark.interfaces.vosk import VoskSpeechRecognizer
 from stark.interfaces.silero import SileroSpeechSynthesizer
 from stark.voice_assistant import VoiceAssistant
-from stark.general.blockage_detector import BlockageDetector
 
 
 VOSK_MODEL_URL = "YOUR_CHOSEN_VOSK_MODEL_URL"
 SILERO_MODEL_URL = "YOUR_CHOSEN_SILERO_MODEL_URL"
 
-recognizer = VoskSpeechRecognizer(model_url=VOSK_MODEL_URL)
-synthesizer = SileroSpeechSynthesizer(model_url=SILERO_MODEL_URL)
-
 manager = CommandsManager()
 
 @manager.new('hello')
 async def hello_command() -> Response:
-    text = voice = 'Hello, world!'
-    return Response(text=text, voice=voice)
+    return Response('Hello, Stark!')
+
+async def periodic_health_ping():
+    while True:
+        await anyio.sleep(60)
+        print('Still alive.')  # your monitoring/metrics call goes here
 
 async def run(
     manager: CommandsManager,
     speech_recognizer: SpeechRecognizer,
-    speech_synthesizer: SpeechSynthesizer
+    speech_synthesizer: SpeechSynthesizer,
 ):
     async with asyncer.create_task_group() as main_task_group:
         context = CommandsContext(
-            task_group = main_task_group, 
-            commands_manager = manager
+            task_group=main_task_group,
+            commands_manager=manager,
+            processors=[SearchProcessor()],
         )
         voice_assistant = VoiceAssistant(
-            speech_recognizer = speech_recognizer,
-            speech_synthesizer = speech_synthesizer,
-            commands_context = context
+            speech_recognizer=speech_recognizer,
+            speech_synthesizer=speech_synthesizer,
+            commands_context=context,
         )
         speech_recognizer.delegate = voice_assistant
         context.delegate = voice_assistant
-        
+
+        health_check(context.pattern_parser, manager.commands)
+
         main_task_group.soonify(speech_recognizer.start_listening)()
+        microphone = Microphone(speech_recognizer.microphone_did_receive_sample)
+        main_task_group.soonify(microphone.start_listening)()
         main_task_group.soonify(context.handle_responses)()
-        
+        main_task_group.soonify(periodic_health_ping)()  # the addition
+
         detector = BlockageDetector()
         main_task_group.soonify(detector.monitor)()
 
 async def main():
+    recognizer = VoskSpeechRecognizer(model_url=VOSK_MODEL_URL)
+    synthesizer = SileroSpeechSynthesizer(model_url=SILERO_MODEL_URL)
     await run(manager, recognizer, synthesizer)
 
 if __name__ == '__main__':
-    asyncer.runnify(main)() # or anyio.run(main), same thing
+    anyio.run(main)
 ```
+
+The only addition over the default is `periodic_health_ping`, everything else is the structure `run()` already does, copied so it can be extended in place.

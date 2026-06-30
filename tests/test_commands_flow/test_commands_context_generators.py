@@ -11,15 +11,15 @@ async def test_commands_context_handle_async_generator(commands_context_flow, au
         @manager.new("foo")
         async def foo():
             await anyio.sleep(2)
-            yield Response(text="foo0")
+            yield Response("foo0")
             await anyio.sleep(2)
-            yield Response(text="foo1")
+            yield Response("foo1")
             await anyio.sleep(2)
-            yield Response(text="foo2")
+            yield Response("foo2")
             await anyio.sleep(2)
-            yield Response(text="foo3")
+            yield Response("foo3")
             await anyio.sleep(2)
-            yield Response(text="foo4")
+            yield Response("foo4")
             # return is not allowed in generators (functions with yield)
 
         await context.process_string("foo")
@@ -42,11 +42,11 @@ async def test_commands_context_handle_sync_generator(commands_context_flow, aut
 
         @manager.new("foo")
         def foo():
-            yield Response(text="foo0")
-            yield Response(text="foo1")
-            yield Response(text="foo2")
-            yield Response(text="foo3")
-            yield Response(text="foo4")
+            yield Response("foo0")
+            yield Response("foo1")
+            yield Response("foo2")
+            yield Response("foo3")
+            yield Response("foo4")
             # return is not allowed in generators (functions with yield)
 
         with warnings.catch_warnings(record=True) as warnings_list:

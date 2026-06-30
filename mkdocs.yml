@@ -10,39 +10,50 @@ copyright: Copyright &copy; Mark Parker
 
 nav:
   - Home: index.md
-  - Contributing and Shared Usage: contributing-and-shared-usage-stark-place.md
-  - Installation: installation.md
-  - First Steps: first-steps.md
-  - Sync vs Async Commands: sync-vs-async-commands.md
-  - Creating Commands: creating-commands.md
-  - Dependency Injection: dependency-injection.md
-  - Patterns: patterns.md
-  - Command Response: command-response.md
-  - Commands Context: commands-context.md
-  - Voice Assistant: voice-assistant.md
-  - Default Speech Interfaces: default-speech-interfaces.md
-  - Where to Host: where-to-host.md
-  - Tools:
-      - Phonetic Dictionary - Cross-language Name Lookup: tools/phonetic-dictionary.md
-      - Raw Phonetic Tools (IPA & Simplephone): tools/raw-phonetic.md
-      - Levenshtein - Fuzzy String Matching: tools/stark-levenshtein.md
-      - Sliding Window Parser: tools/sliding-window-parser.md
-      - Corrections - Phonetic Pattern Matching: tools/corrections.md
-  - Advanced:
-      - Optimization: advanced/optimization.md
-      - Custom Run: advanced/custom-run.md
-      - Fallback Command / LLM Integration: advanced/fallback-command-llm-integration.md
-      - External Triggers: advanced/external-triggers.md
-      - Custom Interfaces: advanced/custom-interfaces.md
-      - Custom Processors: advanced/custom-processors.md
-      - Feature Flags: advanced/feature-flags.md
-  - Localization and Multi-Language:
+  - Getting Started:
+      - Installation: installation.md
+      - "Hello World": first-steps.md
+      - Creating Commands: creating-commands.md
+      - Sync vs Async Commands: sync-vs-async-commands.md
+  - Core Concepts:
+      - Overview: core-concepts.md
+      - Patterns: patterns.md
+      - Command Response: command-response.md
+      - Commands Context: commands-context.md
+      - Dependency Injection: dependency-injection.md
+  - Running Your Assistant:
+      - Overview: running-your-assistant.md
+      - How to Run: how-to-run.md
+      - Voice Assistant & Modes: voice-assistant.md
+      - Default Speech Interfaces: default-speech-interfaces.md
+      - Custom IO & Context Delegate: advanced/custom-interfaces.md
+      - Where to Host: where-to-host.md
+  - Going Multilingual:
       - localization-and-multilingual/index.md
       - Localizing Parsing: localization-and-multilingual/localizing-parsing.md
       - Multilanguage Input: localization-and-multilingual/multilanguage-input.md
       - Localizing Responses: localization-and-multilingual/localizing-responses.md
-  - Other: advanced/other.md # TODO: <-
-  # - S.T.A.R.K P.L.A.C.E Navigator: /stark-place-navigator.md
+  - Tools:
+      - Overview: tools/index.md
+      - Phonetic Dictionary - Cross-language Name Lookup: tools/phonetic-dictionary.md
+      - Phonetic Corrections (Fuzzy Matching): tools/corrections.md
+      - Raw Phonetic Tools (IPA & Simplephone): tools/raw-phonetic.md
+      - Levenshtein - Fast Fuzzy String Matching (Cython): tools/stark-levenshtein.md
+      - Sliding Window Parser: tools/sliding-window-parser.md
+      - Speech Recognition (STT): tools/speech-recognition.md
+      - Speech Synthesis (TTS): tools/speech-synthesis.md
+  - Going Deeper:
+      - Custom Run: advanced/custom-run.md
+      - Custom Processors: advanced/custom-processors.md
+      - External Triggers: advanced/external-triggers.md
+      - Fallback Command / LLM Integration: advanced/fallback-command-llm-integration.md
+      - Feature Flags: advanced/feature-flags.md
+      - Optimization: advanced/optimization.md
+  - AI Agent Platform: agent-platform.md
+  - Community:
+      - STARK-PLACE: contributing-and-shared-usage-stark-place.md
+      - Project Ideas: project-ideas.md
+      - Roadmap: roadmap.md
 
 theme:
   name: material
@@ -144,15 +155,17 @@ plugins:
         Getting Started:
           - installation.md
           - first-steps.md
-          - contributing-and-shared-usage-stark-place.md
-        Commands:
+        Core Concepts:
+          - core-concepts.md
           - creating-commands.md
           - sync-vs-async-commands.md
           - command-response.md
           - commands-context.md
           - patterns.md
           - dependency-injection.md
-        Voice Assistant:
+        Running Your Assistant:
+          - running-your-assistant.md
+          - how-to-run.md
           - voice-assistant.md
           - default-speech-interfaces.md
           - where-to-host.md
@@ -162,6 +175,12 @@ plugins:
           - advanced/*.md
         Localization and Multi-Language:
           - localization-and-multilingual/*.md
+        Whats Next:
+          - agent-platform.md
+          - roadmap.md
+        Community:
+          - contributing-and-shared-usage-stark-place.md
+          - project-ideas.md
   # - git-committers:
   #     repository: MarkParker5/STARK
   #     branch: master

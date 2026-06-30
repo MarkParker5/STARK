@@ -71,7 +71,9 @@ class SpeechSynthesizerMock:
 @pytest.fixture
 async def commands_context_flow():
     @contextlib.asynccontextmanager
-    async def _commands_context_flow() -> AsyncGenerator[tuple[CommandsManager, CommandsContext, CommandsContextDelegateMock], None]:
+    async def _commands_context_flow() -> AsyncGenerator[
+        tuple[CommandsManager, CommandsContext, CommandsContextDelegateMock], None
+    ]:
         async with asyncer.create_task_group() as main_task_group:
             dependencies = DependencyManager()
             manager = CommandsManager()
@@ -92,27 +94,29 @@ async def commands_context_flow():
 @pytest.fixture
 async def commands_context_flow_filled(commands_context_flow):
     @contextlib.asynccontextmanager
-    async def _commands_context_flow_filled() -> AsyncGenerator[tuple[CommandsContext, CommandsContextDelegateMock], None]:
+    async def _commands_context_flow_filled() -> AsyncGenerator[
+        tuple[CommandsContext, CommandsContextDelegateMock], None
+    ]:
         async with commands_context_flow() as (manager, context, context_delegate):
 
             @manager.new("test")
             def test():
                 text = voice = "test"
-                return Response(text=text, voice=voice)
+                return Response(text, voice=voice)
 
             @manager.new("lorem * dolor")
             def lorem():
-                return Response(text="Lorem!", voice="Lorem!")
+                return Response("Lorem!", voice="Lorem!")
 
             @manager.new("hello", hidden=True)
             def hello_context(**params):
                 voice = text = f"Hi, {params['name']}!"
-                return Response(text=text, voice=voice)
+                return Response(text, voice=voice)
 
             @manager.new("bye", hidden=True)
             def bye_context(name: Word, handler: ResponseHandler):
                 handler.pop_context()
-                return Response(text=f"Bye, {name}!")
+                return Response(f"Bye, {name}!")
 
             @manager.new("hello $name:Word")
             def hello(name: Word):
@@ -133,26 +137,26 @@ async def commands_context_flow_filled(commands_context_flow):
             @manager.new("background min")
             async def background(handler: AsyncResponseHandler):
                 text = voice = "Starting background task"
-                await handler.respond(Response(text=text, voice=voice))
+                await handler.respond(Response(text, voice=voice))
                 await anyio.sleep(1)
                 text = voice = "Finished background task"
-                return Response(text=text, voice=voice)
+                return Response(text, voice=voice)
 
             @manager.new("background needs input")
             async def background_needs_input(handler: AsyncResponseHandler):
                 await anyio.sleep(1)
 
                 for text in ["First response", "Second response", "Third response"]:
-                    await handler.respond(Response(text=text, voice=text))
+                    await handler.respond(Response(text, voice=text))
 
                 text = "Needs input"
-                await handler.respond(Response(text=text, voice=text, needs_user_input=True))
+                await handler.respond(Response(text, voice=text, needs_user_input=True))
 
                 for text in ["Fourth response", "Fifth response", "Sixth response"]:
-                    await handler.respond(Response(text=text, voice=text))
+                    await handler.respond(Response(text, voice=text))
 
                 text = voice = "Finished long background task"
-                return Response(text=text, voice=voice)
+                return Response(text, voice=voice)
 
             @manager.new("background with context")
             async def background_multiple_contexts(handler: AsyncResponseHandler):
@@ -167,7 +171,7 @@ async def commands_context_flow_filled(commands_context_flow):
 
             @manager.new("background remove response")
             async def background_remove_response(handler: AsyncResponseHandler):
-                response = Response(text="Deleted response", voice="Deleted response")
+                response = Response("Deleted response", voice="Deleted response")
                 await handler.respond(response)
                 await anyio.sleep(1)
                 await handler.unrespond(response)

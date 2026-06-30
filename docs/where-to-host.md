@@ -75,3 +75,5 @@ Such setups illustrate the flexibility and scalability of Stark. Whether you're 
 ## Important Note
 
 Want to see the various platforms Stark has been adapted for? Visit the **STARK-PLACE** repository to find implemented ports and extensions. If you’ve developed a unique runner for Stark – be it tray, GUI, Kivy-based, or any other kind – consider contributing to the community. Open a PR to **STARK-PLACE**; let's work together to develop the best VA platform ever, enhancing the user experience for everyone!
+
+Running S.T.A.R.K. somewhere unusual, or hit a wall trying to? [Tell us about it in Discussions](https://github.com/MarkParker5/STARK/discussions). Hosting setups are exactly the kind of thing worth comparing notes on, and we need all the feedback we can get to make S.T.A.R.K. better.

@@ -14,22 +14,22 @@ async def hello(handler: AsyncResponseHandler) -> Response:
     await handler.respond(Response(text = 'Hi'))
 ```
 
-In the showcased example, the `AsyncResponseHandler` is automatically injected into the `foo` command function upon its invocation.
+In the showcased example, the `AsyncResponseHandler` is automatically injected into the `hello` command function upon its invocation.
 
 ## Language Code
 
-The `LanguageCode` dependency provides the language of the substring that matched the command's pattern. It's injected per-command — if two commands match in different languages from the same input, each receives its own language. Matched by type annotation; the parameter name doesn't matter.
+The `LanguageCode` dependency provides the language of the substring that matched the command's pattern. It's injected per-command, if two commands match in different languages from the same input, each receives its own language. Matched by type annotation; the parameter name doesn't matter.
 
 ```python
 from stark.general.localisation.language_code import LanguageCode
 from stark.general.localisation import LocalizableString
 
-@manager.new({"en": "set timer", "ru": "поставь таймер"})
+@manager.new({"en": "set timer", "es": "pon un temporizador"})
 async def set_timer(lang: LanguageCode) -> Response:
-    return Response(text=LocalizableString("timer_set", lang))
+    return Response(LocalizableString("timer_set", lang))
 ```
 
-When the user says "поставь таймер", `lang` is `"ru"`. When they say "set timer", `lang` is `"en"`. For mixed-language input with `TranscriptionString`, the language is the majority language of the matched substring's words.
+When the user says "pon un temporizador", `lang` is `"es"`. When they say "set timer", `lang` is `"en"`. For mixed-language input with `TranscriptionString`, the language is the majority language of the matched substring's words.
 
 ## `inject_dependency`
 
@@ -37,16 +37,16 @@ The `inject_dependency` method serves to integrate specific dependencies into a 
 
 Example:
 ```python
-@manager.new('foo')
-async def foo(handler: AsyncResponseHandler) -> Response: 
-    return Response(text = 'foo!')
+@manager.new('turn off the light')
+async def lights_off(handler: AsyncResponseHandler) -> Response: 
+    return Response('Lights off.')
 
-@manager.new('bar')
-async def bar(inject_dependencies): 
-    return await inject_dependencies(foo)()
+@manager.new('good night')
+async def good_night(inject_dependencies): 
+    return await inject_dependencies(lights_off)()
 ```
 
-Here, the `foo` dependency is injected and executed within the `bar` command function.
+Here, the `lights_off` dependency is injected and executed within the `good_night` command function.
 
 ## Accessing DIContainer in a Command
 
@@ -57,8 +57,8 @@ To tap into the DIContainer inside a command, simply declare the needed dependen
 For more advanced access, you can extract the container as a dependency of type `DIContainer`, as demonstrated:
 
 ```python
-@manager.new('baz')
-async def baz(di_container: DIContainer): 
+@manager.new('set volume')
+async def set_volume(di_container: DIContainer): 
     di_container.add_dependency(...)
     di_container.find(...)
 ```
