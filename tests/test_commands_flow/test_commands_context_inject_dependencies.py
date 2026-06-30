@@ -7,19 +7,19 @@ from stark.general.localisation.language_code import LanguageCode
 async def test_commands_context_inject_dependencies(commands_context_flow, autojump_clock):
     async with commands_context_flow() as (manager, context, context_delegate):
 
-        @manager.new("foo")
-        async def foo(handler: AsyncResponseHandler) -> Response:
-            return Response("foo!")
+        @manager.new("turn off the light")
+        async def lights_off(handler: AsyncResponseHandler) -> Response:
+            return Response("Lights off!")
 
-        @manager.new("bar")
-        async def bar(inject_dependencies):
-            return await inject_dependencies(foo)()
+        @manager.new("good night")
+        async def good_night(inject_dependencies):
+            return await inject_dependencies(lights_off)()
 
-        await context.process_string("bar")
+        await context.process_string("good night")
         await anyio.sleep(1)
 
         assert len(context_delegate.responses) == 1
-        assert context_delegate.responses[0].text == "foo!"
+        assert context_delegate.responses[0].text == "Lights off!"
 
 
 async def test_language_code_injected_from_match(commands_context_flow, autojump_clock):

@@ -99,9 +99,9 @@ async def commands_context_flow_filled(commands_context_flow):
     ]:
         async with commands_context_flow() as (manager, context, context_delegate):
 
-            @manager.new("test")
-            def test():
-                text = voice = "test"
+            @manager.new("ping")
+            def ping():
+                text = voice = "pong"
                 return Response(text, voice=voice)
 
             @manager.new("lorem * dolor")

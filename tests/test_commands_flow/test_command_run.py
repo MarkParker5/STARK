@@ -6,10 +6,10 @@ from stark.core.types import Word
 
 async def test_command_flow_optional_parameter(commands_context_flow, autojump_clock):
     async with commands_context_flow() as (manager, context, context_delegate):
-        # @manager.new('lorem ?hello ?$var:Word? dolor')
-        @manager.new("lorem( hello $var:Word)? dolor")
-        async def foo(var: Word | None = None):
-            return Response("Lorem!" + (var.value if var else ""))
+        # @manager.new('lorem ?hello ?$name:Word? dolor')
+        @manager.new("lorem( hello $name:Word)? dolor")
+        async def lorem_dolor(name: Word | None = None):
+            return Response("Lorem!" + (name.value if name else ""))
 
         await context.process_string("lorem dolor")
         await anyio.sleep(5)

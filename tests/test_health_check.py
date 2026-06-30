@@ -11,11 +11,11 @@ from stark.general.classproperty import classproperty
 
 
 class DummyType(Object):
-    foo: Word
+    value: Word
 
     @classproperty
     def pattern(cls) -> Pattern:
-        return Pattern("dummy $foo:Word")
+        return Pattern("dummy $value:Word")
 
 
 class DummyWrapper(Object):
@@ -26,7 +26,7 @@ class DummyWrapper(Object):
         return Pattern("dummy $dummy:DummyType")
 
 
-def dummy_runner(foo: Word) -> None:
+def dummy_runner(value: Word) -> None:
     pass
 
 
@@ -34,7 +34,7 @@ def dummy_runner_missing() -> None:
     pass
 
 
-def dummy_runner_extra(foo: Word, bar: Word) -> None:
+def dummy_runner_extra(value: Word, extra: Word) -> None:
     pass
 
 

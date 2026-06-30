@@ -159,10 +159,10 @@ async def test_did_parse_receives_language_code():
     parser = PatternParser()
     parser.register_parameter_type(LangAwareType)
 
-    result = await parser.parse_object(LangAwareType, LocaleString("test input", "ru"))
+    result = await parser.parse_object(LangAwareType, LocaleString("turn off the light", "ru"))
     assert result.obj.received_language_code == "ru"
 
-    result2 = await parser.parse_object(LangAwareType, LocaleString("other input", "de"))
+    result2 = await parser.parse_object(LangAwareType, LocaleString("set a timer", "de"))
     assert result2.obj.received_language_code == "de"
 
 
@@ -176,7 +176,7 @@ async def test_command_get_pattern():
     pattern_ru = Pattern("привет $name:Word")
 
     cmd = Command(
-        name="test",
+        name="greet",
         patterns={"base": pattern_en, "en": pattern_en, "ru": pattern_ru},
         runner=lambda: None,
     )

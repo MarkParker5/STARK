@@ -8,23 +8,23 @@ pattern_parser = PatternParser()
 
 def test_new():
     manager = CommandsManager()
-    manager.new("test")(lambda: None)
+    manager.new("set alarm")(lambda: None)
     assert len(manager.commands) == 1
 
-    @manager.new("foo bar")
-    def foo_bar():
+    @manager.new("play music")
+    def play_music():
         pass
 
     assert len(manager.commands) == 2
-    assert manager.commands[1].name == "CommandsManager.foo_bar"
-    assert manager.commands[1].get_pattern("base")._origin == "foo bar"
+    assert manager.commands[1].name == "CommandsManager.play_music"
+    assert manager.commands[1].get_pattern("base")._origin == "play music"
 
 
 async def test_search():
     manager = CommandsManager()
 
-    @manager.new("test")
-    def test():
+    @manager.new("set alarm")
+    def set_alarm():
         pass
 
     @manager.new("hello $name:Word $surname:Word")
@@ -35,11 +35,11 @@ async def test_search():
     def hello(name: Word):
         pass
 
-    # test
-    result = await SearchProcessor().search("test", pattern_parser, manager.commands, [])
+    # set alarm
+    result = await SearchProcessor().search("set alarm", pattern_parser, manager.commands, [])
     assert result is not None
     assert len(result) == 1
-    assert result[0].command.name == "CommandsManager.test"
+    assert result[0].command.name == "CommandsManager.set_alarm"
 
     # hello
     result = await SearchProcessor().search("hello world", pattern_parser, manager.commands, [])
@@ -64,26 +64,26 @@ def test_extend_manager():
     root_manager = CommandsManager()
     child_manager = CommandsManager("Child")
 
-    @root_manager.new("test")
-    def test():
+    @root_manager.new("set alarm")
+    def set_alarm():
         pass
 
-    @child_manager.new("test")
-    def test():
+    @child_manager.new("set alarm")
+    def set_alarm():
         pass
 
     assert len(child_manager.commands) == 1
     assert len(root_manager.commands) == 1
-    assert child_manager.commands[0].name == "Child.test"
-    assert root_manager.commands[0].name == "CommandsManager.test"
+    assert child_manager.commands[0].name == "Child.set_alarm"
+    assert root_manager.commands[0].name == "CommandsManager.set_alarm"
 
     root_manager.extend(child_manager)
 
     assert len(child_manager.commands) == 1
     assert len(root_manager.commands) == 2
-    assert child_manager.commands[0].name == "Child.test"
-    assert root_manager.commands[0].name == "CommandsManager.test"
-    assert root_manager.commands[1].name == "Child.test"
+    assert child_manager.commands[0].name == "Child.set_alarm"
+    assert root_manager.commands[0].name == "CommandsManager.set_alarm"
+    assert root_manager.commands[1].name == "Child.set_alarm"
 
 
 def test_manager_get_command_by_name():
@@ -91,23 +91,23 @@ def test_manager_get_command_by_name():
     child = CommandsManager("Child")
 
     @manager.new("")
-    def test(): ...
+    def lock_door(): ...
 
     @manager.new("")
-    def test2(): ...
+    def unlock_door(): ...
 
     @manager.new("")
-    def test3(): ...
+    def open_garage(): ...
 
     @manager.new("")
-    def test4(): ...
+    def close_garage(): ...
 
     @child.new("")
-    def test5(): ...
+    def ring_doorbell(): ...
 
     manager.extend(child)
 
-    assert manager.get_by_name("test2") == test2
-    assert manager.get_by_name("TestManager.test3") == test3
-    assert manager.get_by_name("test5") == None
-    assert manager.get_by_name("Child.test5") == test5
+    assert manager.get_by_name("unlock_door") == unlock_door
+    assert manager.get_by_name("TestManager.open_garage") == open_garage
+    assert manager.get_by_name("ring_doorbell") == None
+    assert manager.get_by_name("Child.ring_doorbell") == ring_doorbell

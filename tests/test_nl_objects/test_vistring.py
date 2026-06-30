@@ -13,24 +13,24 @@ parser = PatternParser()
 async def test_parse():
     match = await parser.parse_object(String, "a")
     assert match
-    match2 = await parser.parse_object(String, "foo bar baz")
-    assert match2.obj.value == "foo bar baz"
+    match2 = await parser.parse_object(String, "play some jazz music")
+    assert match2.obj.value == "play some jazz music"
 
 
 async def test_match():
-    p = Pattern("foo $bar:String baz")
+    p = Pattern("play $song:String now")
     assert p
 
-    m = await parser.match(p, "foo qwerty baz")
+    m = await parser.match(p, "play stairway now")
     assert m
-    assert m[0].parameters["bar"] == String("qwerty")
+    assert m[0].parameters["song"] == String("stairway")
 
-    m = await parser.match(p, "foo lorem ipsum dolor sit amet baz")
+    m = await parser.match(p, "play lorem ipsum dolor sit amet now")
     assert m
-    assert m[0].parameters["bar"] == String("lorem ipsum dolor sit amet")
+    assert m[0].parameters["song"] == String("lorem ipsum dolor sit amet")
 
 
 async def test_formatted():
-    string = (await parser.parse_object(String, "foo bar baz")).obj
-    assert str(string) == '<String value: "foo bar baz">'
-    assert f"{string}" == "foo bar baz"
+    string = (await parser.parse_object(String, "play some jazz music")).obj
+    assert str(string) == '<String value: "play some jazz music">'
+    assert f"{string}" == "play some jazz music"

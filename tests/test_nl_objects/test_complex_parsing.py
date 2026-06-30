@@ -43,7 +43,7 @@ async def test_did_parse_call_order():
     class CustomParser(ObjectParser):
         async def did_parse(self, obj, from_string):
             call_order.append("parser")
-            assert from_string == "foobar"
+            assert from_string == "timing"
             return from_string[:-3]
 
     class CustomObject(Object):
@@ -53,17 +53,17 @@ async def test_did_parse_call_order():
 
         async def did_parse(self, from_string):
             call_order.append("object")
-            assert from_string == "foo"
+            assert from_string == "tim"
             return from_string[:-1]
 
     parser = PatternParser()
     parser.register_parameter_type(CustomObject, CustomParser())
-    result = await parser.parse_object(CustomObject, "foobar")
+    result = await parser.parse_object(CustomObject, "timing")
     assert call_order == ["parser", "object"]
-    assert result.substring == "fo"
+    assert result.substring == "ti"
 
 
-class Foo(Object):
+class Size(Object):
     @classproperty
     def greedy(cls) -> bool:
         return False
@@ -73,14 +73,14 @@ class Foo(Object):
         return Pattern("**")
 
     async def did_parse(self, from_string: str) -> str:
-        # print(f'Parsing Foo from "{from_string}"')
-        if "foo" not in from_string:
-            raise ParseError(f'foo not found in "{from_string}"')
-        self.value = "foo"
-        return "foo"
+        # print(f'Parsing Size from "{from_string}"')
+        if "small" not in from_string:
+            raise ParseError(f'small not found in "{from_string}"')
+        self.value = "small"
+        return "small"
 
 
-class Bar(Object):
+class Drink(Object):
     @classproperty
     def greedy(cls) -> bool:
         return False
@@ -90,14 +90,14 @@ class Bar(Object):
         return Pattern("**")
 
     async def did_parse(self, from_string: str) -> str:
-        # print(f'Parsing Bar from "{from_string}"')
-        if "bar" not in from_string:
-            raise ParseError(f'bar not found in "{from_string}"')
-        self.value = "bar"
-        return "bar"
+        # print(f'Parsing Drink from "{from_string}"')
+        if "latte" not in from_string:
+            raise ParseError(f'latte not found in "{from_string}"')
+        self.value = "latte"
+        return "latte"
 
 
-class Baz(Object):
+class Extra(Object):
     @classproperty
     def greedy(cls) -> bool:
         return False
@@ -107,11 +107,11 @@ class Baz(Object):
         return Pattern("**")
 
     async def did_parse(self, from_string: str) -> str:
-        # print(f'Parsing Baz from "{from_string}"')
-        if "baz" not in from_string:
-            raise ParseError(f'baz not found in "{from_string}"')
-        self.value = "baz"
-        return "baz"
+        # print(f'Parsing Extra from "{from_string}"')
+        if "sugar" not in from_string:
+            raise ParseError(f'sugar not found in "{from_string}"')
+        self.value = "sugar"
+        return "sugar"
 
 
 class Greedy(Object):
@@ -130,9 +130,9 @@ class Greedy(Object):
 
 
 pattern_parser = PatternParser()
-pattern_parser.register_parameter_type(Foo)
-pattern_parser.register_parameter_type(Bar)
-pattern_parser.register_parameter_type(Baz)
+pattern_parser.register_parameter_type(Size)
+pattern_parser.register_parameter_type(Drink)
+pattern_parser.register_parameter_type(Extra)
 pattern_parser.register_parameter_type(Greedy)
 
 
@@ -140,51 +140,51 @@ pattern_parser.register_parameter_type(Greedy)
     "pattern_string,input_string,expected_params",
     [
         # wildcard regex params
-        ("$f:Foo $b:Bar", "foo bar", {"f": "foo", "b": "bar"}),
-        ("$f:Foo $b:Bar", "hey foo bar two", {"f": "foo", "b": "bar"}),
-        # , 'hey foo one bar two' TODO: add support for just enum of param w/o exact pattern structure
+        ("$s:Size $d:Drink", "small latte", {"s": "small", "d": "latte"}),
+        ("$s:Size $d:Drink", "hey small latte two", {"s": "small", "d": "latte"}),
+        # , 'hey small one latte two' TODO: add support for just enum of param w/o exact pattern structure
         # optional params with wildcard regex
-        ("$f:Foo? ?$b:Bar? ?$z:Baz?", "foo", {"f": "foo", "b": None, "z": None}),
-        ("$f:Foo? ?$b:Bar? ?$z:Baz?", "foo bar", {"f": "foo", "b": "bar", "z": None}),
+        ("$s:Size? ?$d:Drink? ?$e:Extra?", "small", {"s": "small", "d": None, "e": None}),
+        ("$s:Size? ?$d:Drink? ?$e:Extra?", "small latte", {"s": "small", "d": "latte", "e": None}),
         (
-            "$f:Foo? ?$b:Bar? ?$z:Baz?",
-            "foo bar baz",
-            {"f": "foo", "b": "bar", "z": "baz"},
+            "$s:Size? ?$d:Drink? ?$e:Extra?",
+            "small latte sugar",
+            {"s": "small", "d": "latte", "e": "sugar"},
         ),
-        ("$f:Foo? ?$b:Bar? ?$z:Baz?", "bar baz", {"f": None, "b": "bar", "z": "baz"}),
-        ("$f:Foo? ?$b:Bar? ?$z:Baz?", "foo baz", {"f": "foo", "b": None, "z": "baz"}),
+        ("$s:Size? ?$d:Drink? ?$e:Extra?", "latte sugar", {"s": None, "d": "latte", "e": "sugar"}),
+        ("$s:Size? ?$d:Drink? ?$e:Extra?", "small sugar", {"s": "small", "d": None, "e": "sugar"}),
         # greedy and trailing anchor
         (
-            "command1 $g:Greedy end",
-            "command1 a few words of greedy end",
-            {"g": "a few words of greedy"},
+            "order $g:Greedy end",
+            "order a few words of options end",
+            {"g": "a few words of options"},
         ),
         (
-            "command1 $g:Greedy",
-            "command1 a few words of greedy",
-            {"g": "a few words of greedy"},
+            "order $g:Greedy",
+            "order a few words of options",
+            {"g": "a few words of options"},
         ),
         # greedy with other params
         (
-            "command1 $g:Greedy $f:Foo",
-            "command1 a few words of greedy foo",
-            {"g": "a few words of greedy", "f": "foo"},
+            "order $g:Greedy $s:Size",
+            "order a few words of options small",
+            {"g": "a few words of options", "s": "small"},
         ),
         (
-            "command1 $g:Greedy $ag:Greedy",
-            "command1 a few words of greedy another greedy words",
-            {"g": "a", "ag": "few words of greedy another greedy words"},
+            "order $g:Greedy $ag:Greedy",
+            "order a few words of options another options words",
+            {"g": "a", "ag": "few words of options another options words"},
         ),  # TODO: review
         # greedy with optional params, note optional spaces
         (
-            "$g:Greedy ?$f:Foo? ?$b:Bar?$",
+            "$g:Greedy ?$s:Size? ?$d:Drink?$",
             "one two three",
-            {"g": "one two three", "f": None, "b": None},
+            {"g": "one two three", "s": None, "d": None},
         ),
         (
-            "$g:Greedy ?$f:Foo? ?$b:Bar?$",
-            "one two foo bar",
-            {"g": "one two", "f": "foo", "b": "bar"},
+            "$g:Greedy ?$s:Size? ?$d:Drink?$",
+            "one two small latte",
+            {"g": "one two", "s": "small", "d": "latte"},
         ),
     ],
 )
