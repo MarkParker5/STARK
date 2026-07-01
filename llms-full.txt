@@ -1,0 +1,3600 @@
+# S.T.A.R.K. Docs
+
+> Speach and Text Algorithmic Recognition Kit (S.T.A.R.K.) is a set of tools for building custom voice assistants. It is designed to be modular and extensible, allowing you to build your own custom voice assistant with ease.
+
+S.T.A.R.K. (Speech and Text Algorithmic Recognition Kit) is a modern, async Python framework
+for building voice assistants and natural language interfaces. Think FastAPI but for speech.
+It runs on-device, supports multiple languages, integrates with LLMs, and features advanced
+pattern-based NL parsing, context-aware commands, and community extensions via STARK-PLACE.
+
+
+# Getting Started
+
+# Installation
+
+This guide will walk you through the installation of the STARK framework and its associated extras. You can use either pip or poetry for the installation. Let's dive right in!
+
+## Prerequisites
+
+Ensure you have Python 3.12 or newer installed. You can verify this with:
+
+```bash
+python --version
+```
+
+On some systems, you may need to use the `python3` command instead of `python`:
+
+```bash
+python3 --version
+```
+
+### Avaiable Extras
+
+The STARK framework offers several extras, which are default implementations for its protocols, to facilitate integration with various tools. These extras include:
+
+- **all**: Installs all default implementations. Recommended if you're not well-versed in dependency management.
+- **vosk**: [Vosk](https://alphacephei.com/vosk/) (offline speech recognition) implementation of SpeechRecognizer protocol.
+- **gcloud**: [Google Cloud Text-to-Speech](https://cloud.google.com/text-to-speech) implementation of SpeechSynthesizer protocol.
+- **silero**: [Silero](https://github.com/snakers4/silero-models) Models (offline) implementation of SpeechSynthesizer.
+- **sound**: Required utilities for processing sound: `sounddevice` and `soundfile`.
+- **spacy**: [spaCy](https://spacy.io/) NER pre-processing, see [Custom Processors](https://stark.markparker.me/advanced/custom-processors/#spacynerprocessor-pre-processor).
+
+## Installation with pip
+
+To install the base version of STARK:
+
+```bash
+pip install stark-engine
+```
+
+To install any of the extras:
+
+```bash
+pip install stark-engine[all]
+pip install stark-engine[gcloud]
+pip install stark-engine[vosk]
+pip install stark-engine[silero]
+pip install stark-engine[sound]
+pip install stark-engine[spacy]
+```
+
+If you encounter the error `zsh: no matches found`, simply enclose the package name in quotes:
+
+```zsh
+pip install "stark-engine[all]"
+pip install "stark-engine[gcloud]"
+pip install "stark-engine[vosk]"
+pip install "stark-engine[silero]"
+pip install "stark-engine[sound]"
+pip install "stark-engine[spacy]"
+```
+
+## Installation with poetry
+
+If you, like me, prefer using [poetry](https://python-poetry.org) to manage dependencies along with a virtual environment, simply replace `pip install` with `poetry add`.
+
+```bash
+poetry add stark-engine
+poetry add stark-engine[all]
+poetry add stark-engine[gcloud]
+poetry add stark-engine[vosk]
+poetry add stark-engine[silero]
+poetry add stark-engine[sound]
+poetry add stark-engine[spacy]
+```
+
+If you encounter the error `zsh: no matches found`, simply enclose the package name in quotes:
+
+```zsh
+poetry add "stark-engine[all]"
+poetry add "stark-engine[gcloud]"
+poetry add "stark-engine[vosk]"
+poetry add "stark-engine[silero]"
+poetry add "stark-engine[sound]"
+poetry add "stark-engine[spacy]"
+```
+
+______________________________________________________________________
+
+With the STARK framework installed and the desired extras in place, you're all set to develop powerful voice-driven applications. Dive into the documentation, experiment, and build great things!
+
+# Hello World
+
+Congratulations on installing S.T.A.R.K.! This guide walks through your first voice-driven application: a command that responds to "hello" by saying "Hello, Stark!" back. ([jump to async commands →](https://stark.markparker.me/creating-commands/#async-commands))
+
+## Hello, Stark!
+
+S.T.A.R.K. doesn't lock you into one speech engine, it's built around protocols, so any recognizer or synthesizer that implements them works. This tutorial uses Vosk for speech recognition and Silero for speech synthesis, both fully offline. Both download and cache their models automatically on first use:
+
+- [Vosk models](https://alphacephei.com/vosk/models), pick one for your language
+- [Silero models](https://github.com/snakers4/silero-models?tab=readme-ov-file#models-and-speakers), pick a voice
+
+```py
+import anyio
+from stark import run, CommandsManager, Response
+from stark.interfaces.vosk import VoskSpeechRecognizer
+from stark.interfaces.silero import SileroSpeechSynthesizer
+
+
+VOSK_MODEL_URL = "YOUR_CHOSEN_VOSK_MODEL_URL"
+SILERO_MODEL_URL = "YOUR_CHOSEN_SILERO_MODEL_URL"
+
+manager = CommandsManager()                                         # 1
+
+@manager.new('hello')                                                # 2
+def hello_command() -> Response:
+    return Response('Hello, Stark!', voice='Hello, Stark!')     # 3
+
+async def main():
+    recognizer = VoskSpeechRecognizer(model_url=VOSK_MODEL_URL)      # 4
+    synthesizer = SileroSpeechSynthesizer(model_url=SILERO_MODEL_URL)
+    await run(manager, recognizer, synthesizer)                      # 5
+
+if __name__ == '__main__':
+    anyio.run(main)
+```
+
+1. `CommandsManager` is where every command your assistant understands gets registered.
+1. `@manager.new('hello')` registers a command matched against the pattern `'hello'`. Patterns can get much more dynamic than a literal word, see [Patterns](https://stark.markparker.me/patterns/index.md).
+1. A `Response` carries both the spoken (`voice`) and displayed (`text`) reply, they don't have to match, but here they do. Plenty of other fields exist (status, follow-up commands, parameters), see [Command Response](https://stark.markparker.me/command-response/index.md) in Core Concepts.
+1. Pick a recognizer and synthesizer. These two are offline; S.T.A.R.K. doesn't require any cloud service or API key to work.
+1. `run()` wires the manager, recognizer, and synthesizer together and starts listening. Say "hello," hear "Hello, Stark!" back.
+
+This command is declared plain `def`, simplest option, and S.T.A.R.K. handles the rest. Once you start awaiting things inside a command, you'll want `async def` instead, see [Async Commands](https://stark.markparker.me/creating-commands/#async-commands) and [Sync vs Async Commands](https://stark.markparker.me/sync-vs-async-commands/index.md) for when to reach for which.
+
+Prefer to skip the microphone for now and type input in a terminal instead? See [How to Run](https://stark.markparker.me/how-to-run/index.md) for the no-audio variant of this same example.
+# Core Concepts
+
+# Core Concepts
+
+The pieces every command is built from, regardless of how simple or complex it gets:
+
+- **[Patterns](https://stark.markparker.me/patterns/index.md)**: the syntax for matching what a user says and pulling parameters out of it.
+- **[Command Response](https://stark.markparker.me/command-response/index.md)**: what a command returns: text, voice, status, and how to chain into follow-up commands.
+- **[Commands Context](https://stark.markparker.me/commands-context/index.md)**: nested menus, follow-ups, and stateful conversations.
+- **[Dependency Injection](https://stark.markparker.me/dependency-injection/index.md)**: getting response handlers, language info, and your own dependencies into a command function.
+
+Read them in order if you're new, each builds a bit on the last.
+
+# Creating Commands
+
+Commands serve as foundational building blocks designed to execute specific actions. They can be implemented either synchronously or asynchronously. In the following sections, we'll explore the specific features of each type and their differences. ([jump to async commands →](#async-commands), full comparison in [Sync vs Async Commands](https://stark.markparker.me/sync-vs-async-commands/index.md))
+
+______________________________________________________________________
+
+## Sync Commands
+
+### Simple Command with `return`
+
+A synchronous command can straightforwardly return a response, as demonstrated below:
+
+```python
+from stark import Response, CommandsManager
+
+manager = CommandsManager()
+
+@manager.new('hello')
+def hello_command() -> Response:
+    return Response('Hello, Stark!')
+```
+
+### Multiple responses using `yield`
+
+Although it's possible to yield multiple responses in synchronous functions, doing so may block the main thread. This can result in warnings or even halt the application. For multiple responses in sync functions, consider using the `ResponseHandler.respond` method or contemplate migrating to the [async](https://stark.markparker.me/sync-vs-async-commands/index.md) option.
+
+```python
+@manager.new('start timer')
+def start_timer() -> Response:
+    yield Response('Timer started')
+    yield Response('Timer finished')
+    # more yields...
+```
+
+### Multiple responses using `ResponseHandler.respond`
+
+To manage multiple responses, the `ResponseHandler` can be leveraged. Simply include a property of type `ResponseHandler`, and the [dependency injection](https://stark.markparker.me/dependency-injection/index.md) mechanism will handle it automatically.
+
+```python
+@manager.new('start timer')
+def start_timer(handler: ResponseHandler):
+    handler.respond(Response('Timer started'))
+    # some processing
+    handler.respond(Response('Timer 50% done'))
+    ...
+    handler.respond(Response('Timer finished'))
+```
+
+### Remove response using `ResponseHandler.unrespond`
+
+To remove a response, use the `unrespond` method. If the voice assistant is in waiting mode, the response won't be repeated in the subsequent interaction. Learn more about modes in [Voice Assistant](https://stark.markparker.me/voice-assistant/index.md).
+
+```python
+@manager.new('download update')
+def download_update(handler: ResponseHandler):
+    handler.respond(Response('Downloading...'))
+    ...
+    error = Response('No internet connection, retrying...')
+    handler.respond(error)
+    ...
+    # when the internet connection is restored
+    handler.unrespond(error)
+    handler.respond(Response('Download complete'))
+```
+
+### Call command from another command
+
+Commands are inherently async, so we need to syncify the async `lights_off` (or declare the current function as `async def` and await it directly, see [Async Commands](#async-commands) below).
+
+#### Simple
+
+```python
+from asyncer import syncify
+...
+
+@manager.new('turn off the light')
+def lights_off() -> Response:
+    return Response('Lights off.')
+
+@manager.new('good night')
+def good_night() -> Response: 
+    sync_lights_off = syncify(lights_off)
+    return sync_lights_off()
+```
+
+#### With dependency injection
+
+Include the `inject_dependencies` property in the function declaration. This function wraps the command for smooth dependency injection. Learn more about dependencies at [DI Container](https://stark.markparker.me/dependency-injection/index.md).
+
+You need this over the simple version above whenever the called command itself takes injected dependencies (a `ResponseHandler`, the language code, a custom dependency), calling it directly would skip injection and the parameter would never get filled in. `inject_dependencies` resolves those first, then calls the command.
+
+```python
+@manager.new('good night')
+def good_night(inject_dependencies): 
+    return syncify(inject_dependencies(lights_off))()
+```
+
+______________________________________________________________________
+
+## Async Commands
+
+Asynchronous commands resemble their synchronous counterparts but offer enhanced features like `await` and `yield`.
+
+### Simple Command with `return`
+
+An asynchronous command can effortlessly return a response:
+
+```python
+@manager.new('hello')
+async def hello_command() -> Response:
+    return Response('Hello, Stark!')
+```
+
+### Multiple responses using `yield`
+
+Yielding multiple responses in asynchronous functions is seamless and doesn't block the main thread.
+
+```python
+@manager.new('start timer')
+async def start_timer() -> Response:
+    yield Response('Timer started')
+    # some processing
+    yield Response('Timer 50% done')
+    ...
+    yield Response('Timer finished')
+```
+
+### Multiple responses using `ResponseHandler.respond`
+
+As an alternative to `yield`, the asynchronous version of `ResponseHandler`, named `AsyncResponseHandler`, can be used.
+
+```python
+@manager.new('start timer')
+async def start_timer(handler: AsyncResponseHandler):
+    await handler.respond(Response('Timer started'))
+    # some processing
+    await handler.respond(Response('Timer 50% done'))
+    ...
+    await handler.respond(Response('Timer finished'))
+```
+
+### Remove response using `ResponseHandler.unrespond`
+
+To remove a response, use the `unrespond` method. If the voice assistant is in waiting mode, the response won't be repeated in the subsequent interaction. Learn more about modes in [Voice Assistant](https://stark.markparker.me/voice-assistant/index.md).
+
+```python
+@manager.new('download update')
+async def download_update(handler: AsyncResponseHandler):
+    await handler.respond(Response('Downloading...'))
+    ...
+    error = Response('No internet connection, retrying...')
+    await handler.respond(error)
+    ...
+    # once the internet connection is restored
+    await handler.unrespond(error)
+    await handler.respond(Response('Download complete'))
+```
+
+Do note that you can delete responses sent using `yield` in the same manner. There's no distinction between the two.
+
+### Call command from another command
+
+Commands can be invoked as if they were standard async functions (coroutines).
+
+#### Simple
+
+```python
+@manager.new('turn off the light')
+async def lights_off() -> Response:
+    return Response('Lights off.')
+
+@manager.new('good night')
+async def good_night():
+    return await lights_off()
+```
+
+#### With dependency injection
+
+For commands with dependencies, the `inject_dependencies` wrapper ensures seamless injection.
+
+```python
+@manager.new('turn off the light')
+async def lights_off(handler: AsyncResponseHandler) -> Response:
+    handler.respond(Response('Lights off.'))
+
+@manager.new('good night')
+async def good_night(inject_dependencies): 
+    return await inject_dependencies(lights_off)()
+```
+
+______________________________________________________________________
+
+## Extending/merging commands managers
+
+Command managers can be expanded by merging child managers into them.
+
+```python
+root_manager = CommandsManager()
+child_manager = CommandsManager('Child')
+
+@root_manager.new('test')
+def test(): pass
+
+@child_manager.new('test2')
+def test2(): pass
+
+root_manager.extend(child_manager) # now root_manager has all commands of child_manager
+```
+
+______________________________________________________________________
+
+In conclusion, the foundational concepts remain consistent whether you employ synchronous or asynchronous commands. The primary distinction is in task handling: asynchronous commands facilitate non-blocking execution. As always, opt for the approach that best aligns with your application's specific requirements.
+
+What happens when nothing matches? Register a wildcard command as a catch-all, see [Fallback Command / LLM Integration](https://stark.markparker.me/advanced/fallback-command-llm-integration/index.md).
+
+This page covered the mechanics of writing a command. For everything a `Response` can carry and how patterns extract parameters, see [Core Concepts](https://stark.markparker.me/core-concepts/index.md).
+
+# Sync vs Async Commands
+
+## TLDR
+
+### Needs await
+
+If you're using third-party libraries that require `await`, such as
+
+```py
+results = await some_library()
+```
+
+Declare your command using `async def`:
+
+```py
+@manager.new('hello')
+async def hello_command() -> Response:
+    return Response(await some_library())  # asynchronous call
+```
+
+### Blocking Code
+
+If your command contains blocking synchronous code (e.g., using the `requests` library or `time.sleep`), declare it using `def`:
+
+```py
+import requests
+
+@manager.new('hello')
+def hello_command() -> Response:
+    requests.get('https://stark.markparker.me/')  # synchronous blocking code
+    return Response('Hello, Stark!')
+```
+
+### Only Fast Code
+
+For commands that don't need to wait for external responses or perform long computations, you can use both `async def` and `def`.
+
+### Unsure?
+
+If you just don't know, use normal `def`.
+
+### Mix of Blocking and Async
+
+If your command contains both blocking code and `await`-requiring asynchronous code, you'll need to use [asyncer](https://asyncer.tiangolo.com). There are two methods:
+
+1. **Recommended**: Declare the command with `async def`, use `await` for asynchronous functions, and wrap blocking code in `asyncer.asyncify`:
+
+```py
+import asyncer
+import requests
+
+@manager.new('hello')
+async def hello_command() -> Response:
+    await some_library() # asynchronous function
+    await asyncer.asyncify(requests.get)('https://stark.markparker.me/') # converted to asynchronous
+    return Response('Hello, Stark!')
+```
+
+2. Use a regular `def` for the command, execute blocking functions as-is, and wrap asynchronous functions in `asyncer.syncify`:
+
+```py
+import asyncer
+import requests
+
+@manager.new('hello')
+def hello_command() -> Response:
+    asyncer.syncify(some_library)() # converted to synchronous
+    requests.get('https://stark.markparker.me/') # blocking code
+    return Response('Hello, Stark!')
+```
+
+## Technical Details
+
+All commands in Stark are inherently asynchronous. If you declare a command as synchronous, Stark converts it to asynchronous using [asyncer.asyncify](https://asyncer.tiangolo.com/).
+
+By default, Stark concurrently manages two vital processes: speech transcription and response handling. It also has to execute commands, adding temporary processes that last as long as the command. All these processes share a single main thread. If one process blocks the thread for an extended period (e.g., with `requests.get` or `time.sleep`), it can halt the entire application. Stark includes the `BlockageDetector` to monitor the main thread and alert you if it's blocked for longer than a specified duration (default is 1 second).
+
+For commands that might cause blockages, declaring them using def is advised. Stark will then wrap these commands with asyncer.asyncify, spawning separate background threads for each process.
+
+When using async def, care should be taken to prevent the main thread from being blocked. This can be achieved by avoiding long-blocking code and opting for asynchronous libraries like `aiohttp` over synchronous ones such as `requests`. Additionally, `asyncer.asyncify` can be used to wrap blocking sections of code.
+
+For a deeper dive into synchronous vs. asynchronous programming, check [FastAPI documentation page](https://fastapi.tiangolo.com/async/). To learn more about transitioning between functions and threads, refer to the [asyncer documentation](https://asyncer.tiangolo.com/).
+
+## Background Commands
+
+Async commands aren't just for non-blocking I/O, they're how STARK powers "fire it and keep going" commands: start a task, respond immediately, keep running in the background, and push progress updates as they happen. The assistant stays free to handle other input the whole time; it isn't blocked waiting on the command to finish.
+
+```py
+import anyio
+from stark.core import AsyncResponseHandler
+
+timer_cancelled = False
+
+@manager.new('start timer')
+async def start_timer(handler: AsyncResponseHandler) -> Response:
+    global timer_cancelled
+    timer_cancelled = False
+    await handler.respond(Response('Timer started.', commands=[stop_timer]))  # 1
+    for percent in (25, 50, 75, 100):
+        await anyio.sleep(15)                                                       # 2
+        if timer_cancelled:
+            return Response('Timer stopped.')                                  # 3
+        await handler.respond(Response(f'Timer {percent}% done.'))
+    return Response('Timer finished!')
+
+@manager.new('stop timer', hidden=True)
+async def stop_timer(handler: AsyncResponseHandler) -> Response:
+    global timer_cancelled
+    timer_cancelled = True
+    handler.pop_context()
+    return Response('Stopping timer...')
+```
+
+1. The command responds immediately and offers a `stop timer` command, scoped to this context only, see [Commands Context](https://stark.markparker.me/commands-context/index.md) for how `commands=[...]` scoping works.
+1. It keeps running, four checkpoints, 15 seconds apart, pushing a `Response` every time there's something new to report. Each `respond` call is queued and delivered without blocking the rest of the assistant, see [Command Response](https://stark.markparker.me/command-response/index.md).
+1. A plain global flag is enough to cancel it, checked once per checkpoint. `stop timer` is only reachable while the timer is running (it's offered via `commands=[stop_timer]` above, not registered at the root). If you need command-local state instead of a shared global, define `stop_timer` inside `start_timer` so it closes over the same variables.
+
+Why doesn't the assistant just sit there waiting for the timer to finish? Because it's never blocked in the first place, the loop above runs as one of several concurrent tasks `CommandsContext` manages, and `handle_responses` delivers each response as it's queued, regardless of what else is in flight. What the user experiences while a background command runs, does the assistant repeat progress, stay silent until summoned, or wait for a "stop" word, is governed by [Voice Assistant & Modes](https://stark.markparker.me/voice-assistant/index.md), not by the command itself.
+
+This same pattern, immediate response, periodic progress, optional cancel, is what would back a download tracker, a long-running search, or any task that shouldn't make the user wait in silence.
+
+# Command Response
+
+The `Response` class represents the outcome of processing a command in the S.T.A.R.K. This documentation section will help you understand the various properties of the `Response` class, allowing you to craft detailed and specific responses to user queries.
+
+## Quick Construction
+
+When `text` and `voice` are the same, pass it once. The first positional argument sets `text`, and `voice` automatically falls back to whatever `text` is if you don't set it explicitly:
+
+```python
+Response('Lights off!')
+# same as: Response(text='Lights off!', voice='Lights off!')
+```
+
+They don't have to match. `text` can be more detailed than what's worth saying out loud, or `voice` can read more naturally than what looks good on screen:
+
+```python
+Response(
+    text='Battery: 23% (2h 14m remaining)',
+    voice='Battery is at twenty-three percent',
+)
+```
+
+## Response Properties
+
+### `voice: str | LocalizableString`
+
+**Default:** `''`
+
+This string will be converted to speech and played back to the user. If left empty, no vocal response will be given. Accepts `LocalizableString` for localized responses, see [Localizing Responses](https://stark.markparker.me/localization-and-multilingual/localizing-responses/index.md).
+
+### `text: str | LocalizableString`
+
+**Default:** `''`
+
+This property provides a textual representation of the response. It can be displayed in an application interface or used for logging. Accepts `LocalizableString` for localized responses.
+
+### `status: ResponseStatus`
+
+**Default:** `ResponseStatus.success`
+
+This property indicates the state or result of the command's processing. It can be any of the following values:
+
+- **none:** No status set.
+- **not_found:** Command not recognized or found.
+- **failed:** Command processing failed.
+- **success:** Command processed successfully.
+- **info:** An informational response.
+- **error:** An error occurred during command processing.
+
+### `needs_user_input: bool`
+
+**Default:** `False`
+
+This property, when set to `True`, signals that the assistant is actively awaiting additional input from the user. Additionally, if the response is queued for repetition and `needs_user_input` is set to `true`, the repetition will pause following the current response. This pause gives users the opportunity to address or answer any queries posed by the assistant without being interrupted by subsequent repeated messages.
+
+### `commands: list[Command]`
+
+**Default:** `[]`
+
+This property contains a list of commands associated with the response. These commands can serve various purposes, such as providing context, suggesting subsequent actions to the user, or even structuring nested menus. It's often beneficial to utilize this in conjunction with the `needs_user_input` property to create more interactive and guided user experiences.
+
+### `parameters: dict[str, Any]`
+
+**Default:** `{}`
+
+This property holds a dictionary of supplementary data or context useful to the voice assistant or the underlying command processing framework. Examples include specifying a city when inquiring about the weather or denoting a particular room in the context of smart home operations. This feature enables dynamic and contextual interactions, enhancing the overall user experience.
+
+### `id: UUID`
+
+A unique identifier for the response. It gets automatically set when a response is created. For internal usage only.
+
+### `time: datetime`
+
+The timestamp when the response was created. It gets automatically set upon the creation of a new response. For internal usage only.
+
+### `repeat_last: Response`
+
+Static instance of the Response class, that provides a mechanism to reprocess the last given response. If a new response matches the `repeat_last` instance, the voice assistant will process the previous response again.
+
+## Response Handling in the Framework
+
+Responses play a vital role in the user interaction flow. The `VoiceAssistant` class, along with the `CommandsContext`, processes these responses to ensure the user receives accurate and timely feedback.
+
+- **Upon receiving a new response:** The `VoiceAssistant` initially verifies if the response status belongs to its ignore list. If it doesn't, the assistant subsequently evaluates the mode's timeout parameters and, if applicable, appends the response to its collection. For further details on this behavior, refer to the Modes section on the [VoiceAssistant](https://stark.markparker.me/voice-assistant/index.md) page.
+- **Playing the response:** Depending on the assistant's mode, the response may be converted to speech and played back to the user.
+- **Repeating responses:** If there has been recent interaction, the assistant may opt to repeat specific responses, ensuring the user is reminded of any ongoing processes or required actions.
+
+This dynamic and flexible system of handling responses ensures that the user experience is interactive and engaging.
+
+______________________________________________________________________
+
+## Formatting Locale-Sensitive Values with PyICU
+
+When building responses that include numbers, dates, units, or currencies, [PyICU](https://pypi.org/project/PyICU/) provides locale-aware formatting out of the box. PyICU wraps the ICU C++ library, the same internationalisation engine used by platforms and projects including Android, Chromium, many Linux applications, and Apple's Foundation Kit that powers iOS/macOS apps.
+
+```python
+import icu
+
+# Spelled-out numbers (useful for TTS)
+formatter = icu.RuleBasedNumberFormat(icu.URBNFRuleSetTag.SPELLOUT, icu.Locale("en"))
+formatter.format(42)  # "forty-two"
+
+# Locale-aware date
+df = icu.DateFormat.createDateInstance(icu.DateFormat.LONG, icu.Locale("de"))
+df.format(icu.Calendar.getNow())  # "21. Juni 2026"
+
+# Units
+mf = icu.MeasureFormat(icu.Locale("en"), icu.UMeasureFormatWidth.WIDE)
+mf.format(icu.Measure(5, icu.UMeasureUnit.KILOMETER))  # "5 kilometers"
+mf.format(icu.Measure(7, icu.UMeasureUnit.POUND))  # "7 pounds"
+
+# Pluralization in message templates
+msg = icu.MessageFormat("{num, plural, one {# item} other {# items}}", icu.Locale("en"))
+msg.format([1])  # "1 item"
+msg.format([5])  # "5 items"
+```
+
+PyICU is not a dependency of S.T.A.R.K, install it separately (`pip install PyICU`) and use it alongside `LocalizableString` for formatting dynamic values before injecting them into your response templates. A tighter integration (e.g., a built-in formatting layer or a convenience wrapper) is on the radar but the exact shape is TBD, if you have ideas or want to draft an implementation, contributions are welcome via [STARK PLACE](https://stark.markparker.me/contributing-and-shared-usage-stark-place/index.md).
+
+For more on response localization, see [Localizing Responses](https://stark.markparker.me/localization-and-multilingual/localizing-responses/index.md).
+
+# Commands Context
+
+The `Commands Context` feature provides a sophisticated means to manage multi-level command structures. By facilitating a hierarchical command interface, it ensures users enjoy an intuitive and seamless interaction.
+
+## Managing Multiple Commands
+
+In instances where a single input correlates with multiple commands, the system adeptly manages these overlaps. It gives priority to commands based on their position in the string or their declaration sequence, guaranteeing that the most pertinent command always takes precedence.
+
+## The Contextual Hierarchy
+
+Visualize the entire system as a tree. Each context functions as a node, with its linked sub-contexts acting as its offspring. As users navigate this tree, they move between nodes, either delving deeper or backtracking, to consistently find the right command match.
+
+## Command Context Processing
+
+When processing a string:
+
+- The system adds the root context if it's missing.
+- It checks the current context to find a command that matches the input string. If a command doesn't fit the current context, the system goes up, removing contexts until it finds a match or runs out of contexts.
+- Upon a successful match, the system updates parameters, organizes dependencies, and initiates the command.
+- Unneeded contexts are quickly removed.
+
+## Managing Responses
+
+Responses are neatly lined up. The system constantly checks this line, running responses and commands in the order they come in, ensuring fast and orderly processing.
+
+## Response-embedded Context
+
+Responses can include:
+
+- **`needs_user_input: bool`**: If set to true, the system halts processing after the current response.
+- **`commands: list[Command]`**: Commands that can reshape context, propose subsequent actions, or establish layered interfaces.
+- **`parameters: dict[str, Any]`**: A supporting data list important for later processing or context definition.
+
+For additional details on responses, visit the [Command Response](https://stark.markparker.me/command-response/index.md) page.
+
+## Code Implementation
+
+```python
+@manager.new('hello', hidden=True) 
+def hello_context(**params):
+    return Response(f'Hi, {params["name"]}!')
+
+@manager.new('bye', hidden=True)
+def bye_context(name: Word, handler: ResponseHandler):
+    handler.pop_context()
+    return Response(f'Bye, {name}!')
+
+@manager.new('hello $name:Word')
+def hello(name: Word):
+    return Response(
+        f'Hello, {name}!',
+        commands=[hello_context, bye_context],
+        parameters={'name': name}
+    )
+```
+
+The code example provided demonstrates how to define and manage commands using a fictional `manager` object.
+
+### `hello_context` Function
+
+- This function is marked with a `hidden=True` parameter in its decorator. This means that the command will not be available in the root context, making it inaccessible as a top-level command.
+- The function accepts all context parameters through `**params`, which is a dictionary.
+- Within the function, both the `voice` and `text` variables are set to greet the user, using the context `name` parameter.
+- It then returns a response with the generated greeting text and voice.
+
+### `bye_context` Function
+
+- Similarly, this function is also hidden from the root context.
+- The function accepts specific parameters: `name` and `handler`. It's important to note that there's no `name` in the command pattern, which implies that it must be derived from the context.
+- The `handler.pop_context()` method is called, which presumably removes the current context, signaling a transition or end of interaction.
+- A farewell response using the `name` parameter is returned.
+
+### `hello` Function
+
+- This function defines a command pattern where a name is expected as input, formatted as `hello $name:Word`.
+- Inside, it constructs a greeting using the provided name.
+- The response not only contains the greeting but also a list of commands (`hello_context` and `bye_context`) that can be triggered next. This showcases the hierarchical and contextual nature of the system. Additionally, the name is passed as a parameter for potential use in subsequent commands.
+
+In summary, the code example gives us a glimpse into the contextual and hierarchical command management system. With the use of the `hidden` attribute, commands can be kept away from the root context, making them accessible only when they are contextually relevant.
+
+## A Real Nested Menu
+
+The example above is the mechanism in isolation. Here's the same mechanism solving something concrete: a `room → device → action` smart-home menu, three levels deep.
+
+```python
+@manager.new('turn off', hidden=True)
+def turn_lights_off(room: str, handler: ResponseHandler) -> Response:
+    handler.pop_context()                                                  # 1
+    return Response(f'{room.title()} lights off.')
+
+@manager.new('lights', hidden=True)
+def lights_menu(room: str) -> Response:
+    return Response(
+        text=f'{room.title()} lights — say "turn off".',
+        commands=[turn_lights_off],                                        # 2
+        parameters={'room': room},                                         # 3
+    )
+
+@manager.new('$room:(living room|kitchen|bedroom)')
+def room_menu(room: str) -> Response:
+    return Response(
+        text=f'{room.title()} — say "lights" to continue.',
+        commands=[lights_menu],
+        parameters={'room': room},
+    )
+```
+
+1. `pop_context()` removes this layer once the action completes, say "living room", then "lights", then "turn off", and the context unwinds back to root after the lights go off. No context is left dangling.
+1. Only `turn_lights_off` is offered next, at this depth, nothing else makes sense, so nothing else is suggested.
+1. `room` flows down from the first command to the last via `parameters`, without the user repeating themselves at each step ("living room", not "turn off the living room lights").
+
+This is the same context push/pop mechanism powering the `stop timer` command in [Sync vs Async Commands](https://stark.markparker.me/sync-vs-async-commands/#background-commands), a context-scoped command isn't limited to menus; it's just as natural for "cancel the thing I just started."
+
+# Patterns
+
+Patterns in the S.T.A.R.K toolkit are designed to be dynamic and extensible. They are at the core of how custom voice assistants interpret input and match it to commands. This documentation is a comprehensive guide to understanding and working with patterns in S.T.A.R.K.
+
+## Pattern Syntax
+
+At its essence, a pattern is a string that defines the structure of input it should match. The pattern syntax is enriched with special characters and sequences to help it match a variety of inputs dynamically.
+
+### Basics
+
+- `**`: Matches any sequence of words.
+- `*`: Matches any single word.
+- `$name:Type`: Defines a named parameter of a specific type.
+
+Example: For instance, the pattern `'Some ** here'` will match both `'Some text here'` and `'Some lorem ipsum dolor here'`.
+
+### Advanced Syntax
+
+**Selections** Selections provide flexibility in your voice command patterns by allowing multiple possibilities for a single command spot. This can be particularly useful in accommodating various ways users might phrase the same request.
+
+- `(foo|bar|baz)`: This pattern matches any single option among the three. So, it will match either `'foo'`, `'bar'`, or `'baz'`. Think of it as an "OR" choice for the user.
+- `(foo|bar)?`: This pattern introduces an optional choice. It can match `'foo'`, `'bar'`, or neither. The `?` denotes that the preceding pattern (in this case, the choice between `'foo'` or `'bar'`) is optional.
+- `{foo|bar}`: This pattern is designed to capture repetitions. It matches one or more occurrences of `'foo'` or `'bar'`. For example, if a user said "foo foo bar", this pattern would successfully match. Note: Be cautious with this pattern as it can match long, unexpected repetitions.
+
+There are also two plain-text helper functions for ordered groups:
+
+```python
+from stark.core.patterns.rules import one_from, one_or_more_from
+```
+
+- `one_from(*args)` → `(a|b|c)`
+- `one_or_more_from(*args)` → `{a|b|c}`
+
+General Tip: While creating patterns, always keep the user's natural way of speaking in mind. Testing your patterns with real users can help ensure that your voice assistant responds effectively to a variety of commands.
+
+## Parameters Parsing
+
+Voice commands can be dynamic, meaning they can accommodate varying inputs. This is achieved using named parameters in the command pattern, with the `$name:Type` syntax. When a user input matches a pattern with named parameters, the assistant extracts these parameters and passes them to the corresponding function.
+
+For example, consider the pattern `'Hello $name:Word'`. If a user says, `'Hello Stark'`, the system will extract a parameter named `'name'` with the value `'Stark'`.
+
+However, ensure that the function declaration tied to a command pattern includes all the parameters defined in that pattern, using the same names and types. If this isn't done, you'll encounter an exception during command creation.
+
+Here's an example:
+
+```python
+from stark.core.types import Word
+
+@manager.new('Hello $name:Word')
+async def example_function(name: Word) -> Response:
+    return Response(f'You said {name}!')
+```
+
+## Native Types List
+
+Out of the box, the S.T.A.R.K. comes with native types that can be used as parameter types in patterns. The currently supported native types include:
+
+- `String`: Matches any sequence of words (\*\*).
+- `Word`: Matches a single word (\*).
+
+It's also worth noting that you can extend the list of types by defining custom object types, as we'll discuss in the next section.
+
+## Defining Custom Object Types
+
+The S.T.A.R.K toolkit isn't just limited to native types; it empowers developers to define their own custom object types. These bespoke types are constructed by subclassing the `Object` base class and specifying a distinct matching pattern.
+
+A standout feature of the S.T.A.R.K toolkit's patterns is their seamless compatibility with nested objects. In essence, a custom object type can house parameters that are, in themselves, other custom object types. This nesting capability facilitates the crafting of complex and nuanced patterns, capable of interpreting diverse input configurations.
+
+Below is a demonstrative example of how one might structure a custom object type:
+
+```python
+class FullName(Object):
+    first_name: Word
+    second_name: Word
+
+    @classproperty
+    def pattern(cls) -> Pattern:
+        return Pattern('$first_name:Word $second_name:Word')
+
+context = CommandsContext(...)
+context.pattern_parser.register_parameter_type(FullName)
+```
+
+Upon successfully matching the pattern, S.T.A.R.K will autonomously parse and assign values to `first_name` and `second_name`. It's imperative, just as with command patterns, that class properties are congruent with the pattern in terms of both name and type.
+
+The section is well-detailed, but I have a few recommendations to make it even clearer:
+
+______________________________________________________________________
+
+## Advanced Object Types with Parsing Customization
+
+In instances where the default parsing doesn't cater to your requirements, or when you need specialized processing, the `did_parse` method comes to the rescue. By overriding this method in custom object types, you can introduce intricate transformations or run custom validation checks post-parsing.
+
+Here's an illustrative example:
+
+```python
+class Lorem(Object):
+
+    @classproperty
+    def pattern(cls):
+        return Pattern('* ipsum')
+
+    async def did_parse(self, from_string: str) -> str:
+        '''
+        Invoked after parsing from the string and assigning the parameters detected in the pattern.
+        Directly calling this method is typically unnecessary and uncommon.
+
+        Override this method to achieve more sophisticated string parsing.
+        The from_string argument is a LocaleString — same as the regular string, but provides `from_string.language_code: LanguageCode`
+        for language-aware parsing. See Localization docs for details.
+        '''
+
+        if 'lorem' not in from_string:
+            raise ParseError('lorem not found') # Throw a ParseError if the string doesn't meet certain criteria
+
+        self.value = 'lorem' # Assign additional properties (properties inferred from the pattern are auto-assigned)
+        return 'lorem' # Return the smallest substring essential for this object
+
+context = CommandsContext(...)
+context.pattern_parser.register_parameter_type(Lorem)
+print(context.pattern_parser.parse_object(Lorem, "lorem ipsum"))
+```
+
+## Custom Parser Class Example
+
+In some cases, you may want to separate the parsing logic from your data model. This is especially useful when you want to reuse parsing logic, inject dependencies, have longer life cycle (stateful parser), or just keep your models clean. You can define a dedicated parser class for your object type.
+
+Here's an example:
+
+```python
+from stark.core.types import Object, Word
+from stark.core.parsing import Pattern, PatternParser, ObjectParser
+
+class Lorem(Object):
+    @classproperty
+    def pattern(cls):
+        return Pattern("* ipsum")
+
+class LoremParser(ObjectParser):
+    def __init__(self, pattern_parser: PatternParser):
+        self.pattern_parser = pattern_parser
+
+    async def did_parse(self, obj: Lorem, from_string: str) -> str:
+        # Custom parsing logic for Lorem
+        if "lorem" not in from_string:
+            raise ParseError("lorem not found")
+        obj.value = "lorem"
+        return "lorem"
+
+context = CommandsContext(...)
+context.pattern_parser.register_parameter_type(Lorem, parser=LoremParser())
+print(context.pattern_parser.parse_object(Lorem, "lorem ipsum"))
+```
+
+This approach allows you to keep parsing logic separate from your data model and makes it easy to inject dependencies or share logic between different models.
+
+Note that the `did_parse` method must return a substring of the input string that was successfully parsed. This substring should be the smallest possible string that still represents the object's value. In case you use 3rd party parser that can't extract substring and just provides the value, you have several options to handle this:
+
+1. If your parser returns a string-ish value, like some kind of name, you can use `levenshtein_search_substring` from the [STARK-Levenshtein](https://stark.markparker.me/tools/stark-levenshtein/index.md) module. This will allow you efficiently find the closest fuzzy match of your named entity in the input string.
+1. Consider using `NLDictionaryName` from [Phonetic Dictionary](https://stark.markparker.me/tools/phonetic-dictionary/index.md) if suits your needs.
+1. If options above are not suitable, take a look at [sliding_window_parser](https://stark.markparker.me/tools/sliding-window-parser/index.md) wrapper. Note that it will call the parser method multiple times to find the best match, which can be optimized by caching intermediate results inside your parser func, but yet still requires careful usage especially with large input strings and long io-bound parsing times.
+
+## Recommended Use of Caching for `did_parse` Method
+
+When the `did_parse` method is involved in the matching process, especially if it performs complex computations or external lookups, it can slow down the overall matching process. To alleviate this potential bottleneck, it's highly recommended to use caching. By storing previously parsed objects in a cache, you can avoid redundant work and improve the overall performance of your custom voice assistant.
+
+______________________________________________________________________
+
+## (beta) Unordered Patterns
+
+By default, parameters in a pattern must appear in a fixed order. Unordered patterns relax this constraint. The user can say the parts in any order and S.T.A.R.K will still match them.
+
+There are two flavours, available as helper functions from `stark.core.patterns.rules`:
+
+### `all_unordered(*args)`, all required
+
+Every listed element must be present in the input. Order doesn't matter.
+
+```python
+from stark.core.patterns.rules import all_unordered
+
+pattern = Pattern(f"{all_unordered('$h:Hours', '$m:Minutes', '$s:Seconds')}")
+# matches "12 h 30 m 45 s", "45 s 12 h 30 m", etc.
+# does NOT match "12 h 30 m" (missing seconds)
+```
+
+### `one_or_more_unordered(*args)`, at least one required
+
+At least one element must match. The rest are optional. Order doesn't matter.
+
+```python
+from stark.core.patterns.rules import one_or_more_unordered
+
+pattern = Pattern(f"{one_or_more_unordered('$h:Hours', '$m:Minutes', '$s:Seconds')}")
+# matches "12 h 30 m 45 s", "12 h", "30 m 45 s", etc.
+# does NOT match "" (at least one must be present)
+```
+
+> **Note:** Unordered patterns use lookahead-based matching under the hood and don't work well with multi-word wildcards (`**`). For unordered multi-word parameters, use Slots instead.
+
+## Union Types
+
+A `Union` parameter type matches one of several concrete types and routes parsing to whichever branch succeeds. There are three declaration styles:
+
+### Factory (`MakeUnion` / `|`)
+
+```python
+from stark.core.types import MakeUnion
+
+NLPower = NLMeasurementWatt | NLMeasurementVolt
+NLPower = MakeUnion(NLMeasurementWatt, NLMeasurementVolt) # equivalent
+```
+
+Use the factory or pipe when the union is a one-off composition. Factory unions are **transparent**: when used as a typed parameter, the parser unwraps to the matched branch directly, so `self.power` is an `NLMeasurementWatt` or `NLMeasurementVolt` instance.
+
+### Named subclass
+
+```python
+from stark.core.types import Union
+
+class NLPower(Union):
+    _types = [NLMeasurementWatt, NLMeasurementVolt]
+```
+
+Named unions are **opaque**: if used as a typed parameter, `self.power` will be an `NLPower` instance with `.value` holding the matched branch. Use when you want to extend `did_parse` behavior for the union as a whole, but don't forget to call `super().did_parse`.
+
+### `any_subclass` factory
+
+By default, STARK only tries to parse the exact type of the parameter and ignores any parent/child classes. `any_subclass(T)` where `T` is a subclass of `Object` recursively discovers all subclasses of `T` and returns a transparent Union of them (i.e. the union is unwrapped to the matched subclass automatically).
+
+```python
+from stark.core.types import any_subclass
+
+class NLUnit(Object):
+    pint_unit: str
+
+    @classproperty
+    def pattern(cls) -> Pattern:
+        raise NotImplementedError  # prevents direct registration
+
+class NLUnitWatt(NLUnit):
+    pint_unit = "watt"
+    @classproperty
+    def pattern(cls) -> Pattern: return Pattern("(watt|w)")
+
+class NLUnitVolt(NLUnit):
+    pint_unit = "volt"
+    @classproperty
+    def pattern(cls) -> Pattern: return Pattern("(volt|v)")
+
+class NLMeasurement(Object):
+    number: NLNumber
+    unit: NLUnit
+
+    @classproperty
+    def pattern(cls) -> Pattern:
+        return Pattern(f"$number:NLNumber $unit:{any_subclass(NLUnit)}")
+
+    async def did_parse(self, from_string) -> str:
+        assert self.number and self.unit and self.unit.pint_unit  # all parsed automatically
+        self.value = (self.unit.pint_unit, self.number.value)
+        return from_string
+```
+
+In this example, because of `any_subclass(NLUnit)` in the pattern, `PatternParser` would try to parse `unit` property of `NLMeasurement` using subclasses of `NLUnit` instead of trying to parse parental class `NLUnit` iteself.
+
+`register_parameter_type(NLMeasurement)` registers the entire tree automatically — no explicit list, no manual registration of each unit type.
+
+To add a new unit, simply define a subclass of `NLUnit` before the first `register_parameter_type` call (all subclasses are discovered automatically):
+
+```python
+class NLUnitAmpere(NLUnit):
+    pint_unit = "ampere"
+    @classproperty
+    def pattern(cls) -> Pattern: return Pattern("(ampere|amp|a)")
+```
+
+## Slots
+
+Slots provide unordered parameter extraction for Object types with multiple fields. Unlike unordered patterns (which work at the pattern level), Slots parse each field independently from the input string, so they handle multi-word and greedy parameters correctly.
+
+### Defining a Slots class
+
+A Slots class is a regular `Object` subclass. Each annotated field (except `value`) becomes a slot that will be parsed independently. Fields can be required or optional (`Optional[T]` / `T | None`).
+
+```python
+from typing import Optional
+from stark.core.types import Object, Word
+
+class TimerSlots(Object):
+    hours: Hours           # required
+    minutes: Minutes       # required
+    seconds: Optional[Seconds]  # optional
+
+    # NOTE: no pattern needed for TimerSlots
+```
+
+### Registering with SlotsParser
+
+Unlike regular Object types, Slots classes use `SlotsParser` instead of the default parser:
+
+```python
+from stark.core.types.slots import SlotsParser
+
+context = CommandsContext(...)
+context.pattern_parser.register_parameter_type(
+    TimerSlots,
+    parser=SlotsParser(context.pattern_parser) # <-
+)
+```
+
+### Using Slots in patterns
+
+Reference the Slots class like any other parameter type:
+
+```python
+@manager.new('set timer $timer:TimerSlots')
+async def set_timer(timer: TimerSlots) -> Response:
+    h = timer.hours       # Hours object or None
+    m = timer.minutes     # Minutes object
+    s = timer.seconds     # Seconds object or None
+    ...
+```
+
+### How it works
+
+`SlotsParser` iterates over each slot and tries to parse its type from the remaining input string. Successfully parsed substrings are removed before parsing the next slot. After all slots are processed:
+
+- At least one slot must have matched, otherwise parsing fails.
+- Required (non-optional) slots must all match, otherwise parsing fails.
+- The `value` property is set to the minimal substring spanning all matched slots.
+
+This makes Slots ideal for commands where parameters can appear in any order and may include multi-word values, something that pattern-based unordered matching can't handle reliably.
+
+______________________________________________________________________
+
+By understanding and mastering patterns in the S.T.A.R.K toolkit, you'll be well-equipped to create powerful and dynamic custom voice assistants. Happy coding!
+
+Pattern matching itself runs as one stage in a pluggable pipeline, see [Custom Processors](https://stark.markparker.me/advanced/custom-processors/index.md) if you want to add your own stage (e.g. NER, phonetic correction) before or after matching.
+
+# Dependency Injection
+
+Dependency Injection (DI) is a powerful design pattern used to achieve Inversion of Control (IoC) between classes and their dependencies. Within the context of our voice assistant, Dependency Injection facilitates the provision of specific objects or values to command functions. This ensures that these functions can readily access external resources or other system components.
+
+This guide provides an overview of the Dependency Injection implementation, how to utilize it in your voice assistant, and some native dependencies.
+
+## Response Handler
+
+There are two response handlers: `AsyncResponseHandler` and `ResponseHandler`. They oversee the processing of responses, asynchronously and synchronously, respectively. To employ them, simply include the required type (class) annotation as an argument within the function declaration. The argument's name isn't significant for this dependency.
+
+```python
+@manager.new('hello')
+async def hello(handler: AsyncResponseHandler) -> Response: 
+    await handler.respond(Response(text = 'Hi'))
+```
+
+In the showcased example, the `AsyncResponseHandler` is automatically injected into the `hello` command function upon its invocation.
+
+## Language Code
+
+The `LanguageCode` dependency provides the language of the substring that matched the command's pattern. It's injected per-command, if two commands match in different languages from the same input, each receives its own language. Matched by type annotation; the parameter name doesn't matter.
+
+```python
+from stark.general.localisation.language_code import LanguageCode
+from stark.general.localisation import LocalizableString
+
+@manager.new({"en": "set timer", "es": "pon un temporizador"})
+async def set_timer(lang: LanguageCode) -> Response:
+    return Response(LocalizableString("timer_set", lang))
+```
+
+When the user says "pon un temporizador", `lang` is `"es"`. When they say "set timer", `lang` is `"en"`. For mixed-language input with `TranscriptionString`, the language is the majority language of the matched substring's words.
+
+## `inject_dependency`
+
+The `inject_dependency` method serves to integrate specific dependencies into a function. This method determines the function's dependencies and subsequently calls it. Contrary to the response handler, this dependency is identified by the argument's name.
+
+Example:
+
+```python
+@manager.new('turn off the light')
+async def lights_off(handler: AsyncResponseHandler) -> Response: 
+    return Response('Lights off.')
+
+@manager.new('good night')
+async def good_night(inject_dependencies): 
+    return await inject_dependencies(lights_off)()
+```
+
+Here, the `lights_off` dependency is injected and executed within the `good_night` command function.
+
+## Accessing DIContainer in a Command
+
+The `CommandsContext` class initializes with a `dependency_manager` of the `DependencyManager` type. This manager undertakes the role of identifying and injecting the requisite dependencies for command functions.
+
+To tap into the DIContainer inside a command, simply declare the needed dependency as a command function parameter. The `DependencyManager` will resolve this parameter and supply the appropriate object or value.
+
+For more advanced access, you can extract the container as a dependency of type `DIContainer`, as demonstrated:
+
+```python
+@manager.new('set volume')
+async def set_volume(di_container: DIContainer): 
+    di_container.add_dependency(...)
+    di_container.find(...)
+```
+
+This is feasible because the default DI container internally registers itself as a dependency:
+
+```python
+default_dependency_manager.add_dependency(None, DependencyManager, default_dependency_manager)
+```
+
+## Adding Custom Dependency
+
+You can incorporate custom dependencies using the `add_dependency` method of the default shared instance of `DependencyManager`.
+
+Example:
+
+```python
+from stark.general.dependencies import default_dependency_manager
+...
+default_dependency_manager.add_dependency("custom_name", CustomType, custom_value)
+```
+
+In this instance, a new dependency named `custom_name`, of `CustomType`, with the value `custom_value` is appended. If the name is set to `None`, you can later choose any name for the function argument; the dependency will be discerned solely by type (like `ResponseHandler` and `AsyncResponseHandler`). Conversely, setting the type to `None` allows the dependency to be detected purely by the argument name (like `inject_dependencies`).
+
+## Creating a Custom Container
+
+To employ a custom container for Dependency Injection in lieu of the default one, instantiate a new `DependencyManager` and input your custom dependencies. This tailored container can subsequently be utilized during the `CommandsContext` initialization.
+
+Example:
+
+```python
+custom_dependency_manager = DependencyManager()
+custom_dependency_manager.add_dependency(...)
+
+context = CommandsContext(..., dependency_manager=custom_dependency_manager)
+```
+
+It's worth noting that the CommandsContext always registers several native dependencies upon initialization:
+
+```python
+self.dependency_manager.add_dependency(None, AsyncResponseHandler, self)
+self.dependency_manager.add_dependency(None, ResponseHandler, SyncResponseHandler(self))
+self.dependency_manager.add_dependency('inject_dependencies', None, self.inject_dependencies)
+```
+
+However, other native dependencies will be absent in the custom container unless you manually incorporate them.
+
+______________________________________________________________________
+
+The adaptability provided by the Dependency Injection framework ensures your command functions remain modular, simplifying testing. As you further develop your voice assistant, utilize this system to adeptly handle your dependencies.
+# Running Your Assistant
+
+# Running Your Assistant
+
+Getting commands defined is half the story, this section covers actually starting an assistant and wiring up its IO:
+
+- **[How to Run](https://stark.markparker.me/how-to-run/index.md)**: `run()`, custom overrides, and your own assembly function.
+- **[Voice Assistant & Modes](https://stark.markparker.me/voice-assistant/index.md)**: the built-in voice IO layer and its active/waiting/inactive/sleeping/explicit/external modes.
+- **[Default Speech Interfaces](https://stark.markparker.me/default-speech-interfaces/index.md)**: the ready-made STT/TTS implementations and how to wire them up.
+- **[Custom IO & Context Delegate](https://stark.markparker.me/advanced/custom-interfaces/index.md)**: building an IO layer that isn't voice at all.
+- **[Where to Host](https://stark.markparker.me/where-to-host/index.md)**: running on a Pi, a server, or your own machine.
+
+# How to Run
+
+There are several ways to get a S.T.A.R.K. assistant running, from "just call one function" to "build your own IO layer from scratch." This page covers them in order, from least to most control.
+
+## 1. Defaults: `run()`
+
+```python
+import anyio
+from stark import run, CommandsManager
+from stark.interfaces.vosk import VoskSpeechRecognizer
+from stark.interfaces.silero import SileroSpeechSynthesizer
+
+manager = CommandsManager()
+# ... register commands ...
+
+async def main():
+    recognizer = VoskSpeechRecognizer(model_url='...')
+    synthesizer = SileroSpeechSynthesizer(model_url='...')
+    await run(manager, recognizer, synthesizer)
+
+anyio.run(main)
+```
+
+This is the one-call path used on the [front page](https://stark.markparker.me/#hello-stark): `run()` builds a `CommandsContext`, wires up a `VoiceAssistant`, starts the microphone, and starts listening. For most assistants, this is all you need.
+
+## 2. Custom Overrides
+
+`run()`'s full signature:
+
+```python
+async def run(
+    manager: CommandsManager,
+    speech_recognizer: SpeechRecognizer | list[SpeechRecognizer],
+    speech_synthesizer: SpeechSynthesizer,
+    processors: list[CommandsContextProcessor] | None = None,
+    localizer: Localizer | None = None,
+):
+```
+
+- **`processors`**: override the default pattern-matching pipeline. Omit it and `run()` picks `SearchProcessor` alone, or `CorrectionsProcessor` + `SearchProcessor` if you pass a `localizer`. See [Custom Processors](https://stark.markparker.me/advanced/custom-processors/index.md) to add your own stage (NER, custom corrections, anything that needs to run before or after matching).
+- **`localizer`**: enables multilingual parsing and pulls in `CorrectionsProcessor` by default. See [Going Multilingual](https://stark.markparker.me/localization-and-multilingual/index.md).
+- **`speech_recognizer` as a list**: pass more than one recognizer (e.g. one per language) and `run()` automatically wraps them in a `SpeechRecognizerRelay`, which compares per-word confidence across recognizers and assembles the best transcription. See [Voice Assistant & Modes, Multi-Language Voice Setup](https://stark.markparker.me/voice-assistant/#multi-language-voice-setup).
+
+## 3. Your Own Minimal Assembly Function
+
+`run()` is opinionated: it always wires a `VoiceAssistant`, always starts a microphone. If you want a different IO source entirely, text in a terminal, no audio at all, skip `run()` and construct `CommandsContext` directly:
+
+```python
+import sys
+import anyio
+from stark.core import CommandsContext, CommandsManager, Response
+
+manager = CommandsManager()
+
+@manager.new('hello')
+async def hello_command() -> Response:
+    return Response('Hello, Stark!')
+
+async def main():
+    async with anyio.create_task_group() as task_group:
+        context = CommandsContext(task_group=task_group, commands_manager=manager)  # 1
+        context.delegate = TextDelegate()                                           # 2
+
+        for line in sys.stdin:                                                       # 3
+            await context.process_string(line.strip())
+
+anyio.run(main)
+```
+
+1. No recognizer, no synthesizer, no microphone, `CommandsContext` alone is the whole engine.
+1. `TextDelegate` just needs to satisfy `CommandsContextDelegate`, a full, runnable implementation (print responses to the terminal) is in [Custom IO & Context Delegate, A Minimal Custom Delegate](https://stark.markparker.me/advanced/custom-interfaces/#a-minimal-custom-delegate).
+1. Feed it text however you like, reading stdin here, but it could just as easily be a GUI event handler or an incoming HTTP request.
+
+This is the no-audio, IO-less path, same mechanics as the voice version, minus speech entirely. Good for testing, debugging, or text-first interfaces.
+
+## 4. The Full Default `run()`, for Reference
+
+Want to see exactly what `run()` does internally, every task it starts, every delegate it wires, so you can replicate and extend it yourself? See [Custom Run](https://stark.markparker.me/advanced/custom-run/index.md) in Going Deeper; it walks through the real implementation line by line.
+
+## IO Options at a Glance
+
+| Interface               | Status           | Where                                                                                                                                                                                                                |
+| ----------------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **VUI** (voice)         | Built-in         | `VoiceAssistant`, via `run()`, see above                                                                                                                                                                             |
+| **TUI** (terminal text) | Built-in pattern | The minimal example above, or `STARK_VOICE_CLI=1` on top of `VoiceAssistant`, see [Voice Assistant & Modes](https://stark.markparker.me/voice-assistant/index.md)                                                    |
+| **GUI**                 | Not yet built    | A great first contribution, see [Custom IO & Context Delegate](https://stark.markparker.me/advanced/custom-interfaces/#gui) for the shape it would take, and [Roadmap](https://stark.markparker.me/roadmap/index.md) |
+| **API**                 | Not yet built    | Same as GUI, `CommandsContextDelegate` is the integration point                                                                                                                                                      |
+
+## 5. Two Levels of Customization
+
+Once you're running an assistant, there are two ways to hook into its behavior, depending on how much you need to change:
+
+**Simpler, subclass `VoiceAssistant`.** Override a lifecycle method, call `super()`, add your logic. Good for things like updating a GUI alongside voice, or logging every response. See [Voice Assistant & Modes, Customizing VA and Observing Events](https://stark.markparker.me/voice-assistant/#customizing-va-and-observing-events).
+
+**Full control, implement `CommandsContextDelegate` yourself.** This is the protocol `VoiceAssistant` itself implements. Skip `VoiceAssistant` entirely and you control the whole IO loop, this is what step 3 above does. See [Custom IO & Context Delegate](https://stark.markparker.me/advanced/custom-interfaces/index.md) for the protocol and worked example.
+
+______________________________________________________________________
+
+Building something with a custom IO layer? [Share it in Discussions](https://github.com/MarkParker5/STARK/discussions) or contribute it to [STARK-PLACE](https://stark.markparker.me/contributing-and-shared-usage-stark-place/index.md), GUI and API interfaces especially are open ground.
+
+# Voice Assistant (VA) Documentation
+
+For the full picture on getting an assistant running, `run()`, custom overrides, and IO options beyond voice, see [How to Run](https://stark.markparker.me/how-to-run/index.md). This page covers the `VoiceAssistant` class itself and its `Mode` system in depth.
+
+## Env Parameters
+
+`STARK_VOICE_CLI`: Prints voice input and output in terminal if set to 1 (default 0). Useful for testing and debugging if no other interface is available.
+
+## Overview
+
+The VA processes user speech inputs, interacts with a set of commands, and provides responses. The behavior and response of the VA can be modified by setting different "modes". These modes define how the VA should operate in various situations, such as active listening, waiting, or when it's inactive.
+
+## How the VA Works
+
+### Responses and Contexts in Different Modes
+
+The VA processes user inputs and responds based on the current context and mode. A context can be thought of as a state or situation in which the VA finds itself. Depending on the mode, the VA might immediately play responses, collect them for later, require explicit triggers to respond, or have different timeouts after which it changes its behavior or mode.
+
+### Effects of Modes on VA
+
+The mode can change the VA's behavior in various ways, such as:
+
+- Whether to immediately play responses.
+- Whether to collect responses for future playbacks.
+- Setting a pattern for explicit interactions.
+- Setting timeouts for interactions or before repeating a response.
+- Switching to another mode either after a timeout or an interaction.
+- Deciding to stop after an interaction.
+
+## Mode Details
+
+The `Mode` class defines the behavior and settings of the VA in various situations. Each property of the `Mode` class influences the VA's interaction with the user and the context.
+
+### Mode Properties
+
+- **`play_responses: bool` (default: `True`)**
+
+Determines whether the VA should immediately play the responses to user inputs. If set to `False`, the VA might hold onto responses for later or not vocalize them at all, based on other mode settings.
+
+- **`collect_responses: bool` (default: `False`)**
+
+Indicates if the VA should collect responses for later playback. When set to `True`, responses might be saved and played back later, especially if `play_responses` is set to `False`.
+
+- **`explicit_interaction_pattern: Optional[str]` (default: `None`)**
+
+This can be set to a specific string pattern. When defined, the VA requires an explicit interaction matching this pattern before processing user input. This is useful for "wake word" or command activation scenarios.
+
+- **`timeout_after_interaction: int` (default: `20`)**
+
+Defines the number of seconds the VA waits after the last interaction before considering the session as timed out. Depending on other mode settings, the VA might change its behavior or switch modes after a timeout.
+
+- **`timeout_before_repeat: int` (default: `5`)**
+
+Specifies the number of seconds before the VA can repeat a previously played response.
+
+- **`mode_on_timeout: Callable[[], Mode] | None` (default: `None`)**
+
+Defines a function that returns another mode that the VA should switch to after a timeout.
+
+- **`mode_on_interaction: Callable[[], Mode] | None` (default: `None`)**
+
+Determines a function that returns another mode that the VA should switch to upon receiving an interaction from the user.
+
+- **`stop_after_interaction: bool` (default: `False`)**
+
+If set to `True`, the VA will stop its current operation after the command response. This is useful for situations where you want to start the VA on extarnal triggers, like keyboard shortcut.
+
+### Native Modes
+
+- **Active**: The VA is in an active listening state, transitioning to the "waiting" mode upon timeout.
+- **Waiting**: The VA collects responses and goes back to the "active" mode upon user interaction.
+- **Inactive**: The VA doesn't immediately play responses but collects them, reverting to "active" mode upon interaction.
+- **Sleeping**: Similar to inactive, but requires an explicit interaction pattern to activate.
+- **Explicit**: Requires a specific interaction pattern to proceed every command.
+- **External**: Similar to Explicit, but requires an external trigger to activate.
+
+### Mode Class Code
+
+```python
+class Mode(BaseModel):
+
+    play_responses: bool = True
+    collect_responses: bool = False
+    explicit_interaction_pattern: Optional[str] = None
+    timeout_after_interaction: int = 20 # seconds
+    timeout_before_repeat: int = 5 # seconds
+    mode_on_timeout: Callable[[], Mode] | None = None
+    mode_on_interaction: Callable[[], Mode] | None = None
+    stop_after_interaction: bool = False
+
+    @classproperty
+    def active(cls) -> Mode:
+        return Mode(
+            mode_on_timeout = lambda: Mode.waiting,
+        )
+
+    @classproperty
+    def waiting(cls) -> Mode:
+        return Mode(
+            collect_responses = True,
+            mode_on_interaction = lambda: Mode.active,
+        )
+
+    @classproperty
+    def inactive(cls) -> Mode:
+        return Mode(
+            play_responses = False,
+            collect_responses = True,
+            timeout_after_interaction = 0, # start collecting responses immediately
+            timeout_before_repeat = 0, # repeat all
+            mode_on_interaction = lambda: Mode.active,
+        )
+
+    @classmethod
+    def sleeping(cls, pattern: str) -> Mode:
+        return Mode(
+            play_responses = False,
+            collect_responses = True,
+            timeout_after_interaction = 0, # start collecting responses immediately
+            timeout_before_repeat = 0, # repeat all
+            explicit_interaction_pattern = pattern,
+            mode_on_interaction = lambda: Mode.active,
+        )
+
+    @classmethod
+    def explicit(cls, pattern: str) -> Mode:
+        return Mode(
+            explicit_interaction_pattern = pattern,
+        )
+
+    @classmethod
+    def external(cls) -> Mode:
+        return Mode(
+            stop_after_interaction = True,
+        )
+```
+
+## Changing Modes Manually
+
+You can manually set the mode by assigning a Mode object to the VA's `mode` attribute. For instance, to set the VA to "waiting" mode:
+
+```python
+voice_assistant.mode = Mode.waiting
+```
+
+## Setting Up a Custom Mode
+
+To define a custom mode, create an instance of the `Mode` class and specify the desired properties. For example:
+
+```python
+custom_mode = Mode(play_responses=False, timeout_after_interaction=10)
+voice_assistant.mode = custom_mode
+```
+
+## Setting VA Modes from Command
+
+To have commands in the VA interact with its modes.
+
+1. Register VA in DIContainer
+1. Add VA as a command dependency
+1. Access VA in command
+
+*check [Dependency Injection](https://stark.markparker.me/dependency-injection/index.md) for details*
+
+## Customizing VA and Observing Events
+
+If you want to add a custom logic to VA events, for example update GUI, you can subclass the native VoiceAssistant class and override its methods to add desired behavior. Don't forget to call the superclass method to ensure the default behavior is preserved. Voice assistant conforms to SpeechRecognizerDelegate and CommandsContextDelegate protocols, which methods are the main events.
+
+```python
+class MyVoiceAssistant(VoiceAssistant):
+
+    async def speech_recognizer_did_receive_final_result(self, result: str | LocaleString):
+        super().speech_recognizer_did_receive_final_result(result)
+        print('You said: ', result) # Your custom logic here
+
+    async def speech_recognizer_did_receive_partial_result(self, result: str):
+        super().speech_recognizer_did_receive_partial_result(result)
+        print(f"\rListening...: \x1b[3m{result}\x1b[0m", end="") # Your custom logic here
+
+    async def speech_recognizer_did_receive_empty_result(self):
+        super().speech_recognizer_did_receive_empty_result()
+        # Your custom logic here
+
+    async def commands_context_did_receive_response(self, response: Response):
+        super().commands_context_did_receive_response(response)
+        print('STARK: ', response.text) # Your custom logic here
+```
+
+For more advanced usage, see the source code or use your IDE's autocomplete. Most modern editors support "go to definition" feature which might be very helpful for this.
+
+## Multi-Language Voice Setup
+
+To use multiple STT engines for different languages simultaneously, pass a list of recognizers to `run()`:
+
+```python
+from stark import run, CommandsManager
+from stark.interfaces.vosk import VoskSpeechRecognizer
+from stark.general.localisation import Localizer
+
+manager = CommandsManager()
+
+recognizers = [
+    VoskSpeechRecognizer(model_url="https://...", language_code="en"),
+    VoskSpeechRecognizer(model_url="https://...", language_code="de"),
+]
+
+localizer = Localizer(languages={"en", "de"})
+localizer.load()
+
+await run(
+    manager=manager,
+    speech_recognizer=recognizers,  # list triggers multi-STT relay
+    speech_synthesizer=synthesizer,
+    localizer=localizer,
+)
+```
+
+When a list is provided, `run()` automatically creates **SpeechRecognizerRelay**, waits for all recognizers to report, builds the best transcription by per-word confidence comparison, and emits a `VoiceTranscriptionString` with per-word language codes
+
+The relay produces a `VoiceTranscriptionString` that carries:
+
+- The best-confidence assembled text
+- Per-word language codes (from whichever recognizer had the highest confidence for each word)
+- Time-aligned `VoiceTranscriptionTrack` with word timestamps, confidence scores, and speaker embeddings
+- Alternative texts from each language's recognizer (for matrix cross-language matching) TODO: ref the feature flag
+
+### Speaker Model (Experimental)
+
+Vosk supports speaker identification via speaker embedding vectors. Pass a `speaker_model_url` to enable:
+
+```python
+VoskSpeechRecognizer(
+    model_url="https://...",
+    language_code="en",
+    speaker_model_url="https://...",  # optional speaker ID model
+)
+```
+
+Speaker embeddings are stored per-word in `VoiceTranscriptionTrack.spk` and preserved through the entire flow. They are not used yet, but the infrastructure is ready for a future speaker diarization module.
+
+See [Localizing Parsing](https://stark.markparker.me/localization-and-multilingual/localizing-parsing/index.md) for details on these features. See [Feature Flags](https://stark.markparker.me/advanced/feature-flags/index.md) for additional configuration options like enabling printing the conversation or tweaking multilingual features.
+
+# Default Speech Interfaces
+
+`run()` needs a speech recognizer and a speech synthesizer, this page is the quick reference for wiring up the ones S.T.A.R.K. ships. The Vosk + Silero stack isn't fixed: both are protocol-based, so any backend that implements the same thin interface is a drop-in replacement, more native alternatives are on the way (see [Roadmap](https://stark.markparker.me/roadmap/index.md)), and nothing stops you from wiring in your own today. For the underlying protocols, what each method does, and how to implement your own backend, see [Speech Recognition (STT)](https://stark.markparker.me/tools/speech-recognition/index.md) and [Speech Synthesis (TTS)](https://stark.markparker.me/tools/speech-synthesis/index.md), both work standalone too, without any other part of the framework.
+
+## Recognizers
+
+### `VoskSpeechRecognizer`
+
+Offline recognition via [Vosk](https://alphacephei.com/vosk/). Downloads and caches the model on first use.
+
+```python
+VoskSpeechRecognizer(model_url: str, language_code: str | None = None, speaker_model_url: str | None = None)
+```
+
+## Synthesizers
+
+### `SileroSpeechSynthesizer`
+
+Offline synthesis via [Silero](https://github.com/snakers4/silero-models).
+
+```python
+SileroSpeechSynthesizer(model_url: str, speaker: str = 'baya', threads: int = 4, device='cpu', torch_backends_quantized_engine: str = 'qnnpack')
+```
+
+### `GCloudSpeechSynthesizer`
+
+Cloud synthesis via Google Cloud Text-to-Speech, requires credentials configured ahead of time.
+
+```python
+GCloudSpeechSynthesizer(voice_name: str, language_code: str, json_key_path: str)
+```
+
+## Putting Them Together
+
+```python
+import anyio
+from stark import run, CommandsManager
+from stark.interfaces.vosk import VoskSpeechRecognizer
+from stark.interfaces.silero import SileroSpeechSynthesizer
+
+manager = CommandsManager()
+# ... register commands ...
+
+async def main():
+    recognizer = VoskSpeechRecognizer(model_url='...')
+    synthesizer = SileroSpeechSynthesizer(model_url='...')
+    await run(manager, recognizer, synthesizer)
+
+anyio.run(main)
+```
+
+This is the same pattern as the front-page [Hello, Stark!](https://stark.markparker.me/#hello-stark) example. Required dependencies (`vosk`, `sounddevice`, `torch`, etc.) are install extras, see [Installation](https://stark.markparker.me/installation/index.md).
+
+For everything else `run()` accepts (custom processors, a localizer, multiple recognizers for multilingual setups), see [How to Run](https://stark.markparker.me/how-to-run/index.md). For a fundamentally different IO layer that isn't voice at all, see [Custom IO & Context Delegate](https://stark.markparker.me/advanced/custom-interfaces/index.md).
+
+# Where to Host
+
+The flexibility of the Python programming language allows Stark to be hosted on virtually any system capable of running a Python interpreter. Here’s a guide on where you can run Stark:
+
+## Unix-based Systems (macOS, Linux)
+
+Both macOS and Linux are Unix-based systems that typically come with Python pre-installed. However:
+
+- Ensure that your Python version is updated to at least 3.12. If it isn't, consider updating it.
+- If you wish to run Stark on boot and keep it running in the background, you can utilize `systemd` services to automate this process.
+
+## Windows
+
+Windows doesn’t come with Python pre-installed, but setting it up is straightforward:
+
+- Download and install Python from [python.org](https://www.python.org/).
+- Running Stark on Windows presents its set of challenges. If you're looking to give Stark a graphical interface, consider frameworks like [PyQt](https://riverbankcomputing.com/software/pyqt/intro), [Tkinter](https://docs.python.org/3/library/tkinter.html), [Edifice](https://github.com/zzzeek/edifice), and others.
+- Alternatively, for a more minimalist approach, Stark can be integrated into a system tray program using libraries like [pystray](https://github.com/moses-palmer/pystray) or [infi.systray](https://github.com/Infinidat/infi.systray), thus enabling a voice-only interface.
+
+## Mobile Platforms
+
+### Android
+
+As of now, a direct port of Stark for Android has not been achieved. However, you can potentially make use of the [Kivy framework](https://kivy.org/) which is designed for building cross-platform apps using Python.
+
+### iOS
+
+An iOS port for Stark is currently under development, with no fixed release date. Similarly to Android, you might find success using the cross-platform [Kivy framework](https://kivy.org/).
+
+## Raspberry Pi-Based Hosting
+
+The Raspberry Pi, given its versatility and cost-effectiveness, can be a perfect host for Stark. Its compact size, affordability, and wide community support make it an attractive option.
+
+To set up Stark on a Raspberry Pi:
+
+1. Ensure you have a Raspberry Pi with an appropriate operating system installed (e.g., Raspberry Pi OS).
+1. Connect a microphone to the Raspberry Pi. If you aim for high voice recognition accuracy, consider using a high-sensitive omnidirectional microphone.
+1. Connect a speaker or, as in the shared example, a TV soundbar to the Raspberry Pi for output.
+1. Install Python (ensure version 3.12 or later) and other necessary packages for Stark.
+1. If you wish to run Stark on boot and keep it running in the background, you can utilize `systemd` services to automate this process.
+
+## Server-Based Hosting
+
+For those looking for a more robust and scalable solution, server-based hosting offers many benefits, like access to Stark from enywhere via the internet.
+
+1. **VPS Hosting**: Virtual Private Servers (VPS) allow you to run Stark on remote servers. This is useful if you need higher computational power, redundancy, or want to ensure that Stark remains operational even if local power or network fails.
+1. **Home Server**: You can host Stark on a dedicated home server or even on personal PCs. This can be a dedicated machine or single-board computers like the Raspberry Pi. The advantage is local access and full control over your data and operations.
+1. **Custom Interfaces**: With Stark running on a server, you can develop custom interfaces for access. For example, by implementing an HTTP server, as was done in the shared example, you can connect other devices to Stark. Detailed instructions can be found at [Custom Interfaces](https://stark.markparker.me/advanced/custom-interfaces/index.md).
+
+______________________________________________________________________
+
+## Personal Experience
+
+To offer some inspiration, here's a mixed setup that's been effectively used:
+
+Stark was set to run 24/7 on a dedicated Raspberry Pi at home, connected to a high-quality sensitive omnidirectional microphone and a TV soundbar for audio output. An Arduino microphone module was also attached, enabling a double-clap mechanism to wake up Stark.
+
+Additionally, a small HTTP server was implemented on the Raspberry Pi, allowing a mobile phone to connect to Stark at home. The native Android libraries handled Speech-to-Text (STT) and Text-to-Speech (TTS) functionalities, and the app communicated with the Raspberry Pi using transcribed text via HTTP.
+
+To ensure Stark was accessible from anywhere in the world, [ngrok](https://ngrok.com/) was set up on the Raspberry Pi, creating a secure tunnel to the localhost, making the locally hosted Stark globally accessible.
+
+Also, a telegram bot was implemented as an inerface for both voice and text messages, used as an additinal cross-platform remote communication way.
+
+______________________________________________________________________
+
+Such setups illustrate the flexibility and scalability of Stark. Whether you're working with a Raspberry Pi or a dedicated server, there's room for innovation and customization in how you host and interact with Stark.
+
+______________________________________________________________________
+
+## Important Note
+
+Want to see the various platforms Stark has been adapted for? Visit the **STARK-PLACE** repository to find implemented ports and extensions. If you’ve developed a unique runner for Stark – be it tray, GUI, Kivy-based, or any other kind – consider contributing to the community. Open a PR to **STARK-PLACE**; let's work together to develop the best VA platform ever, enhancing the user experience for everyone!
+
+Running S.T.A.R.K. somewhere unusual, or hit a wall trying to? [Tell us about it in Discussions](https://github.com/MarkParker5/STARK/discussions). Hosting setups are exactly the kind of thing worth comparing notes on, and we need all the feedback we can get to make S.T.A.R.K. better.
+# Tools
+
+# Tools
+
+S.T.A.R.K. is a framework, but several of its pieces work entirely on their own. No `CommandsManager`, no pattern matching, nothing else from the framework required. This page indexes what you can use solo, grouped by what they actually are.
+
+## Phonetic Matching (Core S.T.A.R.K. Features)
+
+These aren't side utilities bolted on for convenience. Cross-language phonetic matching is core to how S.T.A.R.K. understands misspoken, misspelled, or transliterated input, and it's built on a modular design, so the pieces happen to work standalone too:
+
+- **[Phonetic Dictionary](https://stark.markparker.me/tools/phonetic-dictionary/index.md)**: cross-language name and keyword lookup. Find "Linkin Park" whether it's typed, misspelled, or transliterated from Cyrillic.
+- **[Corrections](https://stark.markparker.me/tools/corrections/index.md)**: widens command patterns to accept phonetic and misspelled variants automatically, based on dictionary lookups.
+
+## Raw Standalone Tools
+
+The lower-level building blocks the features above are built on. S.T.A.R.K. uses them internally, and they're just as useful pulled out on their own:
+
+- **[Raw Phonetic Tools](https://stark.markparker.me/tools/raw-phonetic/index.md)**: IPA transcription and simplephone conversion, the layer the dictionary and corrections build on.
+- **[Levenshtein](https://stark.markparker.me/tools/stark-levenshtein/index.md)**: a from-scratch, Cython-compiled fuzzy string and substring matcher, with weighted proximity graphs and in-sentence search.
+- **[Sliding Window Parser](https://stark.markparker.me/tools/sliding-window-parser/index.md)**: extract parameters from free text using a parser function, even when it only matches part of the input.
+
+## Speech (STT/TTS)
+
+Recognition and synthesis are separate, swappable interfaces. Use either without touching commands at all:
+
+- **[Speech Recognition (STT)](https://stark.markparker.me/tools/speech-recognition/index.md)**: the `SpeechRecognizer` protocol, ready offline implementations (Vosk), and how to add your own backend.
+- **[Speech Synthesis (TTS)](https://stark.markparker.me/tools/speech-synthesis/index.md)**: the `SpeechSynthesizer` protocol, ready implementations (Silero, Google Cloud), and how to add your own backend.
+
+______________________________________________________________________
+
+Building something with one of these outside of S.T.A.R.K. entirely? [Tell us in Discussions](https://github.com/MarkParker5/STARK/discussions), it's exactly the kind of thing worth knowing about, and we need all the feedback we can get to make S.T.A.R.K. better.
+
+# Corrections: Automatic Phonetic & Misspelling Tolerance for Pattern Matching [EXPERIMENTAL]
+
+Corrections is a matching feature that widens command pattern to accept translation/phonetic variants of known keywords. When STT or user input contains a misspelling or phonetic approximation, this feature injects the variant into the compiled pattern so the command still matches.
+
+Example: user says "tern on the lite" → dictionary contains "turn" and "light" → pattern expands `"turn"` to `"(turn|tern)"` and `"light"` to `"(light|lite)"` → command "turn on the light" matches.
+
+## How It Works
+
+The feature has three parts:
+
+### 1. Generation: `CorrectionsProcessor`
+
+A pipeline pre-processor that runs **before** `SearchProcessor`. It accepts one or more `Dictionary` instances and uses their phonetic matching infrastructure (IPA→simplephone→levenshtein with proximity graph) to find corrections.
+
+```python
+from stark.core.processors import CorrectionsProcessor, SearchProcessor
+from stark.tools.dictionary import build_recognizable_dictionary
+from stark.tools.phonetic.transcription import LatinPassthroughProvider
+
+# Build a dictionary from recognizable.strings bundles
+dictionary = build_recognizable_dictionary(localizer, ipa_provider=LatinPassthroughProvider())
+
+context = CommandsContext(
+    ...,
+    processors=[
+        CorrectionsProcessor(dictionaries=[dictionary]),  # generates corrections
+        SearchProcessor(),                                 # uses them for matching
+    ],
+)
+```
+
+When a `localizer` is provided and no custom `processors` are specified, `CorrectionsProcessor` is included automatically in the default pipeline.
+
+The processor accepts any `Dictionary` instance, not just ones built from recognizable.strings. You can pass custom dictionaries populated with domain-specific vocabulary.
+
+**Lookup modes:** The processor supports the same modes as `Dictionary`: `EXACT`, `CONTAINS`, `FUZZY`, and `AUTO` (default). Pass via `CorrectionsProcessor(dictionaries=[...], mode=LookupMode.FUZZY)`. See [Phonetic Dictionary](https://stark.markparker.me/tools/phonetic-dictionary/index.md) for more details.
+
+**Multilingual:** For `TranscriptionString` with alternative tracks, the processor runs dictionary search per each track and stores per-track corrections. See [Localization and Multilingual](https://stark.markparker.me/localization-and-multilingual/index.md)
+
+### 2. Expansion (automatic)
+
+When corrections are present on the input string, `PatternParser.match()` automatically injects them into the compiled pattern before matching. For each `Correction(variant, keyword)`, if `keyword` appears as a literal in the compiled pattern, it's replaced with `(keyword|variant1|variant2|...)`.
+
+No flag needed despite being an experimental feature, expansion is triggered by the presence of corrections.
+
+### 3. Back-tracking
+
+After a successful match, `MatchResult` records which corrections were applied:
+
+- `corrections: dict[str, str]`, maps each variant to its keyword (e.g. `{"tern": "turn"}`)
+- `corrected_string: str`, the matched substring with corrections applied (e.g. `"turn on the light"`)
+
+This enables UIs to show the corrected text to the user, and simplifies debugging.
+
+## Data Sources
+
+### Recognizable Strings (built-in)
+
+`build_recognizable_dictionary()` creates a Dictionary from all loaded `recognizable.strings` bundles. See [Localizing Parsing](https://stark.markparker.me/localization-and-multilingual/localizing-parsing/index.md)
+
+### Custom Dictionaries
+
+Any `Dictionary` instance works, populate it with domain-specific vocabulary:
+
+```python
+from stark.tools.dictionary import Dictionary
+from stark.tools.dictionary.storage import DictionaryStorageMemory
+from stark.tools.dictionary import build_recognizable_dictionary
+
+recognizable_dict = build_recognizable_dictionary(localizer)
+
+custom_dict = Dictionary(storage=DictionaryStorageMemory())
+custom_dict.write_one("en", "spotify")
+custom_dict.write_one("en", "bluetooth")
+
+processor = CorrectionsProcessor(dictionaries=[recognizable_dict, custom_dict])
+```
+
+## IPA Provider Options
+
+Dictionary-based matching uses IPA transcription for cross-language phonetic comparison. Available providers.
+
+```python
+from stark.tools.phonetic.transcription import LatinPassthroughProvider, EspeakIpaProvider
+
+dict = build_recognizable_dictionary(
+    localizer,
+    ipa_provider=LatinPassthroughProvider(fallback=EspeakIpaProvider()),
+)
+```
+
+See [Phonetic Dictionary](https://stark.markparker.me/tools/phonetic-dictionary/index.md) and [Phonetic Tools](https://stark.markparker.me/tools/raw-phonetic/index.md) for more details and native implementations.
+
+## Comparison with NLDictionaryName
+
+Both features use `Dictionary` for phonetic matching, but at different levels:
+
+|                        | Corrections                                                                                                                                              | NLDictionaryName                                                |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| **Best for**           | Fuzzy command keyword matching                                                                                                                           | Fuzzy named entity parsing                                      |
+| **Level**              | Pre-processor + Pattern matching (before parsing)                                                                                                        | Parameter parsing (inside `did_parse`)                          |
+| **What it does**       | Expands patterns with homophones of known words found in the request string                                                                              | Searches through dictionary programmatically if pattern matched |
+| **Scope**              | Scans the entire input string (pre-processing), affects all commands, only expands with homophones present in both the request string and the dictionary | Specific parameter types for commands matched by pattern        |
+| **Data source**        | All provided `Dictionary` objects                                                                                                                        | Specific `Dictionary`                                           |
+| **Cross-language**     | Yes                                                                                                                                                      | Yes                                                             |
+| **Extra requirements** | keyword must be present in the compiled pattern as a literal                                                                                             | none, can have "\*\*" pattern                                   |
+| **Overhead**           | Longer pre-processing, fast matching                                                                                                                     | No pre-processing, longer matching                              |
+
+Corrections are helpful for keywords that are present as literals and can be misheard. NLDictionaryName are designed for extraction of named-entity parameters (names, places, songs). They share the same `Dictionary` infrastructure as a backend, but apply it differently. Both are in experimental stages, please try both and provide feedback.
+
+See [Phonetic Dictionary](https://stark.markparker.me/tools/phonetic-dictionary/index.md) for Dictionary and NLDictionaryName details, [Custom Processors](https://stark.markparker.me/advanced/custom-processors/index.md) for pipeline setup.
+
+# Phonetic Dictionary: Cross-Language Name & Keyword Lookup
+
+> NOTE: requires an IPA provider. Default is `EspeakIpaProvider` ([libespeak-ng binary](https://github.com/espeak-ng/espeak-ng/blob/master/docs/guide.md#installation) installed in the system). For latin-only use cases, `LatinPassthroughProvider` works without external dependencies, is faster, but less accurate. See [raw-phonetic.md](https://stark.markparker.me/tools/raw-phonetic/index.md) for more details.
+
+## Overview
+
+### Basic Lookup
+
+Create a dictionary in memory and add an entry:
+
+```python
+dictionary = Dictionary(storage=DictionaryStorageMemory())
+dictionary.write_one('en', "Linkin Park", {"id": 2017})
+```
+
+Then you can look up names by different spellings, homophones, or even cross-language phonetic similarity:
+
+```python
+matches = dictionary.lookup("linkoln perk", 'en') # misspelled case
+matches[0].metadata  # {"id": 2017})
+
+matches = dictionary.lookup("лінкін парк", 'uk') # ukrainian spelling of Linkin Park
+matches[0].metadata  # {"id": 2017})
+```
+
+### Search in Sentence
+
+You can also scan an entire sentence for names from a dictionary:
+
+```python
+dictionary.search_in_sentence("good morning play linkin park on spotify", 'en')
+```
+
+Both `lookup` and `search_in_sentence` receive two optional parameters: `mode: LookupMode = .AUTO` and `field: LookupField = .PHONETIC`.
+
+```python
+class LookupMode(Enum):
+    EXACT = auto()  # the fastest
+    CONTAINS = auto()  # fast
+    FUZZY = auto()  # slow, not recommended at 10K+ entries
+    AUTO = auto()  # recommended: tries modes sequentially until match with some dict-size limits
+
+class LookupField(Enum):
+    NAME = auto()  # search by original name, only same lang is reasonable
+    PHONETIC = auto()  # search by phonetic similarity, cross-lang support
+```
+
+### Sorting
+
+Also, there are `lookup_sorted` and `search_in_sentence_sorted` methods that automatically sort results by levenshtein distance. These might add a noticeable overhead when many entries are matched (starting from magnitude of a hundred). In most cases, it's better to use the not sorted version, check results amount, and then sort them manually if needed. Example of levenshtein sort:
+
+```python
+sorted(
+    matches,
+    key=lambda item: levenshtein_similarity( # sort by the original name for same languages
+        s1=name_candidate,
+        s2=item.name,
+    ) if item.language_code == language_code else levenshtein_similarity( # sort by phonetic similarity for cross-language
+        s1=transcription(name_candidate, language_code),
+        s2=item.phonetic,
+    ),
+    reverse=True,
+)
+```
+
+> More details about levenshtein for fuzzy string matching [here](https://stark.markparker.me/tools/stark-levenshtein/index.md) page.
+
+But in many cases, domain-specific sorting and filtering is the best approach. For example, in navigator app you can prioritize names that are closer to the user's location. For example, Georgia the state for american users, but Georgia the country for european.
+
+## Using with NLDictionaryName
+
+You can use NLDictionaryName to parse and match names from a Dictionary. It has already implemented `did_parse`, so no need to implement it yourself.
+
+```python
+from stark.tools.dictionary.dictionary import Dictionary
+from stark.tools.dictionary.nl_dictionary_name import NLDictionaryName
+from stark.tools.dictionary.storage import DictionaryStorageMemory
+
+class NLCityName(NLDictionaryName):
+    dictionary = Dictionary(storage=DictionaryStorageMemory()) # any NLDictionaryName must implement dictionary: Dictionary
+
+# Fill the dictionary as usual
+NLCityName.dictionary.clear()
+NLCityName.dictionary.write_one("de", "Nürnberg", {"coords": (49.45, 11.08)})
+NLCityName.dictionary.write_one("en", "London",   {"coords": (51.51, -0.13)})
+NLCityName.dictionary.write_one("en", "Paris",    {"coords": (48.85, 2.35 )})
+NLCityName.dictionary.write_one("cs", "Praha",    {"coords": (50.08, 14.44)})
+
+@manager.new('weather in $city:NLCityName')
+def hello(weather: NLCityName):
+    print(weather.value[0].item.metadata["coords"]) # (48.85, 2.35) for "weather in parish"
+```
+
+Data model overview:
+
+```python
+class NLDictionaryName:
+    value: list[LookupResult]
+    dictionary: Dictionary
+
+class LookupResult:
+    span: Span
+    item: DictionaryItem
+
+@dataclass
+class DictionaryItem:
+    name: str
+    phonetic: str
+    simple_phonetic: str
+    language_code: str
+    metadata: Metadata # dict[str, object]
+```
+
+Inspect your IDE suggestions and the source code (most modern editors support "go to definition" feature) for more details.
+
+## Automatic [Corrections](https://stark.markparker.me/tools/corrections/index.md) Generation
+
+Corrections is a matching feature that widens command pattern to accept translation/phonetic variants of known keywords. When STT or user input contains a misspelling or phonetic approximation, this feature injects the variant into the compiled pattern so the command still matches.
+
+See [Corrections](https://stark.markparker.me/tools/corrections/index.md) for how Dictionary integrates with the corrections pipeline.
+
+## Encapsulate Storage and Filling Logic
+
+You can encapsulate storage and filling logic in a single class:
+
+```python
+class MyDictionary(Dictionary):
+    def __init__(self):
+        super().__init__(storage=DictionaryStorageSQL("sqlite:///my-phonetic-dictionary.db"))
+
+    async def build(self):
+        self.write_all(...)  # Fill from files, db, or API
+
+class NLExampleDictionaryName(NLObject):
+    dictionary = MyDictionary()
+```
+
+## Building Example
+
+While you can modify a Dictionary even in runtime, the best approach is to fill the dictionary at build stage if possible, since writing might be slow for large dictionaries (especially starting from magnitudes of thousands). There is the example main.py that uses [typer](https://typer.tiangolo.com) to add `build` and `run` cli commands to your app.
+
+```python
+import typer
+
+cli = typer.Typer()
+
+@cli.command()
+def build():
+    """Build the project. See typer docs for better CLI with features like progress bars and logging."""
+    print("Building...")
+    NLExampleDictionaryName.dictionary.build_if_needed() # fill the sqlite file once during the build stage, not at runtime
+    SomeOtherDictionary.build() # or force re-build on each call
+    # etc
+    print("Done")
+
+
+@cli.command()
+def run():
+    """Run your main app here."""
+    pass
+
+
+if __name__ == "__main__":
+    cli()
+```
+
+# Raw Phonetic Tools: IPA Transcription & Simplephone Encoding for Python
+
+## Overview
+
+These tools convert text to phonetic representations for fuzzy matching, name lookup, and cross-language search. They power the phonetic matching in the [Dictionary Tool](https://stark.markparker.me/tools/phonetic-dictionary/index.md) and are often used together (simplephone code of the phonetic transcription) for best results.
+
+- `transcription`: Converts text in any language to a simplified Latin transcription using IPA (International Phonetic Alphabet). The default implementation currently uses espeak-ng (requires [libespeak-ng binary](https://github.com/espeak-ng/espeak-ng/blob/master/docs/guide.md#installation) installed in the system). STARK also provides an epitran wrapper as an alternative for espeak, and allows passing any custom implementation as a parameter.
+- `simplephone`: Further reduces a transcription (or plain English text) to a simple, language-agnostic phonetic code for fast, robust matching.
+
+## Basic Usage
+
+```python
+from stark.tools.phonetic.transcription import transcription, ipa2lat
+from stark.tools.phonetic.simplephone import simplephone
+
+# Convert ukrainian to simplified Latin phonetic transcription (IPA-based)
+ipa = transcription("Лінкін Парк", "uk")  # e.g. "Лінкін Парк" → "linkin park"
+
+# Convert to simplephone code (robust, language-agnostic)
+sp = simplephone("Linkin Park")      # e.g. "linkin park" → "LNKNPARK"
+
+# Combine for best fuzzy matching (recommended for cross-language)
+sp_combined = simplephone(transcription("Лінкін Парк", "uk"))  # → "LNKNPARK"
+
+# Same idea for any other language, Polish and Italian here
+sp_pl = simplephone(transcription("Linkin Park", "pl"))  # → "LNKNPARK"
+sp_it = simplephone(transcription("Linkin Park", "it"))  # → "LNKNPARK"
+
+# Direct IPA to Latin conversion
+latin = ipa2lat("tɛst")  # → "test"
+```
+
+## Function Reference
+
+### def transcription
+
+```python
+def transcription(text: str, language_code: str, ipa_provider: IpaProvider = EspeakIpaProvider()) -> str
+```
+
+- Converts a string to a simplified Latin phonetic transcription using IPA via espeak-ng.
+- Handles many languages (see espeak-ng docs for supported codes).
+- Used for cross-language and accent-insensitive matching.
+
+**Parameters:**
+
+- `text`: Input string.
+- `language_code`: BCP-47 or ISO language code (e.g. `"en"`, `"uk"`, `"de"`).
+- `ipa_provider`: Optional, allows custom IPA provider (default: EspeakIpaProvider).
+
+**Returns:** Simplified Latin transcription as a string.
+
+### def simplephone
+
+```python
+def simplephone(text: str, glue: str = " ", sep: str = string.whitespace) -> str | None
+```
+
+- Converts a string to a simple, language-agnostic phonetic code.
+- Inspired by Caverphone, Soundex, and Kölner Phonetik.
+- Ignores spaces, strips non-alphabetic characters, and normalizes similar sounds.
+
+**Parameters:**
+
+- `text`: Input string consisting of latin characters.
+- `glue`: Separator for joining words (default: space).
+- `sep`: Characters to treat as word separators (default: whitespace).
+
+**Returns:** Simplephone code as a string, or `None` if input is empty.
+
+## Typical Usage Pattern
+
+For best fuzzy matching (especially cross-language), use both together:
+
+```python
+# For English input
+a = simplephone(transcription("Linkin Park", "en"))  # → "LNKNPARK"
+
+# For Ukrainian input
+b = simplephone(transcription("Лінкін Парк", "uk"))  # → "LNKNPARK"
+
+a == b # True
+```
+
+This enables matching names and words across different languages and spellings.
+
+## More fuzzyness
+
+For even more fuzzyness, consider using the levenshtein distance with the default proximity graph for simplephone (`SIMPLEPHONE_PROXIMITY_GRAPH`). For details see [STARK's Levenshtein implementation](https://stark.markparker.me/tools/stark-levenshtein/index.md)
+
+## IPA Providers
+
+The `transcription()` function accepts an `ipa_provider` parameter:
+
+- `EspeakIpaProvider()`, default, requires [espeak-ng](https://github.com/espeak-ng/espeak-ng) system binary
+- `EpitranIpaProvider()`, pure Python via the `epitran` library, supports 120+ languages, slightly slower than `EspeakIpaProvider` and different language support
+- `LatinPassthroughProvider(fallback=None)`, returns latin text unchanged (lowercased), delegates non-latin to the fallback provider, raises `ValueError` for non-latin text if no fallback is provided. No external dependencies for latin-only text. Fastest for latin-only text, but less accurate.
+
+You are free to implement your own IPA provider by subclassing `IpaProvider`.
+
+```python
+from stark.tools.phonetic.transcription import transcription, LatinPassthroughProvider
+
+# No espeak needed for English
+result = transcription("hello world", "en", ipa_provider=LatinPassthroughProvider())
+# → "hello world"
+```
+
+## Notes
+
+- These functions are used internally by the Dictionary and [Corrections](https://stark.markparker.me/tools/corrections/index.md) for phonetic and fuzzy lookup.
+- For more details, see the source code or use your IDE's autocomplete.
+
+# Sliding Window Parser: Extract Parameters from Free Text in Python
+
+## Overview
+
+`sliding_window_parser` helps you find and extract parameters from free text using a parser function even if it doesn't parse the entire input or returns just the value without the substring or the span. It slides through the sentence with growing/shrinking substring windows and tests each span until finds a suitable match.
+
+### Basic Usage
+
+```python
+from stark.tools.sliding_window_parser import sliding_window_parse, Span
+
+async def date_parser(text: str):
+    if text.lower() in {"september 5", "5 september"}:
+        return ("date", "2024-09-05")
+    if text.lower() == "september":
+        return ("month", "09")
+    return None
+
+result = await sliding_window_parse(
+    "remind me to call mom on september 5",
+    parser=date_parser,
+)
+print(result) # [(Span(27, 39), "september 5", ("date", "2024-09-05"))]
+```
+
+### Parameters
+
+```python
+async def sliding_window_parse(
+    phrase: str,
+    parser: Callable[[str], Awaitable[T]],
+    min_window: int = 1,
+    max_window: int | None = None,
+    concurrency: int | None = None,
+    find_one: bool = True,
+) -> list[tuple[Span, str, T]]:
+'''
+- **phrase** – text to parse
+- **parser** – async callable returning a parsed value, `None`, or ParseError
+- **min_window / max_window** – window size range in tokens (words)
+- **concurrency** – limit parallel parser calls, default is `None` (unlimited)
+- **find_one** – stop after first match instead of collecting all
+
+Returns:
+        A list of tuples (span, substring, value) for each match, where:
+        - span: Span object with character offsets (start, end) in the original phrase
+        - substring: the matched substring (phrase[span.start:span.end])
+        - value: the value returned by the parser
+
+        If find_one=True, returns a single-item list with the first match (faster, less parser calls).
+        If no match is found, raises ParseError, so the list is never empty, meaning result[0] is always safe.
+'''
+```
+
+# Speech Recognition (STT)
+
+Turning spoken audio into text is a problem on its own, useful even if you never touch the rest of S.T.A.R.K. This page covers S.T.A.R.K.'s speech-recognition layer: the protocol it's built around, ready-to-use implementations, and how to plug in your own engine.
+
+S.T.A.R.K. defines the protocol so any backend is a drop-in replacement inside S.T.A.R.K. itself, but the protocol is deliberately agnostic, not tied to the rest of the framework. Wrap any STT engine behind it and you get the same drop-in swappability in any other Python project, with a couple of ready-made implementations included out of the box.
+
+## Use it standalone
+
+`SpeechRecognizer` implementations don't require `CommandsManager` or any other part of the framework, they're a thin, swappable interface around an STT engine.
+
+```python
+from stark.interfaces.vosk import VoskSpeechRecognizer
+
+recognizer = VoskSpeechRecognizer(model_url='...')  # pick a model: https://alphacephei.com/vosk/models
+
+class PrintResults:
+    async def speech_recognizer_did_receive_final_result(self, result: str):
+        print('Final:', result)
+    async def speech_recognizer_did_receive_partial_result(self, result: str):
+        print('Partial:', result)
+    async def speech_recognizer_did_receive_empty_result(self):
+        pass
+
+recognizer.delegate = PrintResults()
+await recognizer.start_listening()  # transcribes the microphone, no commands involved
+```
+
+Want it wired into a full assistant? See [How to Run](https://stark.markparker.me/how-to-run/index.md).
+
+## Ready Implementations
+
+### `VoskSpeechRecognizer`
+
+Offline speech recognition via the [Vosk](https://alphacephei.com/vosk/) library. Downloads and caches the chosen model on first use; no internet required after that.
+
+```python
+VoskSpeechRecognizer(model_url: str, language_code: str | None = None, speaker_model_url: str | None = None)
+```
+
+Pass `speaker_model_url` to enable speaker-embedding extraction (used for cross-recognizer matching when running [multiple languages simultaneously](https://stark.markparker.me/voice-assistant/#multi-language-voice-setup), not yet used for diarization, but the data is captured).
+
+## The Protocol
+
+```python
+from typing import Protocol, runtime_checkable
+
+@runtime_checkable
+class SpeechRecognizerDelegate(Protocol):
+    async def speech_recognizer_did_receive_final_result(self, result: str): pass
+    async def speech_recognizer_did_receive_partial_result(self, result: str): pass
+    async def speech_recognizer_did_receive_empty_result(self): pass
+
+@runtime_checkable
+class SpeechRecognizer(Protocol):
+    is_recognizing: bool
+    delegate: SpeechRecognizerDelegate | None
+
+    async def start_listening(self): pass
+    def stop_listening(self): pass
+```
+
+- **`SpeechRecognizerDelegate`** receives the results: a final transcript, an interim/partial transcript (useful for live captions or barge-in detection), or a signal that nothing was heard.
+- **`SpeechRecognizer`** is the input side: `start_listening`/`stop_listening` control the mic (or whatever audio source you point it at), and `is_recognizing` reports current state.
+
+## Implementing Your Own
+
+Any class that satisfies the `SpeechRecognizer` protocol is a drop-in replacement, pass it to `run()` exactly like `VoskSpeechRecognizer`. Use the actual `VoskSpeechRecognizer` source as a reference implementation:
+
+This is exactly where a cloud STT backend (Whisper API, Google Speech-to-Text, Azure) or a different offline engine would plug in, and a great first contribution if one doesn't exist yet. See [Roadmap](https://stark.markparker.me/roadmap/index.md).
+
+# Speech Synthesis (TTS)
+
+Turning text into spoken audio is a problem on its own, useful even if you never touch the rest of S.T.A.R.K. This page covers S.T.A.R.K.'s speech-synthesis layer: the protocol it's built around, ready-to-use implementations, and how to plug in your own engine.
+
+S.T.A.R.K. defines the protocol so any backend is a drop-in replacement inside S.T.A.R.K. itself, but the protocol is deliberately agnostic, not tied to the rest of the framework. Wrap any TTS engine behind it and you get the same drop-in swappability in any other Python project, with a couple of ready-made implementations included out of the box.
+
+## Use it standalone
+
+`SpeechSynthesizer` implementations don't require `CommandsManager` or any other part of the framework, they're a thin, swappable interface around a TTS engine.
+
+```python
+from stark.interfaces.silero import SileroSpeechSynthesizer
+
+synthesizer = SileroSpeechSynthesizer(model_url='...')  # pick a model: https://github.com/snakers4/silero-models
+result = await synthesizer.synthesize('Hello, Stark!')
+await result.play()  # plays through your default audio output, no commands involved
+```
+
+Want it wired into a full assistant? See [How to Run](https://stark.markparker.me/how-to-run/index.md).
+
+## Ready Implementations
+
+### `SileroSpeechSynthesizer`
+
+Offline synthesis via [Silero](https://github.com/snakers4/silero-models) models.
+
+```python
+SileroSpeechSynthesizer(
+    model_url: str,
+    speaker: str = 'baya',
+    threads: int = 4,
+    device: str = 'cpu',
+    torch_backends_quantized_engine: str = 'qnnpack',
+)
+```
+
+### `GCloudSpeechSynthesizer`
+
+Cloud synthesis via Google Cloud Text-to-Speech. Requires credentials configured ahead of time.
+
+```python
+GCloudSpeechSynthesizer(voice_name: str, language_code: str, json_key_path: str)
+```
+
+## The Protocol
+
+```python
+from typing import Protocol, runtime_checkable
+
+@runtime_checkable
+class SpeechSynthesizerResult(Protocol):
+    async def play(self): pass
+
+@runtime_checkable
+class SpeechSynthesizer(Protocol):
+    async def synthesize(self, text: str) -> SpeechSynthesizerResult: pass
+```
+
+- **`SpeechSynthesizer`** takes text and returns a result object, synthesis and playback are separate steps, so you can synthesize ahead of time, queue results, or route audio elsewhere instead of playing immediately.
+- **`SpeechSynthesizerResult`** wraps whatever the backend produced and knows how to play itself via `play()`.
+
+## Implementing Your Own
+
+Any class that satisfies the `SpeechSynthesizer` protocol is a drop-in replacement, pass it to `run()` exactly like `SileroSpeechSynthesizer`. Use the actual `SileroSpeechSynthesizer` source as a reference implementation:
+
+This is exactly where another cloud TTS backend (ElevenLabs, Azure, Amazon Polly) or a different offline engine would plug in, and a great first contribution if one doesn't exist yet. See [Roadmap](https://stark.markparker.me/roadmap/index.md).
+
+# STARK-Levenshtein: Cython Fuzzy String & Substring Matching with Proximity Graphs
+
+## Overview
+
+A from-scratch, Cython-compiled Levenshtein implementation, not a wrapper around an existing library. It does the standard distance/similarity calculation, plus a set of features built specifically for matching real speech and real text, not just comparing two clean strings:
+
+- **In-sentence fuzzy substring search**: find where `s1` appears (or nearly appears) anywhere inside a longer `s2`, with matching spans returned, not just a yes/no.
+- **Weighted proximity graphs**: replace the default uniform edit cost with custom per-character weights. STARK ships a phonetic proximity graph out of the box (built for [simplephone](https://stark.markparker.me/tools/raw-phonetic/index.md) strings) so a `w`/`f` mix-up costs less than an unrelated substitution.
+- **Prefix/suffix skipping**: ignore leading or trailing mismatches, which is what makes substring search work in the first place.
+- **Early-return short-circuiting**: stop computing as soon as a threshold is unreachable, instead of always computing the full matrix.
+
+Useful for fuzzy string matching, similarity scoring, and fuzzy substring search anywhere, not just inside S.T.A.R.K. Being Cython-compiled is part of what makes the substring-search and early-return paths viable at all; a pure-Python edit-distance matrix gets slow fast once you're scanning whole sentences instead of comparing two short strings.
+
+### Basic Usage
+
+```python
+from stark.tools.levenshtein import (
+    levenshtein_distance,
+    levenshtein_similarity,
+    levenshtein_match,
+    levenshtein_distance_substring,
+    levenshtein_search_substring,
+    SIMPLEPHONE_PROXIMITY_GRAPH, # Is more meaningful to use for simplephone strings, see phonetic tools docs
+    SKIP_SPACES_GRAPH, # ignores spaces while matching
+)
+
+# Get the Levenshtein distance (lower = more similar, 0 = exact match)
+lev = levenshtein_distance(s1="kitten", s2="sitting")
+
+# Get similarity score (0.0 to 1.0, higher = more similar)
+sim = levenshtein_similarity(s1="kitten", s2="sitting")
+
+# Check if two strings are similar enough (similarity >= threshold)
+is_match = levenshtein_match(s1="kitten", s2="sitting", threshold=0.7)
+
+# Find all substrings in s2 with minimal distance to s1
+dist_spans = levenshtein_distance_substring(s1="kitten", s2="the sitting cat")
+# Returns: list of (Span, distance)
+
+# Find substrings in s2 where similarity to s1 is above threshold
+search_spans = levenshtein_search_substring(s1="kitten", s2="the sitting cat", threshold=0.7)
+# Returns: list of (Span, similarity)
+```
+
+### Parameters
+
+All functions accept:
+
+- `s1: str` – first string to compare (**required**)
+- `s2: str` – second string to compare (**required**)
+- `proximity_graph: dict[str, dict[str, float]] | None = None` – custom operation costs instead of default 1. For example, based on phonetic similarity, keyboard proximity, or just to ignore some characters.
+- `max_distance: float | None = None` – skip calculation if distance exceeds this value and early_return is True (optional)
+- `ignore_prefix: bool = False` – ignore matching prefixes, required for substring search
+- `ignore_suffix: bool = False` – ignore matching suffixes, breaks substring search
+- `narrow: bool = False` – restrict to shortest possible substring (substring search)
+- `early_return: bool = True` – return as soon as threshold is met (faster). False value is for debug only.
+- `lower: bool = False` – compare strings as lowercase
+
+Functions with a `threshold` parameter:
+
+- `threshold: float = 0` – similarity threshold for match/search; used to calc max_distance, which stops the calculation early if distance exceeds this value to improve performance
+
+### Constants
+
+```python
+type ProximityGraph = dict[str, dict[str, float]]
+PROX_MED = 0.5
+PROX_LOW = 0.25
+PROX_MIN = 0.01
+SIMPLEPHONE_PROXIMITY_GRAPH: ProximityGraph = {
+    "w": {"f": PROX_MED, "a": PROX_LOW, "y": PROX_LOW},
+    "y": {"a": PROX_LOW, "w": PROX_LOW},
+    "a": {"y": PROX_LOW, "w": PROX_LOW, "-": PROX_LOW},  # '-' for deletion
+    "f": {"w": PROX_MED},
+    " ": {"-": PROX_MIN},  # ignore spaces
+    "-": {"a": PROX_LOW, " ": PROX_MIN},  # insertion
+}
+SKIP_SPACES_GRAPH = {" ": {"-": PROX_MIN}, "-": {" ": PROX_MIN}}
+```
+
+______________________________________________________________________
+
+For more advanced usage, see the source code or use your IDE's autocomplete.
+# Advanced
+
+# Custom IO & Context Delegate
+
+S.T.A.R.K. ships `VoiceAssistant` as a ready-made IO layer, and subclassing it (see [Voice Assistant & Modes](https://stark.markparker.me/voice-assistant/index.md)) covers most customization needs, overriding a method to hook into an event, like updating a GUI when a response arrives. But if you want a fundamentally different IO layer, a GUI, a Telegram bot, an API, rather than voice at all, `VoiceAssistant` isn't the starting point. `CommandsContextDelegate` is.
+
+## The Protocol
+
+```python
+from typing import Protocol, runtime_checkable
+from stark.core import Response
+
+@runtime_checkable
+class CommandsContextDelegate(Protocol):
+    async def commands_context_did_receive_response(self, response: Response):
+        pass
+
+    def remove_response(self, response: Response):
+        pass
+```
+
+This is the protocol `VoiceAssistant` itself implements. `CommandsContext` calls these methods as commands run, `commands_context_did_receive_response` whenever a `Response` is produced, `remove_response` when a response is withdrawn (e.g. via `ResponseHandler.unrespond`, see [Command Response](https://stark.markparker.me/command-response/index.md)). Implementing it directly gives you the same hook `VoiceAssistant` uses, without inheriting any of its voice-specific behavior (modes, timeouts, speech recognition wiring).
+
+## A Minimal Custom Delegate
+
+```python
+import sys
+import anyio
+from stark.core import CommandsContext, CommandsManager, Response
+
+manager = CommandsManager()
+
+@manager.new('hello')
+async def hello_command() -> Response:
+    return Response('Hello, Stark!')
+
+class TextDelegate:
+    async def commands_context_did_receive_response(self, response: Response):
+        print(response.text)                            # 1
+
+    def remove_response(self, response: Response):
+        pass                                              # 2
+
+async def main():
+    async with anyio.create_task_group() as task_group:
+        context = CommandsContext(task_group=task_group, commands_manager=manager)
+        context.delegate = TextDelegate()                 # 3
+
+        for line in sys.stdin:
+            await context.process_string(line.strip())     # 4
+
+anyio.run(main)
+```
+
+1. Print every response as it arrives, this is the entire "IO layer" for a basic text interface.
+1. No-op here since this minimal example never removes responses; a GUI delegate would use this to take a response off-screen.
+1. Assign your delegate to `CommandsContext.delegate`, this is the wiring `run()` does for you when you use the default voice-assistant path.
+1. Feed input in however makes sense for your interface, a terminal loop, a GUI event handler, an incoming Telegram message, an HTTP request.
+
+This is the same "your own assembly function" path covered in [How to Run](https://stark.markparker.me/how-to-run/index.md), that page is the better starting point for choosing between `run()`, overrides, and a fully custom delegate like this.
+
+## Triggering Without Voice
+
+If your custom interface starts the assistant on something other than continuous listening, a keyboard shortcut, a button press, an incoming message, see [External Triggers](https://stark.markparker.me/advanced/external-triggers/index.md) for the `Mode.external()` pattern that pairs with this.
+
+## Alternative Interface Ideas
+
+These aren't built-in, they're illustrations of where a custom `CommandsContextDelegate` (paired with a matching input source) fits well, to spark ideas for your own. See [Project Ideas](https://stark.markparker.me/project-ideas/index.md) for more.
+
+### Telegram Bot
+
+This one's a rocket. A STARK assistant reachable from any phone, no app to install, no microphone permissions to grant. Treat incoming messages as input and outgoing messages as the response. Since the delegate, the message handler, and the bot lifecycle all need to share state (the active chat), it's cleaner to encapsulate everything in one class rather than juggle a delegate object and free-floating handler functions:
+
+```python
+from telegram import Update
+from telegram.ext import Application, MessageHandler, ContextTypes, filters
+from stark.core import CommandsContext, CommandsManager, Response
+
+manager = CommandsManager()
+# ... register commands ...
+
+class StarkTelegram:                                                              # 1
+    def __init__(self, manager: CommandsManager, task_group, token: str):
+        self.context = CommandsContext(task_group=task_group, commands_manager=manager)
+        self.context.delegate = self                                              # 2
+        self.chat_id = None
+        self.app = Application.builder().token(token).build()
+        self.app.add_handler(MessageHandler(filters.TEXT, self.on_message))
+
+    async def commands_context_did_receive_response(self, response: Response):    # 3
+        if self.chat_id is not None:
+            await self.app.bot.send_message(chat_id=self.chat_id, text=response.text)
+
+    def remove_response(self, response: Response):                                # 4
+        pass
+
+    async def on_message(self, update: Update, ctx: ContextTypes.DEFAULT_TYPE):   # 5
+        self.chat_id = update.effective_chat.id
+        await self.context.process_string(update.message.text)
+
+    def start(self):                                                              # 6
+        self.app.run_polling()
+
+stark_telegram = StarkTelegram(manager, task_group, token='YOUR_BOT_TOKEN')
+stark_telegram.start()
+```
+
+1. One class owns the whole bot: the delegate, the message handler, and the start/stop lifecycle. No loose functions or module-level globals to wire together.
+1. `self` satisfies `CommandsContextDelegate` directly. No separate delegate object needed since the class implements the protocol itself.
+1. Sends every response of STARK back to Telegram, whichever chat last messaged the bot. A multi-chat version would key responses by `chat_id` instead of storing a single one, this is the minimal demo version.
+1. No-op here, same as the minimal text delegate earlier on this page.
+1. Pass all messages from bot to STARK. For personal use, auth by chat_id whitelist might be wanted here.
+1. `start()` is the equivalent of `run()`'s blocking call for the voice path. Hand it off to your task group the same way.
+
+Want actual voice messages instead of text? Run a `SpeechSynthesizer` (see [Speech Synthesis](https://stark.markparker.me/tools/speech-synthesis/index.md)) over the response and send the result as a voice note, and a `SpeechRecognizer` (see [Speech Recognition](https://stark.markparker.me/tools/speech-recognition/index.md)) on incoming voice messages for the reverse direction.
+
+### CLI / Terminal
+
+Type instead of speak, read instead of listen. Excellent for debugging, quick testing, or environments without audio. This is what `STARK_VOICE_CLI=1` already gives you on top of `VoiceAssistant`, see [Voice Assistant & Modes](https://stark.markparker.me/voice-assistant/index.md), but a dedicated text-only delegate (like the minimal example above) skips voice entirely instead of layering on top of it.
+
+### GUI
+
+A graphical delegate can show text responses, visualize context state, accept both typed and spoken input, and offer buttons as an alternative to speaking a command. Useful wherever a visual surface adds clarity that voice alone doesn't.
+
+______________________________________________________________________
+
+The canvas of possibilities is vast, bounded mostly by the IO source you wire up. GUI and HTTP-API interfaces aren't built into S.T.A.R.K. yet, see [Roadmap](https://stark.markparker.me/roadmap/index.md) if you want to build one.
+
+# Custom Processors
+
+Processors form a modular pipeline for string pre-processing and command search. Each processor in the pipeline receives the input string and can either find commands, enrich the parsing context, or pass through to the next processor.
+
+## Data Flow
+
+```text
+process_string(input)
+    │
+    ▼
+┌─────────────────────────────────────┐
+│  Processor 1: Pre-processing        │  e.g. CorrectionsProcessor
+│  Input: string, recognized_entities │  - reads string metadata
+│  Output: ([], 0) — pass-through     │  - updates corrections
+│  Side effects:                      │  - appends to recognized_entities
+│    string.corrections               │
+│    recognized_entities              │
+└──────────────┬──────────────────────┘
+               │
+               ▼
+┌─────────────────────────────────────┐
+│  Processor 2: Pre-processing        │  e.g. SpacyNERProcessor
+│  Input: string, recognized_entities │  - reads string text
+│  Output: ([], 0) — pass-through     │  - appends RecognizedEntity objects
+│  Side effects:                      │
+│    recognized_entities              │
+└──────────────┬──────────────────────┘
+               │
+               ▼
+┌─────────────────────────────────────┐
+│  Processor 3: Search                │  e.g. SearchProcessor
+│  Input: string, recognized_entities │  - uses corrections
+│  Output: ([SearchResult, ...], 0)   │    for pattern expansion
+│  Uses:                              │  - uses recognized_entities
+│    PatternParser.match()            │    for parameter extraction
+│    string.translate_position()      │  - uses alternative_texts
+│    string[start:end]                │    for matrix matching
+└──────────────┬──────────────────────┘
+               │
+               ▼
+┌─────────────────────────────────────┐
+│  Processor 4: Fallback (optional)   │  e.g. LLM, web search,
+│  Only reached if Processor 3        │  template response
+│  returned no results                │
+└─────────────────────────────────────┘
+```
+
+When `CommandsContext.process_string()` is called, it runs the input through each processor in order:
+
+1. Each processor receives the **same** `string` object and the **shared** `recognized_entities` list
+1. If a processor returns non-empty results, processing **stops**, subsequent processors are skipped
+1. Pre-processors return `([], 0)` to pass through without stopping the pipeline
+1. If all processors return empty, the context resets to root
+
+## Built-in Processors
+
+### `CorrectionsProcessor` (pre-processor)
+
+Generates phonetic corrections using `Dictionary`-based phonetic matching. Accepts any `Dictionary` instances, including one built from recognizable.strings via `build_recognizable_dictionary()`. For each input word/phrase, runs dictionary sentence search and appends matching corrections to `string.corrections`.
+
+These corrections are consumed by `PatternParser._expand_corrections()` to widen compiled patterns, e.g., `"hello"` in the compiled pattern becomes `"(hello|helo)"`.
+
+Included automatically for recognizable.strings in the default pipeline when a `localizer` is provided.
+
+See [Corrections](https://stark.markparker.me/tools/corrections/index.md) for full documentation.
+
+### `SpacyNERProcessor` (pre-processor)
+
+Uses spaCy NER to mark named entities (locations, organizations, etc.) as `RecognizedEntity` objects. These narrow parameter extraction bounds in subsequent processors.
+
+**Complexity:** O(N) where N = input length (spaCy's neural model). Memory: proportional to model size.
+
+### `SearchProcessor` (command search)
+
+Matches input against all registered command patterns. Handles:
+
+- Pattern matching via `PatternParser.match()`, O(C × P) where C = commands in the current context window, P = pattern complexity
+- Matrix cross-language matching across alternative tracks (when `STARK_ENABLE_MULTILANG_MATRIX=1`), multiplies by T (number of tracks which is the number of languages with active STT)
+- Corrections pattern expansion, O(C) string replacements per match, where C = corrections
+- Overlap resolution with cross-track position translation, O(R), where R = results
+
+**Complexity:** O(T × C × P) for matching + O(R) for overlap resolution
+
+## Creating a Custom Processor
+
+Subclass `CommandsContextProcessor` and override either `process_string` (for pipeline-wide logic) or `process_context_layer` (for per-context-layer logic):
+
+```python
+from stark.core.commands_context_processor import CommandsContextProcessor
+
+class MyPreProcessor(CommandsContextProcessor):
+    async def process_string(self, string, context, recognized_entities):
+        # Pre-process: enrich metadata, add recognized entities
+        # Return ([], 0) to pass through to the next processor
+        return [], 0
+
+class MySearchProcessor(CommandsContextProcessor):
+    async def process_context_layer(self, string, context, context_layer, recognized_entities):
+        # Search for commands in this context layer
+        # Return list of SearchResult
+        return []
+```
+
+## Registering Processors
+
+Pass your processors to `CommandsContext` or `run()`. Order matters, pre-processors before search, search before fallback:
+
+```python
+from stark.core.processors import CorrectionsProcessor, SearchProcessor, SpacyNERProcessor
+from stark.tools.dictionary import build_recognizable_dictionary
+
+context = CommandsContext(
+    task_group=main_task_group,
+    commands_manager=manager,
+    processors=[
+        CorrectionsProcessor(dictionaries=[dictionary]),  # 1. generate phonetic corrections
+        SpacyNERProcessor(lang_models={"en": "en_core_web_sm"}),  # 2. mark entities
+        SearchProcessor(),  # 3. match commands
+        # MyFallbackProcessor(),  # 4. optionally handle unmatched input
+    ],
+)
+```
+
+## Metadata on Input Strings
+
+Input string may be a plain python str, but also may carry metadata via `LocaleString` or subclasses. Processors can read metadata and append to mutable fields. STARK provides next table of metadata attributes available on `LocaleString` subclasses:
+
+| Attribute           | Type                       | LocaleString Subclass      | Description                                                                                                                                               |
+| ------------------- | -------------------------- | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `language_code`     | `LanguageCode`             | All `LocaleString`         | Majority language of the input                                                                                                                            |
+| `words`             | `tuple[TranscriptionWord]` | `TranscriptionString`      | Per-word language annotations                                                                                                                             |
+| `corrections`       | `list[Correction]`         | `TranscriptionString`      | **Mutable.** Phonetic corrections for pattern expansion                                                                                                   |
+| `alternative_texts` | `dict[str, LocaleString]`  | `TranscriptionString`      | Same utterance from different language models                                                                                                             |
+| `track`             | `VoiceTranscriptionTrack`  | `VoiceTranscriptionString` | Word timestamps, confidence, speaker data. Subclass of `TranscriptionString`. Produced by `VoskSpeechRecognizer` and passed unchanged by `VoiceAssistant` |
+
+The type of the input string is determined by the IO layer (like STARK's `VoiceAssistant`). You can implement your own IO and processor layers and pass any metadata by subclassing `LocaleString` or its subclasses.
+
+## Inter-Processor Communication
+
+### `RecognizedEntity`
+
+Marks a substring that likely corresponds to a specific named entity or parameter type. It narrows parameter extraction bounds, the hardest part of parsing.
+
+```python
+recognized_entities.append(RecognizedEntity(
+    substring="London",
+    type=Location,
+))
+```
+
+`SearchProcessor` uses these to constrain parameter extraction, when a `RecognizedEntity` matches a parameter's type and appears within the pattern match, the parser narrows to that exact substring.
+
+### `corrections`
+
+Phonetic correction variants on `TranscriptionString`. Pre-processors append `Correction(variant, keyword)` pairs. `SearchProcessor` injects these into compiled patterns.
+
+```python
+from stark.models.voice_transcription import Correction
+string.corrections.append(
+    Correction(variant="helo", keyword="hello")
+)
+```
+
+# Custom Run
+
+`run()` is opinionated, it always wires a `VoiceAssistant`, always starts the microphone, always uses the default processor pipeline unless told otherwise (see [How to Run](https://stark.markparker.me/how-to-run/index.md) for the parameters it does expose). Most of the time, those defaults are exactly right. When they're not, you want a different startup sequence, extra concurrent tasks, custom logging baked into the assembly itself, replicate `run()` and adjust it, rather than fighting its assumptions from the outside.
+
+This page walks through what `run()` actually does, so a custom version isn't guesswork.
+
+## Understanding the Default Run Function
+
+```python
+import asyncer
+
+from stark.core import CommandsContext, CommandsManager
+from stark.core.health_check import health_check
+from stark.core.processors.search_processor import SearchProcessor
+from stark.general.blockage_detector import BlockageDetector
+from stark.interfaces.microphone import Microphone
+from stark.interfaces.protocols import SpeechRecognizer, SpeechSynthesizer
+from stark.voice_assistant import VoiceAssistant
+
+
+async def run(
+    manager: CommandsManager,
+    speech_recognizer: SpeechRecognizer,
+    speech_synthesizer: SpeechSynthesizer,
+):
+    async with asyncer.create_task_group() as main_task_group:
+        context = CommandsContext(                                          # 1
+            task_group=main_task_group,
+            commands_manager=manager,
+            processors=[SearchProcessor()],
+        )
+
+        voice_assistant = VoiceAssistant(                                   # 2
+            speech_recognizer=speech_recognizer,
+            speech_synthesizer=speech_synthesizer,
+            commands_context=context,
+        )
+        speech_recognizer.delegate = voice_assistant                        # 3
+        context.delegate = voice_assistant
+
+        health_check(context.pattern_parser, manager.commands)              # 4
+
+        main_task_group.soonify(speech_recognizer.start_listening)()        # 5
+        microphone = Microphone(speech_recognizer.microphone_did_receive_sample)
+        main_task_group.soonify(microphone.start_listening)()
+        main_task_group.soonify(context.handle_responses)()
+
+        detector = BlockageDetector()                                       # 6
+        main_task_group.soonify(detector.monitor)()
+```
+
+1. `CommandsContext` is the engine, it holds the command manager, the processor pipeline (here, just pattern matching via `SearchProcessor`), and the task group everything else runs in.
+1. `VoiceAssistant` is the default IO layer, gluing the recognizer and synthesizer to the context. See [Custom IO & Context Delegate](https://stark.markparker.me/advanced/custom-interfaces/index.md) if you want to swap this out for something other than voice.
+1. The recognizer and the context both report to `voice_assistant` as their delegate, this is the wiring that makes "the mic heard something" eventually become "a response got spoken."
+1. `health_check` validates the whole command set at startup, catches things like a missing `@key` localization reference (see [Localizing Parsing](https://stark.markparker.me/localization-and-multilingual/localizing-parsing/index.md)) before a user ever triggers it.
+1. Three tasks run concurrently for the lifetime of the assistant: listening for speech, reading microphone samples, and delivering queued responses. See [Sync vs Async Commands](https://stark.markparker.me/sync-vs-async-commands/index.md) for why this concurrency matters.
+1. `BlockageDetector` watches the main thread and warns if something blocks it for too long, a safety net for the mistake [Optimization](https://stark.markparker.me/advanced/optimization/index.md) is mostly about avoiding.
+
+## Customizing the Run Function
+
+Common reasons to write your own version instead of relying on [`run()`'s exposed parameters](https://stark.markparker.me/how-to-run/index.md):
+
+- Extra concurrent tasks alongside the assistant (a background sync job, a health-check server, a metrics reporter)
+- Custom logging or analytics wired in at the assembly point, not inside individual commands
+- A different processor pipeline assembled conditionally, beyond what passing `processors=[...]` to `run()` already covers
+
+When customizing, keep the core structure intact, task group creation, delegate wiring, and the order things are assigned in. Getting delegates assigned before tasks start matters; assign them too late and early events get dropped.
+
+A "Hello, Stark!" assistant with a custom run, extending the default with one extra background task:
+
+```python
+import asyncer
+import anyio
+from stark import CommandsContext, CommandsManager, Response
+from stark.core.health_check import health_check
+from stark.core.processors.search_processor import SearchProcessor
+from stark.general.blockage_detector import BlockageDetector
+from stark.interfaces.microphone import Microphone
+from stark.interfaces.protocols import SpeechRecognizer, SpeechSynthesizer
+from stark.interfaces.vosk import VoskSpeechRecognizer
+from stark.interfaces.silero import SileroSpeechSynthesizer
+from stark.voice_assistant import VoiceAssistant
+
+
+VOSK_MODEL_URL = "YOUR_CHOSEN_VOSK_MODEL_URL"
+SILERO_MODEL_URL = "YOUR_CHOSEN_SILERO_MODEL_URL"
+
+manager = CommandsManager()
+
+@manager.new('hello')
+async def hello_command() -> Response:
+    return Response('Hello, Stark!')
+
+async def periodic_health_ping():
+    while True:
+        await anyio.sleep(60)
+        print('Still alive.')  # your monitoring/metrics call goes here
+
+async def run(
+    manager: CommandsManager,
+    speech_recognizer: SpeechRecognizer,
+    speech_synthesizer: SpeechSynthesizer,
+):
+    async with asyncer.create_task_group() as main_task_group:
+        context = CommandsContext(
+            task_group=main_task_group,
+            commands_manager=manager,
+            processors=[SearchProcessor()],
+        )
+        voice_assistant = VoiceAssistant(
+            speech_recognizer=speech_recognizer,
+            speech_synthesizer=speech_synthesizer,
+            commands_context=context,
+        )
+        speech_recognizer.delegate = voice_assistant
+        context.delegate = voice_assistant
+
+        health_check(context.pattern_parser, manager.commands)
+
+        main_task_group.soonify(speech_recognizer.start_listening)()
+        microphone = Microphone(speech_recognizer.microphone_did_receive_sample)
+        main_task_group.soonify(microphone.start_listening)()
+        main_task_group.soonify(context.handle_responses)()
+        main_task_group.soonify(periodic_health_ping)()  # the addition
+
+        detector = BlockageDetector()
+        main_task_group.soonify(detector.monitor)()
+
+async def main():
+    recognizer = VoskSpeechRecognizer(model_url=VOSK_MODEL_URL)
+    synthesizer = SileroSpeechSynthesizer(model_url=SILERO_MODEL_URL)
+    await run(manager, recognizer, synthesizer)
+
+if __name__ == '__main__':
+    anyio.run(main)
+```
+
+The only addition over the default is `periodic_health_ping`, everything else is the structure `run()` already does, copied so it can be extended in place.
+
+# External Triggers
+
+With the adaptability of Stark, VA can be integrated with various external triggers to provide a flexible and dynamic user experience. In the STARK framework, the integration of external triggers is seamless and can greatly enhance the interactivity of the assistant.
+
+In this guide, we will walk through how to set up and use external triggers to activate the STARK Voice Assistant.
+
+## Setting Up External Mode
+
+The STARK framework provides a dedicated mode for external triggers: the "External" mode. When you set the VA mode to "external", it waits for an explicit trigger to activate the `SpeechRecognizer` component.
+
+Additionally, you can utilize the `stop_after_interaction` property in custom modes:
+
+```python
+stop_after_interaction=True
+```
+
+When set to `True`, this ensures that after the VA finishes its current interaction, it stops the `SpeechRecognizer`, allowing for the next interaction to be initiated by an external trigger.
+
+Details on the [Voice Assistant](https://stark.markparker.me/voice-assistant/index.md) page.
+
+## Triggering Using `start_listening()`
+
+Once the VA has stopped listening after an interaction, you can restart the `SpeechRecognizer` using the `start_listening()` method. This method serves as an entry point when you want to reactivate voice recognition after an external trigger.
+
+## Implementing External Triggers
+
+Do note that you probably need to implement a [custom run function](https://stark.markparker.me/advanced/custom-run/index.md) to add cuncurrent process or create a separate thread. If your trigger source isn't voice at all (a button, a webhook, a message), you likely want a custom [`CommandsContextDelegate`](https://stark.markparker.me/advanced/custom-interfaces/index.md) instead of `VoiceAssistant` entirely.
+
+The beauty of external triggers lies in their versatility. Here are some ways to integrate them:
+
+### Keyboard Hotkey Shortcut
+
+A simple approach is to have a specific keyboard combination to activate Stark. Tools like Python's `keyboard` library can help in detecting specific keypresses, enabling you to then call `start_listening()`.
+
+### Hardware Integration
+
+For those looking for a hands-free approach, integrating hardware can be a fascinating option. For instance, using an Arduino microphone module, you can set up a system where Stark activates upon a distinct sound pattern, like a double or triple clap.
+
+### Fast Wakeword Detectors
+
+Wakeword detection is a popular approach in modern VAs. Using fast lightweight wakeword detectors like Picovoice's Porcupine, you can have your VA spring into action upon hearing a specific keyword or phrase.
+
+### Implementations and Examples
+
+You can find external trigger implementations at [stark_place/triggers](https://github.com/MarkParker5/STARK-PLACE/tree/master/stark_place/triggers) and examples of usage at [stark_place/examples](https://github.com/MarkParker5/STARK-PLACE/tree/master/stark_place/examples).
+
+______________________________________________________________________
+
+By embracing external triggers, you can elevate the adaptability and user experience of your voice assistant. Whether it's a simple keyboard shortcut or an intricate hardware setup, STARK's flexibility ensures that your VA is always ready and responsive, aligned with the needs of your user base.
+
+Built a trigger that isn't listed here? A hardware sensor, a wakeword model, anything. Help is wanted expanding this list and the [stark_place/triggers](https://github.com/MarkParker5/STARK-PLACE/tree/master/stark_place/triggers) collection. [Discuss it](https://github.com/MarkParker5/STARK/discussions) before or after building, either works, and we need all the feedback we can get.
+
+# Fallback Command / LLM Integration
+
+In the dynamic world of voice assistants and speech recognition, it's essential to account for the unpredictability of user input. Despite the comprehensive list of commands you may have configured, there will inevitably be instances where user utterances don't align with any predefined command. This is where the fallback command comes in.
+
+The fallback command in the STARK framework serves as a safety net, ensuring that when a user's voice input doesn't match any set command, there's still an appropriate and meaningful response.
+
+## Setting Up the Fallback Command
+
+A fallback command is just a regular command with a wildcard pattern, `$string:String` matches anything. Two things matter for it to actually behave like a fallback:
+
+```python
+from stark.core.types import String
+...
+
+@manager.new('$string:String')  # NOT hidden=True — see below
+async def fallback(string: String):
+    # Your fallback logic here
+    ...
+
+manager.extend(fallback_manager)  # register it LAST
+```
+
+1. **Don't mark it `hidden=True`.** A `hidden=True` command is never added to the manager's command list at all, it only becomes reachable when explicitly offered via a `Response`'s `commands=[...]` (see [Commands Context](https://stark.markparker.me/commands-context/index.md)). A fallback needs to be reachable from anywhere, all the time, so it can't be hidden.
+1. **Register it last.** [`SearchProcessor`](https://stark.markparker.me/advanced/custom-processors/index.md) resolves overlapping matches in favor of the command added earliest. Since `$string:String` overlaps with almost everything, it has to be the last command added, merge its manager in after every other command is registered, so specific commands always win.
+
+This is simple, but it's a soft guarantee, a wildcard pattern technically *can* still win in edge cases depending on match overlap. For a hard guarantee that the fallback only fires when truly nothing else matched, see the alternative below.
+
+### A More Reliable Alternative
+
+Keep the command `hidden=True` (so it's never in the regular match pool at all) and add a final pipeline stage that runs only after every other processor has had a chance and found nothing:
+
+```python
+from stark.core.commands_context_processor import CommandsContextProcessor
+from stark.core.commands_manager import SearchResult
+from stark.core.parsing import MatchResult
+
+@manager.new('$string:String', hidden=True)
+async def fallback(string: String):
+    # Your fallback logic here
+    ...
+
+class FallbackProcessor(CommandsContextProcessor):
+    async def process_context_layer(self, string, context, context_layer, recognized_entities):
+        match = MatchResult(substring=str(string), start=0, end=len(string), parameters={'string': string})
+        return [SearchResult(command=fallback, match_result=match)]  # always matches
+
+context = CommandsContext(
+    ...,
+    processors=[SearchProcessor(), FallbackProcessor()],  # only reached if SearchProcessor found nothing
+)
+```
+
+See [Custom Processors](https://stark.markparker.me/advanced/custom-processors/index.md) for the full pipeline mechanics, a processor only runs if every processor before it returned no results.
+
+## Fallback Command Options
+
+With the rise of advanced language models like ChatGPT, it's now feasible to provide intelligent and contextually relevant responses even for unexpected user inputs. Integrating an LLM can elevate the user experience, making your voice assistant appear more intuitive and responsive.
+
+Fallbacks aren't limited to LLMs. You can get creative with your approach. Consider these options:
+
+- **Wikipedia API**: Search for a quick answer or definition related to the user's query.
+- **Google Search Parsing**: Extract snippets from top search results for a quick response.
+- **Custom Database Lookups**: If you have a specific dataset or database, direct fallback queries there.
+- **Fun random "I don't know" synonyms**
+
+______________________________________________________________________
+
+Fallback commands are invaluable, ensuring your voice assistant remains responsive, intelligent, and user-friendly, even in the face of unexpected inputs. With the flexibility of STARK and the power of modern Large Language Models, creating a robust voice assistant has never been easier.
+
+Want the LLM itself to take action instead of just answering, running a search, controlling a device, taking multiple steps? See [AI Agent Platform](https://stark.markparker.me/agent-platform/index.md) for where this is headed in v5.
+
+# Feature Flags
+
+S.T.A.R.K uses environment variables to enable or disable experimental and optional features.
+
+## Available Flags
+
+| Flag                            | Default | Complexity overhead                                | Description                                                                                                                                                                          |
+| ------------------------------- | ------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `STARK_ENABLE_VOICE_CLI`        | `0`     | None                                               | Print voice input/output in terminal. See [Voice Assistant](https://stark.markparker.me/voice-assistant/index.md).                                                                   |
+| `STARK_ENABLE_MULTILANG_MATRIX` | `1`     | O(T × C × P), multiplies matching cost by T tracks | Match input against all alternative language tracks concurrently. See [Multilanguage Input](https://stark.markparker.me/localization-and-multilingual/multilanguage-input/index.md). |
+
+## Setting Flags
+
+Set via environment variables before running your app:
+
+```bash
+STARK_ENABLE_VOICE_CLI=1 python -m your_app
+```
+
+# Optimization for Stark
+
+A S.T.A.R.K. assistant runs almost everything, speech transcription, response delivery, and every executing command, on one main thread via [anyio](https://anyio.readthedocs.io/) task groups (see [Custom Run](https://stark.markparker.me/advanced/custom-run/index.md) for exactly which tasks). That's what makes it fast and lightweight by default, but it means a single blocking call can stall the entire assistant, not just the command that made it. This page is about avoiding that, and a few other places performance tends to matter.
+
+## Non-blocking is Key
+
+**THE MOST IMPORTANT**: Always ensure that you **DO NOT** place blocking code inside `async def` functions. Blocking code can drastically reduce the performance of asynchronous applications by halting the execution of other parts of the application.
+
+If you have commands that run blocking code, always define them using the simple `def` ([Sync-vs-Async](https://stark.markparker.me/sync-vs-async-commands/index.md)). This ensures that Stark creates a separate worker thread to handle the execution of that command. By doing so, Stark remains responsive, even when processing resource-intensive commands.
+
+## Sync vs Async
+
+Understanding the difference between synchronous and asynchronous code is crucial. Asynchronous code allows your application to perform other tasks while waiting for a particular task to complete, thus improving efficiency. The [Sync-vs-Async](https://stark.markparker.me/sync-vs-async-commands/index.md) page provides a comprehensive comparison and guidance on how to effectively leverage both.
+
+## Utilizing the asyncer
+
+The [asyncer](https://asyncer.tiangolo.com) documentation is a valuable resource. It provides an array of tools and methods to help convert synchronous code to asynchronous and vice-versa, aiding in the optimization process.
+
+## Using asyncer.asyncify
+
+If you need to call blocking synchronous code within an `async def` function, utilize `asyncer.asyncify`. It allows you to effectively run synchronous code inside an asynchronous function without blocking the entire event loop.
+
+## Grouping Asynchronous Requests
+
+If you have multiple asynchronous tasks that can be executed concurrently, group them together and await them as one unit. This approach allows tasks to be run simultaneously, improving the overall speed of the function.
+
+```python
+async def task_one():
+    ...
+
+async def task_two():
+    ...
+
+# or
+import anyio
+async with anyio.create_task_group() as task_group:
+    task_group.start_soon(task_one)
+    task_group.start_soon(task_two)
+# or
+import asyncer
+async with asyncer.create_task_group() as task_group
+    task_group.soonify(task_one)()
+    task_group.soonify(task_one)()
+# or 
+import asyncio
+await asyncio.gather(task_one(), task_two())
+```
+
+## Implement Caching
+
+Caching is a practice of storing frequently used data or results in a location for quicker access in the future. By implementing caching, you can significantly reduce repetitive computations and database lookups, leading to faster response times. Python libraries like `cachetools` or `functools.lru_cache` are popular tools for caching, but those are sync-only.
+
+For caching `async def` functions, S.T.A.R.K. ships its own `alru_cache`: an async LRU cache decorator with a TTL and built-in in-flight deduplication, two concurrent calls with the same arguments share one underlying call instead of running it twice.
+
+```python
+from stark.general.cache import alru_cache
+
+@alru_cache(maxsize=128, ttl=60.0)
+async def fetch_weather(city: str) -> str:
+    ...  # only actually runs once per `city` within the TTL window
+```
+
+Useful anywhere a command calls a slow external API and the same query is likely to repeat (weather, search, lookups) within a short window.
+
+______________________________________________________________________
+
+Optimization is a continuous process. As Stark grows and evolves, always look out for opportunities to refine and streamline its operations. Remember, the key is to ensure Stark remains responsive and efficient, offering users a seamless and efficient voice assistant experience.
+# Localization and Multi-Language
+
+# Localization and Multi-Language
+
+S.T.A.R.K supports multi-language pattern matching and parsing. This section covers how to make your commands and types work across languages.
+
+- [Localizing Parsing](https://stark.markparker.me/localization-and-multilingual/localizing-parsing/index.md), patterns, parameter types, `did_parse`, string bundles, `@key` syntax
+- [Multilanguage Input](https://stark.markparker.me/localization-and-multilingual/multilanguage-input/index.md), `TranscriptionString`, per-word language metadata, alternative tracks, matrix matching
+- [Localizing Responses](https://stark.markparker.me/localization-and-multilingual/localizing-responses/index.md), output formatting
+
+# Localizing Parsing
+
+S.T.A.R.K supports multi-language pattern matching and parsing out of the box. This page covers how to localize the input recognition side: patterns, parameter types, and `did_parse` logic. For response localization (output), see [Localizing Responses](https://stark.markparker.me/localization-and-multilingual/localizing-responses/index.md).
+
+## Core Concepts
+
+There are three places where localization applies to input processing:
+
+1. **Command patterns**: how a command is triggered (e.g., `"set timer"` vs german `"stelle einen Timer"`)
+1. **Object type patterns**: how a parameter type is recognized (e.g., `Duration` matching `"hours"` vs italian `"ore"`)
+1. **`did_parse` logic**: programmatic parsing that may behave differently per language (e.g., parsing `"one"` vs spanish `"uno"` into a number)
+
+Language metadata flows through the entire pipeline on the input string itself via `LocaleString`, a `str` subclass that carries a `language_code` attribute.
+
+## `LocaleString`
+
+`LocaleString` is a `str` subclass that carries language metadata. It behaves exactly like a regular string, equality, hashing, `in`, regex, `len`, iteration all work unchanged. All str methods that return a new string (`replace`, `strip`, slicing, `split`, etc.) are overridden to preserve the `language_code`. Note that third-party libraries and CPython C-level functions (e.g., `re.sub`, spacy) may reconstruct strings internally, bypassing Python-level overrides, in these cases metadata will be lost. Use `str(locale_string)` when passing to such APIs, and `locale_string._with(result)` to re-attach metadata to the output.
+
+```python
+from stark.general.localisation import LocaleString
+
+s = LocaleString("hello world", "en")
+s.language_code  # "en"
+s[6:]            # LocaleString("world", "en") — metadata preserved
+s.replace("hello", "hi")  # LocaleString("hi world", "en")
+```
+
+## Language Codes and `"base"`
+
+The default language code is `"base"`. When no language is specified, all patterns and parsing use the `"base"` variant. This is the fallback for any language that doesn't have a dedicated pattern.
+
+All language codes are typed as `LanguageCode`, a `Literal` union of `"base"` and ISO 639-1 codes (e.g., `"en"`, `"ru"`, `"de"`).
+
+Your app provides the language code via `LocaleString`:
+
+```python
+from stark.general.localisation import LocaleString
+
+await context.process_string(LocaleString("set timer for five minutes", "en"))
+await context.process_string(LocaleString("ustaw minutnik na pięć minut", "pl"))
+
+# Plain str works too — defaults to "base"
+await context.process_string("set timer for five minutes")
+```
+
+Language identification is not part of S.T.A.R.K's core, it's the app's responsibility. In a voice assistant setup, the STT engine typically provides the language code alongside the recognized text.
+
+## Localizing Patterns
+
+### Inline `patterns` Dict
+
+The simplest approach. Override the `patterns` classproperty on your Object type to return per-language Pattern instances:
+
+```python
+class Duration(Object):
+    value: str
+
+    @classproperty
+    def patterns(cls) -> dict[str, Pattern]:
+        return {
+            "base": Pattern("$n:Word (hours|minutes|seconds)"),
+            "de": Pattern("$n:Word (Stunden|Minuten|Sekunden)"),
+            "it": Pattern("$n:Word (ore|minuti|secondi)"),
+            "es": Pattern("$n:Word (horas|minutos|segundos)"),
+            "fr": Pattern("$n:Word (heures|minutes|secondes)"),
+        }
+```
+
+When matching with `language_code="pl"`, S.T.A.R.K uses the `"pl"` pattern; with `"it"` or `"es"`, the Italian or Spanish one. For any other language code, it falls back to `"base"`.
+
+The single `pattern` classproperty still works, if you don't override `patterns`, it defaults to `{"base": cls.pattern}`. So existing types work unchanged.
+
+> **Note on dict ordering:** If you provide a `dict[str, str]` to `@manager.new` without a `"base"` key, the first entry by iteration order is used as `"base"`. Python dicts preserve insertion order, but this is worth being explicit about, always include a `"base"` key to avoid ambiguity.
+
+### `@key` Syntax with String Bundles
+
+For production apps with many languages, embed localization keys in your pattern strings. The `PatternParser` resolves them at compile time from the `Localizer`:
+
+```python
+class Duration(Object):
+    value: str
+
+    @classproperty
+    def pattern(cls) -> Pattern:
+        return Pattern("$n:Word (@duration_units)")
+```
+
+The `@duration_units` key is looked up in the Localizer's recognizable string files for the active language. This requires setting up a Localizer (see [String Bundles](#string-bundles) below).
+
+Keys must start with a letter or underscore, followed by letters, digits, or underscores, standard identifier rules (e.g., `@duration_units`, `@_private_key`, `@greeting2`).
+
+`@key` references are validated at type registration time and during health checks, if a key is missing from all loaded languages, you get an error at startup, not at runtime when a user triggers the command.
+
+## Localizing Commands
+
+Commands support the same per-language patterns. Pass a `dict[str, str]` instead of a single string to `@manager.new`:
+
+```python
+@manager.new({
+    "base": "set timer for $t:Duration",
+    "de": "stell einen Timer für $t:Duration",
+    "fr": "mets un minuteur pour $t:Duration",
+    "uk": "встанови таймер на $t:Duration",
+})
+async def set_timer(t: Duration) -> Response:
+    ...
+```
+
+For a single-language command, just pass a string as before, it becomes the `"base"` pattern.
+
+The `@key` syntax works for commands as well:
+
+```python
+@manager.new('@clock_timer_set_command')
+async def set_timer(t: Duration) -> Response:
+    ...
+```
+
+## Using ObjectParser for Localized Parsing
+
+`ObjectParser` is the recommended approach for types that need localized `did_parse` logic, localized programmatic patterns, or both. Every `ObjectParser` instance automatically holds a reference to the `Localizer` (injected by `PatternParser` during type registration), no manual `__init__` wiring needed.
+
+### Localized `did_parse`
+
+The `from_string` parameter in `did_parse` is a `LocaleString`, same as the regular string, but provides `from_string.language_code: LanguageCode` for language-specific parsing logic.
+
+With `ObjectParser`, use `self.localizer` for localized lookup tables:
+
+```python
+class NLNumberParser(ObjectParser):
+    async def did_parse(self, obj: Object, from_string: LocaleString) -> str:
+        words_one = self.localizer.get_recognizable("words_one", from_string.language_code)
+        ...
+```
+
+For simple types that don't self.localizer or any other features of `ObjectParser`, you can still use `did_parse` directly on the Object:
+
+```python
+class NLNumber(Object):
+    value: float
+
+    async def did_parse(self, from_string: LocaleString) -> str:
+        match from_string.language_code:
+            case "pl":
+                self.value = parse_polish_number(from_string)
+            case "cs":
+                self.value = parse_czech_number(from_string)
+            case _:
+                self.value = parse_english_number(from_string)
+        return from_string
+```
+
+More details about parsing of custom types at [ObjectParser](https://stark.markparker.me/patterns/#defining-custom-object-types)
+
+### Programmatic Patterns
+
+For types that generate patterns at runtime (e.g., from a database or API), override the `patterns` property on your `ObjectParser`. It takes priority over the Object's `patterns` classproperty:
+
+```python
+class PlaylistParser(ObjectParser):
+    _cache: dict[str, Pattern] | None = None
+
+    @property
+    def patterns(self) -> dict[str, Pattern] | None:
+        if self._cache:
+            return self._cache
+        playlists = fetch_playlists()  # your data source
+        play_word = self.localizer.get_recognizable("play", "base") or "play"
+        self._cache = {"base": Pattern(f"({play_word}) ({"|".join(playlists)})")}
+        return self._cache
+```
+
+Pattern resolution order: `parser.patterns[language_code]` > `object_type.patterns[language_code]` > fallback to `"base"` key.
+
+Cache invalidation is the extension's responsibility, the Localizer provides stable strings, but dynamic data (like playlist names) may change.
+
+## String Bundles
+
+String bundles are files that store localized strings. S.T.A.R.K uses a simple key-value format (`.strings` files):
+
+### File Format
+
+```text
+/* optional comment */
+"key" = "value";
+
+"greeting" = "hello|hi|hey";
+"duration_units" = "hours|minutes|seconds";
+```
+
+### Directory Structure
+
+```text
+strings/
+  base/
+    localizable.strings
+    recognizable.strings
+  en/
+    localizable.strings
+    recognizable.strings
+  de/
+    localizable.strings
+    recognizable.strings
+  fr/
+    localizable.strings
+    recognizable.strings
+  it/
+    localizable.strings
+    recognizable.strings
+```
+
+- **recognizable**: strings used for input matching (patterns, parsing)
+- **localizable**: strings used for output formatting (responses), see [Localizing Responses](https://stark.markparker.me/localization-and-multilingual/localizing-responses/index.md)
+- **base/**: fallback strings used when a key is missing for a specific language
+
+### Setting Up the Localizer
+
+```python
+from stark.general.localisation import Localizer
+
+localizer = Localizer(languages={"en", "de", "fr", "it"}, base_language="en")
+localizer.load()  # discovers and reads .strings files
+```
+
+Only languages in the `languages` set are loaded, the rest are ignored even if files exist on disk. The `base` directory is always loaded.
+
+`load()` automatically creates missing `strings/{lang}/` directories and empty `.strings` files for all configured languages. If a pattern uses an `@key` that doesn't exist in any loaded language, `health_check` automatically adds the key to the base `recognizable.strings` with its own name as the default value and a warning is emitted. This means you can start using `@key` syntax immediately, the files and entries are created for you, and you fill in translations later.
+
+Pass the Localizer when creating `CommandsContext`:
+
+```python
+context = CommandsContext(
+    task_group=main_task_group,
+    commands_manager=manager,
+    localizer=localizer,
+)
+```
+
+The Localizer is automatically propagated to `PatternParser` and all `ObjectParser` instances registered on it.
+
+For mixed-language input with per-word language metadata, see [Multilanguage Input](https://stark.markparker.me/localization-and-multilingual/multilanguage-input/index.md).
+
+# Localizing Responses
+
+Response localization allows your assistant to reply in the user's language. The key idea: store a translation key with format arguments, so the translated template is resolved first, then the arguments are injected into it.
+
+```python
+# Without localization — hardcoded language:
+Response(f"Hello, {name}!")
+# gives "Hello, Mark!"
+
+# With localization — deferred:
+Response(LocalizableString("greeting", "fr", name=str(name)))
+# Localizer resolves "greeting" for "fr" → "Bonjour, {name}!"
+# Then formats → "Bonjour, Mark!"
+```
+
+This matters because argument positions and surrounding text differ between languages, you can't just translate a pre-formatted string.
+
+## `LocalizableString`
+
+`LocalizableString` stores a key, a language code, and format arguments. At response time, `Localizer.localize()` looks up the key in `localizable.strings` for the given language, then calls `.format(**arguments)` on the resolved template.
+
+```python
+from stark.general.localisation import LocalizableString
+
+LocalizableString("greeting", "it", name="Mark")
+# .string = "greeting"         — the key
+# .language_code = "it"        — which translation to use
+# .arguments = {"name": "Mark"} — injected after translation
+
+LocalizableString("greeting", "es", name="Mark")
+# same key, different language — Localizer resolves "¡Hola, Mark!" instead
+```
+
+If the key is not found, `localize()` emits a `RuntimeWarning` and falls back to the raw key string.
+
+## Using in Commands
+
+`Response.text` and `Response.voice` accept both plain `str` and `LocalizableString`.
+
+To know which language to respond in, annotate any parameter with `LanguageCode`, the framework injects the language of the matched substring automatically via dependency injection. The parameter name doesn't matter, only the type annotation:
+
+```python
+from stark.general.localisation.language_code import LanguageCode
+
+@manager.new({
+    "base": "hello $name:Word",
+    "es": "hola $name:Word",
+})
+async def greet(name: Word, lang: LanguageCode) -> Response:
+    return Response(LocalizableString("greeting_response", lang, name=str(name)))
+```
+
+When the user says "hola mundo", the pattern matches via the Spanish pattern, so `lang` is `"es"`. When they say "hello world", `lang` is `"en"`. For mixed-language input with `TranscriptionString`, the language is the majority language of the matched substring's words.
+
+## Resolving at Response Time
+
+The core framework stores `LocalizableString` as-is in the `Response` object. Resolution happens at the delegate level, where the `Localizer` is available. `VoiceAssistant` provided by STARK already does that automatically under the hood.
+
+```python
+# In your custom delegate / response handler:
+if isinstance(response.text, LocalizableString):
+    text = localizer.localize(response.text)
+else:
+    text = response.text
+```
+
+This keeps the core framework decoupled from any specific output target, the same `Response` can be rendered differently by a voice assistant (TTS), a chat UI, or a logging system.
+
+## Fallback Behavior
+
+If the key is not found in `localizable.strings` for the requested language, `localize()` falls back to:
+
+1. The `base` language strings
+1. The raw key string itself (with a `RuntimeWarning`)
+
+## String Bundles
+
+Response strings use the same `.strings` bundle format and directory structure as pattern localization. The `localizable.strings` files are the output counterpart to `recognizable.strings`:
+
+```text
+strings/
+  en/
+    localizable.strings    ← response strings
+    recognizable.strings   ← pattern strings
+  cs/
+    localizable.strings
+    recognizable.strings
+  pl/
+    localizable.strings
+    recognizable.strings
+```
+
+See [Localizing Parsing](https://stark.markparker.me/localization-and-multilingual/localizing-parsing/index.md) for the full bundle format reference.
+
+## Formatting Complex Values with PyICU
+
+For formatting locale-sensitive values like numbers, dates, units, and currencies in responses, [PyICU](https://pypi.org/project/PyICU/) is a great companion library. It wraps the ICU C++ library (the same engine behind iOS/Swift's `Foundation` formatting) and provides ready-made locale-aware formatting for:
+
+- **Numbers**: decimal, percent, currency, and spelled-out (e.g., `"five"`, `"п'ять"`, `"pięć"`)
+- **Dates/Times**: locale-specific patterns, relative dates (`"yesterday"`, `"in 2 days"`)
+- **Units**: `"5 kilometers"`, `"3 lbs"`, `"2 hours"` with localized names
+- **Messages**: pluralization and gender rules (`"{num, plural, one {# item} other {# items}}"`)
+
+PyICU is not a dependency of S.T.A.R.K, use it alongside when you need locale-aware value formatting in your responses. See [Command Response](https://stark.markparker.me/command-response/#formatting-locale-sensitive-values-with-pyicu) for more examples of response building with formatted values.
+
+# Multilanguage Input
+
+When building custom IO interfaces (beyond the built-in Voice Assistant), you can provide per-word language metadata to the parsing pipeline via `TranscriptionString`. This metadata is optional, the parser works with plain strings and `LocaleString` too, but when available, it enables per-parameter language resolution for mixed-language input.
+
+## TranscriptionString
+
+`TranscriptionString` extends `LocaleString` with per-word language annotations:
+
+```python
+from stark.models.transcription_string import TranscriptionString
+
+# road trip across Europe
+ts = TranscriptionString.from_words([
+    ("navigate", "en"), ("from", "en"),
+    ("Köln", "de"),
+    ("to", "en"),
+    ("Wrocław", "pl"),
+    ("and", "en"), ("play", "en"),
+    ("Zitti", "it"), ("e", "it"), ("Buoni", "it"),
+])
+# ts == "navigate from Köln to Wrocław and play Zitti e Buoni"
+# ts.language_code == "en" (majority: 5 en words vs. 3 it, 1 de, 1 pl)
+```
+
+Per-word language metadata can come from an STT engine that identifies each word's language, for example when a bilingual speaker switches mid-sentence, or from a shared device in an office or household where different people speak different languages, or a command that genuinely spans languages (city names, product names, a number said in one language mid-sentence in another). The parser slices each span as its own parameter and resolves its language independently:
+
+```python
+ts[ts.index("Köln"):][:4]           # "Köln" → language_code "de"
+ts[ts.index("Wrocław"):][:7]        # "Wrocław" → language_code "pl"
+ts[ts.index("Zitti e Buoni"):]      # "Zitti e Buoni" song by Måneskin → language_code "it"
+```
+
+Each slice resolves the majority language of that span, not the sentence's overall `"en"`. That resolved language is what gets passed to `did_parse` for each parameter's type. See [Phonetic Dictionary](https://stark.markparker.me/tools/phonetic-dictionary/index.md) for matching names across languages and spellings.
+
+All string operations (slicing, replace, strip, split) preserve the per-word language metadata.
+
+## When to Use
+
+Use `TranscriptionString` when your input source provides per-word language information:
+
+- **STT engines** that tag each word with its detected language
+- **NLP pipelines** that perform language identification per token
+- **Translation APIs** that return source language annotations
+- **Manual annotation** for testing multilingual commands
+
+For single-language input, plain `LocaleString` is sufficient.
+
+## Alternative Tracks
+
+`TranscriptionString` can carry `alternative_texts`, the same utterance as processed by different language models:
+
+```python
+from stark.general.localisation import LocaleString
+
+ts = TranscriptionString.from_words(
+    [("set", "en"), ("timer", "en")],
+    alternative_texts={
+        "es": LocaleString("pon el temporizador", "es"),
+        "de": LocaleString("set timer", "de"),
+        "fr": LocaleString("mets le minuteur", "fr"),
+    },
+)
+```
+
+When `STARK_ENABLE_MULTILANG_MATRIX=1` (default), the parser tries each alternative track against its language's command patterns concurrently, merging results. This catches commands that exist only in specific languages.
+
+## VoiceTranscriptionString
+
+For voice input, `VoiceTranscriptionString` extends `TranscriptionString` with time-aligned audio metadata:
+
+```python
+from stark.models.voice_transcription_string import VoiceTranscriptionString
+```
+
+This adds per-word timestamps, confidence scores, and speaker embeddings. This data is used by the parser to resolve overlapping matches across alternative tracks, set priorities, improve recognition accuracy. Speaker identification is not used yet, but this is something to be added in the future.
+
+See [Voice Assistant](https://stark.markparker.me/voice-assistant/index.md) for the built-in multi-STT setup that produces `VoiceTranscriptionString` automatically.
+
+## Passing to the Parser
+
+Pass `TranscriptionString` (or any `LocaleString` subclass) directly to `process_string`:
+
+```python
+await context.process_string(ts)
+```
+
+The parser handles it as a regular string, `TranscriptionString` is a `str` subclass. The metadata enhances pattern resolution without requiring any changes to your commands or types.
+
+See [Feature Flags](https://stark.markparker.me/advanced/feature-flags/index.md) for additional configuration options like tweaking multilingual features.
+# Whats Next
+
+Coming Soon
+
+This page describes planned work, not shipped functionality. Nothing about S.T.A.R.K.'s current API or behavior changes because of this. What's below is an optional layer being designed on top.
+
+# Agent Platform
+
+S.T.A.R.K.'s next major release (v5) adds an optional layer for building agents: assistants that don't just respond, they take multi-step action on their own. Here's the early, honest version of that plan.
+
+## What's Changing (and What Isn't)
+
+Nothing about S.T.A.R.K.'s core values changes. Agents are an optional layer built on top of what already exists, not a pivot. The load-bearing pieces are already here:
+
+- **Background commands and async intermediate responses.** See [Sync vs Async Commands](https://stark.markparker.me/sync-vs-async-commands/#background-commands). An agent running a multi-step task and reporting progress as it goes uses the same mechanism as a timer reporting "50% done."
+- **LLM integration**, already underway. See [Fallback Command / LLM Integration](https://stark.markparker.me/advanced/fallback-command-llm-integration/index.md).
+
+## What "Agent" Actually Means Here
+
+Stripped of marketing language: an agent is a fallback-style LLM command that, instead of just answering, can take arbitrary actions (running terminal commands, controlling a browser, operating peripherals) wrapped in a loop, so it can take more than one step toward a goal. That's it. A lot of the "agent mode" branding floating around the industry right now is exactly that: branding, applied to a fairly simple loop. We'd rather build that loop on infrastructure that's already proven (background commands, multiple responses) than treat it as some new paradigm bolted on top.
+
+## Design Stance
+
+A few principles guiding the implementation, carried over from how the rest of S.T.A.R.K. is built:
+
+- **Minimize LLM involvement where possible.** Assign models narrow, well-scoped tasks for more deterministic results. The less a request depends on the model getting it right, the more reliable the assistant.
+- **Isolate LLM-touched components.** Keep model-driven logic in its own module, separate from deterministic pattern matching. A hallucination should stay contained, not corrupt the rest of the pipeline.
+- **Keep models swappable.** S.T.A.R.K. is modular. A tiny, sub-billion-parameter on-device model is the right call for simple tasks. A large cloud model is the right call when the task actually needs it. The agent layer shouldn't force a choice between them.
+
+This is consistent with S.T.A.R.K.'s "no AI required, AI is opt-in" position, not a departure from it. Agents are a deeper opt-in, not a new requirement.
+
+## Status
+
+Early planning. The exact shape (structured output, function/tool calling, or something else) is still being weighed against what models reliably support today. If you have opinions on the implementation, or want to help build it, [Discussions](https://github.com/MarkParker5/STARK/discussions) is the place. This direction is genuinely still open.
+
+See also [Roadmap](https://stark.markparker.me/roadmap/index.md) for everything else planned alongside this.
+
+# Roadmap
+
+What's planned, in progress, or wanted next. This isn't a committed timeline, it's where to look if you want to know what's coming, or want to help build it.
+
+## AI Agent Platform
+
+The big one: an optional layer for building agents on top of S.T.A.R.K.'s existing background commands and LLM integration. See [AI Agent Platform](https://stark.markparker.me/agent-platform/index.md) for the full plan.
+
+## More Native Parsed Types
+
+S.T.A.R.K. ships a small set of native types out of the box (`String`, `Word`, see [Patterns](https://stark.markparker.me/patterns/#native-types-list)) plus the ability to define your own `Object` types. More native types are actively being added, numbers, dates, durations, and similar commonly-needed parameter types, reducing how often you need to write a custom `Object` for something basic. **Status: work in progress.**
+
+## More Interface Implementations & Platform Ports
+
+S.T.A.R.K.'s protocols (`SpeechRecognizer`, `SpeechSynthesizer`, `CommandsContextDelegate`) are designed for exactly this, more backends and more ports are wanted, not just possible:
+
+- More STT/TTS backends, see [Speech Recognition](https://stark.markparker.me/tools/speech-recognition/index.md) and [Speech Synthesis](https://stark.markparker.me/tools/speech-synthesis/index.md) for the protocols to implement against
+- GUI and API interfaces, neither exists yet; see [How to Run, IO Options at a Glance](https://stark.markparker.me/how-to-run/#io-options-at-a-glance) and [Custom IO & Context Delegate](https://stark.markparker.me/advanced/custom-interfaces/index.md)
+- Porting to more platforms (mobile, embedded, browser)
+
+**Status: help wanted.** If any of this sounds interesting, it's some of the highest-leverage contribution territory in the project, see [Project Ideas](https://stark.markparker.me/project-ideas/index.md) and [STARK-PLACE](https://stark.markparker.me/contributing-and-shared-usage-stark-place/index.md), or just open a [Discussion](https://github.com/MarkParker5/STARK/discussions) to talk through an approach before diving in.
+# Community
+
+# Contributing and Shared Usage: S.T.A.R.K P.L.A.C.E
+
+## Why Share Here
+
+S.T.A.R.K. itself stays small on purpose, see [Minimal Dependencies](https://stark.markparker.me/#minimal-dependencies). STARK-PLACE is where everything built on top of it accumulates: commands, speech-interface implementations, and other extensions, organized into modules. It's not a side project bolted onto S.T.A.R.K., it's the practical answer to "I don't want to build this from scratch," and the place your own work stops being a one-off script and starts being something the next person doesn't have to rebuild.
+
+## STARK Platform Library and Community Extensions
+
+Stark-Place serves as a repository filled with commands, implementations of various protocols (like speech interfaces), and other extensions that enhance the capabilities of the Stark framework. These features are systematically structured into modules, categorized based on their functionality.
+
+## 📦 Using Stark-Place
+
+You don't have to `pip install` it. STARK-PLACE is as much a reference collection as it is a package, for a lot of modules, the better move is to copy the relevant code straight into your own project (keeping attribution, per the license below) rather than pull in a dependency for one command. Use whichever fits:
+
+**Install it** as you would with any pip module, if you want the whole library available:
+
+```bash
+pip install stark-place
+```
+
+```python
+from stark_place.commands import general_manager  # access to all commands
+# or import a specific module's manager instead
+```
+
+**Copy what you need** straight from the repository if you only want one command or module, browse [MarkParker5/STARK-PLACE](https://github.com/MarkParker5/STARK-PLACE), grab the file, keep the attribution comment intact, done.
+
+## 🤝 Contributing to Stark-Place
+
+We welcome and appreciate contributions from the community! Here's how you can contribute:
+
+1. **Fork the Repository**: Start by creating a fork of the [MarkParker5/STARK-PLACE](https://github.com/MarkParker5/STARK-PLACE) repository.
+1. **Optional Branch Creation**: If you prefer, you can create a branch within your fork to manage your changes.
+1. **Add Commands or Features**: Either add commands to an existing module or create a new module.
+1. **Push Your Changes**: Once you're satisfied with your additions or modifications, push them to your fork.
+1. **Open a Pull Request**: Finally, head over to the main STARK-PLACE repository and open a pull request. We'll review your contributions and merge them!
+
+## License
+
+The Stark-Place project is licensed under the [CC BY-NC-SA 4.0 International license](https://github.com/MarkParker5/STARK-PLACE/tree/master/LICENSE.md). You're welcome to modify, contribute to the repository, create, and share forks. Just remember to attribute the original repository and its creator, abstain from commercial use, and retain the existing license.
+
+**Note**: Failing to provide the attribution or using the project for commercial purposes breaches the licensing terms and could have legal consequences.
+
+______________________________________________________________________
+
+We're thrilled to have you as part of our community, and we're excited to see the innovative extensions you'll bring to Stark-Place! Remember, every contribution, big or small, helps in shaping Stark-Place into a powerful platform for all Stark users. Join the community, share your expertise, and let's build together!
+
+Not ready for a full pull request? That's fine, [post it in Discussions](https://github.com/MarkParker5/STARK/discussions) instead. A half-finished module, a "here's how I solved X," or even just a question about whether something belongs in STARK-PLACE: all of it counts, and it's a lower-friction way to get feedback before investing in a polished PR. We need all the feedback we can get to make S.T.A.R.K. better, so don't be afraid to be first, every thread starts empty, and "is this even a good idea" is a perfectly good opening question.
+
+# Project Ideas
+
+Looking for something to build with S.T.A.R.K.? Here are ideas grouped by what they're good for, each one is picked to exercise a specific feature, not just be another smart-home command (Archie's already got that covered, see [Powered By](https://stark.markparker.me/#powered-by-stark)).
+
+## PC Control
+
+- **Hotkey-triggered assistant**: wake the assistant with a keyboard shortcut instead of a wake word. Showcases [External Triggers](https://stark.markparker.me/advanced/external-triggers/index.md) and `Mode.external()`.
+- **System control**: volume, brightness, launching apps, window management. Showcases [Patterns](https://stark.markparker.me/patterns/index.md) for matching varied phrasing ("turn it up" vs "volume to 80%").
+- **Tray/statusbar companion**: runs quietly, shows status, triggers on click. Showcases a custom [`CommandsContextDelegate`](https://stark.markparker.me/advanced/custom-interfaces/index.md) instead of voice.
+
+## Service Integrations
+
+- **Media lookup**: query YouTube, Spotify, or IMDB and read back results. Showcases [Dependency Injection](https://stark.markparker.me/dependency-injection/index.md) for API clients and async commands for network calls.
+- **"What's playing" + queue control**: start playback, then offer follow-ups (skip, pause, queue another). Showcases [Commands Context](https://stark.markparker.me/commands-context/index.md) for the follow-up menu.
+
+## Background & Long-Running Tasks
+
+- **Download/upload tracker**: start a transfer, get progress updates, optionally cancel mid-flight. Directly the [background commands](https://stark.markparker.me/sync-vs-async-commands/#background-commands) pattern, timer, but for files.
+- **Reminder/notification assistant**: schedule something, get notified later regardless of what else you're doing. Showcases [Multiple Responses](https://stark.markparker.me/command-response/index.md) and [Voice Assistant Modes](https://stark.markparker.me/voice-assistant/index.md).
+
+## Raspberry Pi & Hardware
+
+- **Fully offline Pi assistant**: Vosk + Silero on a Pi, no cloud dependency. Showcases the "100% on-device" pillar end to end, see [Where to Host](https://stark.markparker.me/where-to-host/index.md).
+- **Robotics voice control**: drive a robot, control a motor, trigger a routine by voice. Showcases [External Triggers](https://stark.markparker.me/advanced/external-triggers/index.md) for hardware integration (sensors, button presses) alongside voice.
+
+## Voice UI & Games
+
+- **Branching dialogue / text adventure**: each "room" or "scene" is a context, offering different commands depending on where the player is. The most natural fit for [Commands Context](https://stark.markparker.me/commands-context/index.md) outside of a literal menu, contexts as game state.
+- **Quiz or trivia game**: multilingual questions, [Going Multilingual](https://stark.markparker.me/localization-and-multilingual/index.md) showcased as a feature, not just a setting.
+
+## Porting & New Interfaces
+
+- **GUI or Telegram bot interface**: neither exists yet in S.T.A.R.K.; see [How to Run](https://stark.markparker.me/how-to-run/#io-options-at-a-glance) and [Custom IO & Context Delegate](https://stark.markparker.me/advanced/custom-interfaces/index.md) for where to start. High-leverage: whatever you build, others can reuse.
+- **New STT/TTS backend**: wrap a model or cloud API you like behind the existing protocols. See [Speech Recognition](https://stark.markparker.me/tools/speech-recognition/index.md) and [Speech Synthesis](https://stark.markparker.me/tools/speech-synthesis/index.md).
+
+## More Ideas
+
+Check [ideas thread in discussions](https://github.com/ai21labs/STARK/discussions/21) for more inspiration.
+
+______________________________________________________________________
+
+## Built Something? Tell Us
+
+This list is here to spark ideas, not box you in. Whatever you actually build, even if it's half-finished, weird, or "probably not interesting to anyone else," [post it in Discussions](https://github.com/MarkParker5/STARK/discussions). We need all the feedback we can get to make S.T.A.R.K. better, so don't be afraid to be first; every thread starts with one post, and a small, honest write-up of what you tried is worth more than a polished announcement nobody made. If it's reusable by others, [contribute it to STARK-PLACE](https://stark.markparker.me/contributing-and-shared-usage-stark-place/index.md) too, but Discussions first is always fine.
