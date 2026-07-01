@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import copy
-from abc import ABC
+from abc import ABCMeta
 from typing import Any
 
 from stark.core.patterns.pattern import Pattern
@@ -9,9 +9,37 @@ from stark.general.classproperty import classproperty
 from stark.general.localisation import LocaleString
 
 
+class UnionMeta(ABCMeta):
+    """Metaclass that makes | on Object subclasses produce a STARK Union subclass instead of types.UnionType."""
+
+    def __call__(cls, *args, **kwargs):
+        from stark.core.types.union import Union
+
+        if cls is Union:
+            raise TypeError("Union cannot be instantiated directly; subclass it or use | syntax or  MakeUnion")
+        return super().__call__(*args, **kwargs)
+
+    def __or__(cls, other: type) -> type:
+        from stark.core.types.union import MakeUnion
+
+        if isinstance(other, type) and issubclass(other, Object):
+            return MakeUnion(cls, other)
+        return type.__or__(cls, other)  # fall through to types.UnionType for X | None etc.
+
+    def __ror__(cls, other: type) -> type:
+        from stark.core.types.union import MakeUnion
+
+        if isinstance(other, type) and issubclass(other, Object):
+            return MakeUnion(other, cls)
+        return type.__ror__(cls, other)
+
+    def __format__(cls, spec) -> str:
+        return cls.__name__
+
+
 # TODO: review programmable init vs did_parse
 # TODO: consider storing parsing metadata here like substr and span
-class Object[T](ABC):
+class Object[T](metaclass=UnionMeta):
     value: T
 
     @classproperty

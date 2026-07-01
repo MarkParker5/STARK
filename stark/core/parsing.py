@@ -3,16 +3,15 @@ from __future__ import annotations
 import re
 from abc import ABC
 from dataclasses import dataclass, field
-from typing import AsyncGenerator
+from typing import AsyncGenerator, NamedTuple
 
 from stark.core.patterns.pattern import Pattern
 from stark.core.patterns.rules import rules_list
 from stark.core.types import Object
 from stark.core.types.string import String
+from stark.core.types.union import Union, _all_subclasses
 from stark.core.types.word import Word
 from stark.general.cache import alru_cache
-from typing import NamedTuple
-
 from stark.general.localisation import LanguageCode, LocaleString, Localizer
 from stark.models.transcription_string import Correction
 from stark.tools.common.span import Span
@@ -21,6 +20,7 @@ from stark.tools.common.span import Span
 class CorrectionMatch(NamedTuple):
     span: Span
     correction: Correction
+
 
 type ObjectType = type[Object]
 
@@ -104,6 +104,7 @@ class PatternParser:
 
     def __init__(self, localizer: Localizer | None = None):
         self.parameter_types_by_name = {}
+        self._registering: set[str] = set()  # cycle guard for recursive register_parameter_type
         self.localizer = localizer
         self.register_parameter_type(Word)
         self.register_parameter_type(String)
@@ -114,19 +115,38 @@ class PatternParser:
         parser: ObjectParser | None = None,
         # TODO: consider adding lang parameter
     ):
-        assert issubclass(object_type, Object), (
-            f'Can`t add parameter type "{object_type.__name__}": it is not a subclass of Object'
-        )
-        exists_type = self.parameter_types_by_name.get(object_type.__name__)
-        assert exists_type is None, (
-            f"Duplicate parameter type: can`t add parameter type '{object_type.__name__}' because it already exists"
-        )
-        resolved_parser = parser or ObjectParser()
-        resolved_parser.localizer = self.localizer
-        self.parameter_types_by_name[object_type.__name__] = RegisteredParameterType(
-            name=object_type.__name__, type=object_type, parser=resolved_parser
-        )
-        self._validate_localizer_keys(object_type)
+        name = object_type.__name__
+        # Idempotent: skip if already registered or currently being registered (cycle guard).
+        if name in self.parameter_types_by_name or name in self._registering:
+            return
+        self._registering.add(name)
+        try:
+            assert issubclass(object_type, Object), f'Can`t add parameter type "{name}": it is not a subclass of Object'
+            # Resolve deps. Union types declare members explicitly in _types;
+            # everything else declares deps implicitly via parameter annotations in the pattern.
+            if issubclass(object_type, Union) and hasattr(object_type, "_types"):
+                deps = object_type._types
+            else:
+                # Evaluate the pattern first — it may create new classes (e.g. any_subclass calls).
+                # Build known AFTER so those new classes are visible by name.
+                pattern = object_type.pattern
+                known = {cls.__name__: cls for cls in _all_subclasses(Object)}
+                deps = [known[p.type_name] for p in pattern.parameters.values() if p.type_name in known]
+            # Register each dep before the type itself (depth-first, handles transitive deps).
+            for dep in deps:
+                self.register_parameter_type(dep)
+            exists_type = self.parameter_types_by_name.get(name)
+            assert exists_type is None, (
+                f"Duplicate parameter type: can`t add parameter type '{name}' because it already exists"
+            )
+            resolved_parser = parser or ObjectParser()
+            resolved_parser.localizer = self.localizer
+            self.parameter_types_by_name[name] = RegisteredParameterType(
+                name=name, type=object_type, parser=resolved_parser
+            )
+            self._validate_localizer_keys(object_type)
+        finally:
+            self._registering.discard(name)
 
     def _validate_localizer_keys(self, object_type: ObjectType):
         for pattern in object_type.patterns.values():
@@ -184,15 +204,17 @@ class PatternParser:
             try:
                 substring = await self._did_parse(obj, parser, string)
             except ParseError:
-                logger.debug(f"Failed to parse object {object_type} with parser {parser} from '{string}'")
+                logger.debug(f"Failed to parse object {object_type!r} with parser {parser!r} from '{string}'")
                 continue  # skip an try the next match candidate
 
-            assert substring.strip(), ValueError(f"Parsed substring must not be empty. Object: {obj}, Parser: {parser}")
+            assert substring.strip(), ValueError(
+                f"Parsed substring must not be empty. Object: {obj!r}, Parser: {parser!r}"
+            )
             assert substring in string, ValueError(
-                f"Parsed substring must be a part of the original string. There is no {substring} in {string}. Object: {obj}, Parser: {parser}"
+                f"Parsed substring must be a part of the original string. There is no '{substring}' in '{string}'. Object: {obj!r}, Parser: {parser!r}"
             )
             assert obj.value is not None, ValueError(
-                f"Parsed object {obj} must have a `value` property set in did_parse method. Object: {obj}, Parser: {parser}"
+                f"Parsed object {obj!r} must have a `value` property set in did_parse method. Object: {obj!r}, Parser: {parser!r}"
             )
 
             yield ParseResult(obj, substring)
@@ -441,10 +463,17 @@ class PatternParser:
 
         # parse the object
         try:
+            from stark.core.types.union import Union
+
             parse_result = await self.parse_object(parameter_reg_type.type, from_string=raw_param_substr)
+            parsed_obj = parse_result.obj
+            if isinstance(parsed_obj, Union) and getattr(type(parsed_obj), "_transparent", False):
+                # Transparent Unions (MakeUnion / | / any_subclass) are unwrapped to the branch.
+                # Named Union subclasses (class Foo(Union)) are kept as-is — caller uses .value.
+                parsed_obj = parsed_obj.value
             return ParameterMatch(  # take the first match (the only in most cases)
                 name=param.name,
-                parsed_obj=parse_result.obj,
+                parsed_obj=parsed_obj,
                 parsed_substr=parse_result.substring,
             )
         except ParseError as e:

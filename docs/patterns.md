@@ -127,7 +127,7 @@ print(context.pattern_parser.parse_object(Lorem, "lorem ipsum"))
 
 ## Custom Parser Class Example
 
-In some cases, you may want to separate the parsing logic from your data model. This is especially useful when you want to reuse parsing logic, inject dependencies, have longer life cycle, or just keep your models clean. You can define a dedicated parser class for your object type.
+In some cases, you may want to separate the parsing logic from your data model. This is especially useful when you want to reuse parsing logic, inject dependencies, have longer life cycle (stateful parser), or just keep your models clean. You can define a dedicated parser class for your object type.
 
 Here's an example:
 
@@ -201,6 +201,84 @@ pattern = Pattern(f"{one_or_more_unordered('$h:Hours', '$m:Minutes', '$s:Seconds
 ```
 
 > **Note:** Unordered patterns use lookahead-based matching under the hood and don't work well with multi-word wildcards (`**`). For unordered multi-word parameters, use Slots instead.
+
+## Union Types
+
+A `Union` parameter type matches one of several concrete types and routes parsing to whichever branch succeeds. There are three declaration styles:
+
+### Factory (`MakeUnion` / `|`)
+
+```python
+from stark.core.types import MakeUnion
+
+NLPower = NLMeasurementWatt | NLMeasurementVolt
+NLPower = MakeUnion(NLMeasurementWatt, NLMeasurementVolt) # equivalent
+```
+
+Use the factory or pipe when the union is a one-off composition. Factory unions are **transparent**: when used as a typed parameter, the parser unwraps to the matched branch directly, so `self.power` is an `NLMeasurementWatt` or `NLMeasurementVolt` instance.
+
+### Named subclass
+
+```python
+from stark.core.types import Union
+
+class NLPower(Union):
+    _types = [NLMeasurementWatt, NLMeasurementVolt]
+```
+
+Named unions are **opaque**: if used as a typed parameter, `self.power` will be an `NLPower` instance with `.value` holding the matched branch. Use when you want to extend `did_parse` behavior for the union as a whole, but don't forget to call `super().did_parse`.
+
+
+### `any_subclass` factory
+
+By default, STARK only tries to parse the exact type of the parameter and ignores any parent/child classes. `any_subclass(T)` where `T` is a subclass of `Object` recursively discovers all subclasses of `T` and returns a transparent Union of them (i.e. the union is unwrapped to the matched subclass automatically).
+
+```python
+from stark.core.types import any_subclass
+
+class NLUnit(Object):
+    pint_unit: str
+
+    @classproperty
+    def pattern(cls) -> Pattern:
+        raise NotImplementedError  # prevents direct registration
+
+class NLUnitWatt(NLUnit):
+    pint_unit = "watt"
+    @classproperty
+    def pattern(cls) -> Pattern: return Pattern("(watt|w)")
+
+class NLUnitVolt(NLUnit):
+    pint_unit = "volt"
+    @classproperty
+    def pattern(cls) -> Pattern: return Pattern("(volt|v)")
+
+class NLMeasurement(Object):
+    number: NLNumber
+    unit: NLUnit
+
+    @classproperty
+    def pattern(cls) -> Pattern:
+        return Pattern(f"$number:NLNumber $unit:{any_subclass(NLUnit)}")
+
+    async def did_parse(self, from_string) -> str:
+        assert self.number and self.unit and self.unit.pint_unit  # all parsed automatically
+        self.value = (self.unit.pint_unit, self.number.value)
+        return from_string
+```
+
+In this example, because of `any_subclass(NLUnit)` in the pattern, `PatternParser` would try to parse `unit` property of `NLMeasurement` using subclasses of `NLUnit` instead of trying to parse parental class `NLUnit` iteself.
+
+`register_parameter_type(NLMeasurement)` registers the entire tree automatically — no explicit list, no manual registration of each unit type.
+
+To add a new unit, simply define a subclass of `NLUnit` before the first `register_parameter_type` call (all subclasses are discovered automatically):
+
+```python
+class NLUnitAmpere(NLUnit):
+    pint_unit = "ampere"
+    @classproperty
+    def pattern(cls) -> Pattern: return Pattern("(ampere|amp|a)")
+```
 
 ## Slots
 
