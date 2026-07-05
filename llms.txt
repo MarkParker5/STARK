@@ -1,0 +1,71 @@
+# S.T.A.R.K. Docs
+
+> Speach and Text Algorithmic Recognition Kit (S.T.A.R.K.) is a set of tools for building custom voice assistants. It is designed to be modular and extensible, allowing you to build your own custom voice assistant with ease.
+
+S.T.A.R.K. (Speech and Text Algorithmic Recognition Kit) is a modern, async Python framework
+for building voice assistants and natural language interfaces. Think FastAPI but for speech.
+It runs on-device, supports multiple languages, integrates with LLMs, and features advanced
+pattern-based NL parsing, context-aware commands, and community extensions via STARK-PLACE.
+
+
+## Getting Started
+
+- [Installation](https://stark.markparker.me/installation/index.md)
+- [Hello World](https://stark.markparker.me/first-steps/index.md)
+
+## Core Concepts
+
+- [Overview](https://stark.markparker.me/core-concepts/index.md)
+- [Creating Commands](https://stark.markparker.me/creating-commands/index.md)
+- [Sync vs Async Commands](https://stark.markparker.me/sync-vs-async-commands/index.md)
+- [Command Response](https://stark.markparker.me/command-response/index.md)
+- [Commands Context](https://stark.markparker.me/commands-context/index.md)
+- [Patterns](https://stark.markparker.me/patterns/index.md)
+- [Dependency Injection](https://stark.markparker.me/dependency-injection/index.md)
+
+## Running Your Assistant
+
+- [Overview](https://stark.markparker.me/running-your-assistant/index.md)
+- [How to Run](https://stark.markparker.me/how-to-run/index.md)
+- [Voice Assistant & Modes](https://stark.markparker.me/voice-assistant/index.md)
+- [Default Speech Interfaces](https://stark.markparker.me/default-speech-interfaces/index.md)
+- [Where to Host](https://stark.markparker.me/where-to-host/index.md)
+
+## Tools
+
+- [Overview](https://stark.markparker.me/tools/index.md)
+- [Phonetic Corrections (Fuzzy Matching)](https://stark.markparker.me/tools/corrections/index.md)
+- [Phonetic Dictionary - Cross-language Name Lookup](https://stark.markparker.me/tools/phonetic-dictionary/index.md)
+- [Raw Phonetic Tools (IPA & Simplephone)](https://stark.markparker.me/tools/raw-phonetic/index.md)
+- [Sliding Window Parser](https://stark.markparker.me/tools/sliding-window-parser/index.md)
+- [Speech Recognition (STT)](https://stark.markparker.me/tools/speech-recognition/index.md)
+- [Speech Synthesis (TTS)](https://stark.markparker.me/tools/speech-synthesis/index.md)
+- [Levenshtein - Fast Fuzzy String Matching (Cython)](https://stark.markparker.me/tools/stark-levenshtein/index.md)
+
+## Advanced
+
+- [Custom IO & Context Delegate](https://stark.markparker.me/advanced/custom-interfaces/index.md)
+- [Custom Processors](https://stark.markparker.me/advanced/custom-processors/index.md)
+- [Custom Run](https://stark.markparker.me/advanced/custom-run/index.md)
+- [External Triggers](https://stark.markparker.me/advanced/external-triggers/index.md)
+- [Fallback Command / LLM Integration](https://stark.markparker.me/advanced/fallback-command-llm-integration/index.md)
+- [Feature Flags](https://stark.markparker.me/advanced/feature-flags/index.md)
+- [Optimization](https://stark.markparker.me/advanced/optimization/index.md)
+
+## Localization and Multi-Language
+
+- [Localization and Multi-Language](https://stark.markparker.me/localization-and-multilingual/index.md)
+- [Localizing Parsing](https://stark.markparker.me/localization-and-multilingual/localizing-parsing/index.md)
+- [Localizing Responses](https://stark.markparker.me/localization-and-multilingual/localizing-responses/index.md)
+- [Multilanguage Input](https://stark.markparker.me/localization-and-multilingual/multilanguage-input/index.md)
+
+## Whats Next
+
+- [AI Agent Platform](https://stark.markparker.me/agent-platform/index.md)
+- [Roadmap](https://stark.markparker.me/roadmap/index.md)
+
+## Community
+
+- [STARK-PLACE](https://stark.markparker.me/contributing-and-shared-usage-stark-place/index.md)
+- [Project Ideas](https://stark.markparker.me/project-ideas/index.md)
+
