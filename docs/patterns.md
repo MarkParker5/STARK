@@ -68,9 +68,41 @@ It's also worth noting that you can extend the list of types by defining custom 
 
 The S.T.A.R.K toolkit isn't just limited to native types; it empowers developers to define their own custom object types. These bespoke types are constructed by subclassing the `Object` base class and specifying a distinct matching pattern.
 
+Every `Object` has a `value` property that's meant to hold "the" parsed value of the type. A plain payload consumers can read without knowing about any of the object's other fields. Here's a minimal custom type that sets it explicitly:
+
+```python
+class Digit(Object):
+    value: int
+    
+    @classproperty
+    def pattern(cls) -> Pattern:
+        return Pattern('(0|1|2|3|4|5|6|7|8|9)')
+
+    async def did_parse(self, from_string: str) -> str:
+        if not from_string.isdigit():
+            raise ParseError('not a digit')
+        self.value = int(from_string)
+        return from_string
+
+context = CommandsContext(...)
+context.pattern_parser.register_parameter_type(Digit)
+```
+
+Here, `did_parse` explicitly assigns `self.value`, converting the matched word into an `int`. This is the most common case: whatever your object type represents, `value` is where consumers should look to get it.
+
+### The `value` Property
+
+`value` ends up populated in one of a few ways, in priority order:
+
+1. **Set by a custom `did_parse` override** — as in `Digit` above, this is the most common case.
+2. **Set as a static default at class declaration** — e.g. `value = "static"` right under the class body, or assigned in your own `__init__`. Once set this way, the framework's default `did_parse` will **not** overwrite it with the substring.
+3. **Falls back to the matched substring** — if nothing above set it and you don't override `did_parse`, S.T.A.R.K assigns the matched substring to `value` automatically.
+
+By default, S.T.A.R.K asserts that `value` is set to something other than `None` by the time `did_parse` returns — this catches the common mistake of overriding `did_parse`, forgetting to set `self.value`, and getting a confusing downstream error instead. If you're building an object type where `value` genuinely has no meaning (i.e. all the useful data lives in typed sub-parameters), you can opt out of this check with the `STARK_TYPE_NO_REQUIRED_VALUE` [feature flag](advanced/feature-flags.md), which allows `value` to remain `None`.
+
 A standout feature of the S.T.A.R.K toolkit's patterns is their seamless compatibility with nested objects. In essence, a custom object type can house parameters that are, in themselves, other custom object types. This nesting capability facilitates the crafting of complex and nuanced patterns, capable of interpreting diverse input configurations.
 
-Below is a demonstrative example of how one might structure a custom object type:
+Below is a demonstrative example of how one might structure a custom object type around nested parameters instead of a single `value`:
 
 ```python
 class FullName(Object):
@@ -87,7 +119,7 @@ context.pattern_parser.register_parameter_type(FullName)
 
 Upon successfully matching the pattern, S.T.A.R.K will autonomously parse and assign values to `first_name` and `second_name`. It's imperative, just as with command patterns, that class properties are congruent with the pattern in terms of both name and type.
 
-The section is well-detailed, but I have a few recommendations to make it even clearer:
+Notice `FullName` never sets `value` itself and doesn't override `did_parse` — that's case 3 above: the matched substring (e.g. `"John Smith"`) becomes `value` automatically. That's a reasonable default here since callers are expected to read `first_name` and `second_name` directly, not `value`.
 
 ---
 

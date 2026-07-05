@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import copy
 from abc import ABCMeta
-from typing import Any
 
 from stark.core.patterns.pattern import Pattern
 from stark.general.classproperty import classproperty
@@ -40,7 +39,7 @@ class UnionMeta(ABCMeta):
 # TODO: review programmable init vs did_parse
 # TODO: consider storing parsing metadata here like substr and span
 class Object[T](metaclass=UnionMeta):
-    value: T
+    value: T = None
 
     @classproperty
     def pattern(cls) -> Pattern:
@@ -60,9 +59,13 @@ class Object[T](metaclass=UnionMeta):
         """
         return False  # TODO: review default behavior
 
-    def __init__(self, value: Any):
-        """Just init with wrapped value."""
-        self.value = value
+    def __init__(self, *args, **kwargs):
+        """Init with wrapped value, if provided. Otherwise leave `value` untouched so a static
+        value set at class declaration time (e.g. `value = "foo"`) survives instantiation."""
+        if "value" in kwargs:
+            self.value = kwargs["value"]
+        elif args:
+            self.value = args[0]
 
     async def did_parse(self, from_string: LocaleString) -> str:
         """
@@ -79,6 +82,8 @@ class Object[T](metaclass=UnionMeta):
         Raises:
             ParseError: if parsing failed.
         """
+        if not self.value:
+            self.value = from_string
         return from_string
 
     def copy(self) -> Object:

@@ -12,6 +12,7 @@ from stark.core.types.string import String
 from stark.core.types.union import Union, _all_subclasses
 from stark.core.types.word import Word
 from stark.general.cache import alru_cache
+from stark.general.feature_flags import FeatureFlag, get_flag
 from stark.general.localisation import LanguageCode, LocaleString, Localizer
 from stark.models.transcription_string import Correction
 from stark.tools.common.span import Span
@@ -192,7 +193,7 @@ class PatternParser:
             string = from_string._with(object_pattern_match.substring)  # TODO: review _with usage
 
             parser: ObjectParser = self.parameter_types_by_name[object_type.__name__].parser
-            obj = object_type(string)  # temp/default value, may be overridden by did_parse
+            obj = object_type()  # object_type(string)  # temp/default value, may be overridden by did_parse
 
             matched_subparams = object_pattern_match.parameters
             assert matched_subparams.keys() <= {p.name for p in pattern.parameters.values() if not p.optional}
@@ -213,9 +214,10 @@ class PatternParser:
             assert substring in string, ValueError(
                 f"Parsed substring must be a part of the original string. There is no '{substring}' in '{string}'. Object: {obj!r}, Parser: {parser!r}"
             )
-            assert obj.value is not None, ValueError(
-                f"Parsed object {obj!r} must have a `value` property set in did_parse method. Object: {obj!r}, Parser: {parser!r}"
-            )
+            if not get_flag(FeatureFlag.TYPE_NO_REQUIRED_VALUE):
+                assert obj.value is not None, ValueError(
+                    f"Parsed object {obj!r} must have a `value` property set at the time did_parse method returns. Object: {obj!r}, Parser: {parser!r}"
+                )
 
             yield ParseResult(obj, substring)
 

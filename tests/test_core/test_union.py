@@ -1,10 +1,9 @@
 import pytest
 
-from stark.core.parsing import ParseError, PatternParser
+from stark.core.parsing import PatternParser
 from stark.core.patterns.pattern import Pattern
 from stark.core.types import MakeUnion, Object, Union, any_subclass
 from stark.general.classproperty import classproperty
-
 
 # ── fixtures ──────────────────────────────────────────────────────────────────
 
@@ -23,6 +22,7 @@ class Num(Object):
 
 class Word_(Object):
     """Minimal word type for union branch tests (avoids shadowing built-in Word)."""
+
     value: str
 
     @classproperty
@@ -79,16 +79,20 @@ def test_direct_instantiation_blocked():
 
 def test_pattern_override_blocked():
     with pytest.raises(TypeError, match="may not override 'pattern'"):
+
         class Bad(Union):
             _types = [Num]
+
             @classproperty
             def pattern(cls) -> Pattern: ...
 
 
 def test_patterns_override_blocked():
     with pytest.raises(TypeError, match="may not override 'pattern'"):
+
         class Bad(Union):
             _types = [Num]
+
             @classproperty
             def patterns(cls): ...
 
@@ -127,9 +131,6 @@ async def test_union_branch_unwrapped_as_parameter():
         def pattern(cls) -> Pattern:
             return Pattern("$item:NumOrWord_3")
 
-        async def did_parse(self, from_string) -> str:
-            return from_string
-
     U = MakeUnion(Num, Word_)
     U.__name__ = "NumOrWord_3"
     pp = PatternParser()
@@ -157,9 +158,6 @@ async def test_named_union_parameter_not_unwrapped():
         @classproperty
         def pattern(cls) -> Pattern:
             return Pattern("$power:NLPower")
-
-        async def did_parse(self, from_string) -> str:
-            return from_string
 
     pp = PatternParser()
     pp.register_parameter_type(NLPower)
@@ -209,7 +207,7 @@ async def test_auto_registration_idempotent():
     pp = PatternParser()
     pp.register_parameter_type(Root2)
     pp.register_parameter_type(Root2)  # second call must be a no-op
-    pp.register_parameter_type(Num)    # already in tree, must be a no-op
+    pp.register_parameter_type(Num)  # already in tree, must be a no-op
     assert list(pp.parameter_types_by_name).count("Num") == 1
 
 
@@ -320,9 +318,6 @@ async def test_any_subclass_fstring_sugar():
         @classproperty
         def pattern(cls) -> Pattern:
             return Pattern(f"$item:{any_subclass(BaseF)}")  # no .__name__
-
-        async def did_parse(self, from_string) -> str:
-            return from_string
 
     pp = PatternParser()
     pp.register_parameter_type(Container)

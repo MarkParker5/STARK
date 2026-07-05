@@ -47,6 +47,8 @@ async def test_did_parse_call_order():
             return from_string[:-3]
 
     class CustomObject(Object):
+        value: int
+
         @classproperty
         def pattern(cls):
             return Pattern("**")
@@ -54,7 +56,9 @@ async def test_did_parse_call_order():
         async def did_parse(self, from_string):
             call_order.append("object")
             assert from_string == "tim"
-            return from_string[:-1]
+            substring = from_string[:-1]
+            self.value = len(substring)
+            return substring
 
     parser = PatternParser()
     parser.register_parameter_type(CustomObject, CustomParser())
