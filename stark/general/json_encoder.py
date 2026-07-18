@@ -10,18 +10,24 @@ from stark.core.parsing import ObjectType
 
 class CommandInfo(BaseModel):  # TODO: consider moving to Command itself
     name: str
-    pattern: str
+    pattern: str  # representative (base) pattern, for LLM context / single-language use
+    patterns: dict[str, str] = {}  # per-language origin patterns, if multiple
     declaration: str
     docstring: str
 
     def as_text(self) -> str:
-        return " | ".join(v for v in self.model_dump().values() if v)
+        # keep the textual form single-pattern so it stays compact in LLM prompts
+        parts = [self.name, self.pattern, self.declaration, self.docstring]
+        return " | ".join(v for v in parts if v)
 
     @staticmethod
     def from_command(cmd: Command) -> "CommandInfo":
+        patterns = {str(lang): p._origin for lang, p in cmd.patterns.items()}
+        base = cmd.get_pattern("base")._origin if cmd.patterns else ""
         return CommandInfo(
             name=cmd.name,
-            pattern=cmd.pattern._origin,
+            pattern=base,
+            patterns=patterns,
             declaration=_get_function_declaration(cmd._runner),
             docstring=inspect.getdoc(cmd._runner) or "",
         )

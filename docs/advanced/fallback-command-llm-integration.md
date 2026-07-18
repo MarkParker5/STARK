@@ -6,27 +6,51 @@ The fallback command in the STARK framework serves as a safety net, ensuring tha
 
 ## Setting Up the Fallback Command
 
-In the STARK framework, integrating a fallback command is streamlined. You can assign the `fallback_command` to the `CommandsContext` directly:
-
-```python
-CommandsContext.fallback_command: Command
-```
-
-Here's a practical example:
+A fallback command is just a regular command with a wildcard pattern, `$string:String` matches anything. Two things matter for it to actually behave like a fallback:
 
 ```python
 from stark.core.types import String
 ...
+
+@manager.new('$string:String')  # NOT hidden=True — see below
+async def fallback(string: String):
+    # Your fallback logic here
+    ...
+
+manager.extend(fallback_manager)  # register it LAST
+```
+
+1. **Don't mark it `hidden=True`.** A `hidden=True` command is never added to the manager's command list at all, it only becomes reachable when explicitly offered via a `Response`'s `commands=[...]` (see [Commands Context](../commands-context.md)). A fallback needs to be reachable from anywhere, all the time, so it can't be hidden.
+2. **Register it last.** [`SearchProcessor`](custom-processors.md) resolves overlapping matches in favor of the command added earliest. Since `$string:String` overlaps with almost everything, it has to be the last command added, merge its manager in after every other command is registered, so specific commands always win.
+
+This is simple, but it's a soft guarantee, a wildcard pattern technically *can* still win in edge cases depending on match overlap. For a hard guarantee that the fallback only fires when truly nothing else matched, see the alternative below.
+
+### A More Reliable Alternative
+
+Keep the command `hidden=True` (so it's never in the regular match pool at all) and add a final pipeline stage that runs only after every other processor has had a chance and found nothing:
+
+```python
+from stark.core.commands_context_processor import CommandsContextProcessor
+from stark.core.commands_manager import SearchResult
+from stark.core.parsing import MatchResult
 
 @manager.new('$string:String', hidden=True)
 async def fallback(string: String):
     # Your fallback logic here
     ...
 
-commands_context.fallback_command = fallback
+class FallbackProcessor(CommandsContextProcessor):
+    async def process_context_layer(self, string, context, context_layer, recognized_entities):
+        match = MatchResult(substring=str(string), start=0, end=len(string), parameters={'string': string})
+        return [SearchResult(command=fallback, match_result=match)]  # always matches
+
+context = CommandsContext(
+    ...,
+    processors=[SearchProcessor(), FallbackProcessor()],  # only reached if SearchProcessor found nothing
+)
 ```
 
-In this example, any unrecognized string is directed to the `fallback` function, allowing you to define how the system should respond.
+See [Custom Processors](custom-processors.md) for the full pipeline mechanics, a processor only runs if every processor before it returned no results.
 
 ## Fallback Command Options
 
@@ -42,3 +66,5 @@ Fallbacks aren't limited to LLMs. You can get creative with your approach. Consi
 ---
 
 Fallback commands are invaluable, ensuring your voice assistant remains responsive, intelligent, and user-friendly, even in the face of unexpected inputs. With the flexibility of STARK and the power of modern Large Language Models, creating a robust voice assistant has never been easier.
+
+Want the LLM itself to take action instead of just answering, running a search, controlling a device, taking multiple steps? See [AI Agent Platform](../agent-platform.md) for where this is headed in v5.

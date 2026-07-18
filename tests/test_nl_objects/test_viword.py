@@ -10,24 +10,24 @@ parser = PatternParser()
 
 
 async def test_parse():
-    word = (await parser.parse_object(Word, "foo")).obj
+    word = (await parser.parse_object(Word, "hello")).obj
     assert word
-    assert word.value == "foo"
+    assert word.value == "hello"
 
 
 async def test_match():
-    p = Pattern("foo $bar:Word baz")
+    p = Pattern("play $song:Word now")
     assert p
 
-    m = await parser.match(p, "foo qwerty baz")
+    m = await parser.match(p, "play stairway now")
     assert m
-    assert m[0].parameters["bar"] == Word("qwerty")
+    assert m[0].parameters["song"] == Word("stairway")
 
-    m = await parser.match(p, "foo lorem ipsum dolor sit amet baz")
+    m = await parser.match(p, "play lorem ipsum dolor sit amet now")
     assert not m
 
 
 async def test_formatted():
-    string = (await parser.parse_object(Word, "foo")).obj
-    assert str(string) == '<Word value: "foo">'
-    assert f"{string}" == "foo"
+    string = (await parser.parse_object(Word, "hello")).obj
+    assert str(string) == '<Word value: "hello">'
+    assert f"{string}" == "hello"

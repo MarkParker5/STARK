@@ -2,6 +2,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import Protocol
 
+from stark.general.localisation.language_code import LanguageCode
 from stark.tools.common.span import Span
 
 type Metadata = dict[str, object]
@@ -12,7 +13,7 @@ class DictionaryItem:
     name: str
     phonetic: str
     simple_phonetic: str
-    language_code: str
+    language_code: LanguageCode
     metadata: Metadata
 
 
@@ -34,9 +35,9 @@ class DictionaryStorageProtocol(Protocol):
     def iterate(self) -> Iterable[DictionaryItem]: ...
     def clear(self): ...
     def search_equal_name(
-        self, name: str, language_code: str
+        self, name: str, language_code: LanguageCode
     ) -> list[DictionaryItem]: ...
     def search_contains_name(
-        self, name: str, language_code: str
+        self, name: str, language_code: LanguageCode
     ) -> list[DictionaryItem]: ...
     def get_count(self) -> int: ...

@@ -1,6 +1,6 @@
 # Optimization for Stark
 
-When it comes to Stark, or any software platform, optimization is pivotal to ensuring smooth and efficient operations. Here are some pivotal guidelines and best practices to ensure that Stark runs at its best:
+A S.T.A.R.K. assistant runs almost everything, speech transcription, response delivery, and every executing command, on one main thread via [anyio](https://anyio.readthedocs.io/) task groups (see [Custom Run](custom-run.md) for exactly which tasks). That's what makes it fast and lightweight by default, but it means a single blocking call can stall the entire assistant, not just the command that made it. This page is about avoiding that, and a few other places performance tends to matter.
 
 ## Non-blocking is Key
 
@@ -48,7 +48,19 @@ await asyncio.gather(task_one(), task_two())
 
 ## Implement Caching
 
-Caching is a practice of storing frequently used data or results in a location for quicker access in the future. By implementing caching, you can significantly reduce repetitive computations and database lookups, leading to faster response times. Python libraries like `cachetools` or `functools.lru_cache` are popular tools for caching.
+Caching is a practice of storing frequently used data or results in a location for quicker access in the future. By implementing caching, you can significantly reduce repetitive computations and database lookups, leading to faster response times. Python libraries like `cachetools` or `functools.lru_cache` are popular tools for caching, but those are sync-only.
+
+For caching `async def` functions, S.T.A.R.K. ships its own `alru_cache`: an async LRU cache decorator with a TTL and built-in in-flight deduplication, two concurrent calls with the same arguments share one underlying call instead of running it twice.
+
+```python
+from stark.general.cache import alru_cache
+
+@alru_cache(maxsize=128, ttl=60.0)
+async def fetch_weather(city: str) -> str:
+    ...  # only actually runs once per `city` within the TTL window
+```
+
+Useful anywhere a command calls a slow external API and the same query is likely to repeat (weather, search, lookups) within a short window.
 
 ---
 

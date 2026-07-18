@@ -1,8 +1,19 @@
-# STARK-Levenshtein - Fuzzy String Matching
+---
+description: Fast, Cython-compiled Levenshtein distance and fuzzy substring search for Python, with weighted proximity graphs, prefix/suffix skipping, and in-sentence fuzzy search.
+---
+
+# STARK-Levenshtein: Cython Fuzzy String & Substring Matching with Proximity Graphs
 
 ## Overview
 
-Minimal wrappers for Levenshtein distance and similarity, with optional phonetic/character proximity graphs, substring search, and prefix/suffix ignoring. Useful for fuzzy string matching, similarity scoring, and fuzzy substring search. Written in cython and compiled for performance.
+A from-scratch, Cython-compiled Levenshtein implementation, not a wrapper around an existing library. It does the standard distance/similarity calculation, plus a set of features built specifically for matching real speech and real text, not just comparing two clean strings:
+
+- **In-sentence fuzzy substring search**: find where `s1` appears (or nearly appears) anywhere inside a longer `s2`, with matching spans returned, not just a yes/no.
+- **Weighted proximity graphs**: replace the default uniform edit cost with custom per-character weights. STARK ships a phonetic proximity graph out of the box (built for [simplephone](raw-phonetic.md) strings) so a `w`/`f` mix-up costs less than an unrelated substitution.
+- **Prefix/suffix skipping**: ignore leading or trailing mismatches, which is what makes substring search work in the first place.
+- **Early-return short-circuiting**: stop computing as soon as a threshold is unreachable, instead of always computing the full matrix.
+
+Useful for fuzzy string matching, similarity scoring, and fuzzy substring search anywhere, not just inside S.T.A.R.K. Being Cython-compiled is part of what makes the substring-search and early-return paths viable at all; a pure-Python edit-distance matrix gets slow fast once you're scanning whole sentences instead of comparing two short strings.
 
 ### Basic Usage
 

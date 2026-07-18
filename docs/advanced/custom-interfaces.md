@@ -1,131 +1,125 @@
-# Speech Interface Protocols and Custom Implementation
+# Custom IO & Context Delegate
 
-When working with voice-driven applications, a robust and flexible architecture for handling both speech recognition and synthesis is vital. The Stark framework provides these features via interfaces (protocols) that can be easily extended and customized. This page dives deeper into the Stark framework's speech interface protocols and provides details on their implementation.
+S.T.A.R.K. ships `VoiceAssistant` as a ready-made IO layer, and subclassing it (see [Voice Assistant & Modes](../voice-assistant.md)) covers most customization needs, overriding a method to hook into an event, like updating a GUI when a response arrives. But if you want a fundamentally different IO layer, a GUI, a Telegram bot, an API, rather than voice at all, `VoiceAssistant` isn't the starting point. `CommandsContextDelegate` is.
 
-## Recognizer
-
-### Protocol
+## The Protocol
 
 ```python
-@runtime_checkable
-class SpeechRecognizerDelegate(Protocol):
-    async def speech_recognizer_did_receive_final_result(self, result: str): pass
-    async def speech_recognizer_did_receive_partial_result(self, result: str): pass
-    async def speech_recognizer_did_receive_empty_result(self): pass
+from typing import Protocol, runtime_checkable
+from stark.core import Response
 
 @runtime_checkable
-class SpeechRecognizer(Protocol):
-    is_recognizing: bool
-    delegate: SpeechRecognizerDelegate | None
-    
-    async def start_listening(self): pass
-    def stop_listening(self): pass
+class CommandsContextDelegate(Protocol):
+    async def commands_context_did_receive_response(self, response: Response):
+        pass
+
+    def remove_response(self, response: Response):
+        pass
 ```
 
-### Explanation
+This is the protocol `VoiceAssistant` itself implements. `CommandsContext` calls these methods as commands run, `commands_context_did_receive_response` whenever a `Response` is produced, `remove_response` when a response is withdrawn (e.g. via `ResponseHandler.unrespond`, see [Command Response](../command-response.md)). Implementing it directly gives you the same hook `VoiceAssistant` uses, without inheriting any of its voice-specific behavior (modes, timeouts, speech recognition wiring).
 
-#### SpeechRecognizerDelegate
-
-This protocol provides callback methods to output results of various states of the speech recognition:
-
-- `speech_recognizer_did_receive_final_result`: Triggered when a final transcript is available.
-- `speech_recognizer_did_receive_partial_result`: Fired upon receiving an interim transcript.
-- `speech_recognizer_did_receive_empty_result`: Called when no speech was detected.
-
-#### SpeechRecognizer
-
-This protocol defines the primary input interface for any speech recognition implementation. It consists of:
-
-- `is_recognizing`: A flag indicating if the recognizer is currently active.
-- `delegate`: An instance responsible for handling the recognition results.
-- `start_listening`: A method to initiate the listening process.
-- `stop_listening`: A method to halt the listening process.
-
-### Implementation Reference
-
-To illustrate a custom implementation, we can reference the `VoskSpeechRecognizer`. This implementation leverages the Vosk offline speech recognition library. It downloads and initializes the Vosk model, sets up an audio queue, and provides methods to start and stop the recognition process.
-
-For a deeper understanding, review the source code of the `VoskSpeechRecognizer` implementation.
-
-<script src="https://emgithub.com/embed-v2.js?target=https%3A%2F%2Fgithub.com%2FMarkParker5%2FSTARK%2Fblob%2Fmaster%2Fstark%2Finterfaces%2Fvosk.py&style=atom-one-dark&type=code&showBorder=on&showLineNumbers=on&showFileMeta=on&showFullPath=on&showCopy=on"/></script>
-
-## Synthesizer
-
-### Protocol
+## A Minimal Custom Delegate
 
 ```python
-@runtime_checkable
-class SpeechSynthesizerResult(Protocol):
-    async def play(self): pass
+import sys
+import anyio
+from stark.core import CommandsContext, CommandsManager, Response
 
-@runtime_checkable   
-class SpeechSynthesizer(Protocol):
-    async def synthesize(self, text: str) -> SpeechSynthesizerResult: pass
+manager = CommandsManager()
+
+@manager.new('hello')
+async def hello_command() -> Response:
+    return Response('Hello, Stark!')
+
+class TextDelegate:
+    async def commands_context_did_receive_response(self, response: Response):
+        print(response.text)                            # 1
+
+    def remove_response(self, response: Response):
+        pass                                              # 2
+
+async def main():
+    async with anyio.create_task_group() as task_group:
+        context = CommandsContext(task_group=task_group, commands_manager=manager)
+        context.delegate = TextDelegate()                 # 3
+
+        for line in sys.stdin:
+            await context.process_string(line.strip())     # 4
+
+anyio.run(main)
 ```
 
-### Explanation
+1. Print every response as it arrives, this is the entire "IO layer" for a basic text interface.
+2. No-op here since this minimal example never removes responses; a GUI delegate would use this to take a response off-screen.
+3. Assign your delegate to `CommandsContext.delegate`, this is the wiring `run()` does for you when you use the default voice-assistant path.
+4. Feed input in however makes sense for your interface, a terminal loop, a GUI event handler, an incoming Telegram message, an HTTP request.
 
-- **SpeechSynthesizerResult**: This protocol defines a structure for the output of the speech synthesis process. It provides a method, `play`, to audibly present the synthesized speech.
+This is the same "your own assembly function" path covered in [How to Run](../how-to-run.md), that page is the better starting point for choosing between `run()`, overrides, and a fully custom delegate like this.
 
-- **SpeechSynthesizer**: This protocol represents the primary interface for any speech synthesis implementation. It contains:
-  - `synthesize`: An asynchronous method that takes text input and returns a `SpeechSynthesizerResult` instance.
+## Triggering Without Voice
 
-### Implementation Reference
+If your custom interface starts the assistant on something other than continuous listening, a keyboard shortcut, a button press, an incoming message, see [External Triggers](external-triggers.md) for the `Mode.external()` pattern that pairs with this.
 
-For a hands-on example, the `SileroSpeechSynthesizer` and `GCloudSpeechSynthesizer` classes illustrate how one might implement the synthesizer protocol using the Silero models and Google Cloud Text-to-Speech services, respectively.
+## Alternative Interface Ideas
 
-To gain more insights, you can check the source code of the `SileroSpeechSynthesizer` implementation.
+These aren't built-in, they're illustrations of where a custom `CommandsContextDelegate` (paired with a matching input source) fits well, to spark ideas for your own. See [Project Ideas](../project-ideas.md) for more.
 
-<script src="https://emgithub.com/embed-v2.js?target=https%3A%2F%2Fgithub.com%2FMarkParker5%2FSTARK%2Fblob%2Fmaster%2Fstark%2Finterfaces%2Fsilero.py&style=atom-one-dark&type=code&showBorder=on&showLineNumbers=on&showFileMeta=on&showFullPath=on&showCopy=on"></script>
+### Telegram Bot
 
-## Alternative Interfaces
+This one's a rocket. A STARK assistant reachable from any phone, no app to install, no microphone permissions to grant. Treat incoming messages as input and outgoing messages as the response. Since the delegate, the message handler, and the bot lifecycle all need to share state (the active chat), it's cleaner to encapsulate everything in one class rather than juggle a delegate object and free-floating handler functions:
 
-### CLI Interface
+```python
+from telegram import Update
+from telegram.ext import Application, MessageHandler, ContextTypes, filters
+from stark.core import CommandsContext, CommandsManager, Response
 
-In this approach, you leverage the terminal or command line of a computer as the interface for both speech recognition and synthesis. Instead of speaking into a microphone and receiving audio feedback:
+manager = CommandsManager()
+# ... register commands ...
 
-- **Recognition**: Users type their queries or commands into the terminal. The system then processes these textual inputs as if they were transcribed from spoken words.
+class StarkTelegram:                                                              # 1
+    def __init__(self, manager: CommandsManager, task_group, token: str):
+        self.context = CommandsContext(task_group=task_group, commands_manager=manager)
+        self.context.delegate = self                                              # 2
+        self.chat_id = None
+        self.app = Application.builder().token(token).build()
+        self.app.add_handler(MessageHandler(filters.TEXT, self.on_message))
 
-- **Synthesis**: Instead of "speaking" or playing synthesized voice, the system displays the response as text in the terminal. This creates a chat-like experience directly within the terminal.
+    async def commands_context_did_receive_response(self, response: Response):    # 3
+        if self.chat_id is not None:
+            await self.app.bot.send_message(chat_id=self.chat_id, text=response.text)
 
-This is an excellent method for debugging, quick testing, or when dealing with environments where audio interfaces aren't feasible.
+    def remove_response(self, response: Response):                                # 4
+        pass
 
-### GUI Interface
+    async def on_message(self, update: Update, ctx: ContextTypes.DEFAULT_TYPE):   # 5
+        self.chat_id = update.effective_chat.id
+        await self.context.process_string(update.message.text)
 
-The GUI (Graphical User Interface) provides an intuitive and interactive way to implement custom speech interfaces for voice assistants. It offers a multifaceted experience, allowing users to:
+    def start(self):                                                              # 6
+        self.app.run_polling()
 
-- **Text Outputs**: Display text-based responses, enabling clear communication with users through written messages.
+stark_telegram = StarkTelegram(manager, task_group, token='YOUR_BOT_TOKEN')
+stark_telegram.start()
+```
 
-- **Context Visualization**: Visualize context and relevant information using graphics, charts, or interactive elements to enhance user understanding.
+1. One class owns the whole bot: the delegate, the message handler, and the start/stop lifecycle. No loose functions or module-level globals to wire together.
+2. `self` satisfies `CommandsContextDelegate` directly. No separate delegate object needed since the class implements the protocol itself.
+3. Sends every response of STARK back to Telegram, whichever chat last messaged the bot. A multi-chat version would key responses by `chat_id` instead of storing a single one, this is the minimal demo version.
+4. No-op here, same as the minimal text delegate earlier on this page.
+5. Pass all messages from bot to STARK. For personal use, auth by chat_id whitelist might be wanted here.
+6. `start()` is the equivalent of `run()`'s blocking call for the voice path. Hand it off to your task group the same way.
 
-- **Text and Speech Input**: Accept input through both text and speech, allowing users to interact in the manner most convenient for them.
+Want actual voice messages instead of text? Run a `SpeechSynthesizer` (see [Speech Synthesis](../tools/speech-synthesis.md)) over the response and send the result as a voice note, and a `SpeechRecognizer` (see [Speech Recognition](../tools/speech-recognition.md)) on incoming voice messages for the reverse direction.
 
-- **Trigger with Buttons**: Incorporate buttons or interactive elements that users can click or tap to initiate voice assistant interactions, providing a user-friendly interface.
+### CLI / Terminal
 
-The GUI interface serves as a versatile canvas for crafting engaging voice assistant experiences, making it an excellent choice for applications where graphical interaction enhances user engagement and comprehension.
+Type instead of speak, read instead of listen. Excellent for debugging, quick testing, or environments without audio. This is what `STARK_VOICE_CLI=1` already gives you on top of `VoiceAssistant`, see [Voice Assistant & Modes](../voice-assistant.md), but a dedicated text-only delegate (like the minimal example above) skips voice entirely instead of layering on top of it.
 
-### Telegram Bot as an Interface
+### GUI
 
-Telegram, a popular messaging platform, provides an amazing bot API that developers can use to create custom bots. By leveraging this API, you can emulate speech interfaces in two distinct ways:
-
-#### 1. **Voice Messages**
-
-- **Recognition**: Users send voice messages to the Telegram bot. These voice messages can be transcribed into text using a speech recognition system. The recognized text can then be processed further by the bot for commands or queries.
-
-- **Synthesis**: Instead of sending back text responses, the bot can use a text-to-speech system to generate voice messages, which it then sends back to the users. This method provides a more authentic "voice assistant" experience within the messaging environment.
-
-By utilizing voice messages, you can create a more immersive experience for users, closely resembling interactions with traditional voice assistants.
-
-#### 2. **Text Messages**
-
-- **Recognition**: Users send text messages to the Telegram bot. The bot then treats these messages as if they were the transcribed text of spoken words.
-
-- **Synthesis**: Rather than synthesizing spoken responses, the bot sends back text messages as its replies. The users read these messages as if they were listening to the synthesized voice of the system.
-
-This approach offers a chat-like experience directly within the Telegram app, providing a seamless interaction that many users find intuitive.
-
-In both methods, the use of a Telegram bot allows developers to introduce voice command functionalities in messaging environments, reaching users on various devices and platforms.
+A graphical delegate can show text responses, visualize context state, accept both typed and spoken input, and offer buttons as an alternative to speaking a command. Useful wherever a visual surface adds clarity that voice alone doesn't.
 
 ---
 
-Venture in mind that these are mere illustrations of potential implementations. The canvas of possibilities is vast, bounded solely by the horizons of your creativity.
+The canvas of possibilities is vast, bounded mostly by the IO source you wire up. GUI and HTTP-API interfaces aren't built into S.T.A.R.K. yet, see [Roadmap](../roadmap.md) if you want to build one.

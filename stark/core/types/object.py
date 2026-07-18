@@ -1,17 +1,45 @@
 from __future__ import annotations
 
 import copy
-from abc import ABC
-from typing import Any
+from abc import ABCMeta
 
 from stark.core.patterns.pattern import Pattern
 from stark.general.classproperty import classproperty
+from stark.general.localisation import LocaleString
+
+
+class UnionMeta(ABCMeta):
+    """Metaclass that makes | on Object subclasses produce a STARK Union subclass instead of types.UnionType."""
+
+    def __call__(cls, *args, **kwargs):
+        from stark.core.types.union import Union
+
+        if cls is Union:
+            raise TypeError("Union cannot be instantiated directly; subclass it or use | syntax or  MakeUnion")
+        return super().__call__(*args, **kwargs)
+
+    def __or__(cls, other: type) -> type:
+        from stark.core.types.union import MakeUnion
+
+        if isinstance(other, type) and issubclass(other, Object):
+            return MakeUnion(cls, other)
+        return type.__or__(cls, other)  # fall through to types.UnionType for X | None etc.
+
+    def __ror__(cls, other: type) -> type:
+        from stark.core.types.union import MakeUnion
+
+        if isinstance(other, type) and issubclass(other, Object):
+            return MakeUnion(other, cls)
+        return type.__ror__(cls, other)
+
+    def __format__(cls, spec) -> str:
+        return cls.__name__
 
 
 # TODO: review programmable init vs did_parse
 # TODO: consider storing parsing metadata here like substr and span
-class Object[T](ABC):
-    value: T
+class Object[T](metaclass=UnionMeta):
+    value: T = None
 
     def __init__(self, value: Any):
         """Just init with a wrapped value."""
@@ -20,6 +48,10 @@ class Object[T](ABC):
     @classproperty
     def pattern(cls) -> Pattern:
         return Pattern("**")
+
+    @classproperty
+    def patterns(cls) -> dict[str, Pattern]:
+        return {"base": cls.pattern}
 
     @classproperty
     def greedy(
@@ -31,8 +63,15 @@ class Object[T](ABC):
         """
         return False  # TODO: review default behavior
 
-    async def did_parse(self, from_string: str) -> str:
-        # TODO: consider making this a `@classmethod def parse` and passing all parameters as kwargs instead of using object's properties
+    def __init__(self, *args, **kwargs):
+        """Init with wrapped value, if provided. Otherwise leave `value` untouched so a static
+        value set at class declaration time (e.g. `value = "foo"`) survives instantiation."""
+        if "value" in kwargs:
+            self.value = kwargs["value"]
+        elif args:
+            self.value = args[0]
+
+    async def did_parse(self, from_string: LocaleString) -> str:
         """
         This method is called after parsing from string and setting parameters found in pattern.
         You will very rarely, if ever, need to call this method directly.
@@ -48,6 +87,8 @@ class Object[T](ABC):
         Raises:
             ParseError: if parsing failed.
         """
+        if not self.value:
+            self.value = from_string
         return from_string
 
     def copy(self) -> Object:
@@ -57,7 +98,7 @@ class Object[T](ABC):
         return f"{self.value:{spec}}"
 
     def __repr__(self):
-        strValue = f'"{str(self.value)}"' if type(self.value) is str else str(self.value)
+        strValue = f'"{str(self.value)}"' if isinstance(self.value, str) else str(self.value)
         return f"<{type(self).__name__} value: {strValue}>"
 
     def __eq__(self, other: object) -> bool:

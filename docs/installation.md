@@ -23,6 +23,7 @@ The STARK framework offers several extras, which are default implementations for
 - **gcloud**: [Google Cloud Text-to-Speech](https://cloud.google.com/text-to-speech) implementation of SpeechSynthesizer protocol.
 - **silero**: [Silero](https://github.com/snakers4/silero-models) Models (offline) implementation of SpeechSynthesizer.
 - **sound**: Required utilities for processing sound: `sounddevice` and `soundfile`.
+- **spacy**: [spaCy](https://spacy.io/) NER pre-processing, see [Custom Processors](advanced/custom-processors.md#spacynerprocessor-pre-processor).
 
 ## Installation with pip
 
@@ -40,6 +41,7 @@ pip install stark-engine[gcloud]
 pip install stark-engine[vosk]
 pip install stark-engine[silero]
 pip install stark-engine[sound]
+pip install stark-engine[spacy]
 ```
 
 If you encounter the error `zsh: no matches found`, simply enclose the package name in quotes:
@@ -50,6 +52,7 @@ pip install "stark-engine[gcloud]"
 pip install "stark-engine[vosk]"
 pip install "stark-engine[silero]"
 pip install "stark-engine[sound]"
+pip install "stark-engine[spacy]"
 ```
 
 ## Installation with poetry
@@ -65,6 +68,7 @@ poetry add stark-engine[gcloud]
 poetry add stark-engine[vosk]
 poetry add stark-engine[silero]
 poetry add stark-engine[sound]
+poetry add stark-engine[spacy]
 ```
 
 If you encounter the error `zsh: no matches found`, simply enclose the package name in quotes:
@@ -75,6 +79,7 @@ poetry add "stark-engine[gcloud]"
 poetry add "stark-engine[vosk]"
 poetry add "stark-engine[silero]"
 poetry add "stark-engine[sound]"
+poetry add "stark-engine[spacy]"
 ```
 
 ---

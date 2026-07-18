@@ -15,8 +15,10 @@ from stark.core.commands_context_processor import (
 )
 from stark.core.parsing import PatternParser
 from stark.core.types.object import Object
+from stark.general.localisation import LocaleString, Localizer
+from stark.general.localisation.language_code import LanguageCode
 
-from ..general.dependencies import DependencyManager, default_dependency_manager
+from ..general.dependencies import Dependency, DependencyManager, default_dependency_manager
 from .command import (
     AsyncResponseHandler,
     Command,
@@ -58,11 +60,12 @@ class CommandsContext:
         commands_manager: CommandsManager,
         dependency_manager: DependencyManager = default_dependency_manager,
         processors: list[Any] | None = None,
+        localizer: Localizer | None = None,
     ):
         assert isinstance(task_group, TaskGroup), task_group
         assert isinstance(commands_manager, CommandsManager)
         assert isinstance(dependency_manager, DependencyManager)
-        self.pattern_parser = PatternParser()
+        self.pattern_parser = PatternParser(localizer=localizer)
         self.commands_manager = commands_manager
         self.context_queue = [self.root_context]
         self._response_queue = []
@@ -89,7 +92,9 @@ class CommandsContext:
     def root_context(self):
         return CommandsContextLayer(self.commands_manager.commands, {})
 
-    async def process_string(self, string: str):
+    async def process_string(self, string: str | LocaleString):
+        string = LocaleString(string) if not isinstance(string, LocaleString) else string
+
         if not self.context_queue:
             self.context_queue.append(self.root_context)
 
@@ -118,7 +123,15 @@ class CommandsContext:
             parameters: dict[str, Object] = {}
             parameters.update(current_context.parameters)
             parameters.update(search_result.match_result.parameters)
+
+            substring = search_result.match_result.substring
+            lang = substring.language_code if isinstance(substring, LocaleString) else string.language_code
+            lang_dep = Dependency(None, LanguageCode, lang)
+            self.dependency_manager.dependencies.add(lang_dep)
             parameters.update(self.dependency_manager.resolve(search_result.command._runner))
+            # language is a command-specific temporary dependency
+            self.dependency_manager.dependencies.discard(lang_dep)
+
             self.run_command(search_result.command, parameters)
 
         return search_results or []

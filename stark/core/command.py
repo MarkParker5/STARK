@@ -27,6 +27,7 @@ import asyncer
 from pydantic import BaseModel, Field
 
 from ..general.classproperty import classproperty
+from ..general.localisation import LanguageCode, LocalizableString
 from .patterns import Pattern
 
 type ResponseOptions = Optional["Response"] | Generator[Optional["Response"], None, None] | AsyncGenerator[Optional["Response"], None]
@@ -38,15 +39,20 @@ type CommandRunner = SyncCommandRunner | AsyncCommandRunner  # TypeVar("CommandR
 
 class Command[T: CommandRunner]:
     name: str
-    pattern: Pattern
+    patterns: dict[LanguageCode, Pattern]
     _runner: T
 
-    def __init__(self, name: str, pattern: Pattern, runner: T):
-        assert isinstance(pattern, Pattern)
+    def __init__(self, name: str, patterns: dict[LanguageCode, Pattern], runner: T):
+        assert patterns and all(isinstance(p, Pattern) for p in patterns.values())
         self.name = name
-        self.pattern = pattern
+        self.patterns = patterns
         self._runner = runner
         update_wrapper(self, runner)
+
+    def get_pattern(self, language_code: LanguageCode) -> Pattern:
+        if language_code in self.patterns:
+            return self.patterns[language_code]
+        return self.patterns["base"]
 
     def run(
         self,
@@ -122,8 +128,8 @@ class ResponseStatus(Enum):
 
 
 class Response(BaseModel):
-    voice: str = ""
-    text: str = ""
+    voice: str | LocalizableString = ""
+    text: str | LocalizableString = ""
     status: ResponseStatus = ResponseStatus.success
     needs_user_input: bool = False
     commands: list[Command] = []
@@ -131,6 +137,13 @@ class Response(BaseModel):
 
     id: UUID = Field(default_factory=uuid4)
     time: datetime = Field(default_factory=datetime.now)
+
+    def __init__(self, *args, **kwargs):
+        if args:
+            kwargs["text"] = args[0]
+        if voice := kwargs.get("voice", kwargs.get("text")):  # fallback voice to text if text present
+            kwargs["voice"] = voice
+        super().__init__(**kwargs)
 
     _repeat_last: ClassVar[Response | None] = None  # static instance
 

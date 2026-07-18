@@ -5,6 +5,7 @@ from enum import Enum, auto
 from itertools import groupby
 from typing import final
 
+from stark.general.localisation.language_code import LanguageCode
 from stark.tools.common.span import Span
 from stark.tools.levenshtein import (
     SIMPLEPHONE_PROXIMITY_GRAPH,
@@ -34,7 +35,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass(frozen=True)
 class NameEntry:
-    language_code: str
+    language_code: LanguageCode
     name: str
     metadata: Metadata | None = None
 
@@ -68,7 +69,7 @@ class Dictionary:
     # Write methods
     # ----------------------
     def write_one(
-        self, language_code: str, name: str, metadata: Metadata | None = None
+        self, language_code: LanguageCode, name: str, metadata: Metadata | None = None
     ):  # TODO: overload to accept NameEntry
         """
         Add a single entry to the dictionary.
@@ -111,7 +112,7 @@ class Dictionary:
     def lookup_sorted(
         self,
         name_candidate: str,
-        language_code: str,
+        language_code: LanguageCode,
         mode: LookupMode = LookupMode.AUTO,
         field: LookupField = LookupField.PHONETIC,
     ) -> list[DictionaryItem]:
@@ -124,7 +125,7 @@ class Dictionary:
     def search_in_sentence_sorted(
         self,
         sentence: str,
-        language_code: str,
+        language_code: LanguageCode,
         mode: LookupMode = LookupMode.EXACT,
         field: LookupField = LookupField.PHONETIC,
     ) -> list[LookupResult]:
@@ -147,7 +148,7 @@ class Dictionary:
     def lookup(
         self,
         name_candidate: str,
-        language_code: str,
+        language_code: LanguageCode,
         mode: LookupMode = LookupMode.AUTO,
         field: LookupField = LookupField.PHONETIC,
     ) -> Iterable[DictionaryItem]:
@@ -248,7 +249,7 @@ class Dictionary:
     def search_in_sentence(
         self,
         sentence: str,
-        language_code: str,
+        language_code: LanguageCode,
         mode: LookupMode = LookupMode.AUTO,
         field: LookupField = LookupField.PHONETIC,
     ) -> Iterable[LookupResult]:
@@ -335,7 +336,7 @@ class Dictionary:
                         break
 
     def _search_in_sentence_per_word(
-        self, sentence: str, language_code: str, mode: LookupMode = LookupMode.EXACT
+        self, sentence: str, language_code: LanguageCode, mode: LookupMode = LookupMode.EXACT
     ) -> Iterable[LookupResult]:
         import logging
 
@@ -426,7 +427,7 @@ class Dictionary:
         # return backtacked_matches
 
     def _sorted_items(
-        self, language_code: str, name_candidate: str, matches: Iterable[DictionaryItem]
+        self, language_code: LanguageCode, name_candidate: str, matches: Iterable[DictionaryItem]
     ) -> list[DictionaryItem]:
         # sort by levenshtein distance of strings' latin representations
 

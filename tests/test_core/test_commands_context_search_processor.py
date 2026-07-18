@@ -40,16 +40,16 @@ async def test_context_param(new_context, manager):
     def go_to(destination: Location) -> Response:
         nonlocal location
         location = destination
-        return Response(text=f"Going to {destination.value}")
+        return Response(f"Going to {destination.value}")
 
     @manager.new("let's go")
     def lets_go(destination: Location | None) -> Response:
         nonlocal location
         location = destination
         if destination:
-            return Response(text=f"Going to {destination.value}")
+            return Response(f"Going to {destination.value}")
         else:
-            return Response(text="Where to?")
+            return Response("Where to?")
 
     layer = CommandsContextLayer(commands=[go_to, lets_go], parameters={"destination": Location("context_place")})
     new_context.context_queue.insert(0, layer)
@@ -77,7 +77,7 @@ async def test_ner(new_context, manager):
     def go_to(destination: Location) -> Response:
         nonlocal location
         location = destination
-        return Response(text=f"Going to {destination.value}")
+        return Response(f"Going to {destination.value}")
 
     class FakeNERProcessor(CommandsContextProcessor):
         async def process_string(

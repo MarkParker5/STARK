@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 
+from stark.general.localisation.language_code import LanguageCode
+
 from ..models import DictionaryItem, DictionaryStorageProtocol
 
 
@@ -41,14 +43,14 @@ class DictionaryStorageMemory(DictionaryStorageProtocol):
         self._name_to_items.clear()
         self._simplephone_to_names.clear()
 
-    def search_equal_name(self, name: str, language_code: str) -> list[DictionaryItem]:
+    def search_equal_name(self, name: str, language_code: LanguageCode) -> list[DictionaryItem]:
         item = self._name_to_items.get(name)
         if item:  # and item.language_code == language_code:
             return [item]
         return []
 
     def search_contains_name(
-        self, name: str, language_code: str
+        self, name: str, language_code: LanguageCode
     ) -> list[DictionaryItem]:
         return [item for item in self._name_to_items.values() if item.name in name]
 

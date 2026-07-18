@@ -1,19 +1,21 @@
-from typing import Any
 import warnings
+from typing import Any
+
+from stark.general.localisation.language_code import LanguageCode
 
 
 class EpitranIpaProvider:
     def __init__(self) -> None:
         self._cache: dict[str, Any] = {}
 
-    def _epitran_obj(self, language_code: str) -> Any:
+    def _epitran_obj(self, language_code: LanguageCode | str) -> Any:
         if language_code not in self._cache:
             from epitran import Epitran
 
             self._cache[language_code] = Epitran(language_code)
         return self._cache[language_code]
 
-    def to_ipa(self, string: str, language_code: str) -> str:
+    def to_ipa(self, string: str, language_code: LanguageCode) -> str:
         # if language_code.startswith("en"):
         #     raise NotImplementedError(
         #         "IPA to Epitran conversion for English is not implemented yet."

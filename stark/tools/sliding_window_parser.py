@@ -131,4 +131,4 @@ async def sliding_window_parse[T](
         return results
 
     # If no valid window is found, raise an error.
-    raise ParseError(f"No valid window found using parser={parser} in phrase={phrase}")
+    raise ParseError(f"No valid window found using parser={parser!r} in phrase='{phrase}'")

@@ -5,6 +5,8 @@ import sqlite3
 from collections.abc import Iterable
 import os
 
+from stark.general.localisation.language_code import LanguageCode
+
 from ..models import DictionaryItem, DictionaryStorageProtocol
 
 
@@ -57,7 +59,7 @@ class DictionaryStorageSQLite(DictionaryStorageProtocol):
         )
         self._conn.commit()
 
-    def search_equal_name(self, name: str, language_code: str) -> list[DictionaryItem]:
+    def search_equal_name(self, name: str, language_code: LanguageCode) -> list[DictionaryItem]:
         cur = self._conn.execute(
             """
             SELECT name, phonetic, simple_phonetic, language_code, metadata
@@ -78,7 +80,7 @@ class DictionaryStorageSQLite(DictionaryStorageProtocol):
         ]
 
     def search_contains_name(
-        self, name: str, language_code: str
+        self, name: str, language_code: LanguageCode
     ) -> list[DictionaryItem]:
         cur = self._conn.execute(
             """

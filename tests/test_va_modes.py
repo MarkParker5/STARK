@@ -32,10 +32,10 @@ async def test_background_command_with_waiting_mode(voice_assistant, autojump_cl
         voice_assistant._responses[0].time -= timedelta(seconds=voice_assistant.mode.timeout_before_repeat + 1)
 
         # interact to reset timeout mode and repeat saved response
-        await voice_assistant.speech_recognizer_did_receive_final_result("test")
+        await voice_assistant.speech_recognizer_did_receive_final_result("ping")
         await anyio.sleep(0.2)  # allow to capture command response
         assert len(voice_assistant.speech_synthesizer.results) == 2
-        assert [r.text for r in voice_assistant.speech_synthesizer.results] == ["test", "Finished background task"]
+        assert [r.text for r in voice_assistant.speech_synthesizer.results] == ["pong", "Finished background task"]
 
 
 async def test_background_command_with_inactive_mode(voice_assistant, autojump_clock):
@@ -61,10 +61,10 @@ async def test_background_command_with_inactive_mode(voice_assistant, autojump_c
         assert len(voice_assistant._responses) == 1
 
         # interact to reset timeout mode and repeat saved response
-        await voice_assistant.speech_recognizer_did_receive_final_result("test")
+        await voice_assistant.speech_recognizer_did_receive_final_result("ping")
         await anyio.sleep(0.2)  # allow to capture command response
         assert len(voice_assistant.speech_synthesizer.results) == 2
-        assert voice_assistant.speech_synthesizer.results.pop(0).text == "test"
+        assert voice_assistant.speech_synthesizer.results.pop(0).text == "pong"
         assert voice_assistant.speech_synthesizer.results.pop(0).text == "Finished background task"
 
 
@@ -90,7 +90,7 @@ async def test_background_waiting_needs_input(voice_assistant, autojump_clock):
             response.time -= timedelta(seconds=voice_assistant.mode.timeout_before_repeat + 1)
 
         # interact to reset timeout mode
-        await voice_assistant.speech_recognizer_did_receive_final_result("test")
+        await voice_assistant.speech_recognizer_did_receive_final_result("ping")
 
         await anyio.sleep(0.2)  # allow to capture command response
 
@@ -98,17 +98,17 @@ async def test_background_waiting_needs_input(voice_assistant, autojump_clock):
         assert len(voice_assistant.speech_synthesizer.results) == 5
         assert len(voice_assistant._responses) == 4
 
-        for response in ["test", "First response", "Second response", "Third response", "Needs input"]:
+        for response in ["pong", "First response", "Second response", "Third response", "Needs input"]:
             assert voice_assistant.speech_synthesizer.results.pop(0).text == response
 
         # interact to emulate user input and continue repeating responses
-        await voice_assistant.speech_recognizer_did_receive_final_result("test")
+        await voice_assistant.speech_recognizer_did_receive_final_result("ping")
         await anyio.sleep(0.2)  # allow to capture command response
 
         # voice assistant should say all left responses
         assert len(voice_assistant.speech_synthesizer.results) == 5
         assert len(voice_assistant._responses) == 0
-        for response in ["test", "Fourth response", "Fifth response", "Sixth response", "Finished long background task"]:
+        for response in ["pong", "Fourth response", "Fifth response", "Sixth response", "Finished long background task"]:
             assert voice_assistant.speech_synthesizer.results.pop(0).text == response
 
 
@@ -162,7 +162,7 @@ async def test_background_waiting_remove_response(voice_assistant, autojump_cloc
         voice_assistant.speech_synthesizer.results.clear()
 
         # interact to reset timeout mode, check that removed response is not repeated
-        await voice_assistant.speech_recognizer_did_receive_final_result("test")
+        await voice_assistant.speech_recognizer_did_receive_final_result("ping")
         await anyio.sleep(1)  # allow to capture command response
         assert len(voice_assistant.speech_synthesizer.results) == 1
-        assert voice_assistant.speech_synthesizer.results.pop(0).text == "test"
+        assert voice_assistant.speech_synthesizer.results.pop(0).text == "pong"

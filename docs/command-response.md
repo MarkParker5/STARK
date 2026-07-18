@@ -2,17 +2,35 @@
 
 The `Response` class represents the outcome of processing a command in the S.T.A.R.K. This documentation section will help you understand the various properties of the `Response` class, allowing you to craft detailed and specific responses to user queries.
 
+## Quick Construction
+
+When `text` and `voice` are the same, pass it once. The first positional argument sets `text`, and `voice` automatically falls back to whatever `text` is if you don't set it explicitly:
+
+```python
+Response('Lights off!')
+# same as: Response(text='Lights off!', voice='Lights off!')
+```
+
+They don't have to match. `text` can be more detailed than what's worth saying out loud, or `voice` can read more naturally than what looks good on screen:
+
+```python
+Response(
+    text='Battery: 23% (2h 14m remaining)',
+    voice='Battery is at twenty-three percent',
+)
+```
+
 ## Response Properties
 
-### `voice: str`
+### `voice: str | LocalizableString`
 **Default:** `''`
 
-This string will be converted to speech and played back to the user. If left empty, no vocal response will be given.
+This string will be converted to speech and played back to the user. If left empty, no vocal response will be given. Accepts `LocalizableString` for localized responses, see [Localizing Responses](localization-and-multilingual/localizing-responses.md).
 
-### `text: str`
+### `text: str | LocalizableString`
 **Default:** `''`
 
-This property provides a textual representation of the response. It can be displayed in an application interface or used for logging.
+This property provides a textual representation of the response. It can be displayed in an application interface or used for logging. Accepts `LocalizableString` for localized responses.
 
 ### `status: ResponseStatus`
 **Default:** `ResponseStatus.success`
@@ -70,4 +88,32 @@ This dynamic and flexible system of handling responses ensures that the user exp
 
 ---
 
-This documentation is meant to provide a concise overview of the `Response` class and its role within the S.T.A.R.K framework. It's crucial to understand these properties and mechanisms to design a voice assistant that effectively communicates with the user.
+## Formatting Locale-Sensitive Values with PyICU
+
+When building responses that include numbers, dates, units, or currencies, [PyICU](https://pypi.org/project/PyICU/) provides locale-aware formatting out of the box. PyICU wraps the ICU C++ library, the same internationalisation engine used by platforms and projects including Android, Chromium, many Linux applications, and Apple's Foundation Kit that powers iOS/macOS apps.
+
+```python
+import icu
+
+# Spelled-out numbers (useful for TTS)
+formatter = icu.RuleBasedNumberFormat(icu.URBNFRuleSetTag.SPELLOUT, icu.Locale("en"))
+formatter.format(42)  # "forty-two"
+
+# Locale-aware date
+df = icu.DateFormat.createDateInstance(icu.DateFormat.LONG, icu.Locale("de"))
+df.format(icu.Calendar.getNow())  # "21. Juni 2026"
+
+# Units
+mf = icu.MeasureFormat(icu.Locale("en"), icu.UMeasureFormatWidth.WIDE)
+mf.format(icu.Measure(5, icu.UMeasureUnit.KILOMETER))  # "5 kilometers"
+mf.format(icu.Measure(7, icu.UMeasureUnit.POUND))  # "7 pounds"
+
+# Pluralization in message templates
+msg = icu.MessageFormat("{num, plural, one {# item} other {# items}}", icu.Locale("en"))
+msg.format([1])  # "1 item"
+msg.format([5])  # "5 items"
+```
+
+PyICU is not a dependency of S.T.A.R.K, install it separately (`pip install PyICU`) and use it alongside `LocalizableString` for formatting dynamic values before injecting them into your response templates. A tighter integration (e.g., a built-in formatting layer or a convenience wrapper) is on the radar but the exact shape is TBD, if you have ideas or want to draft an implementation, contributions are welcome via [STARK PLACE](contributing-and-shared-usage-stark-place.md).
+
+For more on response localization, see [Localizing Responses](localization-and-multilingual/localizing-responses.md).

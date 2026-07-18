@@ -2,6 +2,7 @@ import logging
 from typing import TYPE_CHECKING, get_args
 
 from stark.core.parsing import ObjectParser, ParameterMatch, ParseError
+from stark.general.localisation import LocaleString
 
 from ..patterns import PatternParameter
 from .object import Object
@@ -13,10 +14,27 @@ logger = logging.getLogger(__name__)
 
 
 class SlotsParser(ObjectParser):
+    """
+    SlotsParser is an alternative to the default parser that provides unordered parameter extraction for any Object type with multiple fields, no pattern for the root type needed. Each annotated field (except `value`) becomes a slot that will be parsed independently. Fields can be required or optional (`Optional[T]` / `T | None`). Unlike unordered patterns (which work at the regex level), Slots parse each field independently from the input string, so they handle multi-word and greedy parameters correctly.
+
+    Example:
+        class TimerSlots(Object):
+            hours: Hours
+            minutes: Minutes
+            seconds: Optional[Seconds]
+        ...
+        context = CommandsContext(...)
+        context.pattern_parser.register_parameter_type(
+            TimerSlots,
+            parser=SlotsParser(context.pattern_parser),
+        )
+
+    """
+
     def __init__(self, pattern_parser: "PatternParser"):
         self.pattern_parser = pattern_parser
 
-    async def did_parse(self, obj: Object, from_string: str) -> str:
+    async def did_parse(self, obj: Object, from_string: LocaleString) -> str:
         parsed_parameters: dict[str, ParameterMatch] = {}
 
         slots = {
@@ -68,7 +86,9 @@ class SlotsParser(ObjectParser):
                 string = string.replace(parameter_match.parsed_substr, "")
 
         if len([p for p in parsed_parameters.values() if p.parsed_obj is not None]) < 1:
-            raise ParseError(f"{type(obj)} At least one parameter must be matched, can't find any of {slots.keys()} in '{from_string}'")
+            raise ParseError(
+                f"{type(obj)} At least one parameter must be matched, can't find any of {slots.keys()} in '{from_string}'"
+            )
 
         for name, value in parsed_parameters.items():
             setattr(obj, name, value.parsed_obj)

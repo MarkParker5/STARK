@@ -1,5 +1,7 @@
 # Voice Assistant (VA) Documentation
 
+For the full picture on getting an assistant running, `run()`, custom overrides, and IO options beyond voice, see [How to Run](how-to-run.md). This page covers the `VoiceAssistant` class itself and its `Mode` system in depth.
+
 ## Env Parameters
 
 `STARK_VOICE_CLI`: Prints voice input and output in terminal if set to 1 (default 0). Useful for testing and debugging if no other interface is available.
@@ -169,9 +171,9 @@ If you want to add a custom logic to VA events, for example update GUI, you can 
 ```python
 class MyVoiceAssistant(VoiceAssistant):
 
-    async def speech_recognizer_did_receive_final_result(self, result: str):
+    async def speech_recognizer_did_receive_final_result(self, result: str | LocaleString):
         super().speech_recognizer_did_receive_final_result(result)
-        print('You sad: ', result) # Your custom logic here
+        print('You said: ', result) # Your custom logic here
 
     async def speech_recognizer_did_receive_partial_result(self, result: str):
         super().speech_recognizer_did_receive_partial_result(result)
@@ -187,3 +189,56 @@ class MyVoiceAssistant(VoiceAssistant):
 ```
 
 For more advanced usage, see the source code or use your IDE's autocomplete. Most modern editors support "go to definition" feature which might be very helpful for this.
+
+## Multi-Language Voice Setup
+
+To use multiple STT engines for different languages simultaneously, pass a list of recognizers to `run()`:
+
+```python
+from stark import run, CommandsManager
+from stark.interfaces.vosk import VoskSpeechRecognizer
+from stark.general.localisation import Localizer
+
+manager = CommandsManager()
+
+recognizers = [
+    VoskSpeechRecognizer(model_url="https://...", language_code="en"),
+    VoskSpeechRecognizer(model_url="https://...", language_code="de"),
+]
+
+localizer = Localizer(languages={"en", "de"})
+localizer.load()
+
+await run(
+    manager=manager,
+    speech_recognizer=recognizers,  # list triggers multi-STT relay
+    speech_synthesizer=synthesizer,
+    localizer=localizer,
+)
+```
+
+When a list is provided, `run()` automatically creates **SpeechRecognizerRelay**, waits for all recognizers to report, builds the best transcription by per-word confidence comparison, and emits a `VoiceTranscriptionString` with per-word language codes
+
+The relay produces a `VoiceTranscriptionString` that carries:
+
+- The best-confidence assembled text
+- Per-word language codes (from whichever recognizer had the highest confidence for each word)
+- Time-aligned `VoiceTranscriptionTrack` with word timestamps, confidence scores, and speaker embeddings
+- Alternative texts from each language's recognizer (for matrix cross-language matching) TODO: ref the feature flag
+
+### Speaker Model (Experimental)
+
+Vosk supports speaker identification via speaker embedding vectors. Pass a `speaker_model_url` to enable:
+
+```python
+VoskSpeechRecognizer(
+    model_url="https://...",
+    language_code="en",
+    speaker_model_url="https://...",  # optional speaker ID model
+)
+```
+
+Speaker embeddings are stored per-word in `VoiceTranscriptionTrack.spk` and preserved through the entire flow. They are not used yet, but the infrastructure is ready for a future speaker diarization module.
+
+See [Localizing Parsing](localization-and-multilingual/localizing-parsing.md) for details on these features.
+See [Feature Flags](advanced/feature-flags.md) for additional configuration options like enabling printing the conversation or tweaking multilingual features.
