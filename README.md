@@ -1,6 +1,23 @@
+<!-- flagship → markparker.me -->
+<a href="https://markparker.me" target="_blank">
+  <picture>
+    <source
+      media="(prefers-color-scheme: dark)"
+      srcset="https://markparker.me/banners/flagship-dark.webp"
+    />
+    <img
+      alt="A Mark Parker project — see more at markparker.me"
+      src="https://markparker.me/banners/flagship-light.webp"
+    />
+  </picture>
+</a>
+
 # S.T.A.R.K.
 
-**Speech and Text Algorithmic Recognition Kit**: a modern, async Python framework for building voice assistants and natural language interfaces. Think [FastAPI](https://fastapi.tiangolo.com/), but for speech instead of HTTP.
+<!-- banner
+![S.T.A.R.K. - Speech and Text Advanced Recognition Kit](https://markparker.me/projects/stark.webp) -->
+
+**Speech and Text Advanced Recognition Kit**: a modern, async Python framework for building voice assistants and natural language interfaces. Think [FastAPI](https://fastapi.tiangolo.com/), but for speech instead of HTTP.
 
 No need to build alone. See [Get Involved](#community) below.
 
