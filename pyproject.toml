@@ -54,14 +54,13 @@ spacy = { version = "^3.8.11", optional = true }
 [tool.poetry.extras]
 gcloud = ["google-cloud-texttospeech", "sounddevice", "soundfile"]
 vosk = ["vosk", "sounddevice"]
-silero = ["torch", "numpy", "sounddevice"]
+silero = ["torch", "sounddevice"]
 sound = ["sounddevice", "soundfile"]
 spacy = ["spacy"]
 all = [
     "google-cloud-texttospeech",
     "vosk",
     "torch",
-    "numpy",
     "sounddevice",
     "soundfile",
     "spacy",

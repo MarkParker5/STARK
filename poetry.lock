@@ -1542,7 +1542,6 @@ description = "Fundamental package for array computing in Python"
 optional = false
 python-versions = ">=3.11"
 groups = ["main"]
-markers = "extra == \"spacy\" or extra == \"all\" or extra == \"silero\""
 files = [
     {file = "numpy-2.3.3-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:0ffc4f5caba7dfcbe944ed674b7eef683c7e94874046454bb79ed7ee0236f59d"},
     {file = "numpy-2.3.3-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:e7e946c7170858a0295f79a60214424caac2ffdb0063d4d79cb681f9aa0aa569"},
@@ -3616,9 +3615,9 @@ files = [
 dev = ["pytest", "setuptools"]
 
 [extras]
-all = ["google-cloud-texttospeech", "numpy", "sounddevice", "soundfile", "spacy", "torch", "vosk"]
+all = ["google-cloud-texttospeech", "sounddevice", "soundfile", "spacy", "torch", "vosk"]
 gcloud = ["google-cloud-texttospeech", "sounddevice", "soundfile"]
-silero = ["numpy", "sounddevice", "torch"]
+silero = ["sounddevice", "torch"]
 sound = ["sounddevice", "soundfile"]
 spacy = ["spacy"]
 vosk = ["sounddevice", "vosk"]
@@ -3626,4 +3625,4 @@ vosk = ["sounddevice", "vosk"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<3.15"
-content-hash = "8855aca7c4a65c99b817bab3d9f757c560c5594f0d174c4e0746962819834e25"
+content-hash = "2b29adf2914d32502f86a7598808e036f47d85c6e92ea10e6127bfe46907c24e"
