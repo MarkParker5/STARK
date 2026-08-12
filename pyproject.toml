@@ -3,7 +3,7 @@ name = "stark-engine"
 version = "4.5.5"
 description = "S.T.A.R.K - Speech and Text Advanced Recognition Kit. Modern framework for creating powerfull voice assistants."
 authors = ["MarkParker5 <mark@parker-programs.com>"]
-license = "CC BY-NC-SA 4.0"
+license = "PolyForm-Noncommercial-1.0.0"
 readme = "README.md"
 packages = [{ include = "stark" }]
 homepage = "https://pypi.org/project/stark-engine/"

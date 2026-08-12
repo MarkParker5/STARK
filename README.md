@@ -150,6 +150,6 @@ Full docs, including installation options and extras, at **[stark.markparker.me]
 
 ## License
 
-The S.T.A.R.K. project is licensed under the [CC BY-NC-SA 4.0 International license](https://github.com/MarkParker5/STARK/tree/master/LICENSE.md). You're welcome to modify, contribute to the repository, create, and share forks. Just remember to attribute the original repository and its creator, abstain from commercial use, and retain the existing license.
+The S.T.A.R.K. project is licensed under the [PolyForm Noncommercial License 1.0.0](https://github.com/MarkParker5/STARK/tree/master/LICENSE.md). You're welcome to modify, contribute to the repository, create, and share forks. Just remember to attribute the original repository and its creator, abstain from commercial use, and retain the existing license.
 
 Want to use STARK commercially, or talk about a partnership? Joint projects, hardware, contract development, anything related. Reach out via [parker-industries.org/partnership](https://parker-industries.org/partnership). We're genuinely open to it.

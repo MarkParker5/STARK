@@ -182,7 +182,7 @@ There's no official Discord or Telegram, and that's intentional. If you want a n
 
 ## License
 
-The S.T.A.R.K. project is licensed under the [CC BY-NC-SA 4.0 International license](https://github.com/MarkParker5/STARK/tree/master/LICENSE.md). You're welcome to modify, contribute to the repository, create, and share forks. Just remember to attribute the original repository and its creator, abstain from commercial use, and retain the existing license.
+The S.T.A.R.K. project is licensed under the [PolyForm Noncommercial License 1.0.0](https://github.com/MarkParker5/STARK/tree/master/LICENSE.md). You're welcome to modify, contribute to the repository, create, and share forks. Just remember to attribute the original repository and its creator, abstain from commercial use, and retain the existing license.
 
 **Note**: Failing to provide the necessary attribution or using the project for commercial purposes breaches the licensing terms and could have legal consequences.
 
