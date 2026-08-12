@@ -1,0 +1,23 @@
+version: 2
+updates:
+  # Python deps (poetry — pyproject.toml + poetry.lock). PRs land on develop.
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    target-branch: "develop"
+    open-pull-requests-limit: 10
+    groups:
+      # One grouped PR for routine minor/patch bumps to cut noise; security
+      # updates and majors still come as their own PRs.
+      python-minor-patch:
+        update-types: ["minor", "patch"]
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    target-branch: "develop"
+    groups:
+      actions:
+        patterns: ["*"]
