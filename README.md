@@ -1,6 +1,6 @@
 # S.T.A.R.K.
 
-**Speech and Text Algorithmic Recognition Kit**: a modern, async Python framework for building voice assistants and natural language interfaces. Think [FastAPI](https://fastapi.tiangolo.com/), but for speech instead of HTTP.
+**Speech and Text Advanced Recognition Kit**: a modern, async Python framework for building voice assistants and natural language interfaces. Think [FastAPI](https://fastapi.tiangolo.com/), but for speech instead of HTTP.
 
 No need to build alone. See [Get Involved](#community) below.
 

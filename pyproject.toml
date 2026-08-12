@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "stark-engine"
 version = "4.5.3"
-description = "S.T.A.R.K - Speech and Text Algorithmic Recognition Kit. Modern framework for creating powerfull voice assistants."
+description = "S.T.A.R.K - Speech and Text Advanced Recognition Kit. Modern framework for creating powerfull voice assistants."
 authors = ["MarkParker5 <mark@parker-programs.com>"]
 license = "CC BY-NC-SA 4.0"
 readme = "README.md"
@@ -88,6 +88,13 @@ pympler = "^1.1"
 psutil = "^7.1.1"
 trio = "^0.33.0"
 mkdocs-llmstxt = "^0.5.0"
+poethepoet = "^0.29.0"
+
+[tool.poe.tasks]
+# quick shortcuts:  poetry run poe <name>
+viz  = { shell = "cd visualizer && npm run build && cd .. && python -m profiler.server", help = "Build the UI + serve on http://localhost:8765" }
+ui   = { cmd = "npm run dev", cwd = "visualizer", help = "Vite dev server (hot reload)" }
+test = { cmd = "python -m pytest tests/test_profiling/", help = "Run the profiler tests" }
 
 [build-system]
 requires = ["poetry-core"]

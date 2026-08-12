@@ -19,7 +19,7 @@ description: S.T.A.R.K. is a modern, async Python framework for building voice a
     - [`/llms.txt`](/llms.txt), page index with descriptions
     - [`/llms-full.txt`](/llms-full.txt), complete documentation in a single file
 
-## Speech and Text Algorithmic Recognition Kit
+## Speech and Text Advanced Recognition Kit
 
 S.T.A.R.K. is a modern, async Python framework for building voice assistants and natural language interfaces. Think of it as [FastAPI](https://fastapi.tiangolo.com/), but for speech instead of HTTP.
 
