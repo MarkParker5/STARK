@@ -13,10 +13,8 @@ from typing import (
     Callable,
     ClassVar,
     Generator,
-    Generic,
     Optional,
     Protocol,
-    TypeVar,
     cast,
 )
 from uuid import UUID, uuid4
@@ -32,21 +30,19 @@ from ..general.classproperty import classproperty
 from ..general.localisation import LanguageCode, LocalizableString
 from .patterns import Pattern
 
-ResponseOptions = (
-    Optional["Response"] | Generator[Optional["Response"], None, None] | AsyncGenerator[Optional["Response"], None]
-)
-AwaitResponse = Awaitable[ResponseOptions]
-AsyncCommandRunner = Callable[..., AwaitResponse]
-SyncCommandRunner = Callable[..., Optional["Response"]]
-CommandRunner = TypeVar("CommandRunner", bound=SyncCommandRunner | AsyncCommandRunner)
+type ResponseOptions = Optional["Response"] | Generator[Optional["Response"], None, None] | AsyncGenerator[Optional["Response"], None]
+type AwaitResponse = Awaitable[ResponseOptions]
+type AsyncCommandRunner = Callable[..., AwaitResponse]
+type SyncCommandRunner = Callable[..., Optional["Response"]]
+type CommandRunner = SyncCommandRunner | AsyncCommandRunner  # TypeVar("CommandRunner", bound=SyncCommandRunner | AsyncCommandRunner)
 
 
-class Command(Generic[CommandRunner]):
+class Command[T: CommandRunner]:
     name: str
     patterns: dict[LanguageCode, Pattern]
-    _runner: CommandRunner
+    _runner: T
 
-    def __init__(self, name: str, patterns: dict[LanguageCode, Pattern], runner: CommandRunner):
+    def __init__(self, name: str, patterns: dict[LanguageCode, Pattern], runner: T):
         assert patterns and all(isinstance(p, Pattern) for p in patterns.values())
         self.name = name
         self.patterns = patterns

@@ -146,7 +146,7 @@ plugins:
       type: timeago
   - llmstxt:
       markdown_description: |
-        S.T.A.R.K. (Speech and Text Algorithmic Recognition Kit) is a modern, async Python framework
+        S.T.A.R.K. (Speech and Text Advanced Recognition Kit) is a modern, async Python framework
         for building voice assistants and natural language interfaces. Think FastAPI but for speech.
         It runs on-device, supports multiple languages, integrates with LLMs, and features advanced
         pattern-based NL parsing, context-aware commands, and community extensions via STARK-PLACE.

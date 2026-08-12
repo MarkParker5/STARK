@@ -41,6 +41,10 @@ class UnionMeta(ABCMeta):
 class Object[T](metaclass=UnionMeta):
     value: T = None
 
+    def __init__(self, value: Any):
+        """Just init with a wrapped value."""
+        self.value = value
+
     @classproperty
     def pattern(cls) -> Pattern:
         return Pattern("**")
@@ -71,6 +75,7 @@ class Object[T](metaclass=UnionMeta):
         """
         This method is called after parsing from string and setting parameters found in pattern.
         You will very rarely, if ever, need to call this method directly.
+        If you want to parse string to an object, use `parse_object` method of the `PatternParser` instance.
 
         Override this method for more complex parsing from string.
 

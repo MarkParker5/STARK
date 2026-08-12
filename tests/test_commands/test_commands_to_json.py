@@ -18,7 +18,10 @@ async def test_command_json():
     parsed = json.loads(string)
 
     assert parsed["name"] == "TestManager.play"
-    assert parsed["patterns"]["base"]["origin"] == r"play $song:Word"
+    # CommandInfo flattens the representative (base) pattern to its origin string,
+    # and exposes every localized pattern under `patterns`.
+    assert parsed["pattern"] == r"play $song:Word"
+    assert parsed["patterns"]["base"] == r"play $song:Word"
     assert parsed["declaration"] == "def play(track: str, song: Word, volume: int | None = None) -> Response"
     assert parsed["docstring"] == "play a song"
 
@@ -34,14 +37,13 @@ async def test_async_command_complicate_type_json():
     parsed = json.loads(string)
 
     assert parsed["name"] == "TestManager.get_forecast"
-    assert parsed["patterns"]["base"]["origin"] == r"get forecast"
+    assert parsed["pattern"] == r"get forecast"
     assert parsed["declaration"] == "async def get_forecast(some: AsyncGenerator)"  # TODO: improve AsyncGenerator to full type
     # assert parsed['declaration'] == 'async def get_forecast(some: AsyncGenerator[Callable[[Any], Type], list[None], None])'
     assert parsed["docstring"] == ""
 
 
 def test_manager_json():
-
     manager = CommandsManager("TestManager")
 
     @manager.new("")
