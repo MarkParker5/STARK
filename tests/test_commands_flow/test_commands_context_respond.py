@@ -17,15 +17,16 @@ async def test_command_return_response(commands_context_flow, autojump_clock):
         assert len(context_delegate.responses) == 1
         assert context_delegate.responses[0].text == 'Lights off!'
 
-async def test_sync_command_call_sync_respond(commands_context_flow, autojump_clock):
+async def test_sync_command_call_sync_respond(commands_context_flow, wait_responses):
+    # sync command handler runs in a worker thread → real time, not autojump_clock
     async with commands_context_flow() as (manager, context, context_delegate):
-    
+
         @manager.new('turn off the light')
         def lights_off(handler: ResponseHandler):
             handler.respond(Response(text = 'Lights off!'))
 
         await context.process_string('turn off the light')
-        await anyio.sleep(5)
+        await wait_responses(context_delegate, 1)
 
         assert len(context_delegate.responses) == 1
         assert context_delegate.responses[0].text == 'Lights off!'

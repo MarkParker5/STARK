@@ -29,7 +29,7 @@ async def test_command_flow_optional_parameter(commands_context_flow, autojump_c
         context.pattern_parser.register_parameter_type(Room)
 
         @manager.new("turn on ($category:Category|$device:Device|$room:Room)")
-        def turn_on(category: Optional[Category], device: Optional[Device], room: Optional[Room]) -> Response:
+        async def turn_on(category: Optional[Category], device: Optional[Device], room: Optional[Room]) -> Response:
             if category:
                 return Response(f"Category {category.value}")
             elif device:

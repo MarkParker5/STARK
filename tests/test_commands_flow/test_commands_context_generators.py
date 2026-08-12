@@ -37,7 +37,8 @@ async def test_commands_context_handle_async_generator(commands_context_flow, au
         assert [r.text for r in context_delegate.responses] == [f"Timer update {i}" for i in range(5)]
 
 
-async def test_commands_context_handle_sync_generator(commands_context_flow, autojump_clock):
+async def test_commands_context_handle_sync_generator(commands_context_flow, wait_responses):
+    # sync generator handler runs in a worker thread → real time, not autojump_clock
     async with commands_context_flow() as (manager, context, context_delegate):
 
         @manager.new("start timer")
@@ -51,7 +52,7 @@ async def test_commands_context_handle_sync_generator(commands_context_flow, aut
 
         with warnings.catch_warnings(record=True) as warnings_list:
             await context.process_string("start timer")
-            await anyio.sleep(1)
+            await wait_responses(context_delegate, 5)
 
         assert len(warnings_list) == 2
         for warning in warnings_list:

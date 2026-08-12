@@ -100,26 +100,26 @@ async def commands_context_flow_filled(commands_context_flow):
         async with commands_context_flow() as (manager, context, context_delegate):
 
             @manager.new("ping")
-            def ping():
+            async def ping():
                 text = voice = "pong"
                 return Response(text, voice=voice)
 
             @manager.new("lorem * dolor")
-            def lorem():
+            async def lorem():
                 return Response("Lorem!", voice="Lorem!")
 
             @manager.new("hello", hidden=True)
-            def hello_context(**params):
+            async def hello_context(**params):
                 voice = text = f"Hi, {params['name']}!"
                 return Response(text, voice=voice)
 
             @manager.new("bye", hidden=True)
-            def bye_context(name: Word, handler: ResponseHandler):
-                handler.pop_context()
+            async def bye_context(name: Word, handler: AsyncResponseHandler):
+                await handler.pop_context()
                 return Response(f"Bye, {name}!")
 
             @manager.new("hello $name:Word")
-            def hello(name: Word):
+            async def hello(name: Word):
                 text = voice = f"Hello, {name}!"
                 return Response(
                     text=text,
@@ -129,7 +129,7 @@ async def commands_context_flow_filled(commands_context_flow):
                 )
 
             @manager.new("repeat")
-            def repeat():
+            async def repeat():
                 return Response.repeat_last
 
             # background commands
@@ -195,6 +195,29 @@ async def voice_assistant(commands_context_flow_filled):
             yield voice_assistant
 
     return _voice_assistant
+
+
+@pytest.fixture
+def wait_responses():
+    """Poll in REAL time until `count` responses arrive.
+
+    For the few commands that legitimately run in a worker thread (sync command
+    handlers via asyncer.asyncify), the virtual `autojump_clock` can't be used —
+    it would jump past the thread's real execution. Those tests use real time and
+    this helper instead of a fixed `anyio.sleep`.
+    """
+    import time
+
+    async def _wait(delegate, count: int, timeout: float = 2.0):
+        deadline = time.monotonic() + timeout
+        while len(delegate.responses) < count:
+            assert time.monotonic() < deadline, (
+                f"got {len(delegate.responses)}/{count} responses within {timeout}s"
+            )
+            await anyio.sleep(0.005)
+        return delegate.responses
+
+    return _wait
 
 
 def pytest_addoption(parser):

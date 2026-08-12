@@ -17,11 +17,11 @@ async def test_multiple_commands(commands_context_flow, autojump_clock):
     async with commands_context_flow() as (manager, context, context_delegate):
 
         @manager.new("turn off the light")
-        def lights_off():
+        async def lights_off():
             return Response("Lights off!")
 
         @manager.new("lorem * dolor")
-        def lorem():
+        async def lorem():
             return Response("lorem!")
 
         # original test
@@ -55,11 +55,11 @@ async def test_two_commands_greedy_param(commands_context_flow, autojump_clock):
         manager.pattern_parser = context.pattern_parser
 
         @manager.new("command1 $g:AnotherGreedy")
-        def cmd1(g: AnotherGreedy):
+        async def cmd1(g: AnotherGreedy):
             return Response(f"cmd1:{g.value}")
 
         @manager.new("command2")
-        def cmd2():
+        async def cmd2():
             return Response("cmd2!")
 
         await context.process_string("command1 some words command2")
@@ -72,7 +72,7 @@ async def test_repeating_command(commands_context_flow, autojump_clock):
     async with commands_context_flow() as (manager, context, context_delegate):
 
         @manager.new("lorem * dolor")
-        def lorem():
+        async def lorem():
             return Response("lorem!")
 
         await context.process_string("lorem pisum dolor lorem ipsutest_repeating_commanduum dolor sit amet")
@@ -87,11 +87,11 @@ async def test_overlapping_commands_less_priority_cut(commands_context_flow, aut
     manager = CommandsManager()
 
     @manager.new("play music *")
-    def play_music():
+    async def play_music():
         return Response("Playing music!")
 
     @manager.new("* alarm")
-    def alarm():
+    async def alarm():
         return Response("Alarm set!")
 
     result = await SearchProcessor().search("play music test alarm", pattern_parser, manager.commands, [])
@@ -104,11 +104,11 @@ async def test_overlapping_commands_priority_cut(commands_context_flow, autojump
     manager = CommandsManager()
 
     @manager.new("play music *")
-    def play_music():
+    async def play_music():
         return Response("Playing music!")
 
     @manager.new("*t alarm")
-    def alarm():
+    async def alarm():
         return Response("Alarm set!")
 
     result = await SearchProcessor().search("play music test alarm", pattern_parser, manager.commands, [])
@@ -122,11 +122,11 @@ async def test_overlapping_commands_remove(commands_context_flow, autojump_clock
     manager = CommandsManager()
 
     @manager.new("good night")
-    def good_night():
+    async def good_night():
         return Response("Good night!")
 
     @manager.new("night light")
-    def night_light():
+    async def night_light():
         return Response("Night light on!")
 
     result = await SearchProcessor().search("good night light", pattern_parser, manager.commands, [])
@@ -138,11 +138,11 @@ async def test_overlapping_commands_remove_inverse(commands_context_flow, autoju
     manager = CommandsManager()
 
     @manager.new("night light")
-    def night_light():
+    async def night_light():
         return Response("Night light on!")
 
     @manager.new("good night")
-    def good_night():
+    async def good_night():
         return Response("Good night!")
 
     result = await SearchProcessor().search("good night light", pattern_parser, manager.commands, [])
@@ -172,15 +172,15 @@ async def test_objects_parse_caching(commands_context_flow, autojump_clock):
     pattern_parser.register_parameter_type(Mock)
 
     @manager.new(f"hello $mock:{mock_name}")
-    def hello(mock: Mock):
+    async def hello(mock: Mock):
         pass
 
     @manager.new(f"hello $mock:{mock_name} 2")
-    def hello2(mock: Mock):
+    async def hello2(mock: Mock):
         pass
 
     @manager.new(f"hello $mock:{mock_name} 22")
-    def hello22(mock: Mock):
+    async def hello22(mock: Mock):
         pass
 
     @manager.new(f"test $mock:{mock_name}")
