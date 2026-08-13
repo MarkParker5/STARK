@@ -180,7 +180,7 @@ class EpitranIpaProvider:
             for key in supported_languages:
                 if key.startswith(code):
                     warnings.warn(
-                        f"Unsupported language code: {code}; trying to use similar key {key}"
+                        f"Unsupported language code: {code}; trying to use similar key {key}", stacklevel=2
                     )
                     code = key
                     break

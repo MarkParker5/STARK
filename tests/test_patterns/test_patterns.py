@@ -1,13 +1,12 @@
 import pytest
 
 from stark.core import Pattern
+from stark.core.parsing import PatternParser
 from stark.core.patterns import rules
 
 word = rf"[{rules.alphanumerics}]*"
 words = rf"[{rules.alphanumerics}\s]+"
 words_optional = rf"[{rules.alphanumerics}\s]*"
-
-from stark.core.parsing import PatternParser
 
 pattern_parser = PatternParser()
 

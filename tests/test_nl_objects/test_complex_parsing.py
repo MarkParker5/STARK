@@ -141,7 +141,7 @@ pattern_parser.register_parameter_type(Greedy)
 
 
 @pytest.mark.parametrize(
-    "pattern_string,input_string,expected_params",
+    ("pattern_string", "input_string", "expected_params"),
     [
         # wildcard regex params
         ("$s:Size $d:Drink", "small latte", {"s": "small", "d": "latte"}),

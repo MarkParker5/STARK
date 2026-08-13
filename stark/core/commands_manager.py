@@ -5,9 +5,8 @@ from dataclasses import dataclass
 from types import UnionType
 from typing import cast
 
-from stark.general.localisation.language_code import LanguageCode
-
 from stark.core.parsing import MatchResult
+from stark.general.localisation.language_code import LanguageCode
 
 from .command import AsyncResponseHandler, Command, CommandRunner, ResponseHandler
 from .patterns import Pattern
@@ -44,7 +43,7 @@ class CommandsManager:
                 patterns = {'base': Pattern(pattern_str)}
 
             # take the main type from Optionals
-            annotations = dict()
+            annotations = {}
             for param_name, param_type in runner.__annotations__.items():
                 if isinstance(param_type, UnionType):
                     for sub_type in param_type.__args__:
@@ -58,17 +57,17 @@ class CommandsManager:
 
             if ResponseHandler in runner.__annotations__.values() and inspect.iscoroutinefunction(runner):
                 raise TypeError(
-                    f"`ResponseHandler` is not compatible with command {self.name}.{runner.__name__} because it is async, use `AsyncResponseHandler` instead"
+                    f"`ResponseHandler` is not compatible with command {self.name}.{runner.__name__} because it is async, use `AsyncResponseHandler` instead"  # ty: ignore[unresolved-attribute]  # runner is a function with __name__; ty Callable gap
                 )
 
             if AsyncResponseHandler in runner.__annotations__.values() and not inspect.iscoroutinefunction(runner):
                 raise TypeError(
-                    f"`AsyncResponseHandler` is not compatible with command {self.name}.{runner.__name__} because it is sync, use `ResponseHandler` instead"
+                    f"`AsyncResponseHandler` is not compatible with command {self.name}.{runner.__name__} because it is sync, use `ResponseHandler` instead"  # ty: ignore[unresolved-attribute]  # runner is a function with __name__; ty Callable gap
                 )
 
             # create command
 
-            cmd = Command(f"{self.name}.{runner.__name__}", cast(dict[LanguageCode, Pattern], patterns), runner)
+            cmd = Command(f"{self.name}.{runner.__name__}", cast(dict[LanguageCode, Pattern], patterns), runner)  # ty: ignore[unresolved-attribute]  # runner is a function with __name__; ty Callable gap
 
             if not hidden:
                 self.commands.append(cmd)

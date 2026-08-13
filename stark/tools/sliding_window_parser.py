@@ -1,5 +1,5 @@
 import asyncio
-from typing import Awaitable, Callable
+from collections.abc import Awaitable, Callable
 
 from stark.core.parsing import ParseError
 from stark.tools.common.span import Span
@@ -111,7 +111,7 @@ async def sliding_window_parse[T](
     # Try parsing for each window. Once successful, trim to minimal window.
     results: list[tuple[Span, str, T]] = []
     for window_size in range(min(max_window, n), min_window - 1, -1):
-        for start in range(0, n - window_size + 1):
+        for start in range(n - window_size + 1):
             end = start + window_size
             try:
                 res = await try_window(start, end)

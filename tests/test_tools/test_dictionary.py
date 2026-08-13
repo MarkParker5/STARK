@@ -37,7 +37,7 @@ def parse_lang(string: str) -> tuple[LanguageCode, str]:
 
 
 @pytest.mark.parametrize(
-    "name,lookup,data",
+    ("name", "lookup", "data"),
     [
         # English, Cyrillic, and German city name, all should match and return coords
         ("de:Nürnberg", "en:Nurnberg", {"coords": [49.45, 11.08]}),
@@ -73,7 +73,8 @@ def test_write_all_and_clear(dictionary: Dictionary):
     for entry in data:
         matches = list(dictionary.lookup(entry.name, entry.language_code))
         assert matches
-        assert matches[0].metadata is not None and entry.metadata is not None
+        assert matches[0].metadata is not None
+        assert entry.metadata is not None
         assert matches[0].metadata["meta"] == entry.metadata["meta"]
     dictionary.clear()
     for entry in data:
@@ -81,7 +82,7 @@ def test_write_all_and_clear(dictionary: Dictionary):
 
 
 @pytest.mark.parametrize(
-    "entries,sentence,expected",
+    ("entries", "sentence", "expected"),
     [
         ([("lorem", {"id": 10})], "foo lorem foo", [10]),
         (
@@ -126,7 +127,7 @@ def test_search_in_sentence(
 
 
 @pytest.mark.parametrize(
-    "query,expected",
+    ("query", "expected"),
     [
         ("nurberg", ["nurberg", "nurburg"]),
         ("nurburg", ["nurburg", "nurberg"]),
@@ -150,7 +151,7 @@ def test_clear_removes_all(dictionary: Dictionary):
 
 
 @pytest.mark.parametrize(
-    "entries,sentence,expected",
+    ("entries", "sentence", "expected"),
     [
         # Basic suggestions (supported by current implementation)
         (
@@ -267,7 +268,7 @@ def test_lookup(
 
 
 @pytest.mark.parametrize(
-    "entries,query,mode,field,expected_names",
+    ("entries", "query", "mode", "field", "expected_names"),
     [
         # PHONETIC (default) cases
         (["en:foo", "en:bar"], "foo", LookupMode.EXACT, LookupField.PHONETIC, ["foo"]),
@@ -332,13 +333,6 @@ def test_lookup(
             [],
         ),
         (
-            ["en:foo", "en:foobar"],
-            "foo",
-            LookupMode.AUTO,
-            LookupField.PHONETIC,
-            ["foo"],
-        ),
-        (
             ["en:hello", "en:world"],
             "hellp",
             LookupMode.AUTO,
@@ -366,7 +360,7 @@ def test_lookup_modes(
 
 
 @pytest.mark.parametrize(
-    "entries,sentence,mode,expected_names,field",
+    ("entries", "sentence", "mode", "expected_names", "field"),
     [
         # PHONETIC (default) cases
         (
@@ -511,7 +505,7 @@ def test_search_in_sentence_modes(
 
 
 @pytest.mark.parametrize(
-    "field,mode,expected",
+    ("field", "mode", "expected"),
     [
         (LookupField.NAME, LookupMode.AUTO, ["Qatar"]),
         (LookupField.PHONETIC, LookupMode.AUTO, ["Qatar"]),

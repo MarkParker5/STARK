@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import logging
 import re
 from abc import ABC
+from collections.abc import AsyncGenerator
 from dataclasses import dataclass, field
-from typing import AsyncGenerator, NamedTuple
+from typing import NamedTuple
 
 from stark.core.patterns.pattern import Pattern
 from stark.core.patterns.rules import rules_list
@@ -25,8 +27,6 @@ class CorrectionMatch(NamedTuple):
 
 type ObjectType = type[Object]
 
-
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -76,7 +76,7 @@ class RecognizedEntity:
     key: str | None = None
 
 
-class ObjectParser(ABC):
+class ObjectParser(ABC):  # noqa: B024  # intentional ABC base with default hook implementations; subclasses override did_parse/patterns selectively
     localizer: Localizer | None = None
 
     @property
@@ -100,7 +100,7 @@ class ObjectParser(ABC):
 
 
 class PatternParser:
-    parameter_types_by_name: dict[str, RegisteredParameterType] = {}
+    parameter_types_by_name: dict[str, RegisteredParameterType]  # set per-instance in __init__
     localizer: Localizer | None
 
     def __init__(self, localizer: Localizer | None = None):
@@ -171,8 +171,7 @@ class PatternParser:
     async def parse_object(self, object_type: ObjectType, from_string: str | LocaleString) -> ParseResult:
         async for obj in self.parse_objects(object_type, from_string):
             return obj  # take the first successful parsed result, usually the only one
-        else:
-            raise ParseError(f"Failed to parse object of type {object_type.__name__} from string '{from_string}'")
+        raise ParseError(f"Failed to parse object of type {object_type.__name__} from string '{from_string}'")
 
     def _resolve_pattern(self, object_type: ObjectType, language_code: LanguageCode) -> Pattern:
         parser = self.parameter_types_by_name[object_type.__name__].parser
@@ -490,8 +489,8 @@ class PatternParser:
     def _filter_overlapping_matches(self, matches: list[MatchResult]) -> list[MatchResult]:
         filtered = matches.copy()
         for prev, current in zip(
-            filtered.copy(), filtered[1:]
-        ):  # copy to prevent affecting iteration by removing items; slice makes copy automatically
+            filtered.copy(), filtered[1:], strict=False
+        ):  # pairwise adjacent: tail is one shorter by design; copy prevents affecting iteration
             if prev.start == current.start or prev.end > current.start:  # if overlap
                 filtered.remove(min(prev, current, key=lambda m: len(m.substring)))  # remove shorter
         return filtered

@@ -1,6 +1,9 @@
 import pytest
 
-from stark.models.voice_transcription import VoiceTranscriptionTrack, VoiceTranscriptionWord
+from stark.models.voice_transcription import (
+    VoiceTranscriptionTrack,
+    VoiceTranscriptionWord,
+)
 
 
 @pytest.fixture

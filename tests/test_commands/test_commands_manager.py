@@ -69,7 +69,7 @@ def test_extend_manager():
         pass
 
     @child_manager.new("set alarm")
-    def set_alarm():
+    def set_alarm():  # noqa: F811  # deliberately same name to test command naming across managers
         pass
 
     assert len(child_manager.commands) == 1
@@ -109,5 +109,5 @@ def test_manager_get_command_by_name():
 
     assert manager.get_by_name("unlock_door") == unlock_door
     assert manager.get_by_name("TestManager.open_garage") == open_garage
-    assert manager.get_by_name("ring_doorbell") == None
+    assert manager.get_by_name("ring_doorbell") is None
     assert manager.get_by_name("Child.ring_doorbell") == ring_doorbell

@@ -6,7 +6,11 @@ import pytest
 
 from stark.core.command import Response
 from stark.core.commands_context import CommandsContext
-from stark.core.commands_context_processor import CommandsContextLayer, CommandsContextProcessor, RecognizedEntity
+from stark.core.commands_context_processor import (
+    CommandsContextLayer,
+    CommandsContextProcessor,
+    RecognizedEntity,
+)
 from stark.core.commands_manager import CommandsManager, SearchResult
 from stark.core.patterns.pattern import Pattern
 from stark.core.types.object import Object
@@ -57,13 +61,15 @@ async def test_context_param(new_context, manager):
     results = await new_context.process_string("go to the place")
     assert len(results) == 1
     await anyio.sleep(0.01)
-    assert location and location.value == "the place"
+    assert location
+    assert location.value == "the place"
     location = None
 
     results = await new_context.process_string("let's go")
     assert len(results) == 1
     await anyio.sleep(0.01)
-    assert location and location.value == "context_place"
+    assert location
+    assert location.value == "context_place"
 
     results = await new_context.process_string("go to")
     assert not results
@@ -89,10 +95,12 @@ async def test_ner(new_context, manager):
 
     await new_context.process_string("go to the famous London city")
     await anyio.sleep(0.01)
-    assert location and location.value == "the famous London city"
+    assert location
+    assert location.value == "the famous London city"
     location = None
 
     new_context.processors.insert(0, FakeNERProcessor())
     await new_context.process_string("go to the famous London city")
     await anyio.sleep(0.01)
-    assert location and location.value == "London"
+    assert location
+    assert location.value == "London"

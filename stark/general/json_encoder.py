@@ -57,7 +57,8 @@ class TypeInfo(BaseModel):
 
 
 def _get_function_declaration(func) -> str:
-    get_name = lambda x: x.__name__ if hasattr(x, "__name__") else x
+    def get_name(x):
+        return x.__name__ if hasattr(x, "__name__") else x
 
     signature = inspect.signature(func)
     parameters = []

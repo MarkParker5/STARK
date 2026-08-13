@@ -1,5 +1,5 @@
 import warnings
-from typing import Generator
+from collections.abc import Generator
 
 import pytest
 from asyncer import syncify
@@ -79,7 +79,7 @@ def test_sync_command_with_sync_response_handler():
 def test_sync_command_with_async_response_handler():
     manager = CommandsManager()
 
-    with pytest.raises(TypeError, match = '`AsyncResponseHandler` is not compatible with command .* because it is sync, use `ResponseHandler` instead'):
+    with pytest.raises(TypeError, match=r'`AsyncResponseHandler` is not compatible with command .* because it is sync, use `ResponseHandler` instead'):
         @manager.new('turn off the light')
         def lights_off(handler: AsyncResponseHandler):
             ...
@@ -121,7 +121,7 @@ async def test_exception_in_command():
 
     @manager.new('turn off the light')
     def lights_off() -> Response:
-        raise Exception('smart bulb not responding')
+        raise RuntimeError('smart bulb not responding')
 
     # with pytest.raises(Exception, match = 'smart bulb not responding'):
     #     await lights_off()

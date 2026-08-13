@@ -5,11 +5,13 @@ import subprocess
 import sys
 from typing import TYPE_CHECKING, cast, override
 
-from stark.core.commands_context_processor import CommandsContextProcessor, RecognizedEntity
+from stark.core.commands_context_processor import (
+    CommandsContextProcessor,
+    RecognizedEntity,
+)
 from stark.core.commands_manager import SearchResult
 from stark.core.parsing import ObjectType
 from stark.core.types.location import Location
-from stark.core.types.object import Object
 from stark.general.localisation import LocaleString
 
 if TYPE_CHECKING:
@@ -18,32 +20,35 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+# Default spaCy NER label -> STARK type mapping (read-only, shared as a module-level constant).
+_DEFAULT_LABEL_TYPES: dict[str, ObjectType | None] = {
+    "CARDINAL": None,
+    "DATE": None,
+    "EVENT": None,
+    "FAC": None,
+    "GPE": Location,
+    "LANGUAGE": None,
+    "LAW": None,
+    "LOC": Location,
+    "MONEY": None,
+    "NORP": None,
+    "ORDINAL": None,
+    "ORG": None,
+    "PERCENT": None,
+    "PERSON": None,
+    "PRODUCT": None,
+    "QUANTITY": None,
+    "TIME": None,
+    "WORK_OF_ART": None,
+    "default": None,
+}
+
 
 class SpacyNERProcessor(CommandsContextProcessor):
     def __init__(
         self,
         lang_models: dict[str, str],
-        label_types: dict[str, ObjectType | None] = {
-            "CARDINAL": None,
-            "DATE": None,
-            "EVENT": None,
-            "FAC": None,
-            "GPE": Location,
-            "LANGUAGE": None,
-            "LAW": None,
-            "LOC": Location,
-            "MONEY": None,
-            "NORP": None,
-            "ORDINAL": None,
-            "ORG": None,
-            "PERCENT": None,
-            "PERSON": None,
-            "PRODUCT": None,
-            "QUANTITY": None,
-            "TIME": None,
-            "WORK_OF_ART": None,
-            "default": None,
-        },
+        label_types: dict[str, ObjectType | None] | None = None,
     ):
         """
         Find lang model names at https://spacy.io/usage/models#languages e.g. {"en": "en_core_web_sm"}. Installation is done automatically on the first run.
@@ -61,7 +66,7 @@ class SpacyNERProcessor(CommandsContextProcessor):
                 self._install_model(model)
                 self.nlps[lang] = spacy.load(model)
 
-        self.label_types = label_types
+        self.label_types = label_types if label_types is not None else _DEFAULT_LABEL_TYPES
 
     # CommandsContextProcessor Impl
 

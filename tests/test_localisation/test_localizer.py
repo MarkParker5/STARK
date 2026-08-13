@@ -1,4 +1,3 @@
-import tempfile
 from pathlib import Path
 
 from stark.general.localisation import Localizer

@@ -1,4 +1,6 @@
+import logging
 import os
+
 import asyncer
 import sounddevice
 import soundfile
@@ -6,7 +8,6 @@ from google.cloud import texttospeech
 
 from .protocols import SpeechSynthesizer, SpeechSynthesizerResult
 
-import logging
 logger = logging.getLogger(__name__)
 
 class Speech(SpeechSynthesizerResult):
@@ -70,10 +71,10 @@ class GCloudSpeechSynthesizer(SpeechSynthesizer):
           'ю':'u','я':'ja', ' ':'_'}
         allowed = 'abcdefghijklmnopqrstuvxyz'
         name = name.lower()
-        for i, letter in enumerate(name):
+        for _i, letter in enumerate(name):
             if letter in allowed:
                 continue
-            elif letter in dict.keys():
+            elif letter in dict:
                 name = name.replace(letter, dict[letter])
             else:
                 name = name.replace(letter, '')

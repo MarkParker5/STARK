@@ -1,7 +1,8 @@
 import logging
 import warnings
+from collections.abc import Generator
 from pathlib import Path
-from typing import Generator, cast
+from typing import cast
 
 from stark.general.localisation.language_code import LanguageCode
 
@@ -33,7 +34,7 @@ class Localizer:
             warnings.warn(
                 f"Localizer key '{localizable_string.string}' not found for language '{localizable_string.language_code}', using raw key as fallback",
                 RuntimeWarning,
-            )
+            stacklevel=2)
             resolved = localizable_string.string
         return resolved.format(**localizable_string.arguments)
 
@@ -57,7 +58,7 @@ class Localizer:
                 + (f"\nMissing localizable: {missing_localizable}" if missing_localizable else "")
                 + (f"\nMissing recognizable: {missing_recognizable}" if missing_recognizable else ""),
                 RuntimeWarning,
-            )
+            stacklevel=2)
 
         self._check_completeness(self.localizable)
         self._check_completeness(self.recognizable)
@@ -67,7 +68,7 @@ class Localizer:
             warnings.warn(
                 f"Recognizable key '{key}' for base language '{self.base_language}' not found. Added key to '{self.recognizable[self.base_language].path}'. Translation needed.",
                 RuntimeWarning,
-            )
+            stacklevel=2)
             with open(self.recognizable[self.base_language].path, "a") as f:
                 f.write(f'\n{key} = "{key}"')
             return
@@ -77,14 +78,14 @@ class Localizer:
             warnings.warn(
                 f"Recognizable key '{key}' for language '{lang}' not found in file '{self.recognizable[lang].path}'.",
                 RuntimeWarning,
-            )
+            stacklevel=2)
 
     def verify_localizable(self, key: str):
         if self.localizable[self.base_language].get(key) is None:
             warnings.warn(
                 f"Localizable key '{key}' for base language '{self.base_language}' not found. Added key to '{self.localizable[self.base_language].path}'. Translation needed.",
                 RuntimeWarning,
-            )
+            stacklevel=2)
             with open(self.localizable[self.base_language].path, "a") as f:
                 f.write(f'\n{key} = "{key}"')
             return
@@ -94,7 +95,7 @@ class Localizer:
             warnings.warn(
                 f"Localizable key '{key}' for language '{lang}' not found in file '{self.localizable[lang].path}'.",
                 RuntimeWarning,
-            )
+            stacklevel=2)
 
     def _get_string(
         self, key: str, language: LanguageCode, source: Languages, file_name: str = "localizable"
@@ -104,15 +105,15 @@ class Localizer:
         warnings.warn(
             f"Localizer key '{key}' not found for language '{language}' in {file_name}.",
             RuntimeWarning,
-        )
+        stacklevel=2)
         if self.base_language in source and (result := source[self.base_language].get(key)):
             return result
-        if "base" != self.base_language and "base" in source and (result := source["base"].get(key)):
+        if self.base_language != "base" and "base" in source and (result := source["base"].get(key)):
             return result
         warnings.warn(
             f"Localizer key '{key}' not found for base language '{self.base_language}' in {file_name}.",
             RuntimeWarning,
-        )
+        stacklevel=2)
         return None
 
     def _ensure_strings_dirs(self):
@@ -151,4 +152,4 @@ class Localizer:
                 warnings.warn(
                     f"Missing keys in {strings_file.path}: {missing}",
                     RuntimeWarning,
-                )
+                stacklevel=2)

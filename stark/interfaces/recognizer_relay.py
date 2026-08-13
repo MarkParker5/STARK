@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 import time
-from typing import Generator
+from collections.abc import Generator
 
 import anyio
 from asyncer._main import TaskGroup

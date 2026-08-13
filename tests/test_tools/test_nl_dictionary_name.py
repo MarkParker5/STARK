@@ -21,7 +21,7 @@ def setup_dictionary():
 
 
 @pytest.mark.parametrize(
-    "query,expected_city, expected_coords",
+    ("query", "expected_city", "expected_coords"),
     [
         ("Nurnberg", "Nurnberg", (49.45, 11.08)),
         ("London", "London", (51.51, -0.13)),

@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import logging
 import re
+from collections.abc import Generator
 from dataclasses import dataclass
-from typing import Generator
 from uuid import uuid4
 
 logger = logging.getLogger(__name__)

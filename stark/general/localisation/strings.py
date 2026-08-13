@@ -34,7 +34,7 @@ class StringsFile:
         return None
 
     def read(self):
-        with open(self.path, 'r') as f:
+        with open(self.path) as f:
             for match in self._pattern.finditer(f.read()):
                 groups = match.groupdict()
                 if not all([groups.get('value'), groups.get('key')]):

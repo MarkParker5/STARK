@@ -88,6 +88,8 @@ psutil = "^7.1.1"
 trio = "^0.33.0"
 mkdocs-llmstxt = "^0.5.0"
 poethepoet = "^0.29.0"
+ruff = "^0.16.2"
+ty = "^0.0.71"
 
 [tool.poe.tasks]
 # quick shortcuts:  poetry run poe <name>
@@ -108,3 +110,63 @@ disable_test_id_escaping_and_forfeit_all_rights_to_community_support = true
 [tool.mypy]
 ignore_missing_imports = true
 exclude = ["stark/core/types/Time.*", "stark/core/types/Number.*", "stark/tools/dictionary/!examples.py"]
+
+[tool.ty.src]
+# Illustrative doc snippet with intentionally-undefined names (parallels mypy/ruff exclude).
+exclude = ["**/dictionary/?examples.py"]  # matches "!examples.py" (`?` sidesteps leading-! glob negation)
+
+[tool.ty.rules]
+# Optional extras (torch / matplotlib / epitran) are not installed in the base env;
+# this parallels mypy's `ignore_missing_imports = true`.
+unresolved-import = "ignore"
+# mypy's `# type: ignore` comments coexist in the source; ty cannot tell they target
+# mypy and would otherwise flag them as unused.
+unused-type-ignore-comment = "ignore"
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+# Illustrative/tutorial snippet with intentionally undefined names (F821).
+exclude = ["stark/tools/dictionary/!examples.py"]
+
+[tool.ruff.lint]
+# Curated, meaningful set: correctness (E/F), import hygiene (I), modernization
+# (UP), bugbear (B), simplify (SIM), comprehensions (C4), misc lint (PIE),
+# pytest style (PT), timezone safety (DTZ), Ruff-native (RUF), plus a few
+# high-signal Pylint refactors (PLR). E501 is intentionally excluded: the
+# codebase has ~99 wide data/expectation literals and reflowing them would be
+# pure churn with no correctness benefit.
+select = [
+    "E",    # pycodestyle errors
+    "F",    # pyflakes
+    "I",    # isort
+    "UP",   # pyupgrade
+    "B",    # flake8-bugbear
+    "SIM",  # flake8-simplify
+    "C4",   # flake8-comprehensions
+    "PIE",  # flake8-pie
+    "PT",   # flake8-pytest-style
+    "DTZ",  # flake8-datetimez
+    "RUF",  # Ruff-specific
+    "PLR1704",  # redefined-argument-from-local
+    "TRY002",   # raise-vanilla-class
+    "TRY004",   # type-check-without-type-error
+]
+ignore = [
+    "E501",   # line-too-long: many wide data literals; reflow would be churn
+    "RUF001", # ambiguous-unicode (string): multilingual NLP data, non-ASCII is intentional
+    "RUF002", # ambiguous-unicode (docstring): idem
+    "RUF003", # ambiguous-unicode (comment): idem
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Intentional re-exports.
+"__init__.py" = ["F401"]
+# This test deliberately exercises Optional[X] / Union[X, None] slot annotations
+# as the subject under test (both spellings side by side); keep the legacy forms.
+"tests/test_nl_objects/test_rules.py" = ["UP007", "UP045"]
+# Deliberate pre-import side effect: silence faker logging before it is imported.
+"tests/conftest.py" = ["E402"]
+# Test-local Union subclasses assign the `_types` registry (mirroring MakeUnion);
+# these are deliberate class-attribute overrides, not a mutability hazard.
+"tests/test_core/test_union.py" = ["RUF012"]

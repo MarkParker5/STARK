@@ -1,12 +1,13 @@
 import ctypes
+import ctypes.util
 import os
 import re
 import sys
 import threading
-from typing import Generator, Optional, final
+from collections.abc import Generator
+from typing import final
 
 from stark.general.localisation.language_code import LanguageCode
-import ctypes.util
 
 
 @final
@@ -18,7 +19,7 @@ class EspeakNG:
     AUDIO_OUTPUT_SYNCHRONOUS = 0x02
     EE_OK = 0
 
-    def __init__(self, lib_path: Optional[str] = None, lang: str = "en-us"):
+    def __init__(self, lib_path: str | None = None, lang: str = "en-us"):
         self.voice = lang
         self.lib_espeak = self._load_espeak(lib_path)
         self._init_espeak()
@@ -36,7 +37,7 @@ class EspeakNG:
     def text_to_ipa(
         self,
         text: str,
-        phoneme_separator: Optional[str] = None,
+        phoneme_separator: str | None = None,
         remove_stress: bool = False,
     ) -> str:
         """Return IPA phoneme string for the given text using espeak_TextToPhonemes."""
@@ -140,7 +141,7 @@ class EspeakIpaProvider:
             espeak.set_lang(language_code)
             ipa = espeak.text_to_ipa(string, remove_stress=True)
             if self.check_chars:
-                for char in {"(", ")", "[", "]"}:
+                for char in ("(", ")", "[", "]"):
                     assert char not in ipa, (
                         f"Unexpected character '{char}' in IPA '{ipa}' with lang '{language_code}'. Check if the language is supported by eSpeak NG. You can disable this check by setting check_chars=False."
                     )

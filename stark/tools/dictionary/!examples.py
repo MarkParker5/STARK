@@ -68,7 +68,6 @@ def build():
 @app.command()
 def run():
     """Run the project."""
-    pass
 
 
 if __name__ == "__main__":

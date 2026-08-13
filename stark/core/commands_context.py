@@ -18,7 +18,11 @@ from stark.core.types.object import Object
 from stark.general.localisation import LocaleString, Localizer
 from stark.general.localisation.language_code import LanguageCode
 
-from ..general.dependencies import Dependency, DependencyManager, default_dependency_manager
+from ..general.dependencies import (
+    Dependency,
+    DependencyManager,
+    default_dependency_manager,
+)
 from .command import (
     AsyncResponseHandler,
     Command,
@@ -126,7 +130,7 @@ class CommandsContext:
 
             substring = search_result.match_result.substring
             lang = substring.language_code if isinstance(substring, LocaleString) else string.language_code
-            lang_dep = Dependency(None, LanguageCode, lang)  # type: ignore[arg-type]  # LanguageCode Literal alias used as a runtime dependency key
+            lang_dep = Dependency(None, LanguageCode, lang)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]  # LanguageCode Literal alias used as a runtime dependency key
             self.dependency_manager.dependencies.add(lang_dep)
             parameters.update(self.dependency_manager.resolve(search_result.command._runner))
             # language is a command-specific temporary dependency
@@ -143,7 +147,10 @@ class CommandsContext:
 
         return injected_func  # type: ignore
 
-    def run_command(self, command: Command, parameters: dict[str, Any] = {}):
+    def run_command(self, command: Command, parameters: dict[str, Any] | None = None):
+        if parameters is None:
+            parameters = {}
+
         async def command_task():
             command_return = await command(parameters)
 
@@ -160,7 +167,7 @@ class CommandsContext:
                     f"[WARNING] Command {command} is a sync GeneratorType that is not fully supported and may block the main thread. "
                     + "Consider using the ResponseHandler.respond() or async approach instead."
                 )
-                warnings.warn(message, UserWarning)
+                warnings.warn(message, UserWarning, stacklevel=2)
                 for response in command_return:
                     if response:
                         await self.respond(response)

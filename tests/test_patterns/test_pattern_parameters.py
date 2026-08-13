@@ -1,7 +1,7 @@
 import pytest
 
 from stark.core import Pattern
-from stark.core.parsing import ParseError
+from stark.core.parsing import ParseError, PatternParser
 from stark.core.patterns import rules
 from stark.core.types import Object, String, Word
 from stark.general.classproperty import classproperty
@@ -83,8 +83,6 @@ class TwoWords(Object):
         return Pattern("$word1:Word $word2:Word")
 
 
-from stark.core.parsing import PatternParser
-
 pattern_parser = PatternParser()
 pattern_parser.register_parameter_type(TwoWords)
 
@@ -105,13 +103,11 @@ class OOWordSimple2(Word):
         return from_string
 
 
-from stark.core.parsing import PatternParser
-
 pattern_parser.register_parameter_type(OOWordSimple2)
 
 
 @pytest.mark.parametrize(
-    "pattern_str, input_str, expected_params",
+    ("pattern_str", "input_str", "expected_params"),
     [
         ("$name:OOWordSimple2 ?* $name2:OOWordSimple2", "Joohn Janoo", {"name": "Joohn", "name2": "Janoo"}),
         ("$name:OOWordSimple2 ?* $name2:OOWordSimple2", "Joohn and Janoo", {"name": "Joohn", "name2": "Janoo"}),

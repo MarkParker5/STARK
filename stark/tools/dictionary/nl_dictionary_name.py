@@ -3,8 +3,8 @@ from typing import override
 from stark.core.parsing import ParseError
 from stark.core.patterns.pattern import Pattern
 from stark.core.types import Object
-from stark.general.localisation.language_code import LanguageCode
 from stark.general.classproperty import classproperty
+from stark.general.localisation.language_code import LanguageCode
 
 from .dictionary import Dictionary, LookupMode
 from .models import LookupResult

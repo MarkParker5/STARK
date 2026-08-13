@@ -1,5 +1,7 @@
 import logging
 
+import numpy as np
+
 from stark.tools.levenshtein import (
     SIMPLEPHONE_PROXIMITY_GRAPH,
     levenshtein_distance_substring,
@@ -7,9 +9,6 @@ from stark.tools.levenshtein import (
 )
 
 logger = logging.getLogger(__name__)
-
-import numpy as np
-
 
 if __name__ == "__main__":
     s1 = "imagine dragons"
@@ -43,15 +42,15 @@ if __name__ == "__main__":
             s1_list: Optional custom row labels.
             s2_list: Optional custom column labels.
         """
-        s1_list = s1_list or ["s1"] + list(s1)
-        s2_list = s2_list or ["s2"] + list(s2)
+        s1_list = s1_list or ["s1", *list(s1)]
+        s2_list = s2_list or ["s2", *list(s2)]
 
         def auto_figsize(
             arr: np.ndarray, cell_w: float = 0.6, cell_h: float = 0.6
         ) -> tuple[float, float]:
             return arr.shape[1] * cell_w, arr.shape[0] * cell_h
 
-        fig, ax = plt.subplots(figsize=auto_figsize(dp))
+        _fig, ax = plt.subplots(figsize=auto_figsize(dp))
         masked = np.ma.masked_where(dp >= 1e6, dp)
         cax = ax.matshow(masked, cmap="viridis", alpha=0.7)
 
@@ -85,8 +84,8 @@ if __name__ == "__main__":
             s2: String for x-axis labels.
             title: Chart title.
         """
-        fig, ax = plt.subplots(figsize=(len(s2) * 0.6, 2.5))
-        bars = ax.bar(
+        _fig, ax = plt.subplots(figsize=(len(s2) * 0.6, 2.5))
+        ax.bar(
             range(len(values)),
             values,
             color=plt.cm.viridis(values / (values.max() or 1)),

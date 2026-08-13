@@ -1,8 +1,10 @@
 import os
-import numpy
-import torch
-import sounddevice
+
 import asyncer
+import numpy
+import sounddevice
+import torch
+
 from .protocols import SpeechSynthesizer, SpeechSynthesizerResult
 
 

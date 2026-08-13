@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Self, Sequence, SupportsIndex
+from collections.abc import Sequence
+from typing import Self, SupportsIndex
 
 from stark.general.localisation.language_code import LanguageCode
 
@@ -136,13 +137,13 @@ class LocaleString(str):
 
     # --- str → list[str] methods ---
 
-    def split(self, sep: str | None = None, maxsplit: SupportsIndex = -1) -> Sequence[Self]:  # type: ignore[override]
+    def split(self, sep: str | None = None, maxsplit: SupportsIndex = -1) -> Sequence[Self]:  # type: ignore[override]  # ty: ignore[invalid-method-override]  # intentional covariant return on str subclass
         return [self._with(s) for s in super().split(sep, maxsplit)]
 
-    def rsplit(self, sep: str | None = None, maxsplit: SupportsIndex = -1) -> Sequence[Self]:  # type: ignore[override]
+    def rsplit(self, sep: str | None = None, maxsplit: SupportsIndex = -1) -> Sequence[Self]:  # type: ignore[override]  # ty: ignore[invalid-method-override]  # intentional covariant return on str subclass
         return [self._with(s) for s in super().rsplit(sep, maxsplit)]
 
-    def splitlines(self, keepends: bool = False) -> Sequence[Self]:  # type: ignore[override]
+    def splitlines(self, keepends: bool = False) -> Sequence[Self]:  # type: ignore[override]  # ty: ignore[invalid-method-override]  # intentional covariant return on str subclass
         return [self._with(s) for s in super().splitlines(keepends)]
 
     # --- str → tuple[str, ...] methods ---

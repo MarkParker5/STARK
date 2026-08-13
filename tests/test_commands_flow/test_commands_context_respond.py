@@ -1,7 +1,9 @@
-import pytest
 import warnings
+
 import anyio
-from stark.core import Response, ResponseHandler, AsyncResponseHandler
+import pytest
+
+from stark.core import AsyncResponseHandler, Response, ResponseHandler
 
 
 async def test_command_return_response(commands_context_flow, autojump_clock):
@@ -97,7 +99,8 @@ async def test_command_multiple_respond(commands_context_flow, autojump_clock):
         last_count = 0
         while last_count < 5:
             await anyio.sleep(1)
-            if last_count == len(context_delegate.responses): continue
+            if last_count == len(context_delegate.responses):
+                continue
             assert len(context_delegate.responses) == last_count + 1
             last_count += 1
             assert context_delegate.responses[last_count - 1].text == f'Timer update {last_count - 1}'

@@ -3,25 +3,18 @@ from __future__ import annotations
 import inspect
 import logging
 import warnings
+from collections.abc import AsyncGenerator, Awaitable, Callable, Generator
 from datetime import datetime
 from enum import Enum, auto
 from functools import update_wrapper, wraps
 from typing import (
     Any,
-    AsyncGenerator,
-    Awaitable,
-    Callable,
     ClassVar,
-    Generator,
-    Optional,
     Protocol,
     cast,
+    get_args,
 )
 from uuid import UUID, uuid4
-
-from typing_extensions import get_args
-
-logger = logging.getLogger(__name__)
 
 import asyncer
 from pydantic import BaseModel, Field
@@ -30,10 +23,12 @@ from ..general.classproperty import classproperty
 from ..general.localisation import LanguageCode, LocalizableString
 from .patterns import Pattern
 
-type ResponseOptions = Optional["Response"] | Generator[Optional["Response"], None, None] | AsyncGenerator[Optional["Response"], None]
+logger = logging.getLogger(__name__)
+
+type ResponseOptions = "Response" | Generator["Response" | None, None, None] | AsyncGenerator["Response" | None, None] | None  # ty: ignore[unsupported-operator]  # string forward-ref in a lazy PEP 695 alias; ty gap
 type AwaitResponse = Awaitable[ResponseOptions]
 type AsyncCommandRunner = Callable[..., AwaitResponse]
-type SyncCommandRunner = Callable[..., Optional["Response"]]
+type SyncCommandRunner = Callable[..., "Response" | None]  # ty: ignore[unsupported-operator]  # string forward-ref in a lazy PEP 695 alias; ty gap
 type CommandRunner = SyncCommandRunner | AsyncCommandRunner  # TypeVar("CommandRunner", bound=SyncCommandRunner | AsyncCommandRunner)
 
 
@@ -43,7 +38,8 @@ class Command[T: CommandRunner]:
     _runner: T
 
     def __init__(self, name: str, patterns: dict[LanguageCode, Pattern], runner: T):
-        assert patterns and all(isinstance(p, Pattern) for p in patterns.values())
+        assert patterns
+        assert all(isinstance(p, Pattern) for p in patterns.values())
         self.name = name
         self.patterns = patterns
         self._runner = runner
@@ -87,7 +83,7 @@ class Command[T: CommandRunner]:
             coroutine = runner(**parameters)
         else:
             # otherwise pass only parameters that are in command runner signature to prevent TypeError: got an unexpected keyword argument
-            coroutine = runner(**{k: v for k, v in parameters.items() if k in self._runner.__code__.co_varnames})
+            coroutine = runner(**{k: v for k, v in parameters.items() if k in self._runner.__code__.co_varnames})  # ty: ignore[unresolved-attribute]  # runner is always a function with __code__; ty Callable gap (see ty FAQ)
 
         @wraps(runner)
         async def coroutine_wrapper() -> ResponseOptions:
@@ -105,7 +101,7 @@ class Command[T: CommandRunner]:
                     f"[WARNING] Command {self} is a sync GeneratorType that is not fully supported and may block the main thread. "
                     + "Consider using the ResponseHandler.respond() or async approach instead."
                 )
-                warnings.warn(message, UserWarning)
+                warnings.warn(message, UserWarning, stacklevel=2)
             return response
 
         return coroutine_wrapper()

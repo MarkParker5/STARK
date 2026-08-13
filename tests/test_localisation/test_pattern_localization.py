@@ -104,16 +104,16 @@ async def test_at_key_no_match_wrong_language(localized_parser):
 
 
 async def test_at_key_missing_localizer():
+    parser = PatternParser()
+
+    class BadType(Object):
+        value: str
+
+        @classproperty
+        def pattern(cls) -> Pattern:
+            return Pattern("@some_key")
+
     with pytest.raises(ValueError, match="no Localizer"):
-        parser = PatternParser()
-
-        class BadType(Object):
-            value: str
-
-            @classproperty
-            def pattern(cls) -> Pattern:
-                return Pattern("@some_key")
-
         parser.register_parameter_type(BadType)
 
 
@@ -125,16 +125,16 @@ async def test_at_key_missing_key(tmp_path, monkeypatch):
     localizer = Localizer(languages={"en"})
     localizer.load()
 
+    parser = PatternParser(localizer=localizer)
+
+    class BadType2(Object):
+        value: str
+
+        @classproperty
+        def pattern(cls) -> Pattern:
+            return Pattern("@nonexistent_key")
+
     with pytest.warns(RuntimeWarning, match="nonexistent_key.*not found.*Added.*Translation needed"):
-        parser = PatternParser(localizer=localizer)
-
-        class BadType2(Object):
-            value: str
-
-            @classproperty
-            def pattern(cls) -> Pattern:
-                return Pattern("@nonexistent_key")
-
         parser.register_parameter_type(BadType2)
 
 

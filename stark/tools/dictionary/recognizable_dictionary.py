@@ -4,12 +4,12 @@ from stark.general.localisation.localizer import Localizer
 from stark.tools.dictionary.dictionary import Dictionary
 from stark.tools.dictionary.models import DictionaryStorageProtocol
 from stark.tools.dictionary.storage.storage_memory import DictionaryStorageMemory
-from stark.tools.phonetic.transcription import EspeakIpaProvider, IpaProvider
+from stark.tools.phonetic.transcription import _DEFAULT_IPA_PROVIDER, IpaProvider
 
 
 def build_recognizable_dictionary(
     localizer: Localizer,
-    ipa_provider: IpaProvider = EspeakIpaProvider(),
+    ipa_provider: IpaProvider = _DEFAULT_IPA_PROVIDER,
     storage: DictionaryStorageProtocol | None = None,
 ) -> Dictionary:
     """Build a Dictionary populated from all loaded recognizable.strings bundles.

@@ -3,12 +3,12 @@ import pytest
 from stark.tools.levenshtein import (
     levenshtein_distance,
 )
-from stark.tools.phonetic.transcription import transcription
 from stark.tools.phonetic.simplephone import simplephone
+from stark.tools.phonetic.transcription import transcription
 
 
 @pytest.mark.parametrize(
-    "original_str,similar_str",
+    ("original_str", "similar_str"),
     [
         ("en:foo bar", "en:foobar"),
         ("en:bar baz", "en:barbaz"),

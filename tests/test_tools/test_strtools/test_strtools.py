@@ -4,7 +4,7 @@ from stark.tools import strtools
 
 
 @pytest.mark.parametrize(
-    "s,sep,expected",
+    ("s", "sep", "expected"),
     [
         ("foo bar baz", " ", [(0, 3), (4, 7), (8, 11)]),
         ("a,b,c", ",", [(0, 1), (2, 3), (4, 5)]),
@@ -40,7 +40,7 @@ def test_find_substring_in_words_map_no_match():
 
 
 @pytest.mark.parametrize(
-    "s1,s2,expected",
+    ("s1", "s2", "expected"),
     [
         ("foobar", "barbaz", "bar"),
         ("hello", "loworld", "lo"),

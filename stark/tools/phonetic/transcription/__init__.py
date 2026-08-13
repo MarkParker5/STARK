@@ -7,12 +7,15 @@ from .ipa2lat import ipa2lat
 from .latin_passthrough import LatinPassthroughProvider
 from .protocol import IpaProvider
 
+# Module-level default so it is not constructed as a call in argument defaults (B008).
+_DEFAULT_IPA_PROVIDER = EspeakIpaProvider()
+
 
 @lru_cache
 def transcription(
     string: str,
     language_code: LanguageCode,
-    ipa_provider: IpaProvider = EspeakIpaProvider(),
+    ipa_provider: IpaProvider = _DEFAULT_IPA_PROVIDER,
 ) -> str:
     """
     Converts a string to a simplified latin transcription via phonetic (IPA) transliteration.

@@ -3,14 +3,13 @@ import random
 import anyio
 import pytest
 
+from stark.core import CommandsManager, Pattern, Response
 from stark.core.parsing import PatternParser
 from stark.core.processors.search_processor import SearchProcessor
-
-pattern_parser = PatternParser()
-
-from stark.core import CommandsManager, Pattern, Response
 from stark.core.types import Object
 from stark.general.classproperty import classproperty
+
+pattern_parser = PatternParser()
 
 
 async def test_multiple_commands(commands_context_flow, autojump_clock):

@@ -207,7 +207,7 @@ def test_locale_string_translate_position_unrelated():
 
     ls = LocaleString("hello world")
     # neither is substring of the other: raises ValueError (can't verify overlap)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="must be a substring of the other"):
         ls.translate_position(3, "другой текст", "hello world")
 
 

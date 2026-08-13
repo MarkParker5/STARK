@@ -25,7 +25,7 @@ class CommandsContextLayer:
 logger = logging.getLogger(__name__)
 
 
-class CommandsContextProcessor(ABC):
+class CommandsContextProcessor(ABC):  # noqa: B024  # intentional ABC base: subclasses override process() or process_context_layer() selectively, no method is strictly abstract
     """
     Abstract base class for processors in the CommandsContext pipeline.
 
@@ -74,13 +74,13 @@ class CommandsContextProcessor(ABC):
             pops += 1
         return [], pops
 
-    async def process_context_layer(  # type: ignore[empty-body]  # abstract-style method, subclasses provide the body
+    async def process_context_layer(  # type: ignore[empty-body]  # noqa: B027  # abstract-style hook: optional to override (process() is the alternative), so not @abstractmethod
         self,
         string: LocaleString,
         context: CommandsContext,
         context_layer: CommandsContextLayer,
         recognized_entities: list[RecognizedEntity],
-    ) -> list[SearchResult]:
+    ) -> list[SearchResult]:  # ty: ignore[empty-body]  # abstract-style hook with a default (docstring-only) body; subclasses override
         """
         Processes a single context layer.
         Returns a list of SearchResult objects (may be empty).
@@ -88,4 +88,3 @@ class CommandsContextProcessor(ABC):
         Use case: Implement classic command search or other per-context logic.
         If results are empty, the context will be popped by the caller.
         """
-        ...

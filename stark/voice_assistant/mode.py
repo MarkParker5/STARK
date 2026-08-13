@@ -1,6 +1,9 @@
 from __future__ import annotations
-from typing import Optional, Callable
+
+from collections.abc import Callable
+
 from pydantic import BaseModel
+
 from ..general.classproperty import classproperty
 
 
@@ -8,7 +11,7 @@ class Mode(BaseModel):
     
     play_responses: bool = True
     collect_responses: bool = False
-    explicit_interaction_pattern: Optional[str] = None
+    explicit_interaction_pattern: str | None = None
     timeout_after_interaction: int = 20 # seconds
     timeout_before_repeat: int = 5 # seconds
     mode_on_timeout: Callable[[], Mode] | None = None

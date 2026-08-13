@@ -2,7 +2,6 @@ from typing import cast
 
 import pytest
 
-from stark.general.localisation import LocaleString
 from stark.general.localisation.language_code import LanguageCode
 from stark.models.voice_transcription import (
     Transcription,

@@ -15,12 +15,12 @@ from stark.tools.levenshtein import (
     levenshtein_similarity,
     levenshtein_similarity_substring,
 )
-from stark.tools.phonetic.transcription import (
-    transcription,
-    IpaProvider,
-    EspeakIpaProvider,
-)
 from stark.tools.phonetic.simplephone import simplephone
+from stark.tools.phonetic.transcription import (
+    _DEFAULT_IPA_PROVIDER,
+    IpaProvider,
+    transcription,
+)
 from stark.tools.strtools import find_substring_in_words_map, split_indices
 
 from .models import (
@@ -60,7 +60,7 @@ class Dictionary:
     def __init__(
         self,
         storage: DictionaryStorageProtocol,
-        ipa_provider: IpaProvider = EspeakIpaProvider(),
+        ipa_provider: IpaProvider = _DEFAULT_IPA_PROVIDER,
     ):
         self.storage: DictionaryStorageProtocol = storage
         self.ipa_provider: IpaProvider = ipa_provider
@@ -298,7 +298,7 @@ class Dictionary:
                             yield LookupResult(span, item)
                 elif field == LookupField.NAME:
                     for item in self.storage.iterate():
-                        for span, x in levenshtein_search_substring(
+                        for span, _x in levenshtein_search_substring(
                             s1=sentence,
                             s2=item.name,
                             ignore_prefix=True,

@@ -1,6 +1,6 @@
 from collections import OrderedDict
+from collections.abc import Awaitable, Callable
 from functools import wraps
-from typing import Awaitable, Callable
 
 import anyio
 

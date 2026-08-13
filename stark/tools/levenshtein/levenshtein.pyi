@@ -1,4 +1,5 @@
 import numpy as np
+
 from stark.tools.common.span import Span
 
 PROX_MED: float

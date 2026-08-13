@@ -1,4 +1,5 @@
-from typing import Hashable, Protocol
+from collections.abc import Hashable
+from typing import Protocol
 
 from stark.general.localisation.language_code import LanguageCode
 

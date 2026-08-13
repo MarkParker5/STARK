@@ -1,6 +1,6 @@
 import re
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable, Optional
 
 
 class UnhandledTagError(ValueError):
@@ -11,8 +11,8 @@ class UnhandledTagError(ValueError):
 @dataclass
 class Rule:
     pattern: str
-    replace: Optional[str] = None
-    func: Optional[Callable[[re.Match], str]] = None
+    replace: str | None = None
+    func: Callable[[re.Match], str] | None = None
 
 alphanumerics = r'A-zА-яЁё0-9'
 parameters = r'$:'

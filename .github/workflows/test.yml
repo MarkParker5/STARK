@@ -27,11 +27,21 @@ jobs:
       - name: Build Cython extensions
         run: poetry run python setup.py build_ext --inplace
 
+      - name: Lint (ruff)
+        run: poetry run ruff check stark/ tests/
+
       - name: Run pytest
         run: poetry run pytest
 
       - name: Type check (mypy)
         run: poetry run mypy stark/ tests/
+
+      # ty is pre-1.0 (0.0.x): it does not yet model STARK's metaclass Union magic
+      # and dynamic parsed-attribute access, so a handful of documented false
+      # positives remain. Keep it visible in CI but non-blocking until it matures.
+      - name: Type check (ty, non-blocking)
+        run: poetry run ty check stark/ tests/
+        continue-on-error: true
 
       - name: Duck Notifier
         if: failure()

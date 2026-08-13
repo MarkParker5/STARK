@@ -3,7 +3,7 @@ import logging
 logging.getLogger("faker").setLevel(logging.WARNING)
 
 import contextlib
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
 
 import anyio
 import asyncer
@@ -15,7 +15,6 @@ from stark.core import (
     CommandsContextDelegate,
     CommandsManager,
     Response,
-    ResponseHandler,
 )
 from stark.core.types import Word
 from stark.general.dependencies import DependencyManager
@@ -175,7 +174,6 @@ async def commands_context_flow_filled(commands_context_flow):
                 await handler.respond(response)
                 await anyio.sleep(1)
                 await handler.unrespond(response)
-                return None
 
             yield (context, context_delegate)
 
@@ -186,7 +184,7 @@ async def commands_context_flow_filled(commands_context_flow):
 async def voice_assistant(commands_context_flow_filled):
     @contextlib.asynccontextmanager
     async def _voice_assistant() -> AsyncGenerator[VoiceAssistant, None]:
-        async with commands_context_flow_filled() as (context, context_delegate):
+        async with commands_context_flow_filled() as (context, _context_delegate):
             voice_assistant = VoiceAssistant(
                 speech_recognizer=SpeechRecognizerMock(),
                 speech_synthesizer=SpeechSynthesizerMock(),

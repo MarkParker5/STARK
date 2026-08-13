@@ -2,8 +2,6 @@ import logging
 from datetime import datetime
 from typing import cast
 
-logger = logging.getLogger(__name__)
-
 from ..core import (
     CommandsContext,
     CommandsContextDelegate,
@@ -20,6 +18,8 @@ from ..interfaces.protocols import (
     SpeechSynthesizer,
 )
 from .mode import Mode
+
+logger = logging.getLogger(__name__)
 
 
 class ResponseCache(Response):
@@ -56,12 +56,12 @@ class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
         self.mode = Mode.active
         self.ignore_responses = []
         self._responses = []
-        self._last_interaction_time = datetime.now()
+        self._last_interaction_time = datetime.now()  # noqa: DTZ005  # local wall-clock interval timing; naive is intentional
 
     @property
     def timeout_reached(self):
         return (
-            datetime.now() - self._last_interaction_time
+            datetime.now() - self._last_interaction_time  # noqa: DTZ005  # local wall-clock interval timing; naive is intentional
         ).total_seconds() >= self.mode.timeout_after_interaction
 
     # SpeechRecognizerDelegate
@@ -81,7 +81,7 @@ class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
         if self.timeout_reached:
             self.commands_context.pop_to_root_context()
 
-        self._last_interaction_time = datetime.now()
+        self._last_interaction_time = datetime.now()  # noqa: DTZ005  # local wall-clock interval timing; naive is intentional
 
         # switch mode if needed
         if self.mode.mode_on_interaction:
@@ -110,7 +110,7 @@ class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
         if self.timeout_reached and self.mode.collect_responses:
             self._responses.append(
                 ResponseCache(
-                    **response.dict(), timeout_before_repeat=timeout_before_repeat
+                    **response.model_dump(), timeout_before_repeat=timeout_before_repeat
                 )
             )
 
@@ -129,7 +129,7 @@ class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
         while self._responses:
             response = self._responses.pop(0)
             if (
-                datetime.now() - response.time
+                datetime.now() - response.time  # noqa: DTZ005  # local wall-clock interval timing; naive is intentional
             ).total_seconds() <= response.timeout_before_repeat:
                 self._responses.insert(0, response)
                 continue

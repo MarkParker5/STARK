@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Generator
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Generator, cast
+from typing import TYPE_CHECKING, cast
 
 from pydantic import BaseModel, Field
 
@@ -200,7 +201,6 @@ class VoiceTranscriptionTrack(BaseModel):
             if w.start > time:
                 # time falls in the gap before this word
                 if i > 0:
-                    prev = self.result[i - 1]
                     return offset - 1  # the space char
                 return word_start
             offset = word_start + len(w.word) + 1

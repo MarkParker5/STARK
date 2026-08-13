@@ -1,5 +1,5 @@
+
 import anyio
-from typing_extensions import Optional
 
 from stark.core import Pattern, Response
 from stark.core.types import Object
@@ -29,7 +29,7 @@ async def test_command_flow_optional_parameter(commands_context_flow, autojump_c
         context.pattern_parser.register_parameter_type(Room)
 
         @manager.new("turn on ($category:Category|$device:Device|$room:Room)")
-        async def turn_on(category: Optional[Category], device: Optional[Device], room: Optional[Room]) -> Response:
+        async def turn_on(category: Category | None, device: Device | None, room: Room | None) -> Response:
             if category:
                 return Response(f"Category {category.value}")
             elif device:

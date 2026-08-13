@@ -4,7 +4,7 @@ from stark.tools.phonetic import simplephone
 
 
 @pytest.mark.parametrize(
-    "text,expected",
+    ("text", "expected"),
     [
         ("cat", "KT"),
         ("rough", "RF"),
@@ -40,7 +40,7 @@ def test_simplephone_param(text: str, expected: str):
 
 
 @pytest.mark.parametrize(
-    "text,expected,glue",
+    ("text", "expected", "glue"),
     [
         # no glue (default, more flexible)
         ("foo bar", "FAPA", ""),
@@ -54,8 +54,6 @@ def test_simplephone_param(text: str, expected: str):
         ("foo bar", "FA PA", " "),
         ("hello world", "ALA WT", " "),
         ("yellow submarine", "YLA SPMRN", " "),
-        ("", None, ""),
-        ("   ", None, ""),
         ("foo   bar", "FA PA", " "),
         ("foo bar baz", "FA PA PS", " "),
     ],

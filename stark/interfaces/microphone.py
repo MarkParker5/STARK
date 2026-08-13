@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from queue import Empty, Queue
-from typing import Any, Callable
+from typing import Any
 
 import anyio
 
@@ -13,7 +14,7 @@ class Microphone:
         except ImportError:
             raise ImportError(
                 "sounddevice is required for Microphone. Install it with: pip install stark-engine[sound]"
-            )
+            ) from None
         self.callback = callback
         self.device_id = device_id
         device_info = query_devices(device_id, kind="input") if device_id is not None else query_devices(kind="input")
@@ -30,7 +31,7 @@ class Microphone:
         except ImportError:
             raise ImportError(
                 "sounddevice is required for Microphone. Install it with: pip install stark-engine[sound]"
-            )
+            ) from None
         devices = query_devices()
         return [
             {"id": i, "name": d["name"], "channels": d["max_input_channels"], "samplerate": d["default_samplerate"]}

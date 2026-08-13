@@ -1,5 +1,6 @@
-from typing import Callable, Any
+from collections.abc import Callable
 from dataclasses import dataclass
+from typing import Any
 
 
 @dataclass
@@ -34,7 +35,7 @@ class DependencyManager:
     def resolve(self, func: Callable) -> dict[str, Any]:
         parameters = {}
         
-        annotations = {name: None for name in func.__code__.co_varnames}
+        annotations = dict.fromkeys(func.__code__.co_varnames)  # ty: ignore[unresolved-attribute]  # func is a function with __code__; ty Callable gap
         annotations.update(func.__annotations__)
         
         for name, annotation in annotations.items():
@@ -44,7 +45,8 @@ class DependencyManager:
         return parameters
         
     def add_dependency(self, name: str | None, annotation: type | None, value: Any):
-        assert (name or annotation) and value
+        assert name or annotation
+        assert value
         self.dependencies.add(Dependency(name, annotation, value))
                 
 default_dependency_manager = DependencyManager()

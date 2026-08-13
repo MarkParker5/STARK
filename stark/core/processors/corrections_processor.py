@@ -3,12 +3,11 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, cast, override
 
-from stark.general.localisation.language_code import LanguageCode
-
 from stark.core.commands_context_processor import CommandsContextProcessor
 from stark.core.commands_manager import SearchResult
 from stark.core.parsing import RecognizedEntity
 from stark.general.localisation import LocaleString
+from stark.general.localisation.language_code import LanguageCode
 
 from ..commands_context import CommandsContext
 
@@ -53,8 +52,7 @@ class CorrectionsProcessor(CommandsContextProcessor):
         if not self._dictionaries:
             return [], 0
 
-        from stark.models.transcription_string import TranscriptionString
-        from stark.models.transcription_string import Correction
+        from stark.models.transcription_string import Correction, TranscriptionString
 
         if not isinstance(string, TranscriptionString):
             return [], 0

@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 from collections import Counter
-from dataclasses import dataclass
-
 from collections.abc import Sequence
+from dataclasses import dataclass
 from typing import NamedTuple
 
 from stark.general.localisation.language_code import LanguageCode
@@ -123,7 +122,7 @@ class TranscriptionString(LocaleString):
             idx = key if key >= 0 else len(self) + key
             return self._slice_by_offset(result_str, idx, idx + 1)
 
-    def replace(self, old: str, new: str, count: int = -1) -> TranscriptionString:  # type: ignore[override]  # covariant return on str subclass
+    def replace(self, old: str, new: str, count: int = -1) -> TranscriptionString:  # type: ignore[override]  # ty: ignore[invalid-method-override]  # covariant return on str subclass
         result_text = str.replace(self, old, new, count)
         try:
             old_start = str.index(self, old)
@@ -157,7 +156,7 @@ class TranscriptionString(LocaleString):
         end = start + len(result_str)
         return self._slice_by_offset(result_str, start, end)
 
-    def split(self, sep: str | None = None, maxsplit: int = -1) -> list[TranscriptionString]:  # type: ignore[override]  # covariant return on str subclass
+    def split(self, sep: str | None = None, maxsplit: int = -1) -> list[TranscriptionString]:  # type: ignore[override]  # ty: ignore[invalid-method-override]  # covariant return on str subclass
         parts = str.split(self, sep, maxsplit)
         result: list[TranscriptionString] = []
         search_start = 0

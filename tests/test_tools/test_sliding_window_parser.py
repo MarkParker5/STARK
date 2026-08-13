@@ -82,7 +82,7 @@ def char_span_for_substr(phrase: str, substr: str) -> Span:
 
 
 @pytest.mark.parametrize(
-    "phrase, token_start, token_end, baseline_value, parser, expected_substr, expected_value",
+    ("phrase", "token_start", "token_end", "baseline_value", "parser", "expected_substr", "expected_value"),
     [
         (
             "remind me to call mom on september 5",
@@ -152,7 +152,7 @@ async def test__binary_cookie_trim_ner(
 
 
 @pytest.mark.parametrize(
-    "phrase, parser, min_window, max_window, find_one, expected_results",
+    ("phrase", "parser", "min_window", "max_window", "find_one", "expected_results"),
     [
         (
             "remind me to call mom on september 5",

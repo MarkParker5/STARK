@@ -12,6 +12,9 @@ from stark.general.localisation import LocaleString
 class UnionMeta(ABCMeta):
     """Metaclass that makes | on Object subclasses produce a STARK Union subclass instead of types.UnionType."""
 
+    # Class-level flag on Union subclasses; synthetic MakeUnion classes set it True so PatternParser unwraps them.
+    _transparent: bool = False
+
     def __call__(cls, *args, **kwargs):
         from stark.core.types.union import Union
 
@@ -23,15 +26,15 @@ class UnionMeta(ABCMeta):
         from stark.core.types.union import MakeUnion
 
         if isinstance(other, type) and issubclass(other, Object):
-            return MakeUnion(cls, other)  # type: ignore[arg-type]  # UnionMeta instances are Object subclasses
-        return type.__or__(cls, other)  # type: ignore[return-value]  # fall through to types.UnionType for X | None etc.
+            return MakeUnion(cls, other)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]  # UnionMeta instances are Object subclasses
+        return type.__or__(cls, other)  # type: ignore[return-value]  # ty: ignore[invalid-return-type]  # fall through to types.UnionType for X | None etc.
 
     def __ror__(cls, other: type) -> type:  # type: ignore[override]  # metaclass operator overload returning STARK Union
         from stark.core.types.union import MakeUnion
 
         if isinstance(other, type) and issubclass(other, Object):
-            return MakeUnion(other, cls)  # type: ignore[arg-type]  # UnionMeta instances are Object subclasses
-        return type.__ror__(cls, other)  # type: ignore[return-value]  # fall through to types.UnionType for X | None etc.
+            return MakeUnion(other, cls)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]  # UnionMeta instances are Object subclasses
+        return type.__ror__(cls, other)  # type: ignore[return-value]  # ty: ignore[invalid-return-type]  # fall through to types.UnionType for X | None etc.
 
     def __format__(cls, spec) -> str:
         return cls.__name__
@@ -64,7 +67,7 @@ class Object[T](metaclass=UnionMeta):
         """
         return False  # TODO: review default behavior
 
-    def __init__(self, *args, **kwargs):  # type: ignore[no-redef]  # intentional override of the documented single-value __init__ above
+    def __init__(self, *args, **kwargs):  # type: ignore[no-redef]  # noqa: F811  # intentional override of the documented single-value __init__ above
         """Init with wrapped value, if provided. Otherwise leave `value` untouched so a static
         value set at class declaration time (e.g. `value = "foo"`) survives instantiation."""
         if "value" in kwargs:
@@ -99,7 +102,7 @@ class Object[T](metaclass=UnionMeta):
         return f"{self.value:{spec}}"
 
     def __repr__(self):
-        strValue = f'"{str(self.value)}"' if isinstance(self.value, str) else str(self.value)
+        strValue = f'"{self.value!s}"' if isinstance(self.value, str) else str(self.value)
         return f"<{type(self).__name__} value: {strValue}>"
 
     def __eq__(self, other: object) -> bool:

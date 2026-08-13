@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import ClassVar
+
 from stark.core.patterns.pattern import Pattern
 from stark.core.types.object import Object, UnionMeta
 from stark.general.classproperty import classproperty
@@ -7,7 +9,7 @@ from stark.general.classproperty import classproperty
 
 def MakeUnion(*types: type[Object]) -> type:
     cls = UnionMeta("_".join(t.__name__ for t in types), (Union,), {"_types": list(types)})
-    setattr(cls, "_transparent", True)  # PatternParser unwraps to branch when used as a typed parameter
+    cls._transparent = True  # PatternParser unwraps to branch when used as a typed parameter
     return cls
 
 
@@ -44,7 +46,7 @@ class Union(Object):
     directly — isinstance, type(), and attribute access all work against the real class.
     """
 
-    _types: list[type[Object]]
+    _types: ClassVar[list[type[Object]]]
     value: Object
 
     def __init_subclass__(cls, **kwargs):

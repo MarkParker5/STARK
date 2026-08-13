@@ -1,11 +1,13 @@
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
+
 import pytest
+
 from stark.core import (
+    AsyncResponseHandler,
     CommandsManager,
     Response,
     ResponseHandler,
-    AsyncResponseHandler,
-    ResponseStatus
+    ResponseStatus,
 )
 
 
@@ -41,7 +43,7 @@ async def test_async_command_with_async_response_handler():
 async def test_async_command_with_sync_response_handler():
     manager = CommandsManager()
 
-    with pytest.raises(TypeError, match = '`ResponseHandler` is not compatible with command .* because it is async, use `AsyncResponseHandler` instead'):
+    with pytest.raises(TypeError, match=r'`ResponseHandler` is not compatible with command .* because it is async, use `AsyncResponseHandler` instead'):
         @manager.new('turn off the light')
         async def lights_off(handler: ResponseHandler):
             ...
@@ -80,7 +82,7 @@ async def test_exception_in_command():
 
     @manager.new('turn off the light')
     async def lights_off() -> Response:
-        raise Exception('smart bulb not responding')
+        raise RuntimeError('smart bulb not responding')
 
     # with pytest.raises(Exception, match = 'smart bulb not responding'):
     #     await lights_off()

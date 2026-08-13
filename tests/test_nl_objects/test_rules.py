@@ -1,20 +1,17 @@
 import itertools
 import uuid
-from typing import Union
+from typing import Optional, Union
 
 import pytest
 
-from stark.core.parsing import PatternParser
-from stark.core.types.slots import SlotsParser
-
-pattern_parser = PatternParser()
-from typing_extensions import Optional
-
 from stark.core import Pattern
-from stark.core.parsing import ParseError
+from stark.core.parsing import ParseError, PatternParser
 from stark.core.patterns.rules import all_unordered, one_or_more_unordered
 from stark.core.types import Object, Word
+from stark.core.types.slots import SlotsParser
 from stark.general.classproperty import classproperty
+
+pattern_parser = PatternParser()
 
 
 class Seconds(Object):
@@ -80,7 +77,7 @@ class StarObject(Object):
 
     async def did_parse(self, from_string: str) -> str:
         # param extraction imitation
-        words = [w.strip() for w in from_string.split() if w.strip() and not w.startswith("no")]  #
+        words = [w.strip() for w in from_string.split() if w.strip() and not w.startswith("no")]
         assert len(words) >= 2, ParseError(f"Expected at least two words without 'no' prefix, got '{from_string}'")
         self.value = " ".join(words[:2])
         # print(type(self), 'did_parse', self.value, words)
@@ -98,7 +95,7 @@ pattern_parser.register_parameter_type(GreedyObject)
 
 
 @pytest.mark.parametrize(
-    "pattern_str,input_str,is_match,expected_tokens",
+    ("pattern_str", "input_str", "is_match", "expected_tokens"),
     [
         # --- Simple unordered patterns ---
         *permutations(f"{all_unordered('alpha', 'beta')}", "alpha beta", True),
@@ -209,7 +206,7 @@ pattern_parser.register_parameter_type(OOWordSimple)
 
 
 @pytest.mark.parametrize(
-    "pattern_str, input_str, is_match, match_str, expected_tokens",
+    ("pattern_str", "input_str", "is_match", "match_str", "expected_tokens"),
     [
         (
             "$slots:StarSlots",
@@ -255,14 +252,14 @@ async def test_slots(pattern_str, input_str, is_match, match_str, expected_token
 
     print(f"Match: {matches[0].substring}, Got Params: {matches[0].parameters}")
 
-    got_values = {key: getattr(matches[0].parameters["slots"], key).value for key in expected_tokens.keys()}
+    got_values = {key: getattr(matches[0].parameters["slots"], key).value for key in expected_tokens}
     assert got_values == expected_tokens
     assert matches[0].parameters["slots"].value == match_str
     assert matches[0].substring == match_str
 
 
 @pytest.mark.parametrize(
-    "cls_name, slots_dict, input_str, expected_values, expected_error",
+    ("cls_name", "slots_dict", "input_str", "expected_values", "expected_error"),
     [
         # All required, one missing - fail
         (
@@ -435,7 +432,7 @@ async def test_slots_required_optional_cases(cls_name, slots_dict, input_str, ex
     unique_cls_name = f"{cls_name}_{uuid.uuid4().hex[:8]}"
     # Ensure __annotations__ is set for dynamic slots class
     class_dict = dict(slots_dict)
-    class_dict["__annotations__"] = {k: v for k, v in slots_dict.items()}
+    class_dict["__annotations__"] = dict(slots_dict.items())
     slots_cls = type(unique_cls_name, (Object,), class_dict)
 
     # Register the slots class as a parameter type for Pattern
@@ -445,7 +442,7 @@ async def test_slots_required_optional_cases(cls_name, slots_dict, input_str, ex
     pattern = Pattern(f"$slots:{slots_cls.__name__}")
 
     if expected_error is not None:
-        with pytest.raises(expected_error):
+        with pytest.raises(expected_error):  # noqa: PT012  # error may surface from match() or the empty-substring guard; both must stay in the block
             print("Match", m := await pattern_parser.match(pattern, input_str))
             if not m[0].substring.strip():
                 raise ParseError("Empty match")  # small patch until required/optional params are fully implemented

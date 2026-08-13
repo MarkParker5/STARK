@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-
 from typing import cast
 
 from stark.general.localisation.language_code import LanguageCode
 from stark.general.localisation.locale_string import LocaleString
-from stark.models.transcription_string import Correction, TranscriptionString, TranscriptionWord
+from stark.models.transcription_string import (
+    Correction,
+    TranscriptionString,
+    TranscriptionWord,
+)
 from stark.models.voice_transcription import VoiceTranscriptionTrack
 
 

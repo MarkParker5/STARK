@@ -67,7 +67,7 @@ class SearchProcessor(CommandsContextProcessor):
 
         # resolve overlaps — each result lives in its own source track's coordinates
         # translate between tracks on demand for comparison and cutting
-        for prev_entry, current_entry in zip(tagged.copy(), tagged[1:]):
+        for prev_entry, current_entry in zip(tagged.copy(), tagged[1:], strict=False):  # pairwise adjacent: tail is one shorter by design
             prev_src, prev_lang, prev = prev_entry
             current_src, current_lang, current = current_entry
 

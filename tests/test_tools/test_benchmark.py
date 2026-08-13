@@ -71,9 +71,9 @@ def test_benchmark__dictionary(
     storage_type: str,
     # fixtures
     benchmark,
-    # additional parameters
-    seed: int | None = None,
 ):
+    # optional knob for reproducibility; not a parametrized/fixture value
+    seed: int | None = None
     # params that are not part of the parametrized cases and just randomly generated
     ne_type = random.choice(["name", "place"])
     # print(f"{success=}, {ne_type=}, {targets_amount=}")
@@ -162,10 +162,7 @@ def test_benchmark__dictionary(
         else:
             raise ValueError(f"Invalid lookup function: {lookup_func}")
 
-    if benchmark:
-        result = benchmark(execute_lookup)
-    else:
-        result = execute_lookup()
+    result = benchmark(execute_lookup) if benchmark else execute_lookup()
 
     if success:
         assert result

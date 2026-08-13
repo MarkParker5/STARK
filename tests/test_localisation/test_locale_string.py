@@ -24,7 +24,7 @@ def test_empty():
 def test_str_equality():
     s = LocaleString("hello", "ru")
     assert s == "hello"
-    assert "hello" == s
+    assert s == "hello"
     assert s in "say hello world"
     assert "ell" in s
 
@@ -193,7 +193,7 @@ def test_splitlines():
     s = LocaleString("a\nb\nc", "en")
     lines = s.splitlines()
     assert lines == ["a", "b", "c"]
-    assert all(l.language_code == "en" for l in lines)
+    assert all(line.language_code == "en" for line in lines)
 
 
 def test_join():

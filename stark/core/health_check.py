@@ -29,7 +29,7 @@ def health_check(pattern_parser: PatternParser, commands: list[Command]) -> None
 
     # 4. Commands: validate @key references and parameter types
     for command in commands:
-        for lang, cmd_pattern in command.patterns.items():
+        for _lang, cmd_pattern in command.patterns.items():
             if pattern_parser.localizer and pattern_parser._has_localizer_keys(cmd_pattern):
                 for key in _LOCALIZER_KEY_REGEX.findall(cmd_pattern._origin):
                     pattern_parser.localizer.verify_recognizable(key)
@@ -57,18 +57,18 @@ def health_check(pattern_parser: PatternParser, commands: list[Command]) -> None
                 pattern_parser._compile_pattern(p, language_code=lang)
             except Exception as e:
                 warnings.warn(
-                    f"Failed to compile pattern '{p}' of type '{reg_type.type.__name__}' (language '{lang}'): {e}"
+                    f"Failed to compile pattern '{p}' of type '{reg_type.type.__name__}' (language '{lang}'): {e}", stacklevel=2
                 )
     for command in commands:
         for lang, p in command.patterns.items():
             try:
                 pattern_parser._compile_pattern(p, language_code=lang)
             except Exception as e:
-                warnings.warn(f"Failed to compile pattern '{p}' of command '{command.name}' (language '{lang}'): {e}")
+                warnings.warn(f"Failed to compile pattern '{p}' of command '{command.name}' (language '{lang}'): {e}", stacklevel=2)
 
     # 8. No unused types
     used_types = {param.type_name for command in commands for param in command.get_pattern("base").parameters.values()}
     for type_name in pattern_parser.parameter_types_by_name:
         # assert type_name in used_types, f"Registered type {type_name} is not used in any pattern"
         if type_name not in used_types:
-            warnings.warn(f"Registered type {type_name} is not used in any pattern")
+            warnings.warn(f"Registered type {type_name} is not used in any pattern", stacklevel=2)

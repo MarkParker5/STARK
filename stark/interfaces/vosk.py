@@ -6,14 +6,17 @@ import urllib.request
 import zipfile
 from datetime import datetime
 from queue import Empty, Queue
-from typing import Optional, cast
+from typing import ClassVar, cast
 
 import anyio
 import vosk
 from pydantic import BaseModel, Field, ValidationError
 
 from stark.general.localisation import LanguageCode
-from stark.models.voice_transcription import VoiceTranscriptionTrack, VoiceTranscriptionWord
+from stark.models.voice_transcription import (
+    VoiceTranscriptionTrack,
+    VoiceTranscriptionWord,
+)
 
 from .protocols import SpeechRecognizer, SpeechRecognizerDelegate
 
@@ -37,7 +40,8 @@ class KaldiMBR(BaseModel):
 
     @property
     def confidence(self):
-        return sum(word.conf for word in self.result) / len(self.result)
+        # word.conf is set for KaldiMBR results; guard None defensively (treat as 0.0)
+        return sum(word.conf or 0.0 for word in self.result) / len(self.result)
 
 
 class KaldiTranscription(BaseModel):
@@ -61,15 +65,15 @@ class VoskSpeechRecognizer(SpeechRecognizer):
     channels = 1
     kaldiRecognizer: vosk.KaldiRecognizer
 
-    last_result: Optional[str] = ""
+    last_result: str | None = ""
     last_partial_result: str = ""
-    last_partial_update_time: Optional[datetime] = None
+    last_partial_update_time: datetime | None = None
 
     is_recognizing = True
     _is_listening = False
     _stream_start_monotonic: float = 0.0
 
-    _stored_speakers: dict[int, list[int]] = {}
+    _stored_speakers: ClassVar[dict[int, list[int]]] = {}
     _speaker_trashold = 0.75
 
     language_code: LanguageCode
@@ -168,12 +172,12 @@ class VoskSpeechRecognizer(SpeechRecognizer):
             text: str | None = None
 
             try:
-                result = KaldiMBR.parse_raw(raw_json)
+                result = KaldiMBR.model_validate_json(raw_json)
                 text = result.text
                 # print('\nConfidence:', result.confidence) # TODO: log or  os.getenv("STARK_VOICE_CLI", "0") == "1"
             except ValidationError:
                 try:
-                    result = KaldiResult.parse_raw(raw_json)
+                    result = KaldiResult.model_validate_json(raw_json)
                     transcription = result.alternatives[0]
                     text = transcription.text
                 except ValidationError:
@@ -221,7 +225,7 @@ class VoskSpeechRecognizer(SpeechRecognizer):
             # partial always returns {"partial": "..."}
             if (string := result.get("partial")) and string != self.last_partial_result:
                 self.last_partial_result = string
-                self.last_partial_update_time = datetime.now()
+                self.last_partial_update_time = datetime.now()  # noqa: DTZ005  # local wall-clock interval timing; naive is intentional
                 await delegate.speech_recognizer_did_receive_partial_result(string)
 
     def _get_speaker(self, vector: list[int]) -> tuple[int, float]:
@@ -245,7 +249,7 @@ class VoskSpeechRecognizer(SpeechRecognizer):
         return cast(int, matched_speaker_id), best_similarity
 
     def _cosine_similarity(self, vector_a, vector_b) -> float:
-        dot_product = sum(a * b for a, b in zip(vector_a, vector_b))
+        dot_product = sum(a * b for a, b in zip(vector_a, vector_b, strict=True))
         norm_a = sum(a * a for a in vector_a) ** 0.5
         norm_b = sum(b * b for b in vector_b) ** 0.5
         return dot_product / (norm_a * norm_b)

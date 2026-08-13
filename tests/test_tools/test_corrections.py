@@ -3,11 +3,10 @@ LatinPassthroughProvider, backtracking, and corrected_string."""
 
 import pytest
 
-from stark.core.parsing import CorrectionMatch, PatternParser, Pattern
+from stark.core.parsing import CorrectionMatch, Pattern, PatternParser
 from stark.general.localisation import LocaleString
 from stark.models.transcription_string import Correction, TranscriptionString
 from stark.tools.common.span import Span
-
 
 # --- LatinPassthroughProvider ---
 

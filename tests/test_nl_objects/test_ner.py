@@ -10,7 +10,7 @@ from stark.general.localisation import LocaleString
 
 
 @pytest.mark.parametrize(
-    "input_text,expected_entities",
+    ("input_text", "expected_entities"),
     [
         ("Let's meet in Washington DC next year.", [Location("Washington DC")]),
         ("How far is Lake Victoria?", [Location("Lake Victoria")]),

@@ -1,5 +1,6 @@
 import json
-from typing import Any, AsyncGenerator, Callable, Type
+from collections.abc import AsyncGenerator, Callable
+from typing import Any
 
 from stark.core import CommandsManager, Response
 from stark.core.types import Word
@@ -30,7 +31,7 @@ async def test_async_command_complicate_type_json():
     manager = CommandsManager("TestManager")
 
     @manager.new("get forecast")
-    async def get_forecast(some: AsyncGenerator[Callable[[Any], Type], list[None]]):
+    async def get_forecast(some: AsyncGenerator[Callable[[Any], type], list[None]]):
         return Response()
 
     string = json.dumps(get_forecast, cls=StarkJsonEncoder)

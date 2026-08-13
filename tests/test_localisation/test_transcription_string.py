@@ -4,7 +4,6 @@ from stark.models.transcription_string import (
     TranscriptionWord,
 )
 
-
 # --- Construction ---
 
 

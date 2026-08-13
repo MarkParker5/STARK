@@ -1,6 +1,6 @@
-from itertools import groupby
 import string
-from typing import Generator
+from collections.abc import Generator
+from itertools import groupby
 
 from stark.tools.common.span import Span
 

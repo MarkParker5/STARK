@@ -145,7 +145,7 @@ def ipa2lat(ipa_string: str) -> str:
     for symbol in string:
         if symbol not in "abcdefghijklmnopqrstuvwxyz":
             warnings.warn(
-                f'ipa2lat: Unknown symbol: "{symbol}" in {string} ({ipa_string})'
+                f'ipa2lat: Unknown symbol: "{symbol}" in {string} ({ipa_string})', stacklevel=2
             )
 
     return string
