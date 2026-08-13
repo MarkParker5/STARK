@@ -1,4 +1,4 @@
-# Contributing and Shared Usage: S.T.A.R.K P.L.A.C.E
+# Contributing and Shared Usage: S.T.A.R.K. P.L.A.C.E.
 
 ## Why Share Here
 
@@ -10,20 +10,18 @@ Stark-Place serves as a repository filled with commands, implementations of vari
 
 ## 📦 Using Stark-Place
 
-STARK-PLACE ships as several small, independently-installable packages (`stark-ai`,
-`stark-triggers`, `stark-devtools`), not one monolith — install only what you need from
-the self-hosted registry. Use whichever fits:
+### Stark-Place Packages
 
-**Install a package** from the [package registry](package-registry.md):
+STARK-PLACE ships as several small, independently-installable packages (like `stark-ai`,
+`stark-triggers`, `stark-devtools`). See the **[Package Registry](package-registry.md)** page for the installation instructions and a browsable index of every published version.
 
-```bash
-pip install --find-links https://markparker5.github.io/STARK-PLACE/ stark-ai
-```
+### Stark-Place Examples
 
-See the **[Package Registry](package-registry.md)** page for the full package list,
-multi-package installs, and a browsable index of every published version.
+STARK-PLACE is as much a reference collection as a set of packages. **Copy what you need** straight from the repository if you only want one command or module, browse [STARK-PLACE/Examples](https://github.com/MarkParker5/STARK-PLACE/tree/master/examples), grab the file, keep the attribution comment intact, done.
 
-**Copy what you need** straight from the repository if you only want one command or module, browse [MarkParker5/STARK-PLACE](https://github.com/MarkParker5/STARK-PLACE), grab the file, keep the attribution comment intact, done.
+Browse the full `examples/` tree below — it's a **live preview of the repository**: folders expand on click and files load their current contents straight from `master` (nothing here is hand-maintained, so new examples show up automatically).
+
+<div class="gh-tree" data-repo="MarkParker5/STARK-PLACE" data-ref="master" data-path="examples"></div>
 
 ## 🤝 Contributing to Stark-Place
 

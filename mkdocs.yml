@@ -121,6 +121,13 @@ extra:
     provider: google
     property: G-DK2VMEE8DP
 
+extra_css:
+  - stylesheets/gh-embed.css
+
+extra_javascript:
+  - https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js
+  - javascripts/gh-tree.js
+
 markdown_extensions:
   - pymdownx.highlight:
       anchor_linenums: true
