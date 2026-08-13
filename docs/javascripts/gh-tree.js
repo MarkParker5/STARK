@@ -15,6 +15,20 @@
 (function () {
   var API = "https://api.github.com/repos/";
 
+  // Load a highlight.js theme and keep it in sync with Material's light/dark toggle.
+  var HLJS_BASE = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/";
+  function syncHljsTheme() {
+    var link = document.getElementById("__hljs_theme");
+    if (!link) {
+      link = document.createElement("link");
+      link.id = "__hljs_theme";
+      link.rel = "stylesheet";
+      document.head.appendChild(link);
+    }
+    var scheme = document.body.getAttribute("data-md-color-scheme");
+    link.href = HLJS_BASE + (scheme === "slate" ? "github-dark.min.css" : "github.min.css");
+  }
+
   function highlight(code) {
     if (window.hljs) {
       try {
@@ -128,9 +142,20 @@
     document.querySelectorAll(".gh-tree").forEach(render);
   }
 
-  if (window.document$ && typeof window.document$.subscribe === "function") {
-    window.document$.subscribe(renderAll);
-  } else {
-    document.addEventListener("DOMContentLoaded", renderAll);
+  function tick() {
+    syncHljsTheme();
+    renderAll();
   }
+
+  if (window.document$ && typeof window.document$.subscribe === "function") {
+    window.document$.subscribe(tick);
+  } else {
+    document.addEventListener("DOMContentLoaded", tick);
+  }
+
+  // Re-point the theme stylesheet when Material's palette toggle flips the scheme.
+  new MutationObserver(syncHljsTheme).observe(document.body, {
+    attributes: true,
+    attributeFilter: ["data-md-color-scheme"],
+  });
 })();
