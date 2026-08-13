@@ -37,7 +37,7 @@ We welcome and appreciate contributions from the community! Here's how you can c
 
 ## License
 
-The Stark-Place project is licensed under the [CC BY-NC-SA 4.0 International license](https://github.com/MarkParker5/STARK-PLACE/tree/master/LICENSE.md). You're welcome to modify, contribute to the repository, create, and share forks. Just remember to attribute the original repository and its creator, abstain from commercial use, and retain the existing license.
+The Stark-Place project is licensed under the [PolyForm Noncommercial 1.0.0 license](https://github.com/MarkParker5/STARK-PLACE/tree/master/LICENSE.md) (the same license as the S.T.A.R.K. engine). You're welcome to modify, contribute to the repository, create, and share forks. Just remember to attribute the original repository and its creator, abstain from commercial use, and retain the existing license.
 
 **Note**: Failing to provide the attribution or using the project for commercial purposes breaches the licensing terms and could have legal consequences.
 
