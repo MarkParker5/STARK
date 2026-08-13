@@ -21,6 +21,27 @@
 
 No need to build alone. See [Get Involved](#community) below.
 
+## What Makes S.T.A.R.K. Different
+
+- **100% on-device**: runs fully offline, no cloud dependencies. Your data stays yours. Doesn't stop working when internet connection is lost.
+- **4 required dependencies**: `pydantic`, `asyncer`, `anyio`, `numpy`. Everything else (STT/TTS backends, NLP libraries) is opt-in. See [Installation](getting-started/installation.md).
+- **No AI required**: pattern, phonetic, and fuzzy matching are deterministic, fast, and explainable. LLM integration is opt-in, not a dependency. See [Fallback Command / LLM Integration](advanced/fallback-command-llm-integration.md) and where this is headed in [AI Agent Platform](agent-platform.md).
+- **Phonetic and fuzzy matching**: misspellings, accents, and cross-language name lookup, handled out of the box. See [Tools](tools/index.md).
+- **Multilingual by design**: including commands that mix languages mid-sentence. See [Going Multilingual](localization-and-multilingual/index.md).
+- **Nested contexts**: multi-level menus, follow-ups, and stateful conversations, not just one-shot Q&A. See [Commands Context](core-concepts/commands-context.md).
+- **Background commands & multiple responses**: fire a task, keep listening, get notified as it progresses. See [Sync vs Async Commands](core-concepts/sync-vs-async-commands.md#background-commands).
+- **Assistant modes**: active, waiting, inactive, sleeping (wake-word), explicit, and external-trigger modes, all configurable. See [Running Your Assistant](running/index.md).
+- **Modular by design**: swap commands, processors, type parsers, or the entire IO layer (voice, text, a [Telegram bot](running/custom-interfaces.md#telegram-bot), your own). See [How to Run](running/how-to-run.md).
+- **STARK-PLACE**: the extension ecosystem — installable packages and copy-paste examples built on S.T.A.R.K. Use what others made, or share your own.
+
+## Quick Start
+
+```bash
+pip install stark-engine
+```
+
+Full docs, including installation options and extras, at **[stark.markparker.me](https://stark.markparker.me/)**.
+
 ## Hello, Stark!
 
 ```py
@@ -56,7 +77,7 @@ That's a complete, working voice assistant: no cloud, no API keys. Want text-onl
 ## Patterns parse parameters too
 
 ```py
-@manager.new('hello $name:Word')
+@manager.new('hello $name:NLWord')
 def hello(name: str) -> Response:
     return Response(f'Hello, {name}!')
 
@@ -64,7 +85,7 @@ def hello(name: str) -> Response:
 # "hello Archie" -> "Hello, Archie!"
 ```
 
-Patterns aren't fixed phrases. `$name:Word` extracts a parameter and hands it straight to your function, typed and ready to use. See [Patterns](https://stark.markparker.me/core-concepts/patterns/).
+Patterns aren't fixed phrases. `$name:NLWord` extracts a parameter and hands it straight to your function, typed and ready to use. See [Patterns](https://stark.markparker.me/core-concepts/patterns/).
 
 ## One sentence, multiple commands
 
@@ -118,29 +139,9 @@ async def stop_timer(handler: AsyncResponseHandler) -> Response:
 
 This pattern, immediate response, async progress updates, an optional cancel command, is what powers timers, downloads, or any long-running task. See [Sync vs Async Commands](https://stark.markparker.me/core-concepts/sync-vs-async-commands/#background-commands) and [Commands Context](https://stark.markparker.me/core-concepts/commands-context/).
 
-## Why STARK
-
-- **4 required dependencies**: `pydantic`, `asyncer`, `anyio`, `numpy`. Everything else (STT/TTS backends, NLP) is opt-in. See [Installation](https://stark.markparker.me/getting-started/installation/).
-- **No AI required**: pattern, phonetic, and fuzzy matching are deterministic and fast. LLM integration is opt-in, not a dependency. See [Fallback Command / LLM Integration](https://stark.markparker.me/advanced/fallback-command-llm-integration/) and where this is headed in [AI Agent Platform](https://stark.markparker.me/agent-platform/).
-- **Multilingual by design**: including commands that mix languages mid-sentence.
-- **Phonetic and fuzzy matching**: misspellings, accents, and cross-language name lookup, handled out of the box. See [Tools](https://stark.markparker.me/tools/).
-- **Nested contexts**: multi-level menus, follow-ups, and stateful conversations. See [Commands Context](https://stark.markparker.me/core-concepts/commands-context/).
-- **Background commands & multiple responses**: fire a task, keep listening, get notified as it progresses. See [Sync vs Async Commands](https://stark.markparker.me/core-concepts/sync-vs-async-commands/#background-commands).
-- **Assistant modes**: active, waiting, inactive, sleeping (wake-word), explicit, and external-trigger modes. See [Running Your Assistant](https://stark.markparker.me/running/).
-- **Modular by design**: swap commands, processors, type parsers, or the entire IO layer (voice, text, a [Telegram bot](https://stark.markparker.me/running/custom-interfaces/#telegram-bot), your own). See [How to Run](https://stark.markparker.me/running/how-to-run/).
-- **100% on-device**: runs fully offline, your data stays yours.
-
 ## Powered by STARK
 
 [Archie](https://majordom.io), the voice assistant built for [MajorDom](https://majordom.io), runs on STARK: nested contexts for device control, multilingual input, fully offline.
-
-## Quick start
-
-```bash
-pip install stark-engine
-```
-
-Full docs, including installation options and extras, at **[stark.markparker.me](https://stark.markparker.me/)**.
 
 ## Community
 
