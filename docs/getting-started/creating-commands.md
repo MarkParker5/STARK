@@ -1,6 +1,6 @@
 # Creating Commands
 
-Commands serve as foundational building blocks designed to execute specific actions. They can be implemented either synchronously or asynchronously. In the following sections, we'll explore the specific features of each type and their differences. <small>([jump to async commands →](#async-commands), full comparison in [Sync vs Async Commands](sync-vs-async-commands.md))</small>
+Commands serve as foundational building blocks designed to execute specific actions. They can be implemented either synchronously or asynchronously. In the following sections, we'll explore the specific features of each type and their differences. <small>([jump to async commands →](#async-commands), full comparison in [Sync vs Async Commands](../core-concepts/sync-vs-async-commands.md))</small>
 
 ---
 
@@ -22,7 +22,7 @@ def hello_command() -> Response:
 
 ### Multiple responses using `yield` 
 
-Although it's possible to yield multiple responses in synchronous functions, doing so may block the main thread. This can result in warnings or even halt the application. For multiple responses in sync functions, consider using the `ResponseHandler.respond` method or contemplate migrating to the [async](sync-vs-async-commands.md) option.
+Although it's possible to yield multiple responses in synchronous functions, doing so may block the main thread. This can result in warnings or even halt the application. For multiple responses in sync functions, consider using the `ResponseHandler.respond` method or contemplate migrating to the [async](../core-concepts/sync-vs-async-commands.md) option.
 
 ```python
 @manager.new('start timer')
@@ -34,7 +34,7 @@ def start_timer() -> Response:
 
 ### Multiple responses using `ResponseHandler.respond` 
 
-To manage multiple responses, the `ResponseHandler` can be leveraged. Simply include a property of type `ResponseHandler`, and the [dependency injection](dependency-injection.md) mechanism will handle it automatically.
+To manage multiple responses, the `ResponseHandler` can be leveraged. Simply include a property of type `ResponseHandler`, and the [dependency injection](../core-concepts/dependency-injection.md) mechanism will handle it automatically.
 
 ```python
 @manager.new('start timer')
@@ -48,7 +48,7 @@ def start_timer(handler: ResponseHandler):
 
 ### Remove response using `ResponseHandler.unrespond` 
 
-To remove a response, use the `unrespond` method. If the voice assistant is in waiting mode, the response won't be repeated in the subsequent interaction. Learn more about modes in [Voice Assistant](voice-assistant.md).
+To remove a response, use the `unrespond` method. If the voice assistant is in waiting mode, the response won't be repeated in the subsequent interaction. Learn more about modes in [Voice Assistant](../running/voice-assistant.md).
 
 ```python
 @manager.new('download update')
@@ -85,7 +85,7 @@ def good_night() -> Response:
 
 #### With dependency injection
 
-Include the `inject_dependencies` property in the function declaration. This function wraps the command for smooth dependency injection. Learn more about dependencies at [DI Container](dependency-injection.md).
+Include the `inject_dependencies` property in the function declaration. This function wraps the command for smooth dependency injection. Learn more about dependencies at [DI Container](../core-concepts/dependency-injection.md).
 
 You need this over the simple version above whenever the called command itself takes injected dependencies (a `ResponseHandler`, the language code, a custom dependency), calling it directly would skip injection and the parameter would never get filled in. `inject_dependencies` resolves those first, then calls the command.
 
@@ -141,7 +141,7 @@ async def start_timer(handler: AsyncResponseHandler):
 
 ### Remove response using `ResponseHandler.unrespond` 
 
-To remove a response, use the `unrespond` method. If the voice assistant is in waiting mode, the response won't be repeated in the subsequent interaction. Learn more about modes in [Voice Assistant](voice-assistant.md).
+To remove a response, use the `unrespond` method. If the voice assistant is in waiting mode, the response won't be repeated in the subsequent interaction. Learn more about modes in [Voice Assistant](../running/voice-assistant.md).
 
 ```python
 @manager.new('download update')
@@ -211,6 +211,6 @@ root_manager.extend(child_manager) # now root_manager has all commands of child_
 
 In conclusion, the foundational concepts remain consistent whether you employ synchronous or asynchronous commands. The primary distinction is in task handling: asynchronous commands facilitate non-blocking execution. As always, opt for the approach that best aligns with your application's specific requirements.
 
-What happens when nothing matches? Register a wildcard command as a catch-all, see [Fallback Command / LLM Integration](advanced/fallback-command-llm-integration.md).
+What happens when nothing matches? Register a wildcard command as a catch-all, see [Fallback Command / LLM Integration](../advanced/fallback-command-llm-integration.md).
 
-This page covered the mechanics of writing a command. For everything a `Response` can carry and how patterns extract parameters, see [Core Concepts](core-concepts.md).
+This page covered the mechanics of writing a command. For everything a `Response` can carry and how patterns extract parameters, see [Core Concepts](../core-concepts/index.md).

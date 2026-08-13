@@ -35,11 +35,11 @@ if __name__ == '__main__':
 ```
 
 1. `CommandsManager` is where every command your assistant understands gets registered.
-2. `@manager.new('hello')` registers a command matched against the pattern `'hello'`. Patterns can get much more dynamic than a literal word, see [Patterns](patterns.md).
-3. A `Response` carries both the spoken (`voice`) and displayed (`text`) reply, they don't have to match, but here they do. Plenty of other fields exist (status, follow-up commands, parameters), see [Command Response](command-response.md) in Core Concepts.
+2. `@manager.new('hello')` registers a command matched against the pattern `'hello'`. Patterns can get much more dynamic than a literal word, see [Patterns](../core-concepts/patterns.md).
+3. A `Response` carries both the spoken (`voice`) and displayed (`text`) reply, they don't have to match, but here they do. Plenty of other fields exist (status, follow-up commands, parameters), see [Command Response](../core-concepts/command-response.md) in Core Concepts.
 4. Pick a recognizer and synthesizer. These two are offline; S.T.A.R.K. doesn't require any cloud service or API key to work.
 5. `run()` wires the manager, recognizer, and synthesizer together and starts listening. Say "hello," hear "Hello, Stark!" back.
 
-This command is declared plain `def`, simplest option, and S.T.A.R.K. handles the rest. Once you start awaiting things inside a command, you'll want `async def` instead, see [Async Commands](creating-commands.md#async-commands) and [Sync vs Async Commands](sync-vs-async-commands.md) for when to reach for which.
+This command is declared plain `def`, simplest option, and S.T.A.R.K. handles the rest. Once you start awaiting things inside a command, you'll want `async def` instead, see [Async Commands](creating-commands.md#async-commands) and [Sync vs Async Commands](../core-concepts/sync-vs-async-commands.md) for when to reach for which.
 
-Prefer to skip the microphone for now and type input in a terminal instead? See [How to Run](how-to-run.md) for the no-audio variant of this same example.
+Prefer to skip the microphone for now and type input in a terminal instead? See [How to Run](../running/how-to-run.md) for the no-audio variant of this same example.

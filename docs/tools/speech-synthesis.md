@@ -20,7 +20,7 @@ result = await synthesizer.synthesize('Hello, Stark!')
 await result.play()  # plays through your default audio output, no commands involved
 ```
 
-Want it wired into a full assistant? See [How to Run](../how-to-run.md).
+Want it wired into a full assistant? See [How to Run](../running/how-to-run.md).
 
 ## Ready Implementations
 
@@ -69,4 +69,4 @@ Any class that satisfies the `SpeechSynthesizer` protocol is a drop-in replaceme
 
 <script src="https://emgithub.com/embed-v2.js?target=https%3A%2F%2Fgithub.com%2FMarkParker5%2FSTARK%2Fblob%2Fmaster%2Fstark%2Finterfaces%2Fsilero.py&style=atom-one-dark&type=code&showBorder=on&showLineNumbers=on&showFileMeta=on&showFullPath=on&showCopy=on"></script>
 
-This is exactly where another cloud TTS backend (ElevenLabs, Azure, Amazon Polly) or a different offline engine would plug in, and a great first contribution if one doesn't exist yet. See [Roadmap](../roadmap.md).
+This is exactly where another cloud TTS backend (ElevenLabs, Azure, Amazon Polly) or a different offline engine would plug in, and a great first contribution if one doesn't exist yet. See [Roadmap](../ecosystem/roadmap.md).

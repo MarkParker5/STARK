@@ -101,4 +101,4 @@ For formatting locale-sensitive values like numbers, dates, units, and currencie
 - **Units**: `"5 kilometers"`, `"3 lbs"`, `"2 hours"` with localized names
 - **Messages**: pluralization and gender rules (`"{num, plural, one {# item} other {# items}}"`)
 
-PyICU is not a dependency of S.T.A.R.K, use it alongside when you need locale-aware value formatting in your responses. See [Command Response](../command-response.md#formatting-locale-sensitive-values-with-pyicu) for more examples of response building with formatted values.
+PyICU is not a dependency of S.T.A.R.K, use it alongside when you need locale-aware value formatting in your responses. See [Command Response](../core-concepts/command-response.md#formatting-locale-sensitive-values-with-pyicu) for more examples of response building with formatted values.

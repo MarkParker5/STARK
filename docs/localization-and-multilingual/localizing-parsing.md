@@ -150,7 +150,7 @@ class NLNumber(Object):
         return from_string
 ```
 
-More details about parsing of custom types at [ObjectParser](../patterns.md#defining-custom-object-types)
+More details about parsing of custom types at [ObjectParser](../core-concepts/patterns.md#defining-custom-object-types)
 
 ### Programmatic Patterns
 

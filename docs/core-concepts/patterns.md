@@ -98,7 +98,7 @@ Here, `did_parse` explicitly assigns `self.value`, converting the matched word i
 2. **Set as a static default at class declaration** — e.g. `value = "static"` right under the class body, or assigned in your own `__init__`. Once set this way, the framework's default `did_parse` will **not** overwrite it with the substring.
 3. **Falls back to the matched substring** — if nothing above set it and you don't override `did_parse`, S.T.A.R.K assigns the matched substring to `value` automatically.
 
-By default, S.T.A.R.K asserts that `value` is set to something other than `None` by the time `did_parse` returns — this catches the common mistake of overriding `did_parse`, forgetting to set `self.value`, and getting a confusing downstream error instead. If you're building an object type where `value` genuinely has no meaning (i.e. all the useful data lives in typed sub-parameters), you can opt out of this check with the `STARK_TYPE_NO_REQUIRED_VALUE` [feature flag](advanced/feature-flags.md), which allows `value` to remain `None`.
+By default, S.T.A.R.K asserts that `value` is set to something other than `None` by the time `did_parse` returns — this catches the common mistake of overriding `did_parse`, forgetting to set `self.value`, and getting a confusing downstream error instead. If you're building an object type where `value` genuinely has no meaning (i.e. all the useful data lives in typed sub-parameters), you can opt out of this check with the `STARK_TYPE_NO_REQUIRED_VALUE` [feature flag](../advanced/feature-flags.md), which allows `value` to remain `None`.
 
 A standout feature of the S.T.A.R.K toolkit's patterns is their seamless compatibility with nested objects. In essence, a custom object type can house parameters that are, in themselves, other custom object types. This nesting capability facilitates the crafting of complex and nuanced patterns, capable of interpreting diverse input configurations.
 
@@ -192,9 +192,9 @@ This approach allows you to keep parsing logic separate from your data model and
 
 Note that the `did_parse` method must return a substring of the input string that was successfully parsed. This substring should be the smallest possible string that still represents the object's value. In case you use 3rd party parser that can't extract substring and just provides the value, you have several options to handle this:
 
-1. If your parser returns a string-ish value, like some kind of name, you can use `levenshtein_search_substring` from the [STARK-Levenshtein](tools/stark-levenshtein.md) module. This will allow you efficiently find the closest fuzzy match of your named entity in the input string.
-2. Consider using `NLDictionaryName` from [Phonetic Dictionary](tools/phonetic-dictionary.md) if suits your needs.
-3. If options above are not suitable, take a look at [sliding_window_parser](tools/sliding-window-parser.md) wrapper. Note that it will call the parser method multiple times to find the best match, which can be optimized by caching intermediate results inside your parser func, but yet still requires careful usage especially with large input strings and long io-bound parsing times.
+1. If your parser returns a string-ish value, like some kind of name, you can use `levenshtein_search_substring` from the [STARK-Levenshtein](../tools/stark-levenshtein.md) module. This will allow you efficiently find the closest fuzzy match of your named entity in the input string.
+2. Consider using `NLDictionaryName` from [Phonetic Dictionary](../tools/phonetic-dictionary.md) if suits your needs.
+3. If options above are not suitable, take a look at [sliding_window_parser](../tools/sliding-window-parser.md) wrapper. Note that it will call the parser method multiple times to find the best match, which can be optimized by caching intermediate results inside your parser func, but yet still requires careful usage especially with large input strings and long io-bound parsing times.
 
 ## Recommended Use of Caching for `did_parse` Method
 
@@ -373,4 +373,4 @@ This makes Slots ideal for commands where parameters can appear in any order and
 
 By understanding and mastering patterns in the S.T.A.R.K toolkit, you'll be well-equipped to create powerful and dynamic custom voice assistants. Happy coding!
 
-Pattern matching itself runs as one stage in a pluggable pipeline, see [Custom Processors](advanced/custom-processors.md) if you want to add your own stage (e.g. NER, phonetic correction) before or after matching.
+Pattern matching itself runs as one stage in a pluggable pipeline, see [Custom Processors](../advanced/custom-processors.md) if you want to add your own stage (e.g. NER, phonetic correction) before or after matching.

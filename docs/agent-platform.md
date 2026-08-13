@@ -10,8 +10,8 @@ S.T.A.R.K.'s next major release (v5) adds an optional layer for building agents:
 
 Nothing about S.T.A.R.K.'s core values changes. Agents are an optional layer built on top of what already exists, not a pivot. The load-bearing pieces are already here:
 
-- **Background commands and async intermediate responses.** See [Sync vs Async Commands](sync-vs-async-commands.md#background-commands). An agent running a multi-step task and reporting progress as it goes uses the same mechanism as a timer reporting "50% done."
-- **LLM integration**, already underway. See [Fallback Command / LLM Integration](advanced/fallback-command-llm-integration.md).
+- **Background commands and async intermediate responses.** See [Sync vs Async Commands](core-concepts/sync-vs-async-commands.md#background-commands). An agent running a multi-step task and reporting progress as it goes uses the same mechanism as a timer reporting "50% done."
+- **LLM integration**, already underway. See [Fallback Command / LLM Integration](advanced/fallback-command-llm-integration.md); early processors (agentic loop, structured/search parsing, NER) already ship in the [`stark-ai`](ecosystem/package-registry.md) package on [STARK-PLACE](ecosystem/index.md).
 
 ## What "Agent" Actually Means Here
 
@@ -31,4 +31,4 @@ This is consistent with S.T.A.R.K.'s "no AI required, AI is opt-in" position, no
 
 Early planning. The exact shape (structured output, function/tool calling, or something else) is still being weighed against what models reliably support today. If you have opinions on the implementation, or want to help build it, [Discussions](https://github.com/MarkParker5/STARK/discussions) is the place. This direction is genuinely still open.
 
-See also [Roadmap](roadmap.md) for everything else planned alongside this.
+See also [Roadmap](ecosystem/roadmap.md) for everything else planned alongside this.

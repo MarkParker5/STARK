@@ -48,10 +48,10 @@ if __name__ == '__main__':
 ```
 
 1. Register a command with `@manager.new(...)`. The string is the pattern STARK matches against what the user says.
-2. Pick a speech recognizer and synthesizer. STARK ships ready-to-use ones (offline Vosk + Silero here); see [Default Speech Interfaces](https://stark.markparker.me/default-speech-interfaces/).
+2. Pick a speech recognizer and synthesizer. STARK ships ready-to-use ones (offline Vosk + Silero here); see [Default Speech Interfaces](https://stark.markparker.me/running/default-speech-interfaces/).
 3. `run()` wires everything together and starts listening. This is the whole assistant.
 
-That's a complete, working voice assistant: no cloud, no API keys. Want text-only, no microphone needed? See [How to Run](https://stark.markparker.me/how-to-run/).
+That's a complete, working voice assistant: no cloud, no API keys. Want text-only, no microphone needed? See [How to Run](https://stark.markparker.me/running/how-to-run/).
 
 ## Patterns parse parameters too
 
@@ -64,7 +64,7 @@ def hello(name: str) -> Response:
 # "hello Archie" -> "Hello, Archie!"
 ```
 
-Patterns aren't fixed phrases. `$name:Word` extracts a parameter and hands it straight to your function, typed and ready to use. See [Patterns](https://stark.markparker.me/patterns/).
+Patterns aren't fixed phrases. `$name:Word` extracts a parameter and hands it straight to your function, typed and ready to use. See [Patterns](https://stark.markparker.me/core-concepts/patterns/).
 
 ## One sentence, multiple commands
 
@@ -116,18 +116,18 @@ async def stop_timer(handler: AsyncResponseHandler) -> Response:
 2. Keeps running in the background: four checkpoints, 15 seconds apart, a minute total. The assistant is free to handle other input the whole time.
 3. A plain global flag is enough to cancel it, no extra machinery needed. (If your command needs local state instead of a shared flag, define `stop_timer` inside `start_timer` so it closes over the same variables.)
 
-This pattern, immediate response, async progress updates, an optional cancel command, is what powers timers, downloads, or any long-running task. See [Sync vs Async Commands](https://stark.markparker.me/sync-vs-async-commands/#background-commands) and [Commands Context](https://stark.markparker.me/commands-context/).
+This pattern, immediate response, async progress updates, an optional cancel command, is what powers timers, downloads, or any long-running task. See [Sync vs Async Commands](https://stark.markparker.me/core-concepts/sync-vs-async-commands/#background-commands) and [Commands Context](https://stark.markparker.me/core-concepts/commands-context/).
 
 ## Why STARK
 
-- **4 required dependencies**: `pydantic`, `asyncer`, `anyio`, `numpy`. Everything else (STT/TTS backends, NLP) is opt-in. See [Installation](https://stark.markparker.me/installation/).
+- **4 required dependencies**: `pydantic`, `asyncer`, `anyio`, `numpy`. Everything else (STT/TTS backends, NLP) is opt-in. See [Installation](https://stark.markparker.me/getting-started/installation/).
 - **No AI required**: pattern, phonetic, and fuzzy matching are deterministic and fast. LLM integration is opt-in, not a dependency. See [Fallback Command / LLM Integration](https://stark.markparker.me/advanced/fallback-command-llm-integration/) and where this is headed in [AI Agent Platform](https://stark.markparker.me/agent-platform/).
 - **Multilingual by design**: including commands that mix languages mid-sentence.
 - **Phonetic and fuzzy matching**: misspellings, accents, and cross-language name lookup, handled out of the box. See [Tools](https://stark.markparker.me/tools/).
-- **Nested contexts**: multi-level menus, follow-ups, and stateful conversations. See [Commands Context](https://stark.markparker.me/commands-context/).
-- **Background commands & multiple responses**: fire a task, keep listening, get notified as it progresses. See [Sync vs Async Commands](https://stark.markparker.me/sync-vs-async-commands/#background-commands).
-- **Assistant modes**: active, waiting, inactive, sleeping (wake-word), explicit, and external-trigger modes. See [Running Your Assistant](https://stark.markparker.me/running-your-assistant/).
-- **Modular by design**: swap commands, processors, type parsers, or the entire IO layer (voice, text, a [Telegram bot](https://stark.markparker.me/advanced/custom-interfaces/#telegram-bot), your own). See [How to Run](https://stark.markparker.me/how-to-run/).
+- **Nested contexts**: multi-level menus, follow-ups, and stateful conversations. See [Commands Context](https://stark.markparker.me/core-concepts/commands-context/).
+- **Background commands & multiple responses**: fire a task, keep listening, get notified as it progresses. See [Sync vs Async Commands](https://stark.markparker.me/core-concepts/sync-vs-async-commands/#background-commands).
+- **Assistant modes**: active, waiting, inactive, sleeping (wake-word), explicit, and external-trigger modes. See [Running Your Assistant](https://stark.markparker.me/running/).
+- **Modular by design**: swap commands, processors, type parsers, or the entire IO layer (voice, text, a [Telegram bot](https://stark.markparker.me/running/custom-interfaces/#telegram-bot), your own). See [How to Run](https://stark.markparker.me/running/how-to-run/).
 - **100% on-device**: runs fully offline, your data stays yours.
 
 ## Powered by STARK
@@ -145,7 +145,7 @@ Full docs, including installation options and extras, at **[stark.markparker.me]
 ## Community
 
 - 💬 [Discussions](https://github.com/MarkParker5/STARK/discussions): questions, feedback, showcase what you built. We need all the feedback we can get to make STARK better, so don't be afraid to be first, every thread starts empty.
-- 📦 [STARK-PLACE](https://github.com/MarkParker5/STARK-PLACE): community commands and reference implementations
+- 📦 [STARK-PLACE](https://stark.markparker.me/ecosystem/): the extension ecosystem — installable packages (`stark-ai`, `stark-triggers`, `stark-devtools`) and copy-paste examples built on STARK
 - 🐛 [Issues](https://github.com/MarkParker5/STARK/issues): found a bug?
 
 ## License

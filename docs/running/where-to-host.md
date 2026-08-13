@@ -50,7 +50,7 @@ For those looking for a more robust and scalable solution, server-based hosting 
 
 2. **Home Server**: You can host Stark on a dedicated home server or even on personal PCs. This can be a dedicated machine or single-board computers like the Raspberry Pi. The advantage is local access and full control over your data and operations.
 
-3. **Custom Interfaces**: With Stark running on a server, you can develop custom interfaces for access. For example, by implementing an HTTP server, as was done in the shared example, you can connect other devices to Stark. Detailed instructions can be found at [Custom Interfaces](advanced/custom-interfaces.md).
+3. **Custom Interfaces**: With Stark running on a server, you can develop custom interfaces for access. For example, by implementing an HTTP server, as was done in the shared example, you can connect other devices to Stark. Detailed instructions can be found at [Custom Interfaces](custom-interfaces.md).
 
 ---
 

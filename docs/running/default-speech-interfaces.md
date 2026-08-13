@@ -1,6 +1,6 @@
 # Default Speech Interfaces
 
-`run()` needs a speech recognizer and a speech synthesizer, this page is the quick reference for wiring up the ones S.T.A.R.K. ships. The Vosk + Silero stack isn't fixed: both are protocol-based, so any backend that implements the same thin interface is a drop-in replacement, more native alternatives are on the way (see [Roadmap](roadmap.md)), and nothing stops you from wiring in your own today. For the underlying protocols, what each method does, and how to implement your own backend, see [Speech Recognition (STT)](tools/speech-recognition.md) and [Speech Synthesis (TTS)](tools/speech-synthesis.md), both work standalone too, without any other part of the framework.
+`run()` needs a speech recognizer and a speech synthesizer, this page is the quick reference for wiring up the ones S.T.A.R.K. ships. The Vosk + Silero stack isn't fixed: both are protocol-based, so any backend that implements the same thin interface is a drop-in replacement, more native alternatives are on the way (see [Roadmap](../ecosystem/roadmap.md)), and nothing stops you from wiring in your own today. For the underlying protocols, what each method does, and how to implement your own backend, see [Speech Recognition (STT)](../tools/speech-recognition.md) and [Speech Synthesis (TTS)](../tools/speech-synthesis.md), both work standalone too, without any other part of the framework.
 
 ## Recognizers
 
@@ -49,6 +49,6 @@ async def main():
 anyio.run(main)
 ```
 
-This is the same pattern as the front-page [Hello, Stark!](index.md#hello-stark) example. Required dependencies (`vosk`, `sounddevice`, `torch`, etc.) are install extras, see [Installation](installation.md).
+This is the same pattern as the front-page [Hello, Stark!](../index.md#hello-stark) example. Required dependencies (`vosk`, `sounddevice`, `torch`, etc.) are install extras, see [Installation](../getting-started/installation.md).
 
-For everything else `run()` accepts (custom processors, a localizer, multiple recognizers for multilingual setups), see [How to Run](how-to-run.md). For a fundamentally different IO layer that isn't voice at all, see [Custom IO & Context Delegate](advanced/custom-interfaces.md).
+For everything else `run()` accepts (custom processors, a localizer, multiple recognizers for multilingual setups), see [How to Run](how-to-run.md). For a fundamentally different IO layer that isn't voice at all, see [Custom IO & Context Delegate](custom-interfaces.md).

@@ -4,6 +4,9 @@ In the dynamic world of voice assistants and speech recognition, it's essential 
 
 The fallback command in the STARK framework serves as a safety net, ensuring that when a user's voice input doesn't match any set command, there's still an appropriate and meaningful response.
 
+!!! tip "You may not need to build this"
+    The [`stark-ai`](../ecosystem/package-registry.md) package already ships LLM processors — a fallback agent, structured/search parsing, and LLM/embedding NER. Check [STARK-PLACE](../ecosystem/index.md) before rolling your own.
+
 ## Setting Up the Fallback Command
 
 A fallback command is just a regular command with a wildcard pattern, `$string:String` matches anything. Two things matter for it to actually behave like a fallback:
@@ -20,7 +23,7 @@ async def fallback(string: String):
 manager.extend(fallback_manager)  # register it LAST
 ```
 
-1. **Don't mark it `hidden=True`.** A `hidden=True` command is never added to the manager's command list at all, it only becomes reachable when explicitly offered via a `Response`'s `commands=[...]` (see [Commands Context](../commands-context.md)). A fallback needs to be reachable from anywhere, all the time, so it can't be hidden.
+1. **Don't mark it `hidden=True`.** A `hidden=True` command is never added to the manager's command list at all, it only becomes reachable when explicitly offered via a `Response`'s `commands=[...]` (see [Commands Context](../core-concepts/commands-context.md)). A fallback needs to be reachable from anywhere, all the time, so it can't be hidden.
 2. **Register it last.** [`SearchProcessor`](custom-processors.md) resolves overlapping matches in favor of the command added earliest. Since `$string:String` overlaps with almost everything, it has to be the last command added, merge its manager in after every other command is registered, so specific commands always win.
 
 This is simple, but it's a soft guarantee, a wildcard pattern technically *can* still win in edge cases depending on match overlap. For a hard guarantee that the fallback only fires when truly nothing else matched, see the alternative below.

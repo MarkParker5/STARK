@@ -1,6 +1,6 @@
 # Custom Run
 
-`run()` is opinionated, it always wires a `VoiceAssistant`, always starts the microphone, always uses the default processor pipeline unless told otherwise (see [How to Run](../how-to-run.md) for the parameters it does expose). Most of the time, those defaults are exactly right. When they're not, you want a different startup sequence, extra concurrent tasks, custom logging baked into the assembly itself, replicate `run()` and adjust it, rather than fighting its assumptions from the outside.
+`run()` is opinionated, it always wires a `VoiceAssistant`, always starts the microphone, always uses the default processor pipeline unless told otherwise (see [How to Run](../running/how-to-run.md) for the parameters it does expose). Most of the time, those defaults are exactly right. When they're not, you want a different startup sequence, extra concurrent tasks, custom logging baked into the assembly itself, replicate `run()` and adjust it, rather than fighting its assumptions from the outside.
 
 This page walks through what `run()` actually does, so a custom version isn't guesswork.
 
@@ -50,15 +50,15 @@ async def run(
 ```
 
 1. `CommandsContext` is the engine, it holds the command manager, the processor pipeline (here, just pattern matching via `SearchProcessor`), and the task group everything else runs in.
-2. `VoiceAssistant` is the default IO layer, gluing the recognizer and synthesizer to the context. See [Custom IO & Context Delegate](custom-interfaces.md) if you want to swap this out for something other than voice.
+2. `VoiceAssistant` is the default IO layer, gluing the recognizer and synthesizer to the context. See [Custom IO & Context Delegate](../running/custom-interfaces.md) if you want to swap this out for something other than voice.
 3. The recognizer and the context both report to `voice_assistant` as their delegate, this is the wiring that makes "the mic heard something" eventually become "a response got spoken."
 4. `health_check` validates the whole command set at startup, catches things like a missing `@key` localization reference (see [Localizing Parsing](../localization-and-multilingual/localizing-parsing.md)) before a user ever triggers it.
-5. Three tasks run concurrently for the lifetime of the assistant: listening for speech, reading microphone samples, and delivering queued responses. See [Sync vs Async Commands](../sync-vs-async-commands.md) for why this concurrency matters.
+5. Three tasks run concurrently for the lifetime of the assistant: listening for speech, reading microphone samples, and delivering queued responses. See [Sync vs Async Commands](../core-concepts/sync-vs-async-commands.md) for why this concurrency matters.
 6. `BlockageDetector` watches the main thread and warns if something blocks it for too long, a safety net for the mistake [Optimization](optimization.md) is mostly about avoiding.
 
 ## Customizing the Run Function
 
-Common reasons to write your own version instead of relying on [`run()`'s exposed parameters](../how-to-run.md):
+Common reasons to write your own version instead of relying on [`run()`'s exposed parameters](../running/how-to-run.md):
 
 - Extra concurrent tasks alongside the assistant (a background sync job, a health-check server, a metrics reporter)
 - Custom logging or analytics wired in at the assembly point, not inside individual commands

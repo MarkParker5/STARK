@@ -29,7 +29,7 @@ recognizer.delegate = PrintResults()
 await recognizer.start_listening()  # transcribes the microphone, no commands involved
 ```
 
-Want it wired into a full assistant? See [How to Run](../how-to-run.md).
+Want it wired into a full assistant? See [How to Run](../running/how-to-run.md).
 
 ## Ready Implementations
 
@@ -41,7 +41,7 @@ Offline speech recognition via the [Vosk](https://alphacephei.com/vosk/) library
 VoskSpeechRecognizer(model_url: str, language_code: str | None = None, speaker_model_url: str | None = None)
 ```
 
-Pass `speaker_model_url` to enable speaker-embedding extraction (used for cross-recognizer matching when running [multiple languages simultaneously](../voice-assistant.md#multi-language-voice-setup), not yet used for diarization, but the data is captured).
+Pass `speaker_model_url` to enable speaker-embedding extraction (used for cross-recognizer matching when running [multiple languages simultaneously](../running/voice-assistant.md#multi-language-voice-setup), not yet used for diarization, but the data is captured).
 
 ## The Protocol
 
@@ -72,4 +72,4 @@ Any class that satisfies the `SpeechRecognizer` protocol is a drop-in replacemen
 
 <script src="https://emgithub.com/embed-v2.js?target=https%3A%2F%2Fgithub.com%2FMarkParker5%2FSTARK%2Fblob%2Fmaster%2Fstark%2Finterfaces%2Fvosk.py&style=atom-one-dark&type=code&showBorder=on&showLineNumbers=on&showFileMeta=on&showFullPath=on&showCopy=on"></script>
 
-This is exactly where a cloud STT backend (Whisper API, Google Speech-to-Text, Azure) or a different offline engine would plug in, and a great first contribution if one doesn't exist yet. See [Roadmap](../roadmap.md).
+This is exactly where a cloud STT backend (Whisper API, Google Speech-to-Text, Azure) or a different offline engine would plug in, and a great first contribution if one doesn't exist yet. See [Roadmap](../ecosystem/roadmap.md).

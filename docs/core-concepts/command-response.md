@@ -25,7 +25,7 @@ Response(
 ### `voice: str | LocalizableString`
 **Default:** `''`
 
-This string will be converted to speech and played back to the user. If left empty, no vocal response will be given. Accepts `LocalizableString` for localized responses, see [Localizing Responses](localization-and-multilingual/localizing-responses.md).
+This string will be converted to speech and played back to the user. If left empty, no vocal response will be given. Accepts `LocalizableString` for localized responses, see [Localizing Responses](../localization-and-multilingual/localizing-responses.md).
 
 ### `text: str | LocalizableString`
 **Default:** `''`
@@ -78,7 +78,7 @@ Static instance of the Response class, that provides a mechanism to reprocess th
 
 Responses play a vital role in the user interaction flow. The `VoiceAssistant` class, along with the `CommandsContext`, processes these responses to ensure the user receives accurate and timely feedback.
 
-- **Upon receiving a new response:** The `VoiceAssistant` initially verifies if the response status belongs to its ignore list. If it doesn't, the assistant subsequently evaluates the mode's timeout parameters and, if applicable, appends the response to its collection. For further details on this behavior, refer to the Modes section on the [VoiceAssistant](voice-assistant.md) page.
+- **Upon receiving a new response:** The `VoiceAssistant` initially verifies if the response status belongs to its ignore list. If it doesn't, the assistant subsequently evaluates the mode's timeout parameters and, if applicable, appends the response to its collection. For further details on this behavior, refer to the Modes section on the [VoiceAssistant](../running/voice-assistant.md) page.
 
 - **Playing the response:** Depending on the assistant's mode, the response may be converted to speech and played back to the user.
 
@@ -114,6 +114,6 @@ msg.format([1])  # "1 item"
 msg.format([5])  # "5 items"
 ```
 
-PyICU is not a dependency of S.T.A.R.K, install it separately (`pip install PyICU`) and use it alongside `LocalizableString` for formatting dynamic values before injecting them into your response templates. A tighter integration (e.g., a built-in formatting layer or a convenience wrapper) is on the radar but the exact shape is TBD, if you have ideas or want to draft an implementation, contributions are welcome via [STARK PLACE](contributing-and-shared-usage-stark-place.md).
+PyICU is not a dependency of S.T.A.R.K, install it separately (`pip install PyICU`) and use it alongside `LocalizableString` for formatting dynamic values before injecting them into your response templates. A tighter integration (e.g., a built-in formatting layer or a convenience wrapper) is on the radar but the exact shape is TBD, if you have ideas or want to draft an implementation, contributions are welcome via [STARK PLACE](../ecosystem/index.md).
 
-For more on response localization, see [Localizing Responses](localization-and-multilingual/localizing-responses.md).
+For more on response localization, see [Localizing Responses](../localization-and-multilingual/localizing-responses.md).

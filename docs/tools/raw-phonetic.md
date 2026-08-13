@@ -7,7 +7,7 @@ description: IPA phonetic transcription and simplephone encoding for Python. Con
 ## Overview
 
 These tools convert text to phonetic representations for fuzzy matching, name lookup, and cross-language search.
-They power the phonetic matching in the [Dictionary Tool](./phonetic-dictionary.md) and are often used together (simplephone code of the phonetic transcription) for best results.
+They power the phonetic matching in the [Dictionary Tool](phonetic-dictionary.md) and are often used together (simplephone code of the phonetic transcription) for best results.
 
 - `transcription`: Converts text in any language to a simplified Latin transcription using IPA (International Phonetic Alphabet). The default implementation currently uses espeak-ng (requires [libespeak-ng binary](https://github.com/espeak-ng/espeak-ng/blob/master/docs/guide.md#installation) installed in the system). STARK also provides an epitran wrapper as an alternative for espeak, and allows passing any custom implementation as a parameter.
 - `simplephone`: Further reduces a transcription (or plain English text) to a simple, language-agnostic phonetic code for fast, robust matching.
@@ -91,7 +91,7 @@ This enables matching names and words across different languages and spellings.
 
 ## More fuzzyness
 
-For even more fuzzyness, consider using the levenshtein distance with the default proximity graph for simplephone (`SIMPLEPHONE_PROXIMITY_GRAPH`). For details see [STARK's Levenshtein implementation](./stark-levenshtein.md)
+For even more fuzzyness, consider using the levenshtein distance with the default proximity graph for simplephone (`SIMPLEPHONE_PROXIMITY_GRAPH`). For details see [STARK's Levenshtein implementation](stark-levenshtein.md)
 
 ## IPA Providers
 

@@ -23,7 +23,7 @@ The STARK framework offers several extras, which are default implementations for
 - **gcloud**: [Google Cloud Text-to-Speech](https://cloud.google.com/text-to-speech) implementation of SpeechSynthesizer protocol.
 - **silero**: [Silero](https://github.com/snakers4/silero-models) Models (offline) implementation of SpeechSynthesizer.
 - **sound**: Required utilities for processing sound: `sounddevice` and `soundfile`.
-- **spacy**: [spaCy](https://spacy.io/) NER pre-processing, see [Custom Processors](advanced/custom-processors.md#spacynerprocessor-pre-processor).
+- **spacy**: [spaCy](https://spacy.io/) NER pre-processing, see [Custom Processors](../advanced/custom-processors.md#spacynerprocessor-pre-processor).
 
 ## Installation with pip
 

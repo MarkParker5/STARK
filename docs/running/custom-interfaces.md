@@ -1,6 +1,6 @@
 # Custom IO & Context Delegate
 
-S.T.A.R.K. ships `VoiceAssistant` as a ready-made IO layer, and subclassing it (see [Voice Assistant & Modes](../voice-assistant.md)) covers most customization needs, overriding a method to hook into an event, like updating a GUI when a response arrives. But if you want a fundamentally different IO layer, a GUI, a Telegram bot, an API, rather than voice at all, `VoiceAssistant` isn't the starting point. `CommandsContextDelegate` is.
+S.T.A.R.K. ships `VoiceAssistant` as a ready-made IO layer, and subclassing it (see [Voice Assistant & Modes](voice-assistant.md)) covers most customization needs, overriding a method to hook into an event, like updating a GUI when a response arrives. But if you want a fundamentally different IO layer, a GUI, a Telegram bot, an API, rather than voice at all, `VoiceAssistant` isn't the starting point. `CommandsContextDelegate` is.
 
 ## The Protocol
 
@@ -17,7 +17,7 @@ class CommandsContextDelegate(Protocol):
         pass
 ```
 
-This is the protocol `VoiceAssistant` itself implements. `CommandsContext` calls these methods as commands run, `commands_context_did_receive_response` whenever a `Response` is produced, `remove_response` when a response is withdrawn (e.g. via `ResponseHandler.unrespond`, see [Command Response](../command-response.md)). Implementing it directly gives you the same hook `VoiceAssistant` uses, without inheriting any of its voice-specific behavior (modes, timeouts, speech recognition wiring).
+This is the protocol `VoiceAssistant` itself implements. `CommandsContext` calls these methods as commands run, `commands_context_did_receive_response` whenever a `Response` is produced, `remove_response` when a response is withdrawn (e.g. via `ResponseHandler.unrespond`, see [Command Response](../core-concepts/command-response.md)). Implementing it directly gives you the same hook `VoiceAssistant` uses, without inheriting any of its voice-specific behavior (modes, timeouts, speech recognition wiring).
 
 ## A Minimal Custom Delegate
 
@@ -55,15 +55,15 @@ anyio.run(main)
 3. Assign your delegate to `CommandsContext.delegate`, this is the wiring `run()` does for you when you use the default voice-assistant path.
 4. Feed input in however makes sense for your interface, a terminal loop, a GUI event handler, an incoming Telegram message, an HTTP request.
 
-This is the same "your own assembly function" path covered in [How to Run](../how-to-run.md), that page is the better starting point for choosing between `run()`, overrides, and a fully custom delegate like this.
+This is the same "your own assembly function" path covered in [How to Run](how-to-run.md), that page is the better starting point for choosing between `run()`, overrides, and a fully custom delegate like this.
 
 ## Triggering Without Voice
 
-If your custom interface starts the assistant on something other than continuous listening, a keyboard shortcut, a button press, an incoming message, see [External Triggers](external-triggers.md) for the `Mode.external()` pattern that pairs with this.
+If your custom interface starts the assistant on something other than continuous listening, a keyboard shortcut, a button press, an incoming message, see [External Triggers](../advanced/external-triggers.md) for the `Mode.external()` pattern that pairs with this.
 
 ## Alternative Interface Ideas
 
-These aren't built-in, they're illustrations of where a custom `CommandsContextDelegate` (paired with a matching input source) fits well, to spark ideas for your own. See [Project Ideas](../project-ideas.md) for more.
+These aren't built-in, they're illustrations of where a custom `CommandsContextDelegate` (paired with a matching input source) fits well, to spark ideas for your own. See [Project Ideas](../ecosystem/project-ideas.md) for more.
 
 ### Telegram Bot
 
@@ -114,7 +114,7 @@ Want actual voice messages instead of text? Run a `SpeechSynthesizer` (see [Spee
 
 ### CLI / Terminal
 
-Type instead of speak, read instead of listen. Excellent for debugging, quick testing, or environments without audio. This is what `STARK_VOICE_CLI=1` already gives you on top of `VoiceAssistant`, see [Voice Assistant & Modes](../voice-assistant.md), but a dedicated text-only delegate (like the minimal example above) skips voice entirely instead of layering on top of it.
+Type instead of speak, read instead of listen. Excellent for debugging, quick testing, or environments without audio. This is what `STARK_VOICE_CLI=1` already gives you on top of `VoiceAssistant`, see [Voice Assistant & Modes](voice-assistant.md), but a dedicated text-only delegate (like the minimal example above) skips voice entirely instead of layering on top of it.
 
 ### GUI
 
@@ -122,4 +122,4 @@ A graphical delegate can show text responses, visualize context state, accept bo
 
 ---
 
-The canvas of possibilities is vast, bounded mostly by the IO source you wire up. GUI and HTTP-API interfaces aren't built into S.T.A.R.K. yet, see [Roadmap](../roadmap.md) if you want to build one.
+The canvas of possibilities is vast, bounded mostly by the IO source you wire up. GUI and HTTP-API interfaces aren't built into S.T.A.R.K. yet, see [Roadmap](../ecosystem/roadmap.md) if you want to build one.

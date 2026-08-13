@@ -6,11 +6,11 @@ A S.T.A.R.K. assistant runs almost everything, speech transcription, response de
 
 **THE MOST IMPORTANT**: Always ensure that you **DO NOT** place blocking code inside `async def` functions. Blocking code can drastically reduce the performance of asynchronous applications by halting the execution of other parts of the application.
 
-If you have commands that run blocking code, always define them using the simple `def` ([Sync-vs-Async](../sync-vs-async-commands.md)). This ensures that Stark creates a separate worker thread to handle the execution of that command. By doing so, Stark remains responsive, even when processing resource-intensive commands.
+If you have commands that run blocking code, always define them using the simple `def` ([Sync-vs-Async](../core-concepts/sync-vs-async-commands.md)). This ensures that Stark creates a separate worker thread to handle the execution of that command. By doing so, Stark remains responsive, even when processing resource-intensive commands.
 
 ## Sync vs Async
 
-Understanding the difference between synchronous and asynchronous code is crucial. Asynchronous code allows your application to perform other tasks while waiting for a particular task to complete, thus improving efficiency. The [Sync-vs-Async](../sync-vs-async-commands.md) page provides a comprehensive comparison and guidance on how to effectively leverage both.
+Understanding the difference between synchronous and asynchronous code is crucial. Asynchronous code allows your application to perform other tasks while waiting for a particular task to complete, thus improving efficiency. The [Sync-vs-Async](../core-concepts/sync-vs-async-commands.md) page provides a comprehensive comparison and guidance on how to effectively leverage both.
 
 ## Utilizing the asyncer
 

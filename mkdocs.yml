@@ -11,23 +11,23 @@ copyright: Copyright &copy; Mark Parker
 nav:
   - Home: index.md
   - Getting Started:
-      - Installation: installation.md
-      - "Hello World": first-steps.md
-      - Creating Commands: creating-commands.md
-      - Sync vs Async Commands: sync-vs-async-commands.md
+      - Installation: getting-started/installation.md
+      - "Hello World": getting-started/first-steps.md
+      - Creating Commands: getting-started/creating-commands.md
   - Core Concepts:
-      - Overview: core-concepts.md
-      - Patterns: patterns.md
-      - Command Response: command-response.md
-      - Commands Context: commands-context.md
-      - Dependency Injection: dependency-injection.md
+      - Overview: core-concepts/index.md
+      - Patterns: core-concepts/patterns.md
+      - Command Response: core-concepts/command-response.md
+      - Commands Context: core-concepts/commands-context.md
+      - Dependency Injection: core-concepts/dependency-injection.md
+      - Sync vs Async Commands: core-concepts/sync-vs-async-commands.md
   - Running Your Assistant:
-      - Overview: running-your-assistant.md
-      - How to Run: how-to-run.md
-      - Voice Assistant & Modes: voice-assistant.md
-      - Default Speech Interfaces: default-speech-interfaces.md
-      - Custom IO & Context Delegate: advanced/custom-interfaces.md
-      - Where to Host: where-to-host.md
+      - Overview: running/index.md
+      - How to Run: running/how-to-run.md
+      - Voice Assistant & Modes: running/voice-assistant.md
+      - Default Speech Interfaces: running/default-speech-interfaces.md
+      - Custom IO & Context Delegate: running/custom-interfaces.md
+      - Where to Host: running/where-to-host.md
   - Going Multilingual:
       - localization-and-multilingual/index.md
       - Localizing Parsing: localization-and-multilingual/localizing-parsing.md
@@ -50,11 +50,11 @@ nav:
       - Feature Flags: advanced/feature-flags.md
       - Optimization: advanced/optimization.md
   - AI Agent Platform: agent-platform.md
-  - Community:
-      - STARK-PLACE: contributing-and-shared-usage-stark-place.md
-      - Package Registry: package-registry.md
-      - Project Ideas: project-ideas.md
-      - Roadmap: roadmap.md
+  - Ecosystem:
+      - STARK-PLACE: ecosystem/index.md
+      - Package Registry: ecosystem/package-registry.md
+      - Project Ideas: ecosystem/project-ideas.md
+      - Roadmap: ecosystem/roadmap.md
 
 theme:
   name: material
@@ -144,6 +144,9 @@ markdown_extensions:
   - toc:
       permalink: true
 
+hooks:
+  - hooks/llms_enrich.py
+
 plugins:
   - search
   - social
@@ -161,22 +164,23 @@ plugins:
       full_output: llms-full.txt
       sections:
         Getting Started:
-          - installation.md
-          - first-steps.md
+          - getting-started/installation.md
+          - getting-started/first-steps.md
+          - getting-started/creating-commands.md
         Core Concepts:
-          - core-concepts.md
-          - creating-commands.md
-          - sync-vs-async-commands.md
-          - command-response.md
-          - commands-context.md
-          - patterns.md
-          - dependency-injection.md
+          - core-concepts/index.md
+          - core-concepts/sync-vs-async-commands.md
+          - core-concepts/command-response.md
+          - core-concepts/commands-context.md
+          - core-concepts/patterns.md
+          - core-concepts/dependency-injection.md
         Running Your Assistant:
-          - running-your-assistant.md
-          - how-to-run.md
-          - voice-assistant.md
-          - default-speech-interfaces.md
-          - where-to-host.md
+          - running/index.md
+          - running/how-to-run.md
+          - running/voice-assistant.md
+          - running/default-speech-interfaces.md
+          - running/custom-interfaces.md
+          - running/where-to-host.md
         Tools:
           - tools/*.md
         Advanced:
@@ -185,11 +189,11 @@ plugins:
           - localization-and-multilingual/*.md
         Whats Next:
           - agent-platform.md
-          - roadmap.md
-        Community:
-          - contributing-and-shared-usage-stark-place.md
-          - package-registry.md
-          - project-ideas.md
+        Ecosystem:
+          - ecosystem/index.md
+          - ecosystem/package-registry.md
+          - ecosystem/project-ideas.md
+          - ecosystem/roadmap.md
   # - git-committers:
   #     repository: MarkParker5/STARK
   #     branch: master

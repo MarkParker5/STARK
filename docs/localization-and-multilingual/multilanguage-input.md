@@ -74,7 +74,7 @@ from stark.models.voice_transcription_string import VoiceTranscriptionString
 
 This adds per-word timestamps, confidence scores, and speaker embeddings. This data is used by the parser to resolve overlapping matches across alternative tracks, set priorities, improve recognition accuracy. Speaker identification is not used yet, but this is something to be added in the future.
 
-See [Voice Assistant](../voice-assistant.md) for the built-in multi-STT setup that produces `VoiceTranscriptionString` automatically.
+See [Voice Assistant](../running/voice-assistant.md) for the built-in multi-STT setup that produces `VoiceTranscriptionString` automatically.
 
 ## Passing to the Parser
 
