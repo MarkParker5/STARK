@@ -114,3 +114,17 @@ class NLObject[T](metaclass=UnionMeta):
 
     def __hash__(self) -> int:
         return hash(self.value)
+
+
+def __getattr__(name):
+    # Deprecated alias — Object was renamed to NLObject.
+    if name == "Object":
+        import warnings
+
+        warnings.warn(
+            f"'{__name__}.{name}' is deprecated; use 'NLObject' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return NLObject
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
