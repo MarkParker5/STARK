@@ -10,18 +10,18 @@ Stark-Place serves as a repository filled with commands, implementations of vari
 
 ## 📦 Using Stark-Place
 
-You don't have to `pip install` it. STARK-PLACE is as much a reference collection as it is a package, for a lot of modules, the better move is to copy the relevant code straight into your own project (keeping attribution, per the license below) rather than pull in a dependency for one command. Use whichever fits:
+STARK-PLACE ships as several small, independently-installable packages (`stark-ai`,
+`stark-triggers`, `stark-devtools`), not one monolith — install only what you need from
+the self-hosted registry. Use whichever fits:
 
-**Install it** as you would with any pip module, if you want the whole library available:
+**Install a package** from the [package registry](package-registry.md):
 
 ```bash
-pip install stark-place
+pip install --find-links https://markparker5.github.io/STARK-PLACE/ stark-ai
 ```
 
-```python
-from stark_place.commands import general_manager  # access to all commands
-# or import a specific module's manager instead
-```
+See the **[Package Registry](package-registry.md)** page for the full package list,
+multi-package installs, and a browsable index of every published version.
 
 **Copy what you need** straight from the repository if you only want one command or module, browse [MarkParker5/STARK-PLACE](https://github.com/MarkParker5/STARK-PLACE), grab the file, keep the attribution comment intact, done.
 

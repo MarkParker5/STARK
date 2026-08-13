@@ -52,6 +52,7 @@ nav:
   - AI Agent Platform: agent-platform.md
   - Community:
       - STARK-PLACE: contributing-and-shared-usage-stark-place.md
+      - Package Registry: package-registry.md
       - Project Ideas: project-ideas.md
       - Roadmap: roadmap.md
 
@@ -180,6 +181,7 @@ plugins:
           - roadmap.md
         Community:
           - contributing-and-shared-usage-stark-place.md
+          - package-registry.md
           - project-ideas.md
   # - git-committers:
   #     repository: MarkParker5/STARK
