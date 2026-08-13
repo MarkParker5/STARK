@@ -166,3 +166,20 @@ async def test_background_waiting_remove_response(voice_assistant, autojump_cloc
         await anyio.sleep(1)  # allow to capture command response
         assert len(voice_assistant.speech_synthesizer.results) == 1
         assert voice_assistant.speech_synthesizer.results.pop(0).text == "pong"
+
+
+async def test_explicit_interaction_pattern(voice_assistant, autojump_clock):
+    # regression: explicit_interaction_pattern must gate input via PatternParser
+    async with voice_assistant() as voice_assistant:
+        voice_assistant.mode = Mode.explicit("ping")
+
+        # input that does NOT match the explicit pattern is ignored
+        await voice_assistant.speech_recognizer_did_receive_final_result("lorem ipsum dolor")
+        await anyio.sleep(0.2)
+        assert len(voice_assistant.speech_synthesizer.results) == 0
+
+        # input that matches the pattern is processed
+        await voice_assistant.speech_recognizer_did_receive_final_result("ping")
+        await anyio.sleep(0.2)
+        assert len(voice_assistant.speech_synthesizer.results) == 1
+        assert voice_assistant.speech_synthesizer.results[0].text == "pong"
