@@ -1,3 +1,5 @@
+from typing import cast
+
 import asyncer
 
 from stark.core import (
@@ -51,7 +53,7 @@ async def run(
 
         if use_relay:
             from stark.interfaces.recognizer_relay import SpeechRecognizerRelay
-            effective_recognizer = SpeechRecognizerRelay(recognizers)
+            effective_recognizer: SpeechRecognizer = SpeechRecognizerRelay(recognizers)
         else:
             effective_recognizer = recognizers[0]
 
@@ -66,7 +68,7 @@ async def run(
         health_check(context.pattern_parser, manager.commands)
 
         if use_relay:
-            effective_recognizer.start_speech_recognizers(main_task_group)
+            cast(SpeechRecognizerRelay, effective_recognizer).start_speech_recognizers(main_task_group)
         else:
             main_task_group.soonify(effective_recognizer.start_listening)()
 

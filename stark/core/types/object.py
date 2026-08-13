@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 from abc import ABCMeta
+from typing import Any, cast
 
 from stark.core.patterns.pattern import Pattern
 from stark.general.classproperty import classproperty
@@ -18,19 +19,19 @@ class UnionMeta(ABCMeta):
             raise TypeError("Union cannot be instantiated directly; subclass it or use | syntax or  MakeUnion")
         return super().__call__(*args, **kwargs)
 
-    def __or__(cls, other: type) -> type:
+    def __or__(cls, other: type) -> type:  # type: ignore[override]  # metaclass operator overload returning STARK Union
         from stark.core.types.union import MakeUnion
 
         if isinstance(other, type) and issubclass(other, Object):
-            return MakeUnion(cls, other)
-        return type.__or__(cls, other)  # fall through to types.UnionType for X | None etc.
+            return MakeUnion(cls, other)  # type: ignore[arg-type]  # UnionMeta instances are Object subclasses
+        return type.__or__(cls, other)  # type: ignore[return-value]  # fall through to types.UnionType for X | None etc.
 
-    def __ror__(cls, other: type) -> type:
+    def __ror__(cls, other: type) -> type:  # type: ignore[override]  # metaclass operator overload returning STARK Union
         from stark.core.types.union import MakeUnion
 
         if isinstance(other, type) and issubclass(other, Object):
-            return MakeUnion(other, cls)
-        return type.__ror__(cls, other)
+            return MakeUnion(other, cls)  # type: ignore[arg-type]  # UnionMeta instances are Object subclasses
+        return type.__ror__(cls, other)  # type: ignore[return-value]  # fall through to types.UnionType for X | None etc.
 
     def __format__(cls, spec) -> str:
         return cls.__name__
@@ -39,9 +40,9 @@ class UnionMeta(ABCMeta):
 # TODO: review programmable init vs did_parse
 # TODO: consider storing parsing metadata here like substr and span
 class Object[T](metaclass=UnionMeta):
-    value: T = None
+    value: T = cast(T, None)
 
-    def __init__(self, value: Any):
+    def __init__(self, value: Any = None):
         """Just init with a wrapped value."""
         self.value = value
 
@@ -63,7 +64,7 @@ class Object[T](metaclass=UnionMeta):
         """
         return False  # TODO: review default behavior
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs):  # type: ignore[no-redef]  # intentional override of the documented single-value __init__ above
         """Init with wrapped value, if provided. Otherwise leave `value` untouched so a static
         value set at class declaration time (e.g. `value = "foo"`) survives instantiation."""
         if "value" in kwargs:
@@ -88,7 +89,7 @@ class Object[T](metaclass=UnionMeta):
             ParseError: if parsing failed.
         """
         if not self.value:
-            self.value = from_string
+            self.value = cast(T, from_string)
         return from_string
 
     def copy(self) -> Object:

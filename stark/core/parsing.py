@@ -513,9 +513,11 @@ class PatternParser:
                     f"Pattern '{pattern._origin}' contains @key references but no Localizer is configured on PatternParser"
                 )
 
+            localizer = self.localizer
+
             def _resolve_key(m: re.Match) -> str:
                 key = m.group("key")
-                resolved = self.localizer.get_recognizable(key, language_code)
+                resolved = localizer.get_recognizable(key, language_code)
                 if resolved is None:
                     raise KeyError(f"Localizer key '@{key}' not found for language '{language_code}'")
                 return resolved

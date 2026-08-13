@@ -7,7 +7,7 @@ from stark.general.classproperty import classproperty
 
 def MakeUnion(*types: type[Object]) -> type:
     cls = UnionMeta("_".join(t.__name__ for t in types), (Union,), {"_types": list(types)})
-    cls._transparent = True  # PatternParser unwraps to branch when used as a typed parameter
+    setattr(cls, "_transparent", True)  # PatternParser unwraps to branch when used as a typed parameter
     return cls
 
 

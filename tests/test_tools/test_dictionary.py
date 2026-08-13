@@ -1,5 +1,8 @@
+from typing import cast
+
 import pytest
 
+from stark.general.localisation.language_code import LanguageCode
 from stark.tools.dictionary.dictionary import (
     Dictionary,
     LookupField,
@@ -26,11 +29,11 @@ def dictionary(request) -> Dictionary:
     raise ValueError(request.param)
 
 
-def parse_lang(string: str) -> tuple[str, str]:
+def parse_lang(string: str) -> tuple[LanguageCode, str]:
     lang = "en"
     if ":" in string:
         lang, string = string.split(":", 1)
-    return lang, string
+    return cast(LanguageCode, lang), string
 
 
 @pytest.mark.parametrize(
@@ -70,6 +73,7 @@ def test_write_all_and_clear(dictionary: Dictionary):
     for entry in data:
         matches = list(dictionary.lookup(entry.name, entry.language_code))
         assert matches
+        assert matches[0].metadata is not None and entry.metadata is not None
         assert matches[0].metadata["meta"] == entry.metadata["meta"]
     dictionary.clear()
     for entry in data:

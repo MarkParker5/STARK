@@ -81,7 +81,7 @@ async def sliding_window_parse[T](
     max_window: int | None = None,
     concurrency: int | None = None,
     find_one: bool = True,
-) -> list[tuple[Span, str, T]]:
+) -> list[tuple[Span, str, T]] | None:
     tokens: list[str] = phrase.split()
     n: int = len(tokens)
     if n == 0 or parser is None:
@@ -93,7 +93,7 @@ async def sliding_window_parse[T](
         # Use a semaphore to limit concurrency of parser calls.
         sem = asyncio.Semaphore(concurrency)
 
-        async def try_window(i: int, j: int) -> T:
+        async def try_window(i: int, j: int) -> T | None:
             async with sem:
                 try:
                     return await parser(" ".join(tokens[i:j]))
@@ -101,7 +101,7 @@ async def sliding_window_parse[T](
                     return None
     else:
 
-        async def try_window(i: int, j: int) -> T:
+        async def try_window(i: int, j: int) -> T | None:
             try:
                 return await parser(" ".join(tokens[i:j]))
             except ParseError:

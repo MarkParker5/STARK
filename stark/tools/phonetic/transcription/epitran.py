@@ -21,8 +21,10 @@ class EpitranIpaProvider:
         #         "IPA to Epitran conversion for English is not implemented yet."
         #     )
 
-        if language_code == "ru":
-            language_code = "rus-Cyrl"
+        # epitran uses its own language codes (e.g. 'rus-Cyrl') that are not LanguageCodes
+        code: str = language_code
+        if code == "ru":
+            code = "rus-Cyrl"
 
         # Code:	Language (Script)
         supported_languages = {
@@ -174,20 +176,20 @@ class EpitranIpaProvider:
             "zul-Latn": "Zulu",
         }
 
-        if language_code not in supported_languages:
+        if code not in supported_languages:
             for key in supported_languages:
-                if key.startswith(language_code):
+                if key.startswith(code):
                     warnings.warn(
-                        f"Unsupported language code: {language_code}; trying to use similar key {key}"
+                        f"Unsupported language code: {code}; trying to use similar key {key}"
                     )
-                    language_code = key
+                    code = key
                     break
             else:
                 raise ValueError(
-                    f"Unsupported language code: {language_code}; supported languages: {supported_languages}"
+                    f"Unsupported language code: {code}; supported languages: {supported_languages}"
                 )
 
             if not string.strip():
                 return ""
 
-        return self._epitran_obj(language_code).transliterate(string)
+        return self._epitran_obj(code).transliterate(string)

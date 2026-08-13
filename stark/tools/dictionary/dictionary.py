@@ -393,7 +393,7 @@ class Dictionary:
         grouped_matches = groupby(all_matches, key=lambda x: x.simple_phonetic)
 
         if not all_matches:
-            return []
+            return
 
         # backtacked_matches: list[LookupResult] = []
         # for each matched simple code from the dictionary

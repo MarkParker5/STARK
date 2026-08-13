@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections import Counter
 from dataclasses import dataclass
 
+from collections.abc import Sequence
 from typing import NamedTuple
 
 from stark.general.localisation.language_code import LanguageCode
@@ -46,7 +47,7 @@ class TranscriptionString(LocaleString):
         language_code: LanguageCode | None = None,
         words: tuple[TranscriptionWord, ...] | list[TranscriptionWord] = (),
         alternative_texts: dict[str, LocaleString] | None = None,
-        corrections: list | None = None,
+        corrections: Sequence[Correction] | None = None,
     ) -> TranscriptionString:
         resolved_words = tuple(words)
         resolved_lang = language_code or _majority_language(resolved_words) or "base"
@@ -63,7 +64,7 @@ class TranscriptionString(LocaleString):
         cls,
         words: list[tuple[str, LanguageCode]],
         alternative_texts: dict[str, LocaleString] | None = None,
-        corrections: list | None = None,
+        corrections: Sequence[Correction] | None = None,
     ) -> TranscriptionString:
         text_parts: list[str] = []
         tw_list: list[TranscriptionWord] = []
@@ -122,7 +123,7 @@ class TranscriptionString(LocaleString):
             idx = key if key >= 0 else len(self) + key
             return self._slice_by_offset(result_str, idx, idx + 1)
 
-    def replace(self, old: str, new: str, count: int = -1) -> TranscriptionString:
+    def replace(self, old: str, new: str, count: int = -1) -> TranscriptionString:  # type: ignore[override]  # covariant return on str subclass
         result_text = str.replace(self, old, new, count)
         try:
             old_start = str.index(self, old)
@@ -156,7 +157,7 @@ class TranscriptionString(LocaleString):
         end = start + len(result_str)
         return self._slice_by_offset(result_str, start, end)
 
-    def split(self, sep: str | None = None, maxsplit: int = -1) -> list[TranscriptionString]:
+    def split(self, sep: str | None = None, maxsplit: int = -1) -> list[TranscriptionString]:  # type: ignore[override]  # covariant return on str subclass
         parts = str.split(self, sep, maxsplit)
         result: list[TranscriptionString] = []
         search_start = 0

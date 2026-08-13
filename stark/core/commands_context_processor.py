@@ -74,7 +74,7 @@ class CommandsContextProcessor(ABC):
             pops += 1
         return [], pops
 
-    async def process_context_layer(
+    async def process_context_layer(  # type: ignore[empty-body]  # abstract-style method, subclasses provide the body
         self,
         string: LocaleString,
         context: CommandsContext,

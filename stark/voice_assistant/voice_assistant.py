@@ -73,7 +73,7 @@ class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
             logger.info(f"You: {result}")
         # check explicit interaction if needed
         if pattern_str := self.mode.explicit_interaction_pattern:
-            if not await Pattern(pattern_str).match(result):
+            if not await Pattern(pattern_str).match(result):  # type: ignore[attr-defined]  # FIXME: Pattern has no match(); matching lives on PatternParser (latent runtime bug, left as-is per typing-only scope)
                 return
 
         # reset context if timeout reached

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Generator
+from typing import TYPE_CHECKING, Generator, cast
 
 from pydantic import BaseModel, Field
 
@@ -263,7 +263,7 @@ class Transcription(BaseModel):
                 for ow in origin_track.result:
                     if ow.word == w.word and abs(ow.start - w.start) < 0.1:
                         if (ow.conf or 0) >= (w.conf or 0):
-                            lang = origin_lang
+                            lang = cast(LanguageCode, origin_lang)
                         break
             voice_words.append(
                 VoiceTranscriptionWord(
@@ -278,7 +278,9 @@ class Transcription(BaseModel):
             )
             offset += len(w.word) + 1
 
-        alternative_texts = {lang: LocaleString(track.text, lang) for lang, track in self.origins.items()}
+        alternative_texts = {
+            lang: LocaleString(track.text, cast(LanguageCode, lang)) for lang, track in self.origins.items()
+        }
 
         return VoiceTranscriptionString(
             best.text,

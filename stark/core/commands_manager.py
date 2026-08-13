@@ -3,6 +3,9 @@ from __future__ import annotations
 import inspect
 from dataclasses import dataclass
 from types import UnionType
+from typing import cast
+
+from stark.general.localisation.language_code import LanguageCode
 
 from stark.core.parsing import MatchResult
 
@@ -65,7 +68,7 @@ class CommandsManager:
 
             # create command
 
-            cmd = Command(f"{self.name}.{runner.__name__}", patterns, runner)
+            cmd = Command(f"{self.name}.{runner.__name__}", cast(dict[LanguageCode, Pattern], patterns), runner)
 
             if not hidden:
                 self.commands.append(cmd)

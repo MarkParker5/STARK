@@ -126,7 +126,7 @@ class CommandsContext:
 
             substring = search_result.match_result.substring
             lang = substring.language_code if isinstance(substring, LocaleString) else string.language_code
-            lang_dep = Dependency(None, LanguageCode, lang)
+            lang_dep = Dependency(None, LanguageCode, lang)  # type: ignore[arg-type]  # LanguageCode Literal alias used as a runtime dependency key
             self.dependency_manager.dependencies.add(lang_dep)
             parameters.update(self.dependency_manager.resolve(search_result.command._runner))
             # language is a command-specific temporary dependency

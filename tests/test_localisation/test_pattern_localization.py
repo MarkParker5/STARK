@@ -149,7 +149,7 @@ class LangAwareType(Object):
     def pattern(cls) -> Pattern:
         return Pattern("**")
 
-    async def did_parse(self, from_string: str) -> str:
+    async def did_parse(self, from_string: LocaleString) -> str:
         self.received_language_code = from_string.language_code
         self.value = from_string
         return from_string

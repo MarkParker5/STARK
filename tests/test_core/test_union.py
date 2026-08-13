@@ -84,7 +84,7 @@ def test_pattern_override_blocked():
             _types = [Num]
 
             @classproperty
-            def pattern(cls) -> Pattern: ...
+            def pattern(cls) -> Pattern: ...  # type: ignore[empty-body]  # deliberately empty; class creation is expected to raise
 
 
 def test_patterns_override_blocked():

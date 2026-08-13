@@ -1,6 +1,9 @@
+from typing import cast
+
 import pytest
 
 from stark.general.localisation import LocaleString
+from stark.general.localisation.language_code import LanguageCode
 from stark.models.voice_transcription import (
     Transcription,
     VoiceTranscriptionTrack,
@@ -14,13 +17,13 @@ def _make_track(words_data: list[tuple[str, str, float, float, float]], lang: st
     words = []
     for word, wlang, start, end, conf in words_data:
         words.append(VoiceTranscriptionWord(
-            word=word, language_code=wlang,
+            word=word, language_code=cast(LanguageCode, wlang),
             char_start=offset, char_end=offset + len(word),
             start=start, end=end, conf=conf,
         ))
         offset += len(word) + 1
     text = ' '.join(w.word for w in words)
-    return VoiceTranscriptionTrack(text=text, result=words, language_code=lang)
+    return VoiceTranscriptionTrack(text=text, result=words, language_code=cast(LanguageCode, lang))
 
 
 @pytest.fixture

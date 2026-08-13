@@ -1,7 +1,7 @@
 import logging
 import warnings
 from pathlib import Path
-from typing import Generator
+from typing import Generator, cast
 
 from stark.general.localisation.language_code import LanguageCode
 
@@ -134,9 +134,9 @@ class Localizer:
             if language == "base":
                 strings_file.language_code = self.base_language
 
-    def _search_files(self, filename: str) -> Generator[tuple[str, StringsFile], None, None]:
+    def _search_files(self, filename: str) -> Generator[tuple[LanguageCode, StringsFile], None, None]:
         for path in Path(".").rglob(f"strings/*/{filename}.strings"):
-            language = path.parent.stem
+            language = cast(LanguageCode, path.parent.stem)
             yield language, StringsFile(path, language)
 
     def _check_completeness(self, source: Languages):

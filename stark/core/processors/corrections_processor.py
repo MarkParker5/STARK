@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, override
+from typing import TYPE_CHECKING, cast, override
+
+from stark.general.localisation.language_code import LanguageCode
 
 from stark.core.commands_context_processor import CommandsContextProcessor
 from stark.core.commands_manager import SearchResult
@@ -64,13 +66,13 @@ class CorrectionsProcessor(CommandsContextProcessor):
                 if alt_lang == string.language_code:
                     continue
                 corrections: list[Correction] = []
-                self._find_corrections(str(alt_text), alt_lang, corrections)
+                self._find_corrections(str(alt_text), cast(LanguageCode, alt_lang), corrections)
                 if corrections:
                     string._corrections_by_track[alt_lang] = corrections
 
         return [], 0
 
-    def _find_corrections(self, text: str, language_code: str, output: list):
+    def _find_corrections(self, text: str, language_code: LanguageCode, output: list):
         from stark.models.transcription_string import Correction
 
         for dictionary in self._dictionaries:

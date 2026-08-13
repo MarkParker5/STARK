@@ -41,9 +41,9 @@ def alru_cache[**P, T](maxsize: int = 128, ttl: Seconds = 60.0) -> Callable[[Cal
                 result: T = await func(*args, **kwargs)
             finally:
                 async with lock:
-                    ev = in_flight.pop(key, None)
-                    if ev:
-                        ev.set()
+                    pending = in_flight.pop(key) if key in in_flight else None
+                    if pending:
+                        pending.set()
 
             async with lock:
                 cache[key] = (result, anyio.current_time())

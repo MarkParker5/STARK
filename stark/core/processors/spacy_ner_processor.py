@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import subprocess
 import sys
-from typing import TYPE_CHECKING, override
+from typing import TYPE_CHECKING, cast, override
 
 from stark.core.commands_context_processor import CommandsContextProcessor, RecognizedEntity
 from stark.core.commands_manager import SearchResult
@@ -72,7 +72,7 @@ class SpacyNERProcessor(CommandsContextProcessor):
         context: CommandsContext,
         recognized_entities: list[RecognizedEntity],
     ) -> tuple[list[SearchResult], int]:
-        lang = string.language_code if string.language_code in self.nlps else next(iter(self.nlps))
+        lang: str = cast(str, string.language_code) if string.language_code in self.nlps else next(iter(self.nlps))
         doc = self.nlps[lang](str(string))
         for entity in doc.ents:
             entity_type = self.label_types.get(entity.label_) or self.label_types.get("default")

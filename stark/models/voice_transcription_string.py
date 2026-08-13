@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
+
 from typing import cast
 
 from stark.general.localisation.language_code import LanguageCode
 from stark.general.localisation.locale_string import LocaleString
-from stark.models.transcription_string import TranscriptionString, TranscriptionWord
+from stark.models.transcription_string import Correction, TranscriptionString, TranscriptionWord
 from stark.models.voice_transcription import VoiceTranscriptionTrack
 
 
@@ -25,7 +27,7 @@ class VoiceTranscriptionString(TranscriptionString):
         language_code: LanguageCode | None = None,
         words: tuple[TranscriptionWord, ...] | list[TranscriptionWord] = (),
         alternative_texts: dict[str, LocaleString] | None = None,
-        corrections: list | None = None,
+        corrections: Sequence[Correction] | None = None,
         track: VoiceTranscriptionTrack | None = None,
         alternative_tracks: dict[str, VoiceTranscriptionTrack] | None = None,
     ) -> VoiceTranscriptionString:
@@ -66,7 +68,7 @@ class VoiceTranscriptionString(TranscriptionString):
             self._alternative_tracks,
         )
 
-    def replace(self, old: str, new: str, count: int = -1) -> VoiceTranscriptionString:
+    def replace(self, old: str, new: str, count: int = -1) -> VoiceTranscriptionString:  # type: ignore[override]  # covariant return on str subclass
         base = super().replace(old, new, count)
         track = None
         if self._track:

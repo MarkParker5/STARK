@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import override
+from typing import cast, override
 
 from asyncer import SoonValue, create_task_group
 
@@ -27,7 +27,7 @@ class SearchProcessor(CommandsContextProcessor):
         language_code = string.language_code
 
         # collect all tracks to match (primary + alternatives)
-        tracks_to_match: list[tuple[str | LocaleString, str]] = [(string, language_code)]
+        tracks_to_match: list[tuple[str | LocaleString, LanguageCode]] = [(string, language_code)]
 
         if get_flag(FeatureFlag.ENABLE_MULTILANG_MATRIX):
             from stark.models.transcription_string import TranscriptionString
@@ -36,10 +36,10 @@ class SearchProcessor(CommandsContextProcessor):
                 for alt_lang, alt_text in string.alternative_texts.items():
                     if alt_lang == language_code:
                         continue
-                    tracks_to_match.append((alt_text, alt_lang))
+                    tracks_to_match.append((alt_text, cast(LanguageCode, alt_lang)))
 
         # match all tracks concurrently, tag results with source text and language
-        all_futures: list[tuple[str, str, SoonValue[list[SearchResult]]]] = []
+        all_futures: list[tuple[str, LanguageCode, SoonValue[list[SearchResult]]]] = []
         async with create_task_group() as group:
             for track_string, track_lang in tracks_to_match:
                 all_futures.append(
@@ -52,7 +52,7 @@ class SearchProcessor(CommandsContextProcessor):
                     )
                 )
 
-        tagged: list[tuple[str, str, SearchResult]] = []
+        tagged: list[tuple[str, LanguageCode, SearchResult]] = []
         global_index = 0
         for source_text, track_lang, future in all_futures:
             for r in future.value:
