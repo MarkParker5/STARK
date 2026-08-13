@@ -187,7 +187,7 @@ async def test_objects_parse_caching(commands_context_flow, autojump_clock):
         pass
 
     assert Mock.parsing_counter == 0
-    await SearchProcessor().search("hello world 22", manager.commands)
+    await SearchProcessor().search("hello world 22", manager.commands)  # ty: ignore[missing-argument]  # exercises the search() defaults path
     assert Mock.parsing_counter == 1
     await SearchProcessor().search("hello world 22", manager.commands)
     assert Mock.parsing_counter == 2

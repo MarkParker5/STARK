@@ -224,4 +224,4 @@ def pytest_addoption(parser):
 
 def pytest_runtest_setup(item):
     if "benchmark" in item.keywords and not item.config.getoption("--benchmark"):
-        pytest.skip("skipping benchmark, use --benchmark to run")
+        pytest.skip("skipping benchmark, use --benchmark to run")  # ty: ignore[too-many-positional-arguments]  # ty stub gap: pytest.skip takes a positional reason

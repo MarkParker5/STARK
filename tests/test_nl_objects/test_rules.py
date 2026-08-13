@@ -146,7 +146,7 @@ pattern_parser.register_parameter_type(GreedyObject)
 async def test_unordered_patterns(pattern_str, input_str, is_match, expected_tokens):
     if "StarObject" in pattern_str or "GreedyObject" in pattern_str:
         pytest.skip(
-            reason="Wildcard (star) and greedy objects do not work correctly with unordered patterns. Use Slots instead"
+            reason="Wildcard (star) and greedy objects do not work correctly with unordered patterns. Use Slots instead"  # ty: ignore[unknown-argument]  # ty stub gap: pytest.skip accepts `reason`
         )
 
     print(f'Pattern: "{pattern_str}", Input: "{input_str}", Expected Params: {expected_tokens}')

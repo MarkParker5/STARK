@@ -123,6 +123,16 @@ unresolved-import = "ignore"
 # mypy and would otherwise flag them as unused.
 unused-type-ignore-comment = "ignore"
 
+# Tests exercise the engine's dynamic Object[T] metaclass: parameter types are
+# synthesized at parse time (result.obj.<field>), Object subclasses are fed into
+# register_parameter_type/parse_object, and patterns use the `$x:A | $y:B` DSL via
+# Object.__or__. ty (pre-1.0) can't model any of these statically — mypy (blocking)
+# validates the same code with 0 errors. Scope the affected rules to tests only so
+# they stay fully active in production (e.g. recognizer_relay.py is still checked).
+[[tool.ty.overrides]]
+include = ["tests/**"]
+rules = { "unresolved-attribute" = "ignore", "unsupported-operator" = "ignore", "invalid-argument-type" = "ignore" }
+
 [tool.ruff]
 line-length = 120
 target-version = "py312"

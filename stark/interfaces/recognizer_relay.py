@@ -118,7 +118,10 @@ class SpeechRecognizerRelay(SpeechRecognizer):
             sr.language_code: i for i, sr in enumerate(self._speech_recognizers) if hasattr(sr, "language_code")
         }
         tracks = {track.model_copy(deep=True) for track in current.origins.values()}
-        current.best = self._build_best_confidence(tracks, language_priority=language_priority)
+        # `language_code` is reached via hasattr() on the SpeechRecognizer protocol (which doesn't
+        # declare it), so ty widens the dict key to `object`; it's a LanguageCode (str) at runtime.
+        # Not on the protocol because the relay itself and the test mocks have no single language_code.
+        current.best = self._build_best_confidence(tracks, language_priority=language_priority)  # ty: ignore[invalid-argument-type]
         current.best.language_code = "base"
 
         # emit as VoiceTranscriptionString
