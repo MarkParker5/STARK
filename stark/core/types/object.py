@@ -10,7 +10,7 @@ from stark.general.localisation import LocaleString
 
 
 class UnionMeta(ABCMeta):
-    """Metaclass that makes | on Object subclasses produce a STARK Union subclass instead of types.UnionType."""
+    """Metaclass that makes | on NLObject subclasses produce a STARK Union subclass instead of types.UnionType."""
 
     # Class-level flag on Union subclasses; synthetic MakeUnion classes set it True so PatternParser unwraps them.
     _transparent: bool = False
@@ -25,15 +25,15 @@ class UnionMeta(ABCMeta):
     def __or__(cls, other: type) -> type:  # type: ignore[override]  # metaclass operator overload returning STARK Union
         from stark.core.types.union import MakeUnion
 
-        if isinstance(other, type) and issubclass(other, Object):
-            return MakeUnion(cls, other)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]  # UnionMeta instances are Object subclasses
+        if isinstance(other, type) and issubclass(other, NLObject):
+            return MakeUnion(cls, other)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]  # UnionMeta instances are NLObject subclasses
         return type.__or__(cls, other)  # type: ignore[return-value]  # ty: ignore[invalid-return-type]  # fall through to types.UnionType for X | None etc.
 
     def __ror__(cls, other: type) -> type:  # type: ignore[override]  # metaclass operator overload returning STARK Union
         from stark.core.types.union import MakeUnion
 
-        if isinstance(other, type) and issubclass(other, Object):
-            return MakeUnion(other, cls)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]  # UnionMeta instances are Object subclasses
+        if isinstance(other, type) and issubclass(other, NLObject):
+            return MakeUnion(other, cls)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]  # UnionMeta instances are NLObject subclasses
         return type.__ror__(cls, other)  # type: ignore[return-value]  # ty: ignore[invalid-return-type]  # fall through to types.UnionType for X | None etc.
 
     def __format__(cls, spec) -> str:
@@ -42,7 +42,7 @@ class UnionMeta(ABCMeta):
 
 # TODO: review programmable init vs did_parse
 # TODO: consider storing parsing metadata here like substr and span
-class Object[T](metaclass=UnionMeta):
+class NLObject[T](metaclass=UnionMeta):
     value: T = cast(T, None)
 
     def __init__(self, value: Any = None):
@@ -83,7 +83,7 @@ class Object[T](metaclass=UnionMeta):
 
         Override this method for more complex parsing from string.
 
-        If you need even more complex setup, for example, a long living object with DI, use define an ObjectParser subclass and pass it's instance to Pattern.add_parameter_type along with the Object's class. If both `did_parse` are defined, the ObjectParser's  will be called first.
+        If you need even more complex setup, for example, a long living object with DI, use define an ObjectParser subclass and pass it's instance to Pattern.add_parameter_type along with the NLObject's class. If both `did_parse` are defined, the ObjectParser's  will be called first.
 
         Returns:
             Minimal substring that is required to parse value.
@@ -95,7 +95,7 @@ class Object[T](metaclass=UnionMeta):
             self.value = cast(T, from_string)
         return from_string
 
-    def copy(self) -> Object:
+    def copy(self) -> NLObject:
         return copy.copy(self)
 
     def __format__(self, spec) -> str:

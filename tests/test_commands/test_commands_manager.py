@@ -1,7 +1,7 @@
 from stark.core import CommandsManager
 from stark.core.parsing import PatternParser
 from stark.core.processors import SearchProcessor
-from stark.core.types import Word
+from stark.core.types import NLWord
 
 pattern_parser = PatternParser()
 
@@ -27,12 +27,12 @@ async def test_search():
     def set_alarm():
         pass
 
-    @manager.new("hello $name:Word $surname:Word")
-    def hello2(name: Word, surname: Word):
+    @manager.new("hello $name:NLWord $surname:NLWord")
+    def hello2(name: NLWord, surname: NLWord):
         pass
 
-    @manager.new("hello $name:Word")
-    def hello(name: Word):
+    @manager.new("hello $name:NLWord")
+    def hello(name: NLWord):
         pass
 
     # set alarm
@@ -55,8 +55,8 @@ async def test_search():
     assert result[0].command == hello2
     assert result[0].match_result.substring == "hello new world"
     assert result[0].match_result.parameters == {
-        "name": Word("new"),
-        "surname": Word("world"),
+        "name": NLWord("new"),
+        "surname": NLWord("world"),
     }
 
 

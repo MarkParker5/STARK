@@ -43,10 +43,10 @@ To know which language to respond in, annotate any parameter with `LanguageCode`
 from stark.general.localisation.language_code import LanguageCode
 
 @manager.new({
-    "base": "hello $name:Word",
-    "es": "hola $name:Word",
+    "base": "hello $name:NLWord",
+    "es": "hola $name:NLWord",
 })
-async def greet(name: Word, lang: LanguageCode) -> Response:
+async def greet(name: NLWord, lang: LanguageCode) -> Response:
     return Response(LocalizableString("greeting_response", lang, name=str(name)))
 ```
 

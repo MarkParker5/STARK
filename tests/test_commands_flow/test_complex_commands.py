@@ -2,24 +2,24 @@
 import anyio
 
 from stark.core import Pattern, Response
-from stark.core.types import Object
+from stark.core.types import NLObject
 from stark.general.classproperty import classproperty
 
 
 async def test_command_flow_optional_parameter(commands_context_flow, autojump_clock):
     async with commands_context_flow() as (manager, context, context_delegate):
 
-        class Category(Object):
+        class Category(NLObject):
             @classproperty
             def pattern(cls) -> Pattern:
                 return Pattern("c*")
 
-        class Device(Object):
+        class Device(NLObject):
             @classproperty
             def pattern(cls) -> Pattern:
                 return Pattern("d*")
 
-        class Room(Object):
+        class Room(NLObject):
             @classproperty
             def pattern(cls) -> Pattern:
                 return Pattern("r*")

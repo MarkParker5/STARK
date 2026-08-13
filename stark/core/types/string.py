@@ -1,7 +1,7 @@
-from .object import Object
+from .object import NLObject
 
 
-class String(Object):
+class NLString(NLObject):
     """
     Space separated alphanumerics words.
     """

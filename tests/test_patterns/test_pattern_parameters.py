@@ -3,84 +3,84 @@ import pytest
 from stark.core import Pattern
 from stark.core.parsing import ParseError, PatternParser
 from stark.core.patterns import rules
-from stark.core.types import Object, String, Word
+from stark.core.types import NLObject, NLString, NLWord
 from stark.general.classproperty import classproperty
 
 word = rf"[{rules.alphanumerics}]+"
 words = rf"[{rules.alphanumerics}\s]*"
 
 
-class ExtraParameterInPattern(Object):
-    word1: Word
-    word2: Word
+class ExtraParameterInPattern(NLObject):
+    word1: NLWord
+    word2: NLWord
 
     @classproperty
     def pattern(cls) -> Pattern:
-        return Pattern("$word1:Word $word2:Word $word3:Word")
+        return Pattern("$word1:NLWord $word2:NLWord $word3:NLWord")
 
 
 async def test_typed_parameters():
-    p = Pattern("lorem $name:Word dolor")
-    assert pattern_parser.parameter_types_by_name[p.parameters["name"].type_name].type == Word
+    p = Pattern("lorem $name:NLWord dolor")
+    assert pattern_parser.parameter_types_by_name[p.parameters["name"].type_name].type == NLWord
     # assert pattern_parser._compile_pattern(p) == rf"lorem (?P<name>{word}) dolor"  # compiled is not available
 
     m = await pattern_parser.match(p, "lorem ipsum dolor")
     assert m
     assert m[0].substring == "lorem ipsum dolor"
-    assert m[0].parameters["name"] == Word("ipsum")
+    assert m[0].parameters["name"] == NLWord("ipsum")
     assert not await pattern_parser.match(p, "lorem ipsum foo dolor")
 
-    p = Pattern("lorem $name:String dolor")
-    assert pattern_parser.parameter_types_by_name[p.parameters["name"].type_name].type == String
+    p = Pattern("lorem $name:NLString dolor")
+    assert pattern_parser.parameter_types_by_name[p.parameters["name"].type_name].type == NLString
     m = await pattern_parser.match(p, "lorem ipsum foo bar dolor")
     assert m
     assert m[0].substring == "lorem ipsum foo bar dolor"
-    assert m[0].parameters["name"] == String("ipsum foo bar")
+    assert m[0].parameters["name"] == NLString("ipsum foo bar")
 
 
 async def test_middle_optional_parameter():
-    p = Pattern("lorem $name:Word? dolor")
+    p = Pattern("lorem $name:NLWord? dolor")
     # print(p.compiled)
-    assert pattern_parser.parameter_types_by_name[p.parameters["name"].type_name].type == Word
+    assert pattern_parser.parameter_types_by_name[p.parameters["name"].type_name].type == NLWord
 
     assert await pattern_parser.match(p, "lorem  dolor")
     # assert await pattern_parser.match(p, 'lorem dolor')
 
     m2 = await pattern_parser.match(p, "lorem ipsum dolor")
     assert m2
-    assert m2[0].parameters["name"] == Word("ipsum")
+    assert m2[0].parameters["name"] == NLWord("ipsum")
 
 
 async def test_trailing_optional_parameter():
-    p = Pattern("lorem $name:Word?")
-    assert pattern_parser.parameter_types_by_name[p.parameters["name"].type_name].type == Word
+    p = Pattern("lorem $name:NLWord?")
+    assert pattern_parser.parameter_types_by_name[p.parameters["name"].type_name].type == NLWord
 
     assert await pattern_parser.match(p, "lorem ")
     # assert await pattern_parser.match(p, 'lorem')
     m = await pattern_parser.match(p, "lorem ipsum")
     assert m
-    assert m[0].parameters["name"] == Word("ipsum")
+    assert m[0].parameters["name"] == NLWord("ipsum")
 
 
 async def test_optional_group():
-    p = Pattern("lorem( ipsum $name:Word)? dolor")
-    # assert p.parameters == {('name', Word, True)}
-    assert pattern_parser.parameter_types_by_name[p.parameters["name"].type_name].type == Word
+    p = Pattern("lorem( ipsum $name:NLWord)? dolor")
+    # assert p.parameters == {('name', NLWord, True)}
+    assert pattern_parser.parameter_types_by_name[p.parameters["name"].type_name].type == NLWord
 
     assert await pattern_parser.match(p, "lorem dolor")
 
     m2 = await pattern_parser.match(p, "lorem ipsum variable dolor")
     assert m2
-    assert m2[0].parameters["name"] == Word("variable")
+    assert m2[0].parameters["name"] == NLWord("variable")
 
 
-class TwoWords(Object):
-    word1: Word
-    word2: Word
+class TwoWords(NLObject):
+    word1: NLWord
+    word2: NLWord
 
     @classproperty
     def pattern(cls) -> Pattern:
-        return Pattern("$word1:Word $word2:Word")
+        return Pattern("$word1:NLWord $word2:NLWord")
 
 
 pattern_parser = PatternParser()
@@ -95,7 +95,7 @@ async def test_parameter_type_duplicate():
     assert m
 
 
-class OOWordSimple2(Word):
+class OOWordSimple2(NLWord):
     async def did_parse(self, from_string: str) -> str:
         if "oo" not in from_string:
             raise ParseError("OOWord must contain 'oo'")

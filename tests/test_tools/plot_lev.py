@@ -81,7 +81,7 @@ if __name__ == "__main__":
 
         Args:
             values: Array of values to plot.
-            s2: String for x-axis labels.
+            s2: NLString for x-axis labels.
             title: Chart title.
         """
         _fig, ax = plt.subplots(figsize=(len(s2) * 0.6, 2.5))

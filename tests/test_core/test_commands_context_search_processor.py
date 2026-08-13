@@ -13,11 +13,11 @@ from stark.core.commands_context_processor import (
 )
 from stark.core.commands_manager import CommandsManager, SearchResult
 from stark.core.patterns.pattern import Pattern
-from stark.core.types.object import Object
+from stark.core.types.object import NLObject
 from stark.general.classproperty import classproperty
 
 
-class Location(Object[str]):
+class Location(NLObject[str]):
     @classproperty
     def pattern(cls) -> Pattern:
         return Pattern("**")

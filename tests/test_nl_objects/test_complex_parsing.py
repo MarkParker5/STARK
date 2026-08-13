@@ -2,11 +2,11 @@ import pytest
 
 from stark.core import Pattern
 from stark.core.parsing import ObjectParser, ParseError, PatternParser
-from stark.core.types import Object
+from stark.core.types import NLObject
 from stark.general.classproperty import classproperty
 
 
-class Lorem(Object):
+class Lorem(NLObject):
     @classproperty
     def pattern(cls):
         return Pattern("* ipsum")
@@ -46,7 +46,7 @@ async def test_did_parse_call_order():
             assert from_string == "timing"
             return from_string[:-3]
 
-    class CustomObject(Object):
+    class CustomObject(NLObject):
         value: int
 
         @classproperty
@@ -67,7 +67,7 @@ async def test_did_parse_call_order():
     assert result.substring == "ti"
 
 
-class Size(Object):
+class Size(NLObject):
     @classproperty
     def greedy(cls) -> bool:
         return False
@@ -84,7 +84,7 @@ class Size(Object):
         return "small"
 
 
-class Drink(Object):
+class Drink(NLObject):
     @classproperty
     def greedy(cls) -> bool:
         return False
@@ -101,7 +101,7 @@ class Drink(Object):
         return "latte"
 
 
-class Extra(Object):
+class Extra(NLObject):
     @classproperty
     def greedy(cls) -> bool:
         return False
@@ -118,7 +118,7 @@ class Extra(Object):
         return "sugar"
 
 
-class Greedy(Object):
+class Greedy(NLObject):
     @classproperty
     def greedy(cls) -> bool:
         return True

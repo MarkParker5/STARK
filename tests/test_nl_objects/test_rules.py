@@ -7,46 +7,46 @@ import pytest
 from stark.core import Pattern
 from stark.core.parsing import ParseError, PatternParser
 from stark.core.patterns.rules import all_unordered, one_or_more_unordered
-from stark.core.types import Object, Word
+from stark.core.types import NLObject, NLWord
 from stark.core.types.slots import SlotsParser
 from stark.general.classproperty import classproperty
 
 pattern_parser = PatternParser()
 
 
-class Seconds(Object):
+class Seconds(NLObject):
     value: str
-    seconds: Word
+    seconds: NLWord
 
     @classproperty
     def pattern(cls) -> Pattern:
-        return Pattern("$seconds:Word s")
+        return Pattern("$seconds:NLWord s")
 
     async def did_parse(self, from_string: str) -> str:
         self.value = self.seconds.value.split()[0]
         return from_string
 
 
-class Minutes(Object):
+class Minutes(NLObject):
     value: str
-    minutes: Word
+    minutes: NLWord
 
     @classproperty
     def pattern(cls) -> Pattern:
-        return Pattern("$minutes:Word m")
+        return Pattern("$minutes:NLWord m")
 
     async def did_parse(self, from_string: str) -> str:
         self.value = self.minutes.value.split()[0]
         return from_string
 
 
-class Hours(Object):
+class Hours(NLObject):
     value: str
-    hours: Word
+    hours: NLWord
 
     @classproperty
     def pattern(cls) -> Pattern:
-        return Pattern("$hours:Word h")
+        return Pattern("$hours:NLWord h")
 
     async def did_parse(self, from_string: str) -> str:
         self.value = self.hours.value.split()[0]
@@ -67,7 +67,7 @@ def permutations(
     return [(pattern_str, " ".join(p), match, expected_tokens) for p in itertools.permutations(words)]
 
 
-class StarObject(Object):
+class StarObject(NLObject):
     value: str
 
     @classproperty
@@ -165,19 +165,19 @@ async def test_unordered_patterns(pattern_str, input_str, is_match, expected_tok
     assert {name: obj.value for name, obj in matches[0].parameters.items() if obj} == expected_tokens
 
 
-class StarSlots(Object):
+class StarSlots(NLObject):
     a: StarObject
     b: StarObject
     c: StarObject
 
 
-class GreedySlots(Object):
+class GreedySlots(NLObject):
     a: GreedyObject
     b: GreedyObject
     c: GreedyObject
 
 
-class OOWord(Word):
+class OOWord(NLWord):
     @classproperty
     def pattern(cls) -> Pattern:
         return Pattern(r"**")
@@ -191,7 +191,7 @@ class OOWord(Word):
         return self.value
 
 
-class OOWordSimple(Word):
+class OOWordSimple(NLWord):
     async def did_parse(self, from_string: str) -> str:
         if "oo" not in from_string:
             raise ParseError("OOWord must contain 'oo'")
@@ -433,7 +433,7 @@ async def test_slots_required_optional_cases(cls_name, slots_dict, input_str, ex
     # Ensure __annotations__ is set for dynamic slots class
     class_dict = dict(slots_dict)
     class_dict["__annotations__"] = dict(slots_dict.items())
-    slots_cls = type(unique_cls_name, (Object,), class_dict)
+    slots_cls = type(unique_cls_name, (NLObject,), class_dict)
 
     # Register the slots class as a parameter type for Pattern
 

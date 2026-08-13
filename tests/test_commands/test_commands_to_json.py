@@ -3,15 +3,15 @@ from collections.abc import AsyncGenerator, Callable
 from typing import Any
 
 from stark.core import CommandsManager, Response
-from stark.core.types import Word
+from stark.core.types import NLWord
 from stark.general.json_encoder import StarkJsonEncoder
 
 
 async def test_command_json():
     manager = CommandsManager("TestManager")
 
-    @manager.new("play $song:Word")
-    def play(track: str, song: Word, volume: int | None = None) -> Response:
+    @manager.new("play $song:NLWord")
+    def play(track: str, song: NLWord, volume: int | None = None) -> Response:
         """play a song"""
         return Response(track)
 
@@ -21,9 +21,9 @@ async def test_command_json():
     assert parsed["name"] == "TestManager.play"
     # CommandInfo flattens the representative (base) pattern to its origin string,
     # and exposes every localized pattern under `patterns`.
-    assert parsed["pattern"] == r"play $song:Word"
-    assert parsed["patterns"]["base"] == r"play $song:Word"
-    assert parsed["declaration"] == "def play(track: str, song: Word, volume: int | None = None) -> Response"
+    assert parsed["pattern"] == r"play $song:NLWord"
+    assert parsed["patterns"]["base"] == r"play $song:NLWord"
+    assert parsed["declaration"] == "def play(track: str, song: NLWord, volume: int | None = None) -> Response"
     assert parsed["docstring"] == "play a song"
 
 

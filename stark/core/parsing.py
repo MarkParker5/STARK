@@ -9,10 +9,10 @@ from typing import NamedTuple
 
 from stark.core.patterns.pattern import Pattern
 from stark.core.patterns.rules import rules_list
-from stark.core.types import Object
-from stark.core.types.string import String
+from stark.core.types import NLObject
+from stark.core.types.string import NLString
 from stark.core.types.union import Union, _all_subclasses
-from stark.core.types.word import Word
+from stark.core.types.word import NLWord
 from stark.general.cache import alru_cache
 from stark.general.feature_flags import FeatureFlag, get_flag
 from stark.general.localisation import LanguageCode, LocaleString, Localizer
@@ -25,7 +25,7 @@ class CorrectionMatch(NamedTuple):
     correction: Correction
 
 
-type ObjectType = type[Object]
+type ObjectType = type[NLObject]
 
 
 logger = logging.getLogger(__name__)
@@ -39,7 +39,7 @@ class ParseError(Exception):
 
 @dataclass
 class ParseResult:
-    obj: Object
+    obj: NLObject
     substring: str
 
 
@@ -55,7 +55,7 @@ class MatchResult:
     substring: str
     start: int
     end: int
-    parameters: dict[str, Object | None]  # TODO: use ParameterMatch?
+    parameters: dict[str, NLObject | None]  # TODO: use ParameterMatch?
     corrections: list[CorrectionMatch] = field(default_factory=list)
     corrected_string: str = ""
 
@@ -63,7 +63,7 @@ class MatchResult:
 @dataclass
 class ParameterMatch:
     name: str
-    parsed_obj: Object | None
+    parsed_obj: NLObject | None
     parsed_substr: str
     # TODO: add and use start and/end span to resolve duplication
 
@@ -83,7 +83,7 @@ class ObjectParser(ABC):  # noqa: B024  # intentional ABC base with default hook
     def patterns(self) -> dict[str, Pattern] | None:
         return None
 
-    async def did_parse(self, obj: Object, from_string: LocaleString) -> str:
+    async def did_parse(self, obj: NLObject, from_string: LocaleString) -> str:
         """
         This method is called after parsing from string and setting parameters found in pattern.
         You will very rarely, if ever, need to call this method directly.
@@ -107,8 +107,12 @@ class PatternParser:
         self.parameter_types_by_name = {}
         self._registering: set[str] = set()  # cycle guard for recursive register_parameter_type
         self.localizer = localizer
-        self.register_parameter_type(Word)
-        self.register_parameter_type(String)
+        self.register_parameter_type(NLWord)
+        self.register_parameter_type(NLString)
+        # Deprecated pattern-DSL names: keep `$x:Word` / `$x:String` resolving after the
+        # rename to NLWord / NLString.
+        self.parameter_types_by_name["Word"] = self.parameter_types_by_name["NLWord"]
+        self.parameter_types_by_name["String"] = self.parameter_types_by_name["NLString"]
 
     def register_parameter_type(
         self,
@@ -122,7 +126,7 @@ class PatternParser:
             return
         self._registering.add(name)
         try:
-            assert issubclass(object_type, Object), f'Can`t add parameter type "{name}": it is not a subclass of Object'
+            assert issubclass(object_type, NLObject), f'Can`t add parameter type "{name}": it is not a subclass of NLObject'
             # Resolve deps. Union types declare members explicitly in _types;
             # everything else declares deps implicitly via parameter annotations in the pattern.
             if issubclass(object_type, Union) and hasattr(object_type, "_types"):
@@ -131,7 +135,7 @@ class PatternParser:
                 # Evaluate the pattern first — it may create new classes (e.g. any_subclass calls).
                 # Build known AFTER so those new classes are visible by name.
                 pattern = object_type.pattern
-                known = {cls.__name__: cls for cls in _all_subclasses(Object)}
+                known = {cls.__name__: cls for cls in _all_subclasses(NLObject)}
                 deps = [known[p.type_name] for p in pattern.parameters.values() if p.type_name in known]
             # Register each dep before the type itself (depth-first, handles transitive deps).
             for dep in deps:
@@ -208,20 +212,20 @@ class PatternParser:
                 continue  # skip an try the next match candidate
 
             assert substring.strip(), ValueError(
-                f"Parsed substring must not be empty. Object: {obj!r}, Parser: {parser!r}"
+                f"Parsed substring must not be empty. NLObject: {obj!r}, Parser: {parser!r}"
             )
             assert substring in string, ValueError(
-                f"Parsed substring must be a part of the original string. There is no '{substring}' in '{string}'. Object: {obj!r}, Parser: {parser!r}"
+                f"Parsed substring must be a part of the original string. There is no '{substring}' in '{string}'. NLObject: {obj!r}, Parser: {parser!r}"
             )
             if not get_flag(FeatureFlag.TYPE_NO_REQUIRED_VALUE):
                 assert obj.value is not None, ValueError(
-                    f"Parsed object {obj!r} must have a `value` property set at the time did_parse method returns. Object: {obj!r}, Parser: {parser!r}"
+                    f"Parsed object {obj!r} must have a `value` property set at the time did_parse method returns. NLObject: {obj!r}, Parser: {parser!r}"
                 )
 
             yield ParseResult(obj, substring)
 
     @alru_cache(maxsize=256, ttl=60 * 10)  # TODO: env vars + disable option
-    async def _did_parse(self, obj: Object, parser: ObjectParser, string: LocaleString) -> str:
+    async def _did_parse(self, obj: NLObject, parser: ObjectParser, string: LocaleString) -> str:
         substring = await parser.did_parse(obj, string)
         substring = string._with(substring) if not isinstance(substring, LocaleString) else substring
         substring = await obj.did_parse(substring)

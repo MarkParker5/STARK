@@ -9,14 +9,14 @@ The fallback command in the STARK framework serves as a safety net, ensuring tha
 
 ## Setting Up the Fallback Command
 
-A fallback command is just a regular command with a wildcard pattern, `$string:String` matches anything. Two things matter for it to actually behave like a fallback:
+A fallback command is just a regular command with a wildcard pattern, `$string:NLString` matches anything. Two things matter for it to actually behave like a fallback:
 
 ```python
-from stark.core.types import String
+from stark.core.types import NLString
 ...
 
-@manager.new('$string:String')  # NOT hidden=True — see below
-async def fallback(string: String):
+@manager.new('$string:NLString')  # NOT hidden=True — see below
+async def fallback(string: NLString):
     # Your fallback logic here
     ...
 
@@ -24,7 +24,7 @@ manager.extend(fallback_manager)  # register it LAST
 ```
 
 1. **Don't mark it `hidden=True`.** A `hidden=True` command is never added to the manager's command list at all, it only becomes reachable when explicitly offered via a `Response`'s `commands=[...]` (see [Commands Context](../core-concepts/commands-context.md)). A fallback needs to be reachable from anywhere, all the time, so it can't be hidden.
-2. **Register it last.** [`SearchProcessor`](custom-processors.md) resolves overlapping matches in favor of the command added earliest. Since `$string:String` overlaps with almost everything, it has to be the last command added, merge its manager in after every other command is registered, so specific commands always win.
+2. **Register it last.** [`SearchProcessor`](custom-processors.md) resolves overlapping matches in favor of the command added earliest. Since `$string:NLString` overlaps with almost everything, it has to be the last command added, merge its manager in after every other command is registered, so specific commands always win.
 
 This is simple, but it's a soft guarantee, a wildcard pattern technically *can* still win in edge cases depending on match overlap. For a hard guarantee that the fallback only fires when truly nothing else matched, see the alternative below.
 
@@ -37,8 +37,8 @@ from stark.core.commands_context_processor import CommandsContextProcessor
 from stark.core.commands_manager import SearchResult
 from stark.core.parsing import MatchResult
 
-@manager.new('$string:String', hidden=True)
-async def fallback(string: String):
+@manager.new('$string:NLString', hidden=True)
+async def fallback(string: NLString):
     # Your fallback logic here
     ...
 

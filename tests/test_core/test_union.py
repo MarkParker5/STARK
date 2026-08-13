@@ -2,13 +2,13 @@ import pytest
 
 from stark.core.parsing import PatternParser
 from stark.core.patterns.pattern import Pattern
-from stark.core.types import MakeUnion, Object, Union, any_subclass
+from stark.core.types import MakeUnion, NLObject, Union, any_subclass
 from stark.general.classproperty import classproperty
 
 # ── fixtures ──────────────────────────────────────────────────────────────────
 
 
-class Num(Object):
+class Num(NLObject):
     value: int
 
     @classproperty
@@ -20,8 +20,8 @@ class Num(Object):
         return from_string
 
 
-class Word_(Object):
-    """Minimal word type for union branch tests (avoids shadowing built-in Word)."""
+class Word_(NLObject):
+    """Minimal word type for union branch tests (avoids shadowing built-in NLWord)."""
 
     value: str
 
@@ -34,7 +34,7 @@ class Word_(Object):
         return from_string
 
 
-class Digit(Object):
+class Digit(NLObject):
     value: str
 
     @classproperty
@@ -124,7 +124,7 @@ async def test_union_parses_second_branch():
 async def test_union_branch_unwrapped_as_parameter():
     """When a Union is used as a typed parameter, PatternParser unwraps it to the branch."""
 
-    class Container(Object):
+    class Container(NLObject):
         item: object  # will be Num or Word_ directly, not the Union wrapper
 
         @classproperty
@@ -152,7 +152,7 @@ async def test_named_union_parameter_not_unwrapped():
     class NLPower(Union):
         _types = [Num, Word_]
 
-    class Container(Object):
+    class Container(NLObject):
         power: NLPower
 
         @classproperty
@@ -230,7 +230,7 @@ async def test_auto_registration_handles_shared_dep():
 
 
 def test_any_subclass_discovers_all():
-    class Base(Object):
+    class Base(NLObject):
         @classproperty
         def pattern(cls) -> Pattern:
             raise NotImplementedError
@@ -251,7 +251,7 @@ def test_any_subclass_discovers_all():
 
 
 def test_any_subclass_name_has_no_pipe():
-    class BaseUnit(Object):
+    class BaseUnit(NLObject):
         @classproperty
         def pattern(cls) -> Pattern:
             raise NotImplementedError
@@ -271,7 +271,7 @@ def test_any_subclass_name_has_no_pipe():
 
 
 def test_any_subclass_cached():
-    class BaseCached(Object):
+    class BaseCached(NLObject):
         @classproperty
         def pattern(cls) -> Pattern:
             raise NotImplementedError
@@ -289,7 +289,7 @@ def test_any_subclass_cached():
 async def test_any_subclass_fstring_sugar():
     """any_subclass(T) can be used directly in an f-string pattern — no .__name__ needed."""
 
-    class BaseF(Object):
+    class BaseF(NLObject):
         @classproperty
         def pattern(cls) -> Pattern:
             raise NotImplementedError
@@ -312,7 +312,7 @@ async def test_any_subclass_fstring_sugar():
             self.value = "beta"
             return from_string
 
-    class Container(Object):
+    class Container(NLObject):
         item: BaseF
 
         @classproperty
@@ -330,7 +330,7 @@ async def test_any_subclass_fstring_sugar():
 
 
 async def test_abstract_base_registration_blocked():
-    class AbstractUnit(Object):
+    class AbstractUnit(NLObject):
         @classproperty
         def pattern(cls) -> Pattern:
             raise NotImplementedError

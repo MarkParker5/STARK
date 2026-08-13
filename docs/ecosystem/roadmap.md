@@ -8,7 +8,7 @@ The big one: an optional layer for building agents on top of S.T.A.R.K.'s existi
 
 ## More Native Parsed Types
 
-S.T.A.R.K. ships a small set of native types out of the box (`String`, `Word`, see [Patterns](../core-concepts/patterns.md#native-types-list)) plus the ability to define your own `Object` types. More native types are actively being added, numbers, dates, durations, and similar commonly-needed parameter types, reducing how often you need to write a custom `Object` for something basic. **Status: work in progress.**
+S.T.A.R.K. ships a small set of native types out of the box (`NLString`, `NLWord`, see [Patterns](../core-concepts/patterns.md#native-types-list)) plus the ability to define your own `NLObject` types. More native types are actively being added, numbers, dates, durations, and similar commonly-needed parameter types, reducing how often you need to write a custom `NLObject` for something basic. **Status: work in progress.**
 
 ## More Interface Implementations & Platform Ports
 

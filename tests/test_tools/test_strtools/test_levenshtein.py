@@ -9,7 +9,7 @@ from stark.tools.levenshtein import (
     levenshtein_similarity,
 )
 
-# --- Full String Distance/Similarity/Match ---
+# --- Full NLString Distance/Similarity/Match ---
 
 
 @pytest.mark.parametrize(

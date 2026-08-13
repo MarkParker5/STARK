@@ -1,9 +1,9 @@
 from stark.core.patterns import Pattern, rules
 
-from .object import Object, classproperty
+from .object import NLObject, classproperty
 
 
-class Word(Object):
+class NLWord(NLObject):
     """
     Any single alphanumerics word; separated by spaces, punctuation, other non-alphanumeric characters, or string boundaries.
     """

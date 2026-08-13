@@ -8,3 +8,14 @@ The pieces every command is built from, regardless of how simple or complex it g
 - **[Dependency Injection](dependency-injection.md)**: getting response handlers, language info, and your own dependencies into a command function.
 
 Read them in order if you're new, each builds a bit on the last.
+
+## Terminology
+
+Terms used throughout these docs:
+
+- **NLObject** — the base class for every parsed value type ("NL" for natural language). Subclass it to define a type.
+- **Native type** — an NLObject that ships with STARK: `NLWord` (a single word), `NLString` (any run of words).
+- **Custom NLObject type** — your own NLObject subclass, with its own `pattern` and optional `did_parse`.
+- **Parameter type** — an NLObject type used in a pattern slot (`$name:Type`), registered via `register_parameter_type`.
+- **Union** — an NLObject that matches one of several branch types (`A | B`).
+- **`value`** — the payload every NLObject carries: a scalar, a list, or a nested NLObject.

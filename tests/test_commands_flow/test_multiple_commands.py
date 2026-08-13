@@ -6,7 +6,7 @@ import pytest
 from stark.core import CommandsManager, Pattern, Response
 from stark.core.parsing import PatternParser
 from stark.core.processors.search_processor import SearchProcessor
-from stark.core.types import Object
+from stark.core.types import NLObject
 from stark.general.classproperty import classproperty
 
 pattern_parser = PatternParser()
@@ -36,7 +36,7 @@ async def test_multiple_commands(commands_context_flow, autojump_clock):
 async def test_two_commands_greedy_param(commands_context_flow, autojump_clock):
     async with commands_context_flow() as (manager, context, context_delegate):
 
-        class AnotherGreedy(Object):
+        class AnotherGreedy(NLObject):
             @classproperty
             def greedy(cls) -> bool:
                 return True
@@ -153,7 +153,7 @@ async def test_overlapping_commands_remove_inverse(commands_context_flow, autoju
     reason="Cache is deprecated and not working properly anymore because of new concurrent algorithm; need new async lru cache implementation"
 )
 async def test_objects_parse_caching(commands_context_flow, autojump_clock):
-    class Mock(Object):
+    class Mock(NLObject):
         parsing_counter = 0
 
         @classproperty

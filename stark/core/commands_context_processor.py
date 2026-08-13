@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 from stark.core.command import Command
 from stark.core.parsing import RecognizedEntity
-from stark.core.types.object import Object
+from stark.core.types.object import NLObject
 from stark.general.localisation import LocaleString
 
 from .commands_manager import SearchResult
@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 @dataclass
 class CommandsContextLayer:
     commands: list[Command]
-    parameters: dict[str, Object]
+    parameters: dict[str, NLObject]
 
 
 logger = logging.getLogger(__name__)

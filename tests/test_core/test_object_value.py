@@ -2,12 +2,12 @@ import pytest
 
 from stark.core import Pattern
 from stark.core.parsing import PatternParser
-from stark.core.types import Object
+from stark.core.types import NLObject
 from stark.general.classproperty import classproperty
 from stark.general.feature_flags import FeatureFlag
 
 
-class NoValue(Object):
+class NoValue(NLObject):
     """Never sets `self.value` and doesn't call `super().did_parse`."""
 
     @classproperty
@@ -18,7 +18,7 @@ class NoValue(Object):
         return from_string
 
 
-class StaticValue(Object):
+class StaticValue(NLObject):
     """Sets a static value at declaration time; `did_parse` must not override it."""
 
     value = "static"
@@ -43,7 +43,7 @@ async def test_static_value_is_not_overridden_by_default_did_parse():
 
 
 async def test_default_did_parse_sets_value_when_unset():
-    class Plain(Object):
+    class Plain(NLObject):
         @classproperty
         def pattern(cls):
             return Pattern("**")

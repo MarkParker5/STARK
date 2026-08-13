@@ -7,7 +7,7 @@ S.T.A.R.K supports multi-language pattern matching and parsing out of the box. T
 There are three places where localization applies to input processing:
 
 1. **Command patterns**: how a command is triggered (e.g., `"set timer"` vs german `"stelle einen Timer"`)
-2. **Object type patterns**: how a parameter type is recognized (e.g., `Duration` matching `"hours"` vs italian `"ore"`)
+2. **NLObject type patterns**: how a parameter type is recognized (e.g., `Duration` matching `"hours"` vs italian `"ore"`)
 3. **`did_parse` logic**: programmatic parsing that may behave differently per language (e.g., parsing `"one"` vs spanish `"uno"` into a number)
 
 Language metadata flows through the entire pipeline on the input string itself via `LocaleString`, a `str` subclass that carries a `language_code` attribute.
@@ -49,20 +49,20 @@ Language identification is not part of S.T.A.R.K's core, it's the app's responsi
 
 ### Inline `patterns` Dict
 
-The simplest approach. Override the `patterns` classproperty on your Object type to return per-language Pattern instances:
+The simplest approach. Override the `patterns` classproperty on your NLObject type to return per-language Pattern instances:
 
 ```python
-class Duration(Object):
+class Duration(NLObject):
     value: str
 
     @classproperty
     def patterns(cls) -> dict[str, Pattern]:
         return {
-            "base": Pattern("$n:Word (hours|minutes|seconds)"),
-            "de": Pattern("$n:Word (Stunden|Minuten|Sekunden)"),
-            "it": Pattern("$n:Word (ore|minuti|secondi)"),
-            "es": Pattern("$n:Word (horas|minutos|segundos)"),
-            "fr": Pattern("$n:Word (heures|minutes|secondes)"),
+            "base": Pattern("$n:NLWord (hours|minutes|seconds)"),
+            "de": Pattern("$n:NLWord (Stunden|Minuten|Sekunden)"),
+            "it": Pattern("$n:NLWord (ore|minuti|secondi)"),
+            "es": Pattern("$n:NLWord (horas|minutos|segundos)"),
+            "fr": Pattern("$n:NLWord (heures|minutes|secondes)"),
         }
 ```
 
@@ -77,12 +77,12 @@ The single `pattern` classproperty still works, if you don't override `patterns`
 For production apps with many languages, embed localization keys in your pattern strings. The `PatternParser` resolves them at compile time from the `Localizer`:
 
 ```python
-class Duration(Object):
+class Duration(NLObject):
     value: str
 
     @classproperty
     def pattern(cls) -> Pattern:
-        return Pattern("$n:Word (@duration_units)")
+        return Pattern("$n:NLWord (@duration_units)")
 ```
 
 The `@duration_units` key is looked up in the Localizer's recognizable string files for the active language. This requires setting up a Localizer (see [String Bundles](#string-bundles) below).
@@ -128,15 +128,15 @@ With `ObjectParser`, use `self.localizer` for localized lookup tables:
 
 ```python
 class NLNumberParser(ObjectParser):
-    async def did_parse(self, obj: Object, from_string: LocaleString) -> str:
+    async def did_parse(self, obj: NLObject, from_string: LocaleString) -> str:
         words_one = self.localizer.get_recognizable("words_one", from_string.language_code)
         ...
 ```
 
-For simple types that don't self.localizer or any other features of `ObjectParser`, you can still use `did_parse` directly on the Object:
+For simple types that don't self.localizer or any other features of `ObjectParser`, you can still use `did_parse` directly on the NLObject:
 
 ```python
-class NLNumber(Object):
+class NLNumber(NLObject):
     value: float
 
     async def did_parse(self, from_string: LocaleString) -> str:
@@ -154,7 +154,7 @@ More details about parsing of custom types at [ObjectParser](../core-concepts/pa
 
 ### Programmatic Patterns
 
-For types that generate patterns at runtime (e.g., from a database or API), override the `patterns` property on your `ObjectParser`. It takes priority over the Object's `patterns` classproperty:
+For types that generate patterns at runtime (e.g., from a database or API), override the `patterns` property on your `ObjectParser`. It takes priority over the NLObject's `patterns` classproperty:
 
 ```python
 class PlaylistParser(ObjectParser):
@@ -176,7 +176,7 @@ Cache invalidation is the extension's responsibility, the Localizer provides sta
 
 ## String Bundles
 
-String bundles are files that store localized strings. S.T.A.R.K uses a simple key-value format (`.strings` files):
+NLString bundles are files that store localized strings. S.T.A.R.K uses a simple key-value format (`.strings` files):
 
 ### File Format
 

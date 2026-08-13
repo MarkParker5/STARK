@@ -16,7 +16,7 @@ from stark.core import (
     CommandsManager,
     Response,
 )
-from stark.core.types import Word
+from stark.core.types import NLWord
 from stark.general.dependencies import DependencyManager
 from stark.interfaces.protocols import SpeechRecognizerDelegate
 from stark.voice_assistant import VoiceAssistant
@@ -113,12 +113,12 @@ async def commands_context_flow_filled(commands_context_flow):
                 return Response(text, voice=voice)
 
             @manager.new("bye", hidden=True)
-            async def bye_context(name: Word, handler: AsyncResponseHandler):
+            async def bye_context(name: NLWord, handler: AsyncResponseHandler):
                 await handler.pop_context()
                 return Response(f"Bye, {name}!")
 
-            @manager.new("hello $name:Word")
-            async def hello(name: Word):
+            @manager.new("hello $name:NLWord")
+            async def hello(name: NLWord):
                 text = voice = f"Hello, {name}!"
                 return Response(
                     text=text,

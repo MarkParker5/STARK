@@ -5,7 +5,7 @@ from stark.core.parsing import ObjectParser, ParameterMatch, ParseError
 from stark.general.localisation import LocaleString
 
 from ..patterns import PatternParameter
-from .object import Object
+from .object import NLObject
 
 if TYPE_CHECKING:
     from ..parsing import PatternParser
@@ -15,10 +15,10 @@ logger = logging.getLogger(__name__)
 
 class SlotsParser(ObjectParser):
     """
-    SlotsParser is an alternative to the default parser that provides unordered parameter extraction for any Object type with multiple fields, no pattern for the root type needed. Each annotated field (except `value`) becomes a slot that will be parsed independently. Fields can be required or optional (`Optional[T]` / `T | None`). Unlike unordered patterns (which work at the regex level), Slots parse each field independently from the input string, so they handle multi-word and greedy parameters correctly.
+    SlotsParser is an alternative to the default parser that provides unordered parameter extraction for any NLObject type with multiple fields, no pattern for the root type needed. Each annotated field (except `value`) becomes a slot that will be parsed independently. Fields can be required or optional (`Optional[T]` / `T | None`). Unlike unordered patterns (which work at the regex level), Slots parse each field independently from the input string, so they handle multi-word and greedy parameters correctly.
 
     Example:
-        class TimerSlots(Object):
+        class TimerSlots(NLObject):
             hours: Hours
             minutes: Minutes
             seconds: Optional[Seconds]
@@ -34,7 +34,7 @@ class SlotsParser(ObjectParser):
     def __init__(self, pattern_parser: "PatternParser"):
         self.pattern_parser = pattern_parser
 
-    async def did_parse(self, obj: Object, from_string: LocaleString) -> str:
+    async def did_parse(self, obj: NLObject, from_string: LocaleString) -> str:
         parsed_parameters: dict[str, ParameterMatch] = {}
 
         slots = {

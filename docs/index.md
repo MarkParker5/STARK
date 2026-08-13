@@ -79,7 +79,7 @@ That's a complete, working voice assistant: no cloud calls, no API keys, runs fu
 ## Patterns parse parameters too
 
 ```py
-@manager.new('hello $name:Word')
+@manager.new('hello $name:NLWord')
 def hello(name: str) -> Response:
     return Response(f'Hello, {name}!')
 
@@ -87,7 +87,7 @@ def hello(name: str) -> Response:
 # "hello Archie" -> "Hello, Archie!"
 ```
 
-Patterns aren't fixed phrases. `$name:Word` extracts a parameter and hands it straight to your function, typed and ready to use, no parsing code of your own. Full syntax in [Patterns](core-concepts/patterns.md).
+Patterns aren't fixed phrases. `$name:NLWord` extracts a parameter and hands it straight to your function, typed and ready to use, no parsing code of your own. Full syntax in [Patterns](core-concepts/patterns.md).
 
 ## One sentence, multiple commands
 

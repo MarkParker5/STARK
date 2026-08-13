@@ -5,20 +5,20 @@ import pytest
 from stark.core.command import Command
 from stark.core.health_check import health_check
 from stark.core.parsing import Pattern, PatternParser
-from stark.core.types.object import Object
-from stark.core.types.word import Word
+from stark.core.types.object import NLObject
+from stark.core.types.word import NLWord
 from stark.general.classproperty import classproperty
 
 
-class DummyType(Object):
-    value: Word
+class DummyType(NLObject):
+    value: NLWord
 
     @classproperty
     def pattern(cls) -> Pattern:
-        return Pattern("dummy $value:Word")
+        return Pattern("dummy $value:NLWord")
 
 
-class DummyWrapper(Object):
+class DummyWrapper(NLObject):
     dummy: DummyType
 
     @classproperty
@@ -26,7 +26,7 @@ class DummyWrapper(Object):
         return Pattern("dummy $dummy:DummyType")
 
 
-def dummy_runner(value: Word) -> None:
+def dummy_runner(value: NLWord) -> None:
     pass
 
 
@@ -34,7 +34,7 @@ def dummy_runner_missing() -> None:
     pass
 
 
-def dummy_runner_extra(value: Word, extra: Word) -> None:
+def dummy_runner_extra(value: NLWord, extra: NLWord) -> None:
     pass
 
 
@@ -62,13 +62,13 @@ def test_health_check_unknown_param_type_in_command():
 
 
 def test_health_check_unknown_param_type_in_type():
-    # Auto-discovery scans _all_subclasses(Object) by name. A type referenced by
-    # a name that has no matching Object subclass is silently skipped during
+    # Auto-discovery scans _all_subclasses(NLObject) by name. A type referenced by
+    # a name that has no matching NLObject subclass is silently skipped during
     # registration and caught by health_check.
-    class TypeThatDoesNotExist(Object):
+    class TypeThatDoesNotExist(NLObject):
         pass
 
-    class GhostWrapper(Object):
+    class GhostWrapper(NLObject):
         x: TypeThatDoesNotExist  # gets auto discovered
 
         @classproperty

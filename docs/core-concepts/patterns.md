@@ -41,17 +41,17 @@ General Tip: While creating patterns, always keep the user's natural way of spea
 
 Voice commands can be dynamic, meaning they can accommodate varying inputs. This is achieved using named parameters in the command pattern, with the `$name:Type` syntax. When a user input matches a pattern with named parameters, the assistant extracts these parameters and passes them to the corresponding function.
 
-For example, consider the pattern `'Hello $name:Word'`. If a user says, `'Hello Stark'`, the system will extract a parameter named `'name'` with the value `'Stark'`.
+For example, consider the pattern `'Hello $name:NLWord'`. If a user says, `'Hello Stark'`, the system will extract a parameter named `'name'` with the value `'Stark'`.
 
 However, ensure that the function declaration tied to a command pattern includes all the parameters defined in that pattern, using the same names and types. If this isn't done, you'll encounter an exception during command creation.
 
 Here's an example:
 
 ```python
-from stark.core.types import Word
+from stark.core.types import NLWord
 
-@manager.new('Hello $name:Word')
-async def example_function(name: Word) -> Response:
+@manager.new('Hello $name:NLWord')
+async def example_function(name: NLWord) -> Response:
     return Response(f'You said {name}!')
 ```
 
@@ -59,19 +59,19 @@ async def example_function(name: Word) -> Response:
 
 Out of the box, the S.T.A.R.K. comes with native types that can be used as parameter types in patterns. The currently supported native types include:
 
-- `String`: Matches any sequence of words (**).
-- `Word`: Matches a single word (*).
+- `NLString`: Matches any sequence of words (**).
+- `NLWord`: Matches a single word (*).
 
-It's also worth noting that you can extend the list of types by defining custom object types, as we'll discuss in the next section.
+It's also worth noting that you can extend the list of types by defining custom NLObject types, as we'll discuss in the next section.
 
-## Defining Custom Object Types
+## Defining Custom NLObject Types
 
-The S.T.A.R.K toolkit isn't just limited to native types; it empowers developers to define their own custom object types. These bespoke types are constructed by subclassing the `Object` base class and specifying a distinct matching pattern.
+The S.T.A.R.K toolkit isn't just limited to native types; it empowers developers to define their own custom NLObject types. These bespoke types are constructed by subclassing the `NLObject` base class and specifying a distinct matching pattern.
 
-Every `Object` has a `value` property that's meant to hold "the" parsed value of the type. A plain payload consumers can read without knowing about any of the object's other fields. Here's a minimal custom type that sets it explicitly:
+Every `NLObject` has a `value` property that's meant to hold "the" parsed value of the type. A plain payload consumers can read without knowing about any of the object's other fields. Here's a minimal custom type that sets it explicitly:
 
 ```python
-class Digit(Object):
+class Digit(NLObject):
     value: int
     
     @classproperty
@@ -88,7 +88,7 @@ context = CommandsContext(...)
 context.pattern_parser.register_parameter_type(Digit)
 ```
 
-Here, `did_parse` explicitly assigns `self.value`, converting the matched word into an `int`. This is the most common case: whatever your object type represents, `value` is where consumers should look to get it.
+Here, `did_parse` explicitly assigns `self.value`, converting the matched word into an `int`. This is the most common case: whatever your NLObject type represents, `value` is where consumers should look to get it.
 
 ### The `value` Property
 
@@ -98,20 +98,23 @@ Here, `did_parse` explicitly assigns `self.value`, converting the matched word i
 2. **Set as a static default at class declaration** — e.g. `value = "static"` right under the class body, or assigned in your own `__init__`. Once set this way, the framework's default `did_parse` will **not** overwrite it with the substring.
 3. **Falls back to the matched substring** — if nothing above set it and you don't override `did_parse`, S.T.A.R.K assigns the matched substring to `value` automatically.
 
-By default, S.T.A.R.K asserts that `value` is set to something other than `None` by the time `did_parse` returns — this catches the common mistake of overriding `did_parse`, forgetting to set `self.value`, and getting a confusing downstream error instead. If you're building an object type where `value` genuinely has no meaning (i.e. all the useful data lives in typed sub-parameters), you can opt out of this check with the `STARK_TYPE_NO_REQUIRED_VALUE` [feature flag](../advanced/feature-flags.md), which allows `value` to remain `None`.
+By default, S.T.A.R.K asserts that `value` is set to something other than `None` by the time `did_parse` returns — this catches the common mistake of overriding `did_parse`, forgetting to set `self.value`, and getting a confusing downstream error instead. If you're building an NLObject type where `value` genuinely has no meaning (i.e. all the useful data lives in typed sub-parameters), you can opt out of this check with the `STARK_TYPE_NO_REQUIRED_VALUE` [feature flag](../advanced/feature-flags.md), which allows `value` to remain `None`.
 
-A standout feature of the S.T.A.R.K toolkit's patterns is their seamless compatibility with nested objects. In essence, a custom object type can house parameters that are, in themselves, other custom object types. This nesting capability facilitates the crafting of complex and nuanced patterns, capable of interpreting diverse input configurations.
+!!! note "Constructing a type directly (tests & custom parsers)"
+    An NLObject type doesn't have to come from parsing. Instantiate one directly with `value`: `Digit(value=5)` (or positionally, `NLWord("John")`). This skips `did_parse`, so it's how you unit-test a type's own methods without routing through the parser, or build instances inside a custom parser. For a union, `value` is the matched branch object, e.g. `NLPower(value=NLUnitWatt(value=5))`. Bare `Union(...)` can't be instantiated — use a concrete subclass.
 
-Below is a demonstrative example of how one might structure a custom object type around nested parameters instead of a single `value`:
+A standout feature of the S.T.A.R.K toolkit's patterns is their seamless compatibility with nested objects. In essence, a custom NLObject type can house parameters that are, in themselves, other custom NLObject types. This nesting capability facilitates the crafting of complex and nuanced patterns, capable of interpreting diverse input configurations.
+
+Below is a demonstrative example of how one might structure a custom NLObject type around nested parameters instead of a single `value`:
 
 ```python
-class FullName(Object):
-    first_name: Word
-    second_name: Word
+class FullName(NLObject):
+    first_name: NLWord
+    second_name: NLWord
 
     @classproperty
     def pattern(cls) -> Pattern:
-        return Pattern('$first_name:Word $second_name:Word')
+        return Pattern('$first_name:NLWord $second_name:NLWord')
 
 context = CommandsContext(...)
 context.pattern_parser.register_parameter_type(FullName)
@@ -123,14 +126,14 @@ Notice `FullName` never sets `value` itself and doesn't override `did_parse` —
 
 ---
 
-## Advanced Object Types with Parsing Customization
+## Advanced NLObject Types with Parsing Customization
 
-In instances where the default parsing doesn't cater to your requirements, or when you need specialized processing, the `did_parse` method comes to the rescue. By overriding this method in custom object types, you can introduce intricate transformations or run custom validation checks post-parsing.
+In instances where the default parsing doesn't cater to your requirements, or when you need specialized processing, the `did_parse` method comes to the rescue. By overriding this method in custom NLObject types, you can introduce intricate transformations or run custom validation checks post-parsing.
 
 Here's an illustrative example:
 
 ```python
-class Lorem(Object):
+class Lorem(NLObject):
 
     @classproperty
     def pattern(cls):
@@ -159,15 +162,15 @@ print(context.pattern_parser.parse_object(Lorem, "lorem ipsum"))
 
 ## Custom Parser Class Example
 
-In some cases, you may want to separate the parsing logic from your data model. This is especially useful when you want to reuse parsing logic, inject dependencies, have longer life cycle (stateful parser), or just keep your models clean. You can define a dedicated parser class for your object type.
+In some cases, you may want to separate the parsing logic from your data model. This is especially useful when you want to reuse parsing logic, inject dependencies, have longer life cycle (stateful parser), or just keep your models clean. You can define a dedicated parser class for your NLObject type.
 
 Here's an example:
 
 ```python
-from stark.core.types import Object, Word
+from stark.core.types import NLObject, NLWord
 from stark.core.parsing import Pattern, PatternParser, ObjectParser
 
-class Lorem(Object):
+class Lorem(NLObject):
     @classproperty
     def pattern(cls):
         return Pattern("* ipsum")
@@ -263,12 +266,12 @@ Named unions are **opaque**: if used as a typed parameter, `self.power` will be 
 
 ### `any_subclass` factory
 
-By default, STARK only tries to parse the exact type of the parameter and ignores any parent/child classes. `any_subclass(T)` where `T` is a subclass of `Object` recursively discovers all subclasses of `T` and returns a transparent Union of them (i.e. the union is unwrapped to the matched subclass automatically).
+By default, STARK only tries to parse the exact type of the parameter and ignores any parent/child classes. `any_subclass(T)` where `T` is a subclass of `NLObject` recursively discovers all subclasses of `T` and returns a transparent Union of them (i.e. the union is unwrapped to the matched subclass automatically).
 
 ```python
 from stark.core.types import any_subclass
 
-class NLUnit(Object):
+class NLUnit(NLObject):
     pint_unit: str
 
     @classproperty
@@ -285,7 +288,7 @@ class NLUnitVolt(NLUnit):
     @classproperty
     def pattern(cls) -> Pattern: return Pattern("(volt|v)")
 
-class NLMeasurement(Object):
+class NLMeasurement(NLObject):
     number: NLNumber
     unit: NLUnit
 
@@ -314,17 +317,17 @@ class NLUnitAmpere(NLUnit):
 
 ## Slots
 
-Slots provide unordered parameter extraction for Object types with multiple fields. Unlike unordered patterns (which work at the pattern level), Slots parse each field independently from the input string, so they handle multi-word and greedy parameters correctly.
+Slots provide unordered parameter extraction for NLObject types with multiple fields. Unlike unordered patterns (which work at the pattern level), Slots parse each field independently from the input string, so they handle multi-word and greedy parameters correctly.
 
 ### Defining a Slots class
 
-A Slots class is a regular `Object` subclass. Each annotated field (except `value`) becomes a slot that will be parsed independently. Fields can be required or optional (`Optional[T]` / `T | None`).
+A Slots class is a regular `NLObject` subclass. Each annotated field (except `value`) becomes a slot that will be parsed independently. Fields can be required or optional (`Optional[T]` / `T | None`).
 
 ```python
 from typing import Optional
-from stark.core.types import Object, Word
+from stark.core.types import NLObject, NLWord
 
-class TimerSlots(Object):
+class TimerSlots(NLObject):
     hours: Hours           # required
     minutes: Minutes       # required
     seconds: Optional[Seconds]  # optional
@@ -334,7 +337,7 @@ class TimerSlots(Object):
 
 ### Registering with SlotsParser
 
-Unlike regular Object types, Slots classes use `SlotsParser` instead of the default parser:
+Unlike regular NLObject types, Slots classes use `SlotsParser` instead of the default parser:
 
 ```python
 from stark.core.types.slots import SlotsParser

@@ -4,7 +4,7 @@ import pytest
 
 from stark.core.parsing import ObjectParser, ParseError, PatternParser
 from stark.core.patterns import Pattern
-from stark.core.types import Object, Word
+from stark.core.types import NLObject, NLWord
 from stark.general.classproperty import classproperty
 from stark.general.localisation import LocaleString, Localizer
 
@@ -18,15 +18,15 @@ def _create_strings_file(root: Path, lang: str, name: str, content: str):
 # --- Inline patterns dict ---
 
 
-class GreetingLocalized(Object):
+class GreetingLocalized(NLObject):
     value: str
 
     @classproperty
     def patterns(cls) -> dict[str, Pattern]:
         return {
-            "base": Pattern("(hello|hi) $name:Word"),
-            "en": Pattern("(hello|hi) $name:Word"),
-            "ru": Pattern("(привет|здравствуй) $name:Word"),
+            "base": Pattern("(hello|hi) $name:NLWord"),
+            "en": Pattern("(hello|hi) $name:NLWord"),
+            "ru": Pattern("(привет|здравствуй) $name:NLWord"),
         }
 
 
@@ -74,12 +74,12 @@ def localized_parser(tmp_path, monkeypatch):
 
     p = PatternParser(localizer=localizer)
 
-    class Duration(Object):
+    class Duration(NLObject):
         value: str
 
         @classproperty
         def pattern(cls) -> Pattern:
-            return Pattern("$n:Word (@duration_units)")
+            return Pattern("$n:NLWord (@duration_units)")
 
     p.register_parameter_type(Duration)
     return p, Duration
@@ -106,7 +106,7 @@ async def test_at_key_no_match_wrong_language(localized_parser):
 async def test_at_key_missing_localizer():
     parser = PatternParser()
 
-    class BadType(Object):
+    class BadType(NLObject):
         value: str
 
         @classproperty
@@ -127,7 +127,7 @@ async def test_at_key_missing_key(tmp_path, monkeypatch):
 
     parser = PatternParser(localizer=localizer)
 
-    class BadType2(Object):
+    class BadType2(NLObject):
         value: str
 
         @classproperty
@@ -141,7 +141,7 @@ async def test_at_key_missing_key(tmp_path, monkeypatch):
 # --- did_parse receives language_code ---
 
 
-class LangAwareType(Object):
+class LangAwareType(NLObject):
     value: str
     received_language_code: str = ""
 
@@ -172,8 +172,8 @@ async def test_did_parse_receives_language_code():
 async def test_command_get_pattern():
     from stark.core.command import Command
 
-    pattern_en = Pattern("hello $name:Word")
-    pattern_ru = Pattern("привет $name:Word")
+    pattern_en = Pattern("hello $name:NLWord")
+    pattern_ru = Pattern("привет $name:NLWord")
 
     cmd = Command(
         name="greet",
@@ -192,27 +192,27 @@ async def test_commands_manager_localized_patterns():
 
     manager = CommandsManager()
 
-    @manager.new({"en": "hello $name:Word", "ru": "привет $name:Word"})
-    async def greet(name: Word) -> Response:
+    @manager.new({"en": "hello $name:NLWord", "ru": "привет $name:NLWord"})
+    async def greet(name: NLWord) -> Response:
         return Response(f"Hello {name}!")
 
     assert greet.patterns is not None
     assert "en" in greet.patterns
     assert "ru" in greet.patterns
     assert "base" in greet.patterns
-    assert greet.get_pattern("en")._origin == "hello $name:Word"
-    assert greet.get_pattern("ru")._origin == "привет $name:Word"
+    assert greet.get_pattern("en")._origin == "hello $name:NLWord"
+    assert greet.get_pattern("ru")._origin == "привет $name:NLWord"
 
 
 # --- ObjectParser.get_patterns ---
 
 
-class ProgrammaticType(Object):
+class ProgrammaticType(NLObject):
     value: str
 
 
 class ProgrammaticParser(ObjectParser):
-    async def did_parse(self, obj: Object, from_string: str) -> str:
+    async def did_parse(self, obj: NLObject, from_string: str) -> str:
         obj.value = from_string
         return from_string
 
@@ -244,9 +244,9 @@ async def test_commands_manager_single_pattern():
 
     manager = CommandsManager()
 
-    @manager.new("hello $name:Word")
-    async def greet(name: Word) -> Response:
+    @manager.new("hello $name:NLWord")
+    async def greet(name: NLWord) -> Response:
         return Response(f"Hello {name}!")
 
     assert greet.patterns == {"base": greet.get_pattern("base")}
-    assert greet.get_pattern("base")._origin == "hello $name:Word"
+    assert greet.get_pattern("base")._origin == "hello $name:NLWord"

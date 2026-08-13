@@ -14,7 +14,7 @@ from stark.core.commands_context_processor import (
     RecognizedEntity,
 )
 from stark.core.parsing import PatternParser
-from stark.core.types.object import Object
+from stark.core.types.object import NLObject
 from stark.general.localisation import LocaleString, Localizer
 from stark.general.localisation.language_code import LanguageCode
 
@@ -124,7 +124,7 @@ class CommandsContext:
 
         for search_result in search_results or []:
             current_context = self.context_queue[0]
-            parameters: dict[str, Object] = {}
+            parameters: dict[str, NLObject] = {}
             parameters.update(current_context.parameters)
             parameters.update(search_result.match_result.parameters)
 

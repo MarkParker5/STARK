@@ -3,17 +3,17 @@ from __future__ import annotations
 from typing import ClassVar
 
 from stark.core.patterns.pattern import Pattern
-from stark.core.types.object import Object, UnionMeta
+from stark.core.types.object import NLObject, UnionMeta
 from stark.general.classproperty import classproperty
 
 
-def MakeUnion(*types: type[Object]) -> type:
+def MakeUnion(*types: type[NLObject]) -> type:
     cls = UnionMeta("_".join(t.__name__ for t in types), (Union,), {"_types": list(types)})
     cls._transparent = True  # PatternParser unwraps to branch when used as a typed parameter
     return cls
 
 
-def any_subclass(cls: type[Object]) -> type[Union]:
+def any_subclass(cls: type[NLObject]) -> type[Union]:
     """Returns a Union of all current concrete subclasses of cls.
 
     Result is cached on the base class so the same class object is returned on every call —
@@ -35,10 +35,10 @@ def _all_subclasses(cls):
         yield from _all_subclasses(sub)
 
 
-class Union(Object):
+class Union(NLObject):
     """Base for union types. Use as superclass or combine with | / MakeUnion.
 
-    self.value  — the matched branch Object instance
+    self.value  — the matched branch NLObject instance
     self.value.value  — the inner parsed value
     type(self.value)  — the matched branch type
 
@@ -46,8 +46,8 @@ class Union(Object):
     directly — isinstance, type(), and attribute access all work against the real class.
     """
 
-    _types: ClassVar[list[type[Object]]]
-    value: Object
+    _types: ClassVar[list[type[NLObject]]]
+    value: NLObject
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
@@ -62,6 +62,6 @@ class Union(Object):
         from stark.core.parsing import ParseError
         for k, v in self.__dict__.items():
             if k.startswith("m") and v is not None:
-                self.value = v  # branch Object, not v.value
+                self.value = v  # branch NLObject, not v.value
                 return from_string
         raise ParseError("Union: no branch matched")

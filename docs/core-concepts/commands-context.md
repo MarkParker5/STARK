@@ -41,12 +41,12 @@ def hello_context(**params):
     return Response(f'Hi, {params["name"]}!')
 
 @manager.new('bye', hidden=True)
-def bye_context(name: Word, handler: ResponseHandler):
+def bye_context(name: NLWord, handler: ResponseHandler):
     handler.pop_context()
     return Response(f'Bye, {name}!')
 
-@manager.new('hello $name:Word')
-def hello(name: Word):
+@manager.new('hello $name:NLWord')
+def hello(name: NLWord):
     return Response(
         f'Hello, {name}!',
         commands=[hello_context, bye_context],
@@ -72,7 +72,7 @@ The code example provided demonstrates how to define and manage commands using a
 
 ### `hello` Function
 
-- This function defines a command pattern where a name is expected as input, formatted as `hello $name:Word`.
+- This function defines a command pattern where a name is expected as input, formatted as `hello $name:NLWord`.
 - Inside, it constructs a greeting using the provided name.
 - The response not only contains the greeting but also a list of commands (`hello_context` and `bye_context`) that can be triggered next. This showcases the hierarchical and contextual nature of the system. Additionally, the name is passed as a parameter for potential use in subsequent commands.
 

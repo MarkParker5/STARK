@@ -1,5 +1,5 @@
-from .object import Object
+from .object import NLObject
 
 
-class Location(Object):
+class Location(NLObject):
     value: str
