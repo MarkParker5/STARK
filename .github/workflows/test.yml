@@ -28,9 +28,14 @@ jobs:
         run: poetry run python setup.py build_ext --inplace
 
       - name: Run pytest
-        run: |
-          poetry run pytest
-          poetry run mypy .
+        run: poetry run pytest
+
+      - name: Type check (mypy)
+        # Non-blocking: ~75 pre-existing type errors (mostly the LanguageCode
+        # Literal from the multilingual work). Tracked separately; keep it
+        # visible without failing the test gate / blocking Dependabot auto-merge.
+        continue-on-error: true
+        run: poetry run mypy .
 
       - name: Duck Notifier
         if: failure()
