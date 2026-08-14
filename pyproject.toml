@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "stark-engine"
-version = "4.6.0"
+version = "4.6.1"
 description = "S.T.A.R.K - Speech and Text Advanced Recognition Kit. Modern framework for creating powerfull voice assistants."
 authors = ["MarkParker5 <mark@parker-programs.com>"]
 license = "PolyForm-Noncommercial-1.0.0"
