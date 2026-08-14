@@ -1,7 +1,7 @@
 name: Dependabot auto-merge
 
 # Auto-approve and auto-merge Dependabot PRs once their checks pass.
-# Majors are left for manual review; minor/patch/security bumps merge on green.
+# All update types (including majors) merge once required checks pass.
 on: pull_request_target
 
 permissions:
@@ -25,9 +25,8 @@ jobs:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Enable auto-merge (skip majors)
-        if: ${{ steps.meta.outputs.update-type != 'version-update:semver-major' }}
-        run: gh pr merge --auto --squash "$PR_URL"
+      - name: Enable auto-merge
+        run: gh pr merge --auto --merge "$PR_URL"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
