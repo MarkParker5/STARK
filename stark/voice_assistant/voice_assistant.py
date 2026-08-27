@@ -177,11 +177,20 @@ class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
             else:
                 logger.info(f"S.T.A.R.K.: {text}")
 
-        if voice:
-            lang: LanguageCode = voice.language_code if isinstance(voice, LocaleString) else "base"
-            synthesizer = self.speech_synthesizers.get(lang) or self.speech_synthesizers.get("base") or next(iter(self.speech_synthesizers.values()))
+        segments: list[LocaleString]
+        if isinstance(voice, list):
+            segments = [s for s in voice if s]
+        elif isinstance(voice, LocaleString):
+            segments = [voice] if voice else []
+        else:
+            segments = [LocaleString(str(voice))] if voice else []
+
+        if segments:
             was_recognizing = self.speech_recognizer.is_recognizing
             self.speech_recognizer.is_recognizing = False
-            speech = await synthesizer.synthesize(str(voice))
-            await speech.play()
+            for segment in segments:
+                lang: LanguageCode = segment.language_code
+                synthesizer = self.speech_synthesizers.get(lang) or self.speech_synthesizers.get("base") or next(iter(self.speech_synthesizers.values()))
+                speech = await synthesizer.synthesize(str(segment))
+                await speech.play()
             self.speech_recognizer.is_recognizing = was_recognizing

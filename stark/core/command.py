@@ -20,7 +20,7 @@ import asyncer
 from pydantic import BaseModel, Field
 
 from ..general.classproperty import classproperty
-from ..general.localisation import LanguageCode, LocalizableString
+from ..general.localisation import LanguageCode, LocaleString, LocalizableString
 from .patterns import Pattern
 
 logger = logging.getLogger(__name__)
@@ -124,7 +124,7 @@ class ResponseStatus(Enum):
 
 
 class Response(BaseModel):
-    voice: str | LocalizableString = ""
+    voice: str | LocalizableString | list[LocaleString] = ""
     text: str | LocalizableString = ""
     status: ResponseStatus = ResponseStatus.success
     needs_user_input: bool = False
