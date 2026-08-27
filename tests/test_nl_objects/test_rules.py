@@ -307,8 +307,8 @@ async def test_slots(pattern_str, input_str, is_match, match_str, expected_token
         (
             "AllOptionalSlots3",
             {
-                "a": OOWord | None,
-                "b": OOWord | None,
+                "a": Optional[OOWord],
+                "b": Optional[OOWord],
             },
             "bar baz",
             None,
