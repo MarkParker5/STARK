@@ -187,7 +187,7 @@ async def voice_assistant(commands_context_flow_filled):
         async with commands_context_flow_filled() as (context, _context_delegate):
             voice_assistant = VoiceAssistant(
                 speech_recognizer=SpeechRecognizerMock(),
-                speech_synthesizer=SpeechSynthesizerMock(),
+                speech_synthesizers=SpeechSynthesizerMock(),
                 commands_context=context,
             )
             yield voice_assistant

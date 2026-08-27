@@ -1,3 +1,4 @@
+import importlib.util
 from typing import cast
 
 import pytest
@@ -7,6 +8,11 @@ from stark.core.parsing import RecognizedEntity
 from stark.core.processors import SpacyNERProcessor
 from stark.core.types.location import Location
 from stark.general.localisation import LocaleString
+
+pytestmark = pytest.mark.skipif(
+    importlib.util.find_spec("spacy") is None,
+    reason="spacy not installed (optional dependency)",
+)
 
 
 @pytest.mark.parametrize(

@@ -42,7 +42,7 @@ cdef int pathtrack_start_column(
     cdef int r = rows
     cdef int c = end_column if end_column != -1 else columns
     cdef double deletion, substitution, insertion, minimal
-    while r > 0:
+    while r > 0 and c > 0:
         deletion = matrix[r - 1][c]
         substitution = matrix[r - 1][c - 1]
         insertion = matrix[r][c - 1]

@@ -12,8 +12,8 @@ async def test_background_command_with_waiting_mode(voice_assistant, autojump_cl
         await anyio.sleep(0.2)  # allow to capture first command response
 
         # start background task
-        assert len(va.speech_synthesizer.results) == 1
-        assert va.speech_synthesizer.results.pop(0).text == "Starting background task"
+        assert len(va.speech_synthesizers["base"].results) == 1
+        assert va.speech_synthesizers["base"].results.pop(0).text == "Starting background task"
 
         # force a timeout
         va._last_interaction_time -= timedelta(seconds=va.mode.timeout_after_interaction + 1)
@@ -22,8 +22,8 @@ async def test_background_command_with_waiting_mode(voice_assistant, autojump_cl
         await anyio.sleep(1)
 
         # check finished background command
-        assert len(va.speech_synthesizer.results) == 1
-        assert va.speech_synthesizer.results.pop(0).text == "Finished background task"
+        assert len(va.speech_synthesizers["base"].results) == 1
+        assert va.speech_synthesizers["base"].results.pop(0).text == "Finished background task"
 
         # check saved response
         assert len(va._responses) == 1
@@ -34,8 +34,8 @@ async def test_background_command_with_waiting_mode(voice_assistant, autojump_cl
         # interact to reset timeout mode and repeat saved response
         await va.speech_recognizer_did_receive_final_result("ping")
         await anyio.sleep(0.2)  # allow to capture command response
-        assert len(va.speech_synthesizer.results) == 2
-        assert [r.text for r in va.speech_synthesizer.results] == ["pong", "Finished background task"]
+        assert len(va.speech_synthesizers["base"].results) == 2
+        assert [r.text for r in va.speech_synthesizers["base"].results] == ["pong", "Finished background task"]
 
 
 async def test_background_command_with_inactive_mode(voice_assistant, autojump_clock):
@@ -45,8 +45,8 @@ async def test_background_command_with_inactive_mode(voice_assistant, autojump_c
         await anyio.sleep(0.2)  # allow to capture first command response
 
         # start background task
-        assert len(va.speech_synthesizer.results) == 1
-        assert va.speech_synthesizer.results.pop(0).text == "Starting background task"
+        assert len(va.speech_synthesizers["base"].results) == 1
+        assert va.speech_synthesizers["base"].results.pop(0).text == "Starting background task"
 
         # set inactive mode
         va.mode = Mode.inactive
@@ -55,7 +55,7 @@ async def test_background_command_with_inactive_mode(voice_assistant, autojump_c
         await anyio.sleep(1)
 
         # check finished background task
-        assert len(va.speech_synthesizer.results) == 0
+        assert len(va.speech_synthesizers["base"].results) == 0
 
         # check saved response
         assert len(va._responses) == 1
@@ -63,9 +63,9 @@ async def test_background_command_with_inactive_mode(voice_assistant, autojump_c
         # interact to reset timeout mode and repeat saved response
         await va.speech_recognizer_did_receive_final_result("ping")
         await anyio.sleep(0.2)  # allow to capture command response
-        assert len(va.speech_synthesizer.results) == 2
-        assert va.speech_synthesizer.results.pop(0).text == "pong"
-        assert va.speech_synthesizer.results.pop(0).text == "Finished background task"
+        assert len(va.speech_synthesizers["base"].results) == 2
+        assert va.speech_synthesizers["base"].results.pop(0).text == "pong"
+        assert va.speech_synthesizers["base"].results.pop(0).text == "Finished background task"
 
 
 async def test_background_waiting_needs_input(voice_assistant, autojump_clock):
@@ -82,8 +82,8 @@ async def test_background_waiting_needs_input(voice_assistant, autojump_clock):
 
         # voice assistant should save all responses for later
         assert len(va._responses) == 8
-        assert len(va.speech_synthesizer.results) == 8
-        va.speech_synthesizer.results.clear()
+        assert len(va.speech_synthesizers["base"].results) == 8
+        va.speech_synthesizers["base"].results.clear()
 
         # emulate delay after last response before repeating
         for response in va._responses:
@@ -95,21 +95,21 @@ async def test_background_waiting_needs_input(voice_assistant, autojump_clock):
         await anyio.sleep(0.2)  # allow to capture command response
 
         # voice assistant should say all responses until needs input
-        assert len(va.speech_synthesizer.results) == 5
+        assert len(va.speech_synthesizers["base"].results) == 5
         assert len(va._responses) == 4
 
         for response in ["pong", "First response", "Second response", "Third response", "Needs input"]:
-            assert va.speech_synthesizer.results.pop(0).text == response
+            assert va.speech_synthesizers["base"].results.pop(0).text == response
 
         # interact to emulate user input and continue repeating responses
         await va.speech_recognizer_did_receive_final_result("ping")
         await anyio.sleep(0.2)  # allow to capture command response
 
         # voice assistant should say all left responses
-        assert len(va.speech_synthesizer.results) == 5
+        assert len(va.speech_synthesizers["base"].results) == 5
         assert len(va._responses) == 0
         for response in ["pong", "Fourth response", "Fifth response", "Sixth response", "Finished long background task"]:
-            assert va.speech_synthesizer.results.pop(0).text == response
+            assert va.speech_synthesizers["base"].results.pop(0).text == response
 
 
 async def test_background_waiting_with_context(voice_assistant, autojump_clock):
@@ -123,10 +123,10 @@ async def test_background_waiting_with_context(voice_assistant, autojump_clock):
         await anyio.sleep(2)
 
         # voice assistant should play all (including adding context) and save all responses for later
-        assert len(va.speech_synthesizer.results) == 1
+        assert len(va.speech_synthesizers["base"].results) == 1
         assert len(va._responses) == 1  # first response is not saved because it plays immediately
         assert len(va.commands_context.context_queue) == 2
-        va.speech_synthesizer.results.clear()
+        va.speech_synthesizers["base"].results.clear()
 
         # emulate delay after last response before repeating
         for response in va._responses:
@@ -135,14 +135,14 @@ async def test_background_waiting_with_context(voice_assistant, autojump_clock):
         # interact to reset timeout mode, voice assistant should reset context, repeat responses and add response context
         await va.speech_recognizer_did_receive_final_result("lorem ipsum dolor")
         await anyio.sleep(0.2)  # allow to capture command response
-        assert len(va.speech_synthesizer.results) == 2
+        assert len(va.speech_synthesizers["base"].results) == 2
         assert len(va.commands_context.context_queue) == 2
 
 
 async def test_background_waiting_remove_response(voice_assistant, autojump_clock):
     async with voice_assistant() as va:
         await va.speech_recognizer_did_receive_final_result("background remove response")
-        va.speech_synthesizer.results.clear()
+        va.speech_synthesizers["base"].results.clear()
 
         # force a timeout by settings zero time
         va._last_interaction_time -= timedelta(seconds=va.mode.timeout_after_interaction + 1)
@@ -155,17 +155,17 @@ async def test_background_waiting_remove_response(voice_assistant, autojump_cloc
 
         # check response cached
         assert len(responses_cache) == 1
-        assert len(va.speech_synthesizer.results) == 1
+        assert len(va.speech_synthesizers["base"].results) == 1
         assert responses_cache.pop(0).text == "Deleted response"
         # check voice_assistant doesn't have response
         assert len(va._responses) == 0
-        va.speech_synthesizer.results.clear()
+        va.speech_synthesizers["base"].results.clear()
 
         # interact to reset timeout mode, check that removed response is not repeated
         await va.speech_recognizer_did_receive_final_result("ping")
         await anyio.sleep(1)  # allow to capture command response
-        assert len(va.speech_synthesizer.results) == 1
-        assert va.speech_synthesizer.results.pop(0).text == "pong"
+        assert len(va.speech_synthesizers["base"].results) == 1
+        assert va.speech_synthesizers["base"].results.pop(0).text == "pong"
 
 
 async def test_explicit_interaction_pattern(voice_assistant, autojump_clock):
@@ -176,10 +176,10 @@ async def test_explicit_interaction_pattern(voice_assistant, autojump_clock):
         # input that does NOT match the explicit pattern is ignored
         await va.speech_recognizer_did_receive_final_result("lorem ipsum dolor")
         await anyio.sleep(0.2)
-        assert len(va.speech_synthesizer.results) == 0
+        assert len(va.speech_synthesizers["base"].results) == 0
 
         # input that matches the pattern is processed
         await va.speech_recognizer_did_receive_final_result("ping")
         await anyio.sleep(0.2)
-        assert len(va.speech_synthesizer.results) == 1
-        assert va.speech_synthesizer.results[0].text == "pong"
+        assert len(va.speech_synthesizers["base"].results) == 1
+        assert va.speech_synthesizers["base"].results[0].text == "pong"
