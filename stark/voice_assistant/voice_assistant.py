@@ -174,5 +174,6 @@ class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
             was_recognizing = self.speech_recognizer.is_recognizing
             self.speech_recognizer.is_recognizing = False
             speech = await self.speech_synthesizer.synthesize(voice)
-            await speech.play()
+            if speech is not None:
+                await speech.play()
             self.speech_recognizer.is_recognizing = was_recognizing

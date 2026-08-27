@@ -102,6 +102,7 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.pytest.ini_options]
+pythonpath = ["."]
 # asyncio_mode = "auto"
 trio_mode = "true"
 filterwarnings = ["once"]
