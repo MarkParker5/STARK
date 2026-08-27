@@ -12,6 +12,7 @@ from ..core import (
 )
 from ..general.feature_flags import FeatureFlag, get_flag
 from ..general.localisation import LocaleString, LocalizableString
+from ..general.localisation import LanguageCode
 from ..interfaces.protocols import (
     SpeechRecognizer,
     SpeechRecognizerDelegate,
@@ -29,7 +30,7 @@ class ResponseCache(Response):
 
 class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
     speech_recognizer: SpeechRecognizer
-    speech_synthesizer: SpeechSynthesizer
+    speech_synthesizers: dict[LanguageCode, SpeechSynthesizer]
     commands_context: CommandsContext
 
     mode: Mode
@@ -41,15 +42,21 @@ class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
     def __init__(
         self,
         speech_recognizer: SpeechRecognizer,
-        speech_synthesizer: SpeechSynthesizer,
+        speech_synthesizers: SpeechSynthesizer | dict[LanguageCode, SpeechSynthesizer],
         commands_context: CommandsContext,
     ):
         assert isinstance(speech_recognizer, SpeechRecognizer)
-        assert isinstance(speech_synthesizer, SpeechSynthesizer)
         assert isinstance(commands_context, CommandsContext)
+        assert isinstance(speech_synthesizers, (SpeechSynthesizer, dict))
+        if isinstance(speech_synthesizers, dict):
+            assert all(isinstance(v, SpeechSynthesizer) for v in speech_synthesizers.values())
 
         self.speech_recognizer = speech_recognizer
-        self.speech_synthesizer = speech_synthesizer
+        self.speech_synthesizers = (
+            speech_synthesizers
+            if isinstance(speech_synthesizers, dict)
+            else {"base": speech_synthesizers}
+        )
         self.commands_context = commands_context
         commands_context.delegate = self
 
@@ -171,8 +178,10 @@ class VoiceAssistant(SpeechRecognizerDelegate, CommandsContextDelegate):
                 logger.info(f"S.T.A.R.K.: {text}")
 
         if voice:
+            lang: LanguageCode = voice.language_code if isinstance(voice, LocaleString) else "base"
+            synthesizer = self.speech_synthesizers.get(lang) or self.speech_synthesizers.get("base") or next(iter(self.speech_synthesizers.values()))
             was_recognizing = self.speech_recognizer.is_recognizing
             self.speech_recognizer.is_recognizing = False
-            speech = await self.speech_synthesizer.synthesize(str(voice))
+            speech = await synthesizer.synthesize(str(voice))
             await speech.play()
             self.speech_recognizer.is_recognizing = was_recognizing
