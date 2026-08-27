@@ -5,6 +5,7 @@ import numpy
 import sounddevice
 import torch
 
+from stark.general.localisation import LanguageCode
 from .protocols import SpeechSynthesizer, SpeechSynthesizerResult
 
 
@@ -41,7 +42,7 @@ class SileroSpeechSynthesizer(SpeechSynthesizer):
         self.sample_rate = 24000
         self.speaker = speaker
 
-    async def synthesize(self, text) -> Speech:
+    async def synthesize_segment(self, text: str, language_code: LanguageCode) -> Speech:
         synthesize_async = asyncer.asyncify(self.model.apply_tts)
         audio = await synthesize_async(text = text, speaker = self.speaker, sample_rate = self.sample_rate)
         return Speech(audio, self.sample_rate)

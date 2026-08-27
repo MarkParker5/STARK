@@ -2,6 +2,7 @@ from stark.models.transcription_string import TranscriptionString, Transcription
 
 from .language_code import LanguageCode
 from .locale_string import LocaleString
+from .mixed_locale_string import MixedLocaleString, SpeechSegment
 from .localizable_string import LocalizableString
 from .localizer import Localizer
 from .strings import String, StringsFile
