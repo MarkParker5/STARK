@@ -118,7 +118,6 @@ dev = [
     "pytest-timeout>=2.4.0",
     "pytest-trio>=0.8.0",
     "setuptools>=84.0.0",
-    "stark-engine>=4.6.1",
     "trio>=0.34.0",
 ]
 
