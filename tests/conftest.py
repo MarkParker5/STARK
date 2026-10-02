@@ -18,7 +18,8 @@ from stark.core import (
 )
 from stark.core.types import NLWord
 from stark.general.dependencies import DependencyManager
-from stark.interfaces.protocols import SpeechRecognizerDelegate
+from stark.general.localisation import LanguageCode
+from stark.interfaces.protocols import SpeechRecognizerDelegate, SpeechSynthesizer
 from stark.voice_assistant import VoiceAssistant
 
 
@@ -57,11 +58,11 @@ class SpeechSynthesizerResultMock:
         self.text = text
 
 
-class SpeechSynthesizerMock:
+class SpeechSynthesizerMock(SpeechSynthesizer):
     def __init__(self):
         self.results = []
 
-    async def synthesize(self, text: str) -> SpeechSynthesizerResultMock:
+    async def synthesize_segment(self, text: str, language_code: LanguageCode) -> SpeechSynthesizerResultMock:
         result = SpeechSynthesizerResultMock(text)
         self.results.append(result)
         return result

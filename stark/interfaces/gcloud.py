@@ -6,6 +6,7 @@ import sounddevice
 import soundfile
 from google.cloud import texttospeech
 
+from stark.general.localisation import LanguageCode
 from .protocols import SpeechSynthesizer, SpeechSynthesizerResult
 
 logger = logging.getLogger(__name__)
@@ -41,7 +42,7 @@ class GCloudSpeechSynthesizer(SpeechSynthesizer):
             ssml_gender    = texttospeech.SsmlVoiceGender.FEMALE
         )
 
-    async def synthesize(self, text) -> Speech:
+    async def synthesize_segment(self, text: str, language_code: LanguageCode) -> Speech:
         folder = f'audio/{self._name}'
         path = f'{folder}/{self._transliterate(text)[:100]}.wav'
 
