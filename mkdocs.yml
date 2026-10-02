@@ -53,6 +53,7 @@ nav:
   - Ecosystem:
       - STARK-PLACE: ecosystem/index.md
       - Package Registry: ecosystem/package-registry.md
+      - Submitting a Package: ecosystem/submitting-a-package.md
       - Project Ideas: ecosystem/project-ideas.md
       - Roadmap: ecosystem/roadmap.md
 
@@ -192,6 +193,7 @@ plugins:
         Ecosystem:
           - ecosystem/index.md
           - ecosystem/package-registry.md
+          - ecosystem/submitting-a-package.md
           - ecosystem/project-ideas.md
           - ecosystem/roadmap.md
   # - git-committers:
