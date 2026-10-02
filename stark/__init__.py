@@ -59,7 +59,7 @@ async def run(
 
         voice_assistant = VoiceAssistant(
             speech_recognizer=effective_recognizer,
-            speech_synthesizer=speech_synthesizer,
+            speech_synthesizers=speech_synthesizer,
             commands_context=context,
         )
         effective_recognizer.delegate = voice_assistant
