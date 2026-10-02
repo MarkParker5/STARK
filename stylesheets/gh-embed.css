@@ -1,0 +1,16 @@
+/* Live GitHub examples tree (gh-tree.js) */
+.gh-tree-children {
+  margin-left: 1rem;
+  padding-left: .6rem;
+  border-left: 1px solid var(--md-default-fg-color--lightest);
+}
+.gh-tree summary,
+.gh-tree-dir > summary,
+.gh-tree-file > summary {
+  cursor: pointer;
+  font-family: var(--md-code-font-family, monospace);
+  font-size: .8rem;
+  padding: .15rem 0;
+}
+.gh-tree-loading { opacity: .6; font-style: italic; }
+.gh-tree pre { margin: .3rem 0 .6rem; }
