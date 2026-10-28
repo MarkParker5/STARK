@@ -113,7 +113,7 @@ class RmDate(NLObject):
     async def did_parse(self, from_string: LocaleString) -> str:
         if self.day is None:
             raise ParseError("no day")
-        self.value = (self.day.value, self.month and self.month.value, self.year and self.year.value)
+        self.value = (self.day.value, self.month.value if self.month else None, self.year.value if self.year else None)
         return from_string
 
 
@@ -127,7 +127,7 @@ class RmFlaggedDate(NLObject):
         return Pattern("$day:RmDay( $month:RmMonth?)")
 
     async def did_parse(self, from_string: LocaleString) -> str:
-        self.value = (self.day.value, self.month and self.month.value)
+        self.value = (self.day.value, self.month.value if self.month else None)
         return from_string
 
 
