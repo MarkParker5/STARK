@@ -43,10 +43,10 @@ jobs:
         run: poetry run ty check stark/ tests/
         continue-on-error: true
 
-      - name: Duck Notifier
-        if: failure()
-        uses: appleboy/telegram-action@master
-        with:
-          to: ${{ secrets.TG_CHAT_ID }}
-          token: ${{ secrets.TG_BOT_TOKEN }}
-          message: ❌ S.T.A.R.K. push tests failed on branch ${{ github.ref }}
+      # - name: Duck Notifier
+      #   if: failure()
+      #   uses: appleboy/telegram-action@master
+      #   with:
+      #     to: ${{ secrets.TG_CHAT_ID }}
+      #     token: ${{ secrets.TG_BOT_TOKEN }}
+      #     message: ❌ S.T.A.R.K. push tests failed on branch ${{ github.ref }}
