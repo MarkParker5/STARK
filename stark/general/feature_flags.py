@@ -6,12 +6,14 @@ class FeatureFlag(StrEnum):
     ENABLE_VOICE_CLI = "STARK_ENABLE_VOICE_CLI"
     ENABLE_MULTILANG_MATRIX = "STARK_ENABLE_MULTILANG_MATRIX"
     TYPE_NO_REQUIRED_VALUE = "STARK_TYPE_NO_REQUIRED_VALUE"
+    STABLE_REMATCH = "STARK_STABLE_REMATCH"  # experimental: substituting a claim never breaks the re-match
 
 
 _DEFAULTS: dict[FeatureFlag, str] = {
     FeatureFlag.ENABLE_VOICE_CLI: "0",
     FeatureFlag.ENABLE_MULTILANG_MATRIX: "1",
     FeatureFlag.TYPE_NO_REQUIRED_VALUE: "0",
+    FeatureFlag.STABLE_REMATCH: "0",
 }
 
 

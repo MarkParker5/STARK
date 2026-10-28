@@ -372,6 +372,10 @@ class PatternParser:
         logger.debug(f'Captured candidate "{string}"')
 
         new_match = None
+        stable = get_flag(FeatureFlag.STABLE_REMATCH)
+        substitutions: dict[str, str] = {}  # a claim widened back towards its capture, so the re-match still places it
+        fallbacks: list[str] = []  # wider substitutions of the last claim, tried in order while it can't be placed
+        last_claimed: str | None = None
 
         while True:
             # rerun regex to recapture parameters after previous parameter took it's substring
@@ -379,16 +383,21 @@ class PatternParser:
             #     1. allow neighboring parameters with greedy pattern catch more string
             #     2. remove already parsed parameters from match groups
             #     3. improve performance by simplifying regex
-            prefill = {name: parameter.parsed_substr for name, parameter in parsed_parameters.items()}
+            prefill = {name: substitutions.get(name, parameter.parsed_substr) for name, parameter in parsed_parameters.items()}
 
             # re-run regex only in the current command_str
             compiled = self._compile_pattern(pattern, prefill=prefill, language_code=language_code)
             compiled, _ = self._expand_corrections(compiled, string)
+            if stable:  # conditional groups make the regex backtrack until every claimed parameter is placed
+                compiled += "".join(f"(?({name})|(?!))" for name, parameter in parsed_parameters.items() if parameter.parsed_obj is not None)
             new_matches = list(re.finditer(compiled, string))
 
             logger.debug(f'Re capturing parameters {string} prefill={prefill} compiled="{compiled}"')
 
             if not new_matches:
+                if fallbacks and last_claimed:  # the claim alone leaves text nothing else takes: keep that text in its substitution
+                    substitutions[last_claimed] = fallbacks.pop(0)
+                    continue
                 break  # everything's parsed (probably not successfully)
 
             new_match = new_matches[0]
@@ -445,6 +454,13 @@ class PatternParser:
             )
             if parameter_match is not None:
                 parsed_parameters[parameter_name] = parameter_match
+                fallbacks, last_claimed = [], None
+                if stable and parameter_match.parsed_obj is not None:
+                    # keep the cut on the left first (usually already parsed), then on the right, then the whole capture, which always fits
+                    captured, claim = str(new_match.group(parameter_name)), str(parameter_match.parsed_substr)
+                    left, right = captured[: captured.find(claim)], captured[captured.find(claim) + len(claim) :]
+                    widened = (left + claim, claim + right, captured) if claim in captured else (captured,)
+                    fallbacks, last_claimed = [w for w in dict.fromkeys(widened) if w != claim], parameter_name
 
         return new_match, parsed_parameters
 
@@ -547,6 +563,8 @@ class PatternParser:
             )
             if parameter.name in prefill:
                 arg_pattern = prefill[parameter.name]  # TODO: review wether re.escape is needed
+                if get_flag(FeatureFlag.STABLE_REMATCH):
+                    arg_pattern = re.escape(arg_pattern).replace("\\", r"\\")
             else:  # replace pattern annotation with compiled regex
                 parameter.group_name = ((group_prefix + "_") if group_prefix else "") + parameter.name
                 param_pattern = self._resolve_pattern(parameter_type, language_code)
