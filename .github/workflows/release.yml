@@ -1,22 +1,23 @@
 name: Publish to PyPI and Create Release
 
+# Released from develop; master is fast-forwarded to the released commit only after a successful publish.
 on:
-  push:
-    branches:
-      - master
   workflow_dispatch:
 
 jobs:
   version:
+    if: github.ref == 'refs/heads/develop'
     permissions:
       contents: write
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.VERSION }}
+      sha: ${{ steps.version.outputs.SHA }}
     steps:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+          token: ${{ secrets.GIT_TOKEN }}  # admin token: the bump commit can't wait for develop's required "test" check
 
       - uses: actions/setup-python@v7
         with:
@@ -42,6 +43,7 @@ jobs:
           fi
           echo Using version $(poetry version --short)
           echo VERSION="v$(poetry version --short)" >> $GITHUB_OUTPUT
+          echo SHA="$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
 
   build:
     needs: version
@@ -52,7 +54,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: master
+          ref: ${{ needs.version.outputs.sha }}
           fetch-depth: 0
 
       - uses: actions/setup-python@v7
@@ -87,7 +89,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: master
+          ref: ${{ needs.version.outputs.sha }}
           fetch-depth: 0
 
       - uses: actions/setup-python@v7
@@ -109,6 +111,7 @@ jobs:
         uses: rickstaa/action-create-tag@v1
         with:
           tag: ${{ needs.version.outputs.version }}
+          commit_sha: ${{ needs.version.outputs.sha }}
 
       - name: Generate changelog
         id: changelog
@@ -157,3 +160,17 @@ jobs:
           done
         env:
           GH_TOKEN: ${{ secrets.GIT_TOKEN }}
+
+  promote:
+    needs: [version, publish]
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.version.outputs.sha }}
+          fetch-depth: 0
+
+      - name: Fast-forward master to the released commit
+        run: git push origin "${{ needs.version.outputs.sha }}:refs/heads/master"
