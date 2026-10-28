@@ -162,7 +162,15 @@ def either_mode(request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch)
     monkeypatch.setenv(FeatureFlag.STABLE_REMATCH, request.param)
 
 
-# Edge cases: fail without the STABLE_REMATCH flag
+# Edge cases: fail on master
+
+
+async def test_param_left_out_of_match_is_not_returned(monkeypatch: pytest.MonkeyPatch):
+    # without the flag, year's claim can't be placed after `в` and the re-match drops it
+    monkeypatch.setenv(FeatureFlag.STABLE_REMATCH, "0")
+    result = await parser.parse_object(RmDate, "пятого сентября в тринадцать тридцать")
+    assert result.substring == "пятого сентября"
+    assert result.obj.value == (5, 9, None)
 
 
 async def test_partial_claim_stays_placed_when_nothing_takes_the_cut():

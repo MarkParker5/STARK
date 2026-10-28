@@ -462,6 +462,9 @@ class PatternParser:
                     widened = (left + claim, claim + right, captured) if claim in captured else (captured,)
                     fallbacks, last_claimed = [w for w in dict.fromkeys(widened) if w != claim], parameter_name
 
+        if new_match:  # drop prefilled params that the final re-match left out (optional group failed to match)
+            parsed_parameters = {name: p for name, p in parsed_parameters.items() if new_match.start(name) != -1}
+
         return new_match, parsed_parameters
 
     async def _parse_single_parameter(
