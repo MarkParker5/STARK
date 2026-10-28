@@ -199,6 +199,8 @@ Note that the `did_parse` method must return a substring of the input string tha
 2. Consider using `NLDictionaryName` from [Phonetic Dictionary](../tools/phonetic-dictionary.md) if suits your needs.
 3. If options above are not suitable, take a look at [sliding_window_parser](../tools/sliding-window-parser.md) wrapper. Note that it will call the parser method multiple times to find the best match, which can be optimized by caching intermediate results inside your parser func, but yet still requires careful usage especially with large input strings and long io-bound parsing times.
 
+When a parameter claims only part of the text its pattern captured, the rest is handed back to the pattern, where a literal or a neighbouring parameter can take it. If nothing can, the parameter is dropped from the match by default. The experimental `STARK_STABLE_REMATCH` [feature flag](../advanced/feature-flags.md) keeps it instead: the untaken text stays in the parameter's place in the match, while the parameter's value and substring stay what `did_parse` returned.
+
 ## Recommended Use of Caching for `did_parse` Method
 
 When the `did_parse` method is involved in the matching process, especially if it performs complex computations or external lookups, it can slow down the overall matching process. To alleviate this potential bottleneck, it's highly recommended to use caching. By storing previously parsed objects in a cache, you can avoid redundant work and improve the overall performance of your custom voice assistant.
