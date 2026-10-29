@@ -118,6 +118,8 @@ jobs:
         run: |
           PREV_TAG=$(git describe --tags --abbrev=0 "${{ needs.version.outputs.version }}^" 2>/dev/null || git rev-list --max-parents=0 HEAD)
           RANGE="${PREV_TAG}..${{ needs.version.outputs.version }}"
+          VERSION="${{ needs.version.outputs.version }}"
+          PACKAGE=$(sed -n 's/^name = "\(.*\)"/\1/p' pyproject.toml | head -1)
 
           # dependabot merges and chore commits stay out of the changelog
           COMMITS=$(git log --pretty=format:"- %s" "$RANGE" | grep -Ev '^- (Merge pull request #[0-9]+ from [^ ]+/dependabot/|chore(\([^)]*\))?!?:)' || true)
@@ -127,6 +129,8 @@ jobs:
 
           {
             echo "BODY<<EOF"
+            echo "PyPI: https://pypi.org/project/${PACKAGE}/${VERSION#v}/"
+            echo ""
             if [ -n "$NEW_DOCS" ]; then
               echo "## New Documentation"
               echo "$NEW_DOCS"
