@@ -35,7 +35,7 @@ jobs:
           if [[ "v$(poetry version --short)" == "$(git describe --tags --always --abbrev=0)" ]]; then
             poetry version patch
             git add pyproject.toml
-            git config --global user.email "mark@parker-programs.com"
+            git config --global user.email "34688010+MarkParker5@users.noreply.github.com"
             git config --global user.name "MarkParker5"
             git commit -m "Version bump v$(poetry version --short)"
             git push
