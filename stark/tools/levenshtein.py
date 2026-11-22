@@ -61,34 +61,42 @@ def levenshtein_table(
     matrix[0, :] = np.arange(s2_len + 1)
     best_column = 0
 
-    # start substring distance evalution (filling matrix rows)
-    for row_i in range(1, s1_len + 1):
+    def _matrix(row_i, cell_i):
+        # small recursion for backtracking to support narrow mode
+        # if the optimal path is missed
+
+        if (value := matrix[row_i, cell_i]) != 1e6:
+            return value
 
         char1 = s1[row_i - 1]
+        char2 = s2[cell_i - 1]
+
+        if char1 == char2: # full match, no cost added
+            cell_value = _matrix(row_i - 1, cell_i - 1)
+
+        else: # different characters, calculate additional cost
+
+            # get costs for char edits from the proximity graph
+            del_cost = proximity_graph.get(char1, {}).get('-', 1.0)
+            ins_cost = proximity_graph.get('-', {}).get(char2, 1.0)
+            sub_cost = proximity_graph.get(char1, {}).get(char2, 1.0)
+
+            cell_value = min( # save min full cost for this step
+                _matrix(row_i, cell_i - 1) + ins_cost,    # insertion
+                _matrix(row_i - 1, cell_i - 1) + sub_cost, # substitution
+                _matrix(row_i - 1, cell_i) + del_cost,    # deletion
+            )
+        matrix[row_i, cell_i] = cell_value
+        return cell_value
+
+    # start substring distance evalution (filling matrix rows)
+    for row_i in range(1, s1_len + 1):
 
         # column loop (filling row cells)
         start_column = max(1, best_column-1)
         for cell_i in range(start_column, s2_len + 1):
 
-            char2 = s2[cell_i - 1]
-
-            if char1 == char2: # full match, no cost added
-                cell_value = matrix[row_i - 1, cell_i - 1]
-
-            else: # different characters, calculate additional cost
-
-                # get costs for char edits from the proximity graph
-                del_cost = proximity_graph.get(char1, {}).get('-', 1.0)
-                ins_cost = proximity_graph.get('-', {}).get(char2, 1.0)
-                sub_cost = proximity_graph.get(char1, {}).get(char2, 1.0)
-
-                cell_value = min( # save min full cost for this step
-                    matrix[row_i - 1, cell_i] + del_cost,    # deletion
-                    matrix[row_i, cell_i - 1] + ins_cost,    # insertion
-                    matrix[row_i - 1, cell_i - 1] + sub_cost # substitution
-                )
-
-            matrix[row_i, cell_i] = cell_value
+            cell_value = matrix[row_i, cell_i] = _matrix(row_i, cell_i)
 
             # early stop by max distance limit
             if (
@@ -215,12 +223,12 @@ def levenshtein_substrings_search(
 if __name__ == '__main__':
 
     dp = levenshtein_table(
-        # s1 := 'abcl n k n p k',
-        # s2 := 'abclnknpk sit amet',
-        # s1 := 'Facebooke',
+        s1 := 'abcl n k n p k',
+        s2 := 'abclnknpk sit amet',
+        # s1 := 'Facebookeeee',
         # s2 := 'google',
-        s1 := 'google',
-        s2 := 'Facebookeeee',
+        # s1 := 'google',
+        # s2 := 'Facebookeeee',
         narrow=True,
         proximity_graph={
             ' ': {'-': 0}, # space removed from s1
